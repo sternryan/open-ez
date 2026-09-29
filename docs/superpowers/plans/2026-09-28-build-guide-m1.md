@@ -1362,7 +1362,7 @@ test("makeStore survives a throwing storage", () => {  // Review Focus 2
 });
 ```
 
-- [ ] **Step 2: Run to confirm failure**: `node --test guide/viewer/tests/` → FAIL (module not found)
+- [ ] **Step 2: Run to confirm failure**: `node --test guide/viewer/tests/*.test.mjs` → FAIL (module not found)
 - [ ] **Step 3: Implement**
 
 ```js
@@ -1412,7 +1412,7 @@ export function makeStore(storage) {
 }
 ```
 
-- [ ] **Step 4: Run tests**: `node --test guide/viewer/tests/` → 5 pass
+- [ ] **Step 4: Run tests**: `node --test guide/viewer/tests/*.test.mjs` → 5 pass
 - [ ] **Step 5: Commit**: `git add guide/viewer/js/graph.js guide/viewer/tests && git commit -m "feat(guide): viewer graph logic"`
 
 ---
@@ -1703,7 +1703,7 @@ $("#variant").onchange = () => { renderList(); current = null; };
 renderList();
 ```
 
-- [ ] **Step 5: Run e2e + node tests**: `.venv/bin/python -m pytest tests/guide/test_viewer_e2e.py -q && node --test guide/viewer/tests/` → 5 passed; 5 pass
+- [ ] **Step 5: Run e2e + node tests**: `.venv/bin/python -m pytest tests/guide/test_viewer_e2e.py -q && node --test guide/viewer/tests/*.test.mjs` → 5 passed; 5 pass
 - [ ] **Step 6: Commit**: `git add scripts/vendor_three.sh guide/viewer tests/guide/test_viewer_e2e.py && git commit -m "feat(guide): three.js build-rehearsal viewer"`
 
 ---
@@ -1864,7 +1864,7 @@ Expected: `deployed and verified: 19 ops at <url>` (17 ops + 2 stubs).
 
 ### Task 13: Grade, push, acceptance
 
-- [ ] **Step 1: Full suite**: `.venv/bin/python -m pytest tests/guide -q && node --test guide/viewer/tests/ && .venv/bin/python -m guide.check`. All green, with output pasted into the report.
+- [ ] **Step 1: Full suite**: `.venv/bin/python -m pytest tests/guide -q && node --test guide/viewer/tests/*.test.mjs && .venv/bin/python -m guide.check`. All green, with output pasted into the report.
 - [ ] **Step 2: Leak sweep before the public push**
 
 ```bash
