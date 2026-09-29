@@ -65,6 +65,7 @@ The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out o
 | 17 | `tests/test_regression_lock.py::test_regression_cg_fwd_drift` (split) | CG fwd within 0.01 in of `LOCKED_CG_FWD_PUBLISHED` | `LOCKED_CG_FWD_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
 | 18 | `tests/test_regression_lock.py::test_regression_cg_aft_external_truth` (split from `test_regression_cg_aft`) | CG aft within 1 in of 104.0 | unchanged, strict xfail; gap +17.85 in | (b) | External-truth half of the split. |
 | 19 | `tests/test_regression_lock.py::test_regression_cg_aft_drift` (split) | CG aft within 0.01 in of `LOCKED_CG_AFT_PUBLISHED` | `LOCKED_CG_AFT_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
+| 20 | `tests/test_regression_lock.py::test_regression_values_match_accuracy_report` (split; external half is `test_regression_locked_metrics_all_pass`) | 9 locked metrics are PASS in the report, and each LOCKED_* equals its PASS metric | traceability half: each LOCKED_* equals the report `computed` whatever the grade (passes); PASS half unchanged, strict xfail; 6 PASS, NP/CG fwd/CG aft now FAIL, gap +17.85 in | (a) + (b) | Found in Task 6 after the Task 5 report regeneration (Task 5 verify ran only the report tests, so this went red at 8525552 and was fixed here). The grade requirement is external truth (b); the constant-to-report link is bookkeeping (a). |
 
 ## NP gap
 
