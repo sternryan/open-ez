@@ -26,6 +26,7 @@ sources:
     obtain: github.com/cobelu/Long-EZ
     copy: transcription
     page_basis: pdf
+    note: pages are pages of the per-chapter PDF; the citation context names the chapter (e.g. ch30)
   owner-check:
     title: Owner by-eye reads of the plans scan
     edition: dated per citation

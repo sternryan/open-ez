@@ -6,6 +6,7 @@ import re
 
 import pytest
 
+from core.sources import check_citation
 from config.aircraft_config import (
     GEOMETRY_PROVENANCE,
     PROVENANCE_STATUSES,
@@ -51,7 +52,7 @@ def test_canard_is_a_book_rectangle():
     assert g.canard_root_chord == g.canard_tip_chord == g.canard_chord
     assert g.canard_span == 126.0
     assert GEOMETRY_PROVENANCE["canard_sweep_le"]["status"] == "book"
-    assert "p.71" in GEOMETRY_PROVENANCE["canard_sweep_le"]["source"]
+    assert GEOMETRY_PROVENANCE["canard_sweep_le"]["source"].startswith("plans-1980:p71")
 
 
 def test_chord_aliases_are_read_only():  # Review Focus 2
@@ -75,7 +76,7 @@ def test_book_stations():
     assert g.fs_wing_le == pytest.approx(expect)
     assert g.fs_wing_le == pytest.approx(97.72, abs=0.01)  # 25 deg sweep, root BL 23.3
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["status"] == "cp-corrected"
-    assert "CP25" in GEOMETRY_PROVENANCE["wing_le_anchor"]["source"]
+    assert GEOMETRY_PROVENANCE["wing_le_anchor"]["source"].startswith("cp-text:p25")
 
 
 def test_other_stations_shift_uniformly():  # Review Focus 3
@@ -97,3 +98,9 @@ def test_weight_arms_shift_uniformly():
     w = StructuralWeightParams()
     for name, o in old.items():
         assert getattr(w, name) == pytest.approx(o - SHIFT), name
+
+
+def test_sourced_entries_cite_the_registry():  # Review Focus 1
+    for field, e in GEOMETRY_PROVENANCE.items():
+        if e["status"] in {"book", "cp-corrected"}:
+            check_citation(e["source"])  # raises on unknown id or bad form
