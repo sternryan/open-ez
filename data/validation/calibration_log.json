@@ -7,6 +7,8 @@
   },
   "calibrations": [
     {
+      "status": "retired",
+      "retired_reason": "2026-09-29 planform correction: geometry now book-true; NP is checked, not fitted",
       "parameter": "config.geometry.fs_wing_le",
       "old_value": 133.0,
       "new_value": 125.61,
@@ -21,6 +23,8 @@
       "cg_aft_delta_after_in": 0.0006
     },
     {
+      "status": "retired",
+      "retired_reason": "2026-09-29 planform correction: geometry now book-true; NP is checked, not fitted. The fitted margin value is still used by core.analysis as-is (not re-fitted); CG limits are reported against the published ones, not tuned to them",
       "parameter": "core.analysis.PhysicsEngine.calculate_cg_envelope.fwd_margin",
       "old_value": 0.20,
       "new_value": 0.1721,
@@ -31,6 +35,8 @@
       "cg_fwd_delta_after_in": 0.0010
     },
     {
+      "status": "retired",
+      "retired_reason": "2026-09-29 planform correction: geometry now book-true; NP is checked, not fitted. The fitted margin value is still used by core.analysis as-is (not re-fitted); CG limits are reported against the published ones, not tuned to them",
       "parameter": "core.analysis.PhysicsEngine.calculate_cg_envelope.aft_margin",
       "old_value": 0.05,
       "new_value": 0.0765,
@@ -43,6 +49,8 @@
   ],
   "unchanged_parameters": [
     {
+      "status": "retired",
+      "retired_reason": "2026-09-29 planform correction: geometry now book-true; NP is checked, not fitted",
       "parameter": "config.geometry.datum_offset_in",
       "value": 45.5,
       "reason": "Datum offset was derived from NP comparison in Phase 1 (Phase 01-01 decision). After correcting fs_wing_le, the NP maps to published datum correctly without adjusting datum_offset_in. The offset remains valid as the coordinate system translation constant."

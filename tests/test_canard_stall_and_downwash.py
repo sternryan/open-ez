@@ -118,17 +118,19 @@ class TestDownwashModel:
 
 
 class TestCanardMAC:
-    def test_canard_mac_less_than_root_chord(self):
-        """Canard MAC for tapered canard should be less than root chord."""
-        cr = config.geometry.canard_root_chord  # 17.0
-        ct = config.geometry.canard_tip_chord  # 13.5
+    def test_canard_mac_equals_chord_for_rectangle(self):
+        """Canard is a rectangle (book geometry): MAC equals the single chord, root == tip."""
+        import pytest
+
+        c = config.geometry.canard_chord
+        assert config.geometry.canard_root_chord == config.geometry.canard_tip_chord
+        cr, ct = config.geometry.canard_root_chord, config.geometry.canard_tip_chord
         taper = ct / cr
         mac = (2 / 3) * cr * (1 + taper + taper**2) / (1 + taper)
-        assert mac < cr, f"MAC {mac:.2f} should be < root chord {cr}"
-        assert mac > ct, f"MAC {mac:.2f} should be > tip chord {ct}"
+        assert mac == pytest.approx(c)
 
     def test_canard_mac_value(self):
-        """Canard MAC should be ~15.3 inches for 17/13.5 taper."""
+        """Pure MAC formula check on the retired 17/13.5 taper (independent of config)."""
         cr = 17.0
         ct = 13.5
         taper = ct / cr  # 0.794
@@ -138,9 +140,7 @@ class TestCanardMAC:
     def test_canard_ac_uses_mac_in_np_calc(self):
         """NP calculation should use canard MAC, not root chord, for AC location.
 
-        Canard AC with MAC: fs_canard_le + 0.25 * MAC = 36 + 0.25 * 15.35 = 39.84
-        Canard AC with root: fs_canard_le + 0.25 * 17.0 = 36 + 4.25 = 40.25
-        Difference: ~0.41 inches
+        Canard AC uses the MAC; for the rectangular book canard MAC equals the chord.
         """
         # The NP calculation internally uses MAC -- just verify NP is reasonable
         engine = PhysicsEngine()

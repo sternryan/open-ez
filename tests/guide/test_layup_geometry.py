@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from guide import layup
-from guide.layup_geometry import Planform, build_layup
+from guide.layup_geometry import Planform, _loft, build_layup
 from guide.schema import load_graph
 from core.structures import CanardGenerator
 
@@ -77,9 +77,15 @@ CUTTERS = ("canard.shear_web", "canard.spar_cap_bottom", "canard.spar_cap_top")
 def test_foam_volume_is_core_minus_cutters(built):
     core = CanardGenerator().generate_geometry().val()
     foam = built["canard.core"]
-    removed = sum(vol(core.intersect(s)) for cid in CUTTERS for s in built[cid].values())
+    # Ledger row 2: core.intersect(cutter) on the BSPLINE generator core is nondeterministic in OCCT
+    # (a spar cap returned 0.0, then 32.4 on repeat), so measure the cutters against the same ruled
+    # loft build_layup cuts, and check that loft still matches the generator core.
+    pf = Planform.from_generator(CanardGenerator())
+    base = _loft(lambda bl: pf.outline(bl)[:-1], 0.0, pf.semi_span)
+    assert abs(vol(base) - vol(core)) < 0.01 * vol(core)
+    removed = sum(vol(base.intersect(s)) for cid in CUTTERS for s in built[cid].values())
     assert vol(foam) <= vol(core) * 1.01
-    assert abs(vol(foam) - (vol(core) - removed)) < 0.01 * vol(core)
+    assert abs(vol(foam) - (vol(base) - removed)) < 0.01 * vol(core)
 
 
 def test_foam_section_at_bl5_is_whole_with_cavities(built):
