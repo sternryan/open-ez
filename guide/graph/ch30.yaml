@@ -41,7 +41,7 @@
   components: [canard.core, canard.shear_web, canard.lift_tabs]
   geometry_visible: true
   materials:
-    - {cloth: UND, plies: 2, where: "crossed, full span"}
+    - {cloth: UND, plies: 2, where: "crossed, full span (108 in)"}
     - {cloth: UND, plies: 2, where: "crossed, inboard of BL 30"}
     - {cloth: BID, plies: 1, where: "45 degrees, inboard of BL 20"}
     - {cloth: BID, plies: 1, where: "45 degrees, inboard of BL 10"}
