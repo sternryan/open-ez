@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
+import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
 let storage; try { storage = window.localStorage; } catch { storage = null; }
@@ -49,9 +49,14 @@ new GLTFLoader().load(cfg.model, gltf => {
   const size = box.getSize(new THREE.Vector3()).length();
   controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(size * 1.0, size * 0.8, size * 1.3));
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
+  applyVariantVisibility();
   if (current) highlight(byId.get(current).components);
 }, undefined, () => { $("#model-status").textContent = "3D unavailable — steps and sources still work"; });
 
+function applyVariantVisibility() {
+  const used = componentsInVariant(graph, $("#variant").value);
+  for (const [m, cid] of meshes) m.visible = used.has(cid);
+}
 function highlight(cids) {
   for (const [m, cid] of meshes) m.material.emissive?.setHex(cids.includes(cid) ? 0x1f5f8b : 0x000000);
 }
@@ -59,7 +64,7 @@ const ray = new THREE.Raycaster();
 canvas.addEventListener("click", e => {
   const r = canvas.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-  const hit = ray.intersectObjects([...meshes.keys()])[0];
+  const hit = ray.intersectObjects([...meshes.keys()].filter(m => m.visible))[0];
   if (hit) selectComponent(meshes.get(hit.object));
 });
 
@@ -90,8 +95,8 @@ function selectOp(id) {
   const src = $("#source"); src.replaceChildren();
   for (const s of op.sources ?? []) {
     const v = scanView(s, cfg);
-    if (v.kind === "none") { const p = document.createElement("p"); p.className = "none"; p.textContent = `Plans ${s.page ?? "p." + s.scan_pp}: scan not available here`; src.append(p); }
-    else { const img = document.createElement("img"); img.src = v.url; img.alt = `Plans ${s.page ?? s.scan_pp}`; img.loading = "lazy"; src.append(img); }
+    if (v.kind === "none") { const p = document.createElement("p"); p.className = "none"; p.textContent = noneMessage(s); src.append(p); }
+    else { const img = document.createElement("img"); img.src = v.url; img.alt = `Plans ${sourceLabel(s)}`; img.loading = "lazy"; src.append(img); }
   }
   const ul = $("#checklist"); ul.replaceChildren();
   const done = store.get(id);
@@ -111,9 +116,10 @@ function clearDetail() {
   for (const id of ["#op-title", "#op-summary", "#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
   highlight([]);
 }
-window.__guide = { selectComponent, meshComponents: () => [...new Set(meshes.values())] };
+window.__guide = { selectComponent, meshComponents: () => [...new Set(meshes.values())],
+  visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
-  renderList();
+  renderList(); applyVariantVisibility();
   const still = current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
   if (still) markSelected([current]); else { current = null; clearDetail(); }
 };

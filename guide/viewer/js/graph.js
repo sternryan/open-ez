@@ -3,7 +3,20 @@ const COBELU_RAW = "https://raw.githubusercontent.com/cobelu/Long-EZ/master/";
 export function visibleOps(graph, variant) {
   const byId = new Map(graph.ops.map(o => [o.id, o]));
   return graph.order.map(id => byId.get(id)).filter(o =>
-    o && (o.stub || o.variants.includes("both") || o.variants.includes(variant)));
+    o && (o.variants.includes("both") || o.variants.includes(variant)));
+}
+
+export function componentsInVariant(graph, variant) {
+  return new Set(visibleOps(graph, variant).flatMap(o => o.components));
+}
+
+export function sourceLabel(s) {
+  return s.page ?? (s.scan_pp != null ? "p." + s.scan_pp : (s.heading ?? s.doc));
+}
+
+export function noneMessage(s) {
+  if (s.doc === "cobelu" && s.heading) return `cobelu: ${s.heading} (no figure)`;
+  return `Plans ${sourceLabel(s)}: scan not available here`;
 }
 
 export function opsForComponent(graph, cid) {

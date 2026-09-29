@@ -45,3 +45,6 @@ Thumbs.db
 site/
 .venv/
 output/guide/
+
+# Private owner material (scan renders, OCR) — never commit
+private/

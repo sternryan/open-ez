@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { visibleOps, opsForComponent, badge, scanView, makeStore } from "../js/graph.js";
+import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "../js/graph.js";
 
 const G = {
   order: ["s", "a", "b", "c"],
@@ -71,4 +71,26 @@ test("scanView with relative base path", () => {
   const cfg = { scanBase: "private/scan-1980/pages/" };
   assert.deepEqual(scanView({ scan_pp: 58 }, cfg),
     { kind: "scan", url: "private/scan-1980/pages/058.jpg" });
+});
+
+test("visibleOps: stubs respect variants (default both stays visible)", () => {
+  const g = { order: ["s", "t"], ops: [
+    { id: "s", variants: ["both"], components: [], stub: true },
+    { id: "t", variants: ["roncz"], components: [], stub: true }] };
+  assert.deepEqual(visibleOps(g, "gu").map(o => o.id), ["s"]);
+  assert.deepEqual(visibleOps(g, "roncz").map(o => o.id), ["s", "t"]);
+});
+
+test("sourceLabel and noneMessage for cobelu sources without scan_pp", () => {
+  assert.equal(sourceLabel({ doc: "cobelu", heading: "Step 3" }), "Step 3");
+  assert.equal(sourceLabel({ doc: "cobelu" }), "cobelu");
+  assert.equal(sourceLabel({ scan_pp: 58 }), "p.58");
+  assert.equal(sourceLabel({ page: "10-5", scan_pp: 58 }), "10-5");
+  assert.equal(noneMessage({ doc: "cobelu", heading: "Step 3" }), "cobelu: Step 3 (no figure)");
+  assert.equal(noneMessage({ doc: "scan-1980", scan_pp: 58 }), "Plans p.58: scan not available here");
+});
+
+test("componentsInVariant", () => {
+  assert.deepEqual([...componentsInVariant(G, "roncz")].sort(), ["canard.core", "canard.skin_top"]);
+  assert.deepEqual([...componentsInVariant(G, "gu")], ["canard.core"]);
 });

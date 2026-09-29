@@ -106,3 +106,22 @@ def test_variant_change_clears_detail_of_invisible_op(site):
         assert pg.inner_text("#op-title") == "" and pg.locator("#parts .chip").count() == 0
         b.close()
     s.shutdown()
+
+def test_gu_lists_no_geometry_chip_and_hides_unused_meshes(site):
+    s, url = serve(site)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=["--use-gl=swiftshader", "--enable-unsafe-swiftshader"])
+        pg = b.new_page(viewport={"width": 1280, "height": 900})
+        pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+        pg.wait_for_function("window.__guide.meshComponents().includes('canard.core')", timeout=10000)
+        # default variant roncz: no visible op uses canard.core
+        assert "canard.core" in pg.evaluate("window.__guide.meshComponents()")
+        assert "canard.core" not in pg.evaluate("window.__guide.visibleMeshComponents()")
+        pg.select_option("#variant", "gu")
+        assert "canard.core" in pg.evaluate("window.__guide.visibleMeshComponents()")
+        pg.click('#ops li[data-op="c10.twist-check"]')
+        assert pg.get_attribute('#parts .chip[data-badge="no-geometry"]', "data-cid") == "canard.spar_cap_bottom"
+        pg.select_option("#variant", "roncz")
+        assert "canard.core" not in pg.evaluate("window.__guide.visibleMeshComponents()")
+        b.close()
+    s.shutdown()

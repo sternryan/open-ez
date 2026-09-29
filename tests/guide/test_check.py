@@ -88,3 +88,11 @@ def test_overlap_truncates_to_three_words(gdir, tmp_path, monkeypatch, capsys):
     assert "c10.cores.summary" in out
     # Check that the hit is truncated: should contain "hot wire the…" not the full phrase
     assert "hot wire the…" in out
+
+def test_zero_shingles_reads_as_failure(gdir, tmp_path, monkeypatch, capsys):
+    src_env(tmp_path, monkeypatch, cp_text="THE CANARD\n")
+    (tmp_path / "cobelu" / "I" / "md" / "10_CANARD.md").write_text("tiny\n")
+    (tmp_path / "scan" / "058.txt").write_text("tiny")
+    assert main(["--graph", str(gdir)]) == 2
+    out = capsys.readouterr().out
+    assert "vacuous gate, FAIL" in out and "passes" not in out
