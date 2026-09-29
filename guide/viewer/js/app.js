@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { GLANCE, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
@@ -16,6 +17,7 @@ try {
   const li = document.createElement("li"); li.textContent = "Could not load graph.json"; $("#ops").append(li);
   throw new Error("graph load failed");
 }
+let view = readView(storage ?? { getItem() { return null; } });
 const byId = new Map(graph.ops.map(o => [o.id, o]));
 const meshes = new Map();
 let current = null;
@@ -50,7 +52,7 @@ new GLTFLoader().load(cfg.model, gltf => {
   controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(size * 1.0, size * 0.8, size * 1.3));
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
   applyVariantVisibility();
-  if (current) highlight(byId.get(current).components);
+  if (current && byId.has(current)) highlight(byId.get(current).components);
 }, undefined, () => { $("#model-status").textContent = "3D unavailable — steps and sources still work"; });
 
 function applyVariantVisibility() {
@@ -71,6 +73,10 @@ canvas.addEventListener("click", e => {
 // ---- UI
 function renderList() {
   const ol = $("#ops"); ol.replaceChildren();
+  if (hasGlance(graph)) {
+    const li = document.createElement("li"); li.dataset.op = GLANCE; li.className = "glance";
+    li.textContent = "Canard layup at a glance"; li.onclick = selectGlance; ol.append(li);
+  }
   for (const op of visibleOps(graph, $("#variant").value)) {
     const li = document.createElement("li");
     li.dataset.op = op.id; li.textContent = op.title; if (op.stub) li.className = "stub";
@@ -106,6 +112,7 @@ function selectOp(id) {
     li.append(cb, " ", t); ul.append(li);
   });
   highlight(op.components);
+  showAll(); applyPane();
 }
 function selectComponent(cid) {
   const visible = new Set(visibleOps(graph, $("#variant").value).map(o => o.id));
@@ -115,12 +122,70 @@ function selectComponent(cid) {
 function clearDetail() {
   for (const id of ["#op-title", "#op-summary", "#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
   highlight([]);
+  applyPane();
 }
-window.__guide = { selectComponent, meshComponents: () => [...new Set(meshes.values())],
+function showAll() { /* replaced in Task 11 (ply isolate) */ }
+function applyPane() {
+  const mode = current ? paneMode(graph, current, view) : "3d";
+  $("#viewtoggle").hidden = !(current && current !== GLANCE && cutawayFor(graph, current));
+  for (const b of document.querySelectorAll("#viewtoggle button")) b.setAttribute("aria-checked", String(b.dataset.view === view));
+  $("#viewport").classList.toggle("paned", mode !== "3d");
+  $("#c").hidden = mode !== "3d"; $("#parts").hidden = mode !== "3d";
+  for (const b of document.querySelectorAll("#viewtoggle button")) b.tabIndex = b.dataset.view === view ? 0 : -1;
+  $("#cutpane").hidden = mode !== "cutaway"; $("#glance").hidden = mode !== "glance";
+  $("#legend").hidden = mode !== "glance"; document.querySelector("main").classList.toggle("glance", mode === "glance");
+  if (mode === "cutaway") showCut(cutawayFor(graph, current));
+  if (mode === "3d") resize();
+}
+function showCut(c) {
+  const img = $("#cutimg"), fig = $("#cutpane"); $("#cuterr").hidden = true; img.hidden = false; $("#cutzoom").hidden = false;
+  fig.classList.add("loading");
+  img.onload = () => fig.classList.remove("loading");
+  img.onerror = () => { fig.classList.remove("loading"); img.hidden = true; $("#cutzoom").hidden = true; $("#cuterr").hidden = false; };
+  img.alt = c.alt; img.src = c.src; $("#cutcap").textContent = c.alt;
+}
+function zoom(src, alt) {
+  const im = document.createElement("img"); im.src = src; im.alt = alt;
+  $("#zoombody").replaceChildren(im); $("#zoom").showModal();
+}
+function selectGlance() {
+  current = GLANCE; markSelected([GLANCE]); highlight([]); showAll();
+  $("#op-title").textContent = "Canard layup at a glance";
+  $("#op-summary").textContent = graph.cutaway.count_note;
+  for (const id of ["#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
+  $("#glance").replaceChildren(...graph.cutaway.heroes.map(h => {
+    const f = document.createElement("figure"), b = document.createElement("button"), im = document.createElement("img");
+    b.className = "imgbtn"; b.setAttribute("aria-label", `Enlarge section at BL ${h.bl}`);
+    im.src = h.src; im.alt = h.alt; im.onerror = () => { b.hidden = true; f.append(Object.assign(document.createElement("p"), { className: "err", textContent: "Section picture didn't load." })); };
+    b.append(im); b.onclick = () => zoom(h.src, h.alt);
+    const cap = document.createElement("figcaption"); cap.textContent = `BL ${h.bl} (${h.bl < 20 ? "inboard" : "outboard"})`;
+    f.append(b, cap); return f;
+  }));
+  const ul = document.createElement("ul");
+  for (const l of graph.cutaway.legend) {
+    const li = document.createElement("li");
+    if (l.swatch) { const s = document.createElement("i"); s.className = `sw ${l.swatch}`; li.append(s); }
+    li.append(l.text); ul.append(li);
+  }
+  const h = document.createElement("h3"); h.textContent = "Legend";
+  $("#legend").replaceChildren(h, ul);
+  applyPane();
+}
+for (const b of document.querySelectorAll("#viewtoggle button")) {
+  b.onclick = () => { view = b.dataset.view; writeView(storage ?? { setItem() {} }, view); applyPane(); };
+  b.onkeydown = e => {
+    if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); const o = [...document.querySelectorAll("#viewtoggle button")].find(x => x !== b); o.focus(); o.click(); }
+  };
+}
+$("#cutzoom").onclick = () => zoom($("#cutimg").src, $("#cutimg").alt);
+$("#cutretry").onclick = () => { const c = cutawayFor(graph, current); if (c) showCut({ ...c, src: `${c.src}?r=${Date.now()}` }); };
+$("#zoomclose").onclick = () => $("#zoom").close();
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#zoom").open) showAll(); });
+window.__guide = { selectComponent, paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
   visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
   renderList(); applyVariantVisibility();
-  const still = current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
+  const still = current === GLANCE || current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
   if (still) markSelected([current]); else { current = null; clearDetail(); }
 };
 renderList();

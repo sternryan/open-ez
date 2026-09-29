@@ -17,14 +17,31 @@
   </header>
   <main>
     <nav><ol id="ops"></ol></nav>
-    <section id="viewport"><canvas id="c"></canvas><p id="model-status"></p><div id="parts"></div></section>
+    <section id="viewport">
+      <div id="viewtoggle" role="radiogroup" aria-label="View" hidden>
+        <button role="radio" data-view="3d" aria-checked="true">3D</button>
+        <button role="radio" data-view="cutaway" aria-checked="false">Cutaway</button>
+      </div>
+      <canvas id="c"></canvas><p id="model-status"></p>
+      <figure id="cutpane" hidden>
+        <button id="cutzoom" class="imgbtn" aria-label="Enlarge cutaway"><img id="cutimg" alt=""></button>
+        <figcaption id="cutcap"></figcaption>
+        <p id="cuterr" class="err" hidden>Cutaway picture didn't load. <button id="cutretry">Retry</button></p>
+      </figure>
+      <div id="glance" hidden></div>
+      <div id="isobar" hidden><span id="isotext"></span><button id="showall">Show all</button></div>
+      <div id="plydock" hidden></div>
+      <div id="parts"></div>
+    </section>
     <aside>
+      <div id="legend" hidden></div>
       <h2 id="op-title"></h2><p id="op-summary"></p>
       <div id="changes"></div>
       <div id="source"></div>
       <h3>Checklist</h3><ul id="checklist"></ul>
     </aside>
   </main>
+  <dialog id="zoom" aria-label="Enlarged picture"><button id="zoomclose">Close</button><div id="zoombody"></div></dialog>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
