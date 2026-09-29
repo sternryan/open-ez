@@ -69,3 +69,8 @@ def test_renders_stale_layup(tmp_path):
 def test_renders_need_models(tmp_path):
     with pytest.raises(SchemaError, match="--renders needs --models"):
         build(REPO_GRAPH, tmp_path / "site", models=None, scan_base=None, docs=None, renders=tmp_path)
+
+
+def test_legend_states_planform_source():  # planform correction: the chord has no plans source
+    from guide.build_site import LEGEND
+    assert any(e["text"] == "Canard planform from the plans; chord unsourced" for e in LEGEND)
