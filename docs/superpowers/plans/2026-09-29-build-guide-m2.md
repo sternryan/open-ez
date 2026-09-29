@@ -30,7 +30,7 @@ Read it before any task.
   `fabric-gpu`.
 - **The step graph is the ply SSOT.** Nothing is drawn that `guide/graph/ch30.yaml` does not hold.
   Guesses carry `position_verified: false`.
-- **Never write "public domain" anywhere in the repo.** Label and legend text must pass
+- **Never claim the plans are out of copyright anywhere in the repo.** Label and legend text must pass
   `.venv/bin/python -m guide.check` (full mode).
 - **`blender.sh` takes a bare script name** matching `^[a-z0-9_]+$`: `layup_cutaway`, never
   `layup_cutaway.py`. Flags go after positionals: `fabric-gpu run blender.sh layup_cutaway <job_dir>
@@ -2401,7 +2401,7 @@ who holds it and stop; do not loop.
 - [ ] **Step 3: Deploy**
 
 Run: `source ~/.config/long-ez/env && bash scripts/deploy_guide.sh`
-Expected: `deployed and verified: N ops at https://nas.tail857f5c.ts.net:7485`.
+Expected: `deployed and verified: N ops at $LONGEZ_SITE_URL`.
 
 - [ ] **Step 4: Verify live, end to end**
 
@@ -2576,7 +2576,7 @@ without Ryan's per-instance OK; say so.
 
 - [ ] **Step 4: Ryan's acceptance on the iPad**
 
-Hand Ryan `https://nas.tail857f5c.ts.net:7485`. Ask him to check "Canard layup at a glance": bottom 3,
+Hand Ryan `$LONGEZ_SITE_URL`. Ask him to check "Canard layup at a glance": bottom 3,
 top 4 at both stations, and shear web 6 vs 2. Also ask him to tap one op's Cutaway and isolate a
 shear-web ply. M2 is done only on his yes.
 

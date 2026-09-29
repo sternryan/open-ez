@@ -41,7 +41,7 @@ or opus) and log it.
   note it in the log.
 - **Never `git add -A` / `git add .`.** Stage named files only.
 - **No commit trailers of any kind** (no `Claude-Session:`, no co-author lines).
-- **Never write "public domain"** anywhere. Content edits must pass `.venv/bin/python -m guide.check`.
+- **Never claim the plans are out of copyright** anywhere. Content edits must pass `.venv/bin/python -m guide.check`.
 - **Real data over fixtures:** layup tests run on the repo's real `guide/graph`.
 - **Surprises:** if a task's code does not work as written (for example a CadQuery API differs, or
   glTF node names come out nested or prefixed), the crew fixes it inside the task's intent, and you

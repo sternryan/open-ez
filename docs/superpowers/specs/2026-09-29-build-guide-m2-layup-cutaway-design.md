@@ -189,7 +189,7 @@ Renders are **not committed**. The site build copies them in, and `scripts/deplo
 ### 6.1 Layout (approved mockup B, "viewport swap")
 
 The approved mockup is served tailnet-only at
-https://nas.tail857f5c.ts.net:7485/mockups/m2/b.html (it is throwaway and wiped by the next deploy).
+$LONGEZ_SITE_URL/mockups/m2/b.html (it is throwaway and wiped by the next deploy).
 The saved copy is `~/.gstack/projects/sternryan-open-ez/designs/m2-layout-20260929/b.html`.
 
 ```
@@ -321,7 +321,7 @@ both hero stations deployed.
 1. All suites green, run with the documented commands from two directories.
 2. One live `fabric-gpu` run on anvil: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`,
    vLLM identity probe passing afterwards.
-3. Deployed; the Cutaway panels, Layup section and ply list load at https://nas.tail857f5c.ts.net:7485
+3. Deployed; the Cutaway panels, Layup section and ply list load at $LONGEZ_SITE_URL
    over the tailnet.
 4. Ryan passes the §1 acceptance test on the iPad.
 
