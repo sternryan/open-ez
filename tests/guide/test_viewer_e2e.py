@@ -549,7 +549,9 @@ def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
         top = max(c0, ib["b"] + 4)  # page coords: right half of #c, below the isobar
         clip = {"x": c["x"] + c["w"] / 2, "y": top, "width": c["w"] / 2, "height": c0 + c["h"] - top}
         before = _dark_pixels(pg, clip)
-        pg.click(f'#plydock button[data-node="{P3}"]'); pg.wait_for_timeout(500)
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        pg.evaluate("window.__guide.flyHome()")  # isolate zooms to the ply; compare at the same framing
+        pg.wait_for_timeout(500)
         iso = _dark_pixels(pg, clip)
         pg.keyboard.press("Escape"); pg.wait_for_timeout(500)
         after = _dark_pixels(pg, clip)
@@ -570,5 +572,24 @@ def test_gu_shear_web_offers_no_plies(csite):
         assert chip.count() == 1 and "plies" not in chip.text_content()
         chip.click()
         assert not pg.is_visible("#plydock")
+        b.close()
+    s.shutdown()
+
+
+def test_isolate_zooms_to_the_ply_and_show_all_returns_home(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, 1180)
+        home = pg.evaluate("window.__guide.camera()")
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        cam = pg.evaluate("window.__guide.camera()")
+        box = pg.evaluate(f"window.__guide.plyBox('{P3}')")
+        assert cam["distance"] < 0.5 * home["distance"]
+        assert all(box["min"][i] - 1e-6 <= cam["target"][i] <= box["max"][i] + 1e-6 for i in range(3))
+        pg.click("#showall")
+        back = pg.evaluate("window.__guide.camera()")
+        assert back["distance"] == pytest.approx(home["distance"], rel=1e-6)
+        assert back["target"] == pytest.approx(home["target"], rel=1e-6, abs=1e-6)
         b.close()
     s.shutdown()

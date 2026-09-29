@@ -55,6 +55,7 @@ new GLTFLoader().load(cfg.model, gltf => {
   const size = box.getSize(new THREE.Vector3()).length();
   controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(size * 1.0, size * 0.8, size * 1.3));
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
+  home = { target: controls.target.clone(), position: camera.position.clone() };
   applyVariantVisibility();
   if (current && byId.has(current)) highlight(byId.get(current).components);
   if (isolated) isolate(isolated);
@@ -66,6 +67,20 @@ function applyVariantVisibility() {
 }
 function highlight(cids) {
   for (const [m, cid] of meshes) m.material.emissive?.setHex(cids.includes(cid) ? 0x1f5f8b : 0x000000);
+}
+let home = null;
+function flyTo(target, position) { controls.target.copy(target); camera.position.copy(position); controls.update(); }
+// Plies are long and thin along the span, so framing a whole ply barely zooms in. Aim at the ply's
+// inboard end from about one ply-width-plus-chord away, keeping the home view's direction.
+function zoomToPly(node) {
+  if (!home) return;
+  const ms = [...meshes.keys()].filter(m => plyNode.get(m) === node);
+  if (!ms.length) return;
+  const box = new THREE.Box3(); for (const m of ms) box.expandByObject(m);
+  const sz = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const target = new THREE.Vector3(c.x, box.min.y + Math.min(sz.y / 4, 10), c.z).clamp(box.min, box.max);
+  const dir = home.position.clone().sub(home.target).normalize();
+  flyTo(target, target.clone().add(dir.multiplyScalar(Math.max(sz.x, sz.z, 6) * 2.5)));
 }
 const ray = new THREE.Raycaster();
 canvas.addEventListener("click", e => {
@@ -147,6 +162,7 @@ function isolate(node) {
   const cid = $("#plydock").dataset.cid;
   $("#isotext").textContent = isolateLabel(graph, cid, node); $("#isobar").hidden = false;
   $("#viewport").classList.add("isolating");
+  zoomToPly(node);
   for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", String(b.dataset.node === node));
 }
 function showAll() {
@@ -155,6 +171,7 @@ function showAll() {
     m.material.transparent = false; m.material.opacity = 1; m.material.depthWrite = true; m.material.needsUpdate = true;
   }
   $("#isobar").hidden = true; $("#viewport").classList.remove("isolating");
+  if (home) flyTo(home.target, home.position);
   for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", "false");
 }
 function toggleDock(cid, viaKeyboard) {
@@ -235,7 +252,10 @@ $("#cutzoom").onclick = () => zoom($("#cutimg").src, $("#cutimg").alt);
 $("#cutretry").onclick = () => { const c = cutawayFor(graph, current); if (c) showCut({ ...c, src: `${c.src}?r=${Date.now()}` }); };
 $("#zoomclose").onclick = () => $("#zoom").close();
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#zoom").open) showAll(); });
-window.__guide = { selectComponent, isolated: () => isolated, meshPlies: () => [...new Set(plyNode.values())],
+window.__guide = { selectComponent, isolated: () => isolated,
+  flyHome: () => { if (home) flyTo(home.target, home.position); },
+  camera: () => ({ target: controls.target.toArray(), distance: camera.position.distanceTo(controls.target) }),
+  plyBox: node => { const b = new THREE.Box3(); for (const m of meshes.keys()) if (plyNode.get(m) === node) b.expandByObject(m); return { min: b.min.toArray(), max: b.max.toArray() }; }, meshPlies: () => [...new Set(plyNode.values())],
   meshOpacities: () => [...meshes.keys()].map(m => ({ node: plyNode.get(m) ?? null, component: meshes.get(m), opacity: m.material.opacity })), paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
   visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
