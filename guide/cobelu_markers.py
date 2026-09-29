@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-MARK = re.compile(r"\{\s*CP\s*(\d+)\s+L?PC\s*(\d+)\s+([A-Z]{2,4})\s*\}")
+# More tolerant marker regex: optional commas/spaces, optional class, accept LPC or PC
+MARK = re.compile(r"\{\s*CP\s*(\d+)\s*[:,]?\s+L?PC\s*(\d+)\s*[:,]?\s*(?:([A-Z]{2,4}))?\s*\}", re.I)
 HEAD = re.compile(r"^#{2,3}\s+(.*\S)\s*$")
 FNAME = re.compile(r"^(\d{1,2})[_-]")
 
@@ -30,8 +31,17 @@ def parse_markers(md_text: str, chapter: int) -> list[Marker]:
     for i, line in enumerate(md_text.splitlines(), start=1):
         h = HEAD.match(line)
         if h:
-            heading = h.group(1)
+            heading_text = h.group(1)
+            # Check for markers on the heading line itself
+            for m in MARK.finditer(heading_text):
+                cls_code = m.group(3) if m.group(3) else "?"
+                # Strip markers from heading
+                heading = MARK.sub("", heading_text).strip()
+                out.append(Marker(int(m.group(1)), int(m.group(2)), cls_code, chapter, heading, i))
+            if not MARK.search(heading_text):
+                heading = heading_text
             continue
         for m in MARK.finditer(line):
-            out.append(Marker(int(m.group(1)), int(m.group(2)), m.group(3), chapter, heading, i))
+            cls_code = m.group(3) if m.group(3) else "?"
+            out.append(Marker(int(m.group(1)), int(m.group(2)), cls_code, chapter, heading, i))
     return out
