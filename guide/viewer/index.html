@@ -29,16 +29,15 @@
         <p id="cuterr" class="err" hidden>Cutaway picture didn't load. <button id="cutretry">Retry</button></p>
       </figure>
       <div id="glance" hidden></div>
-      <div id="isobar" hidden><span id="isotext"></span><button id="showall">Show all</button></div>
-      <div id="plydock" hidden></div>
-      <div id="parts"></div>
+      <div id="isobar" hidden><span id="isotext" aria-live="polite"></span><button id="showall">Show all</button></div>
+      <div id="dockstack"><div id="parts"></div><div id="plydock" hidden></div></div>
     </section>
     <aside>
       <h2 id="op-title"></h2><p id="op-summary"></p>
       <div id="legend" hidden></div>
       <div id="changes"></div>
       <div id="source"></div>
-      <h3>Checklist</h3><ul id="checklist"></ul>
+      <h3 id="checklist-h" hidden>Checklist</h3><ul id="checklist"></ul>
     </aside>
   </main>
   <dialog id="zoom" aria-label="Enlarged picture"><button id="zoomclose">Close</button><div id="zoombody"></div></dialog>
