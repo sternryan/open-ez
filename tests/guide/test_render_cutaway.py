@@ -11,7 +11,8 @@ import pytest
 from guide import render_key as rk
 from tests.guide.test_render_key import make_export, make_renders, make_scripts
 
-SH = Path("guide/render_cutaway.sh").resolve()
+ROOT = Path(__file__).resolve().parents[2]
+SH = ROOT / "guide" / "render_cutaway.sh"
 STUB_SSH = r'''#!/bin/bash
 host="$1"; shift; cmd="$*"; echo "ssh $cmd" >> "$STUB_LOG"
 case "$cmd" in
@@ -45,7 +46,7 @@ def env(tmp_path):
     e = dict(os.environ, PATH=f"{bin_}:{os.environ['PATH']}", COMPUTE_FABRIC_DIR=str(cf),
              FABRIC_GPU=str(bin_ / "fabric-gpu"), LONGEZ_EXPORT_DIR=str(export),
              LONGEZ_RENDER_CACHE=str(tmp_path / "cache"), LONGEZ_POLL_S="0",
-             PY=str(Path(".venv/bin/python").resolve()),
+             PY=str(ROOT / ".venv" / "bin" / "python"),
              STUB_LOG=str(tmp_path / "log"), STUB_SCRIPTS=str(scripts), STUB_OUT=str(out),
              STUB_GPU_ARGS=str(tmp_path / "gpu_args"))
     return e, tmp_path, export, scripts
