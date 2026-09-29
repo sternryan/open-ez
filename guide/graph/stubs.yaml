@@ -1,0 +1,26 @@
+# Prerequisites outside the canard slice (shown as stubs), plus the back-cover reference page.
+- id: c03.layup-skills
+  chapter: 3
+  title: Composite layup skills (education chapter)
+  stub: true
+- id: c06.fuselage-assembled
+  chapter: 6
+  title: Fuselage assembled through the bulkheads
+  stub: true
+- id: c11.elevators
+  chapter: 11
+  title: GU elevators built
+  variants: [gu]
+  stub: true
+- id: r30.elevators
+  chapter: 30
+  title: Roncz elevators built and hung
+  variants: [roncz]
+  stub: true
+- id: ref.back-cover-3view
+  chapter: 0
+  title: Plans back cover 3-view (reference)
+  stub: true
+  changes:
+    - {cp: 25, lpc: 7, class: MEO, status: verified, kind: official, note: The wing root leading-edge station on the 3-view is 113.9 in; the printed 113.4 is wrong., annotation_pp: 171}
+    - {cp: 25, lpc: 24, class: MEO, status: verified, kind: official, note: The nose gear centerline sits at waterline -22; the 3-view shows -23., annotation_pp: 171}

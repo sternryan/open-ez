@@ -1,0 +1,202 @@
+# Chapter 30 — Roncz R1145MS canard (replaces chapters 10, 11 and 12). Source: cobelu transcription; not in the 1980 edition.
+- id: r30.templates-cores
+  chapter: 30
+  title: Templates and Roncz foam cores
+  summary: Prepare the Roncz hot-wire templates and cut the inboard, outboard and elevator foam cores, then make the dowels that will locate the cores later.
+  variants: [roncz]
+  requires: [c03.layup-skills]
+  components: [canard.core]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 1: Prepare Templates"}
+    - {doc: cobelu, heading: "Step 3: Hotwire the Inboard foam cores", figure: I/images/30/30_03.png}
+    - {doc: cobelu, heading: "Step 6: Create dowels", figure: I/images/30/30_05.png}
+  completion:
+    - Templates made for inboard, outboard and elevator cores
+    - All cores hot-wired and labeled
+    - Dowels cut for core location
+- id: r30.lift-tabs
+  chapter: 30
+  title: Lift tabs, inserts and drilling jig
+  summary: Cut the aluminum lift tabs (CLT) and their nut-plate inserts, lay out where they sit on the inboard cores, and match-drill tab, insert and jig together so the holes line up at installation.
+  variants: [roncz]
+  requires: [r30.templates-cores]
+  components: [canard.lift_tabs]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 8: Canard Lift Tab and Lift Tab inserts", figure: I/images/30/30_07.png}
+    - {doc: cobelu, heading: "Step 10: Layout the CLT position on the inboard cores", figure: I/images/30/30_12.png}
+    - {doc: cobelu, heading: "Step 12: Match drill the Lift tab, the insert and the Jig"}
+    - {doc: cobelu, heading: "Step 13: Install nut plates on lift tab inserts", figure: I/images/30/30_14.png}
+  completion:
+    - Two lift tabs and two inserts cut from aluminum plate
+    - Tab, insert and jig drilled as one stack
+    - Nut plates riveted to the inserts
+- id: r30.shear-web
+  chapter: 30
+  title: Cut the center cores and glass the shear web
+  summary: Slice the inboard cores along the shear web line, jig them vertical, and lay up the shear web in crossed UND and 45-degree BID plies, with thick BID pads over each lift-tab insert.
+  variants: [roncz]
+  requires: [r30.lift-tabs]
+  components: [canard.core, canard.shear_web, canard.lift_tabs]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "crossed, full span"}
+    - {cloth: UND, plies: 2, where: "crossed, inboard of BL 30"}
+    - {cloth: BID, plies: 1, where: "45 degrees, inboard of BL 20"}
+    - {cloth: BID, plies: 1, where: "45 degrees, inboard of BL 10"}
+    - {cloth: BID, plies: 9, where: "pad over each CL-1 nut plate"}
+  sources:
+    - {doc: cobelu, heading: "Step 7: Cut center cores along shear web", figure: I/images/30/30_06.png}
+    - {doc: cobelu, heading: "Step 9: Jig inboard cores for shear web layup", figure: I/images/30/30_09.png}
+    - {doc: cobelu, heading: "Step 14: Glass the shear web", figure: I/images/30/30_15.png}
+    - {doc: cobelu, heading: "Step 15: Install CLTs"}
+  completion:
+    - Cores vertical and straight in the jig before glassing
+    - Shear web plies laid in the order listed and cured
+    - Insert holes opened through the pads after cure
+- id: r30.jig-assemble
+  chapter: 30
+  title: Assemble the canard in the jigs
+  summary: Fit the dowels and leading-edge cores, set the jig blocks on a level bench or ladder, then bond each outboard core to the middle section with micro, keeping both edges straight.
+  variants: [roncz]
+  requires: [r30.shear-web]
+  components: [canard.core]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 16: Install Dowls", figure: I/images/30/30_17.png}
+    - {doc: cobelu, heading: "Step 17: Mount the leading edge cores", figure: I/images/30/30_18.png}
+    - {doc: cobelu, heading: "Step 18: Mount canard jigs on workbench"}
+    - {doc: cobelu, heading: "Step 20: Micro the outboard cores to the center section"}
+  completion:
+    - Jig surface level along the full 130 in
+    - Leading and trailing edges straight along a string
+    - Outboard cores bonded to the center section
+- id: r30.bottom-spar-cap
+  chapter: 30
+  title: Bottom spar cap
+  summary: Clean and prepare the trough, then fill it one UND ply at a time, wetting and squeegeeing each ply, to build the tapered bottom spar cap.
+  variants: [roncz]
+  requires: [r30.jig-assemble]
+  components: [canard.core, canard.spar_cap_bottom]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 21: Bottom Spar Cap preparation", figure: I/images/30/30_21.png}
+    - {doc: cobelu, heading: "Step 22: Bottom Spar Cap layup", figure: I/images/30/30_22.png}
+  completion:
+    - Trough free of oil and dust before the first ply
+    - Plies stepped to follow the trough taper
+    - Cap fully wet out, no dry white fibers
+- id: r30.bottom-skin
+  chapter: 30
+  title: Bottom skin
+  summary: Mask the leading edge, peel-ply the trailing edge, fill foam dings, and lay up the three-ply bottom skin.
+  variants: [roncz]
+  requires: [r30.bottom-spar-cap]
+  components: [canard.core, canard.skin_bottom]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 1, where: "spanwise, first ply"}
+    - {cloth: BID, plies: 1, where: "45 degrees, full span"}
+    - {cloth: UND, plies: 1, where: "spanwise, last ply"}
+  sources:
+    - {doc: cobelu, heading: "Step 23: Bottom skin layup", figure: I/images/30/30_23.png}
+  completion:
+    - Dings filled with dry micro first
+    - Three plies laid in order and cured
+    - Edges trimmed straight
+- id: r30.turnover-twist-check
+  chapter: 30
+  title: Turn it over and recheck twist
+  summary: Fix a straight pipe or board along the trailing edge, lift the canard off the jigs, set it right side up, sand the skin edges to the template contour, and confirm there is still no twist.
+  variants: [roncz]
+  requires: [r30.bottom-skin]
+  components: [canard.core]
+  geometry_visible: false
+  inspection: true
+  sources:
+    - {doc: cobelu, heading: "Step 24: Prepare Canard to be turned over", figure: I/images/30/30_27.png}
+    - {doc: cobelu, heading: "Step 25: Mount canard right side up", figure: I/images/30/30_29.png}
+  completion:
+    - Canard mounted right side up on its supports
+    - Contour matches the template
+    - Level and twist rechecked before the top layups
+- id: r30.hinge-foam
+  chapter: 30
+  title: Hinge foam inserts
+  summary: Cut pockets in the core where the elevator hinges will mount and bond in high-density foam inserts, checking the stations against the torque tubes.
+  variants: [roncz]
+  requires: [r30.turnover-twist-check]
+  components: [canard.core, canard.hinge_foam]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 26: Insert foam for elevator hinge", figure: I/images/30/30_32.png}
+  completion:
+    - Insert stations checked against the torque tubes
+    - Inserts bonded and sanded flush
+- id: r30.top-spar-cap
+  chapter: 30
+  title: Top spar cap
+  summary: Confirm the top trough matches the templates, mask the surrounding foam, and build the top spar cap the same way as the bottom one.
+  variants: [roncz]
+  requires: [r30.hinge-foam]
+  components: [canard.core, canard.spar_cap_top]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 27: Top Spar Cap Layup"}
+  completion:
+    - Trough checked against the templates first
+    - Cap cured, or skin started while it is still green
+- id: r30.top-skin
+  chapter: 30
+  title: Top skin
+  summary: Lay up the four-ply top skin, then trim the trailing edge and tips and sand the trailing edge straight to the template.
+  variants: [roncz]
+  requires: [r30.top-spar-cap]
+  components: [canard.core, canard.skin_top]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 1, where: "spanwise, first ply"}
+    - {cloth: BID, plies: 1, where: "45 degrees, full span"}
+    - {cloth: UND, plies: 2, where: "spanwise, final plies"}
+  sources:
+    - {doc: cobelu, heading: "Step 28: Layup the top skin of Canard", figure: I/images/30/30_34.png}
+  completion:
+    - Four plies laid in order and cured
+    - Trailing edge straight and sanded to the template
+- id: r30.install-pins
+  chapter: 30
+  title: Pins and fuselage fit for the Roncz canard
+  summary: Make the two alignment pins for F28, then set the canard on the fuselage and lower the fuselage sides until it sits at the right incidence with room for full elevator travel.
+  variants: [roncz]
+  requires: [r30.top-skin, c06.fuselage-assembled, r30.elevators]
+  components: [canard.alignment_pins]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "STEP 1 – INSTALLING THE ALIGNMENT PINS", figure: I/images/30/30_60.png}
+    - {doc: cobelu, heading: "Step 2 - Adapt the fuselage to the Canard", figure: I/images/30/30_63.png}
+  completion:
+    - Pins made and holes drilled; pins loose
+    - Fuselage sides lowered evenly, canard level side to side
+    - At least 0.1 in clearance around the torque tubes at both travel limits
+- id: r30.align-canard
+  chapter: 30
+  title: Align and attach the Roncz canard
+  summary: Clamp the lift tabs to F22, set zero sweep and zero incidence (the average if there is slight twist), drill the tabs, fit the plywood rear tabs to the pins, and replace any sweep shims with BID pads.
+  variants: [roncz]
+  requires: [r30.install-pins]
+  components: [canard.lift_tabs, canard.rear_tabs]
+  geometry_visible: false
+  inspection: true
+  materials:
+    - {cloth: BID, plies: 5, where: "forward face of each rear tab"}
+    - {cloth: BID, plies: 4, where: "aft face of each rear tab"}
+  sources:
+    - {doc: cobelu, heading: "STEP 3 – ALIGNING THE CANARD", figure: I/images/30/30_64.png}
+    - {doc: cobelu, heading: "Step 5: Rear canard alignment tabs", figure: I/images/30/30_66.png}
+    - {doc: cobelu, heading: "Step 6: Replace lift tab shims with BID"}
+  completion:
+    - Tip-to-wing-fitting distances equal on both sides
+    - Incidence set with the template level against the longerons
+    - Rear tabs glassed and bushed
+    - Sweep and incidence rechecked after the shims come out
