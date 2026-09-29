@@ -148,8 +148,9 @@ geometry stays unvalidated (§9).
   1. Import the glb.
   2. Solidify only surfaces that are still thin.
   3. MANIFOLD boolean cut at the station plane.
-  4. Materials: hue by cloth class (UND, BID, foam, position-unverified), with shade alternating by
-     lay order so adjacent same-cloth plies stay distinct.
+  4. Materials: hue by cloth class (UND, BID, foam, position-unverified; the same hues as the §6.3
+     tokens), with shade alternating by lay order so adjacent same-cloth plies stay distinct.
+     `film_transparent` on, so each PNG has an alpha background.
   5. Camera framed **from the cut face's bounds**, looking spanwise with a slight 3/4 offset.
   6. Op frames: earlier ops at full colour, the highlighted op accented, later ops hidden.
 - **Output, atomic:**
@@ -185,16 +186,83 @@ Renders are **not committed**. The site build copies them in, and `scripts/deplo
   - **Present:** the build is strict. It fails on a missing manifest, a key mismatch, or any
     `LAYUP_SCOPE` shot without a file.
   - `deploy_guide.sh` always passes `--renders`.
-- Each included layup op page gets a **Cutaway** panel with its highlight frame.
-- A canard-level **Layup section** view shows both hero stations side by side, with a legend:
-  - cloth hue
-  - lay-order numbers
+### 6.1 Layout (approved mockup B, "viewport swap")
+
+The approved mockup is served tailnet-only at
+https://nas.tail857f5c.ts.net:7485/mockups/m2/b.html (it is throwaway and wiped by the next deploy).
+The saved copy is `~/.gstack/projects/sternryan-open-ez/designs/m2-layout-20260929/b.html`.
+
+```
+┌ header ─────────────────────────────────────────────────────────────┐
+├ nav (op list) ─┬ centre pane ────────────────────┬ aside ───────────┤
+│ ▸ Canard layup │ [ 3D | Cutaway ]  ← segmented   │ op title/summary │
+│   at a glance  │                                 │ plans changes    │
+│ ─────────────  │   3D model  OR  op cutaway PNG  │ checklist        │
+│ 1 Shear web    │                                 │                  │
+│ 2 Jigs         │  chips: Shear web 6 ▾ ...       │ (glance view:    │
+│ 3 Bottom cap …│  [ply list docks bottom-left]   │  legend here)    │
+└────────────────┴─────────────────────────────────┴──────────────────┘
+```
+
+**What the reader sees, in order:**
+1. **The centre pane.** On a layup op with `[Cutaway]` selected, the op's cutaway PNG fills the pane.
+2. **The aside:** what the step says.
+3. **The nav:** where they are in the sequence.
+
+**Toggle:**
+- `[3D | Cutaway]` is a two-option segmented control (radio group) at the top-left of the pane.
+- The choice is remembered across ops, per viewer, in `localStorage` wrapped in try/catch.
+- On an op with no cutaway, the control is **hidden, not disabled**, and the pane shows 3D. Returning
+  to a layup op restores the remembered choice.
+
+**"Canard layup at a glance":**
+- A pinned first item in the op list, visually separated from the numbered ops.
+- Selecting it shows the BL 5 and BL 40 heroes in the pane with the legend in the aside.
+- At ≥ 821 px the aside narrows to 280 px so the two heroes fit side by side. Below that, the heroes
+  stack full width.
+- The legend lists:
+  - cloth hue swatches
+  - "numbers = lay order"
   - "not to scale"
-  - "web/spar position not verified"
+  - "web/spar position not verified" (hatched swatch)
   - "spar caps: plies as required to fill trough"
-- **Viewer ply list:** each component in the parts panel (`#parts`) expands to its plies. Tapping a
-  ply isolates it, and the others ghost at low opacity. Without this, the outer skin wins every ray
-  pick (`app.js` nearest hit) and the inner plies are unreachable.
+  - what to count: bottom 3, top 4, web 6 vs 2
+
+**Enlarge:** tapping a cutaway or hero opens it full-screen with native pinch-zoom (an `<img>` in a
+scrollable container). Close is a visible 44 px button, and Esc also closes it.
+
+**Ply list:**
+- Tapping a component chip (e.g. "Shear web 6") docks a vertical list of its plies at the bottom-left
+  of the pane. Each row shows a cloth swatch, the lay number, the cloth and the extent.
+- Tapping a ply isolates it: the other plies ghost at 15% opacity, and a bar reads
+  "Showing Shear web ply 3 · Show all".
+- Tapping the ply again, pressing "Show all", pressing Esc, or changing op all reset the isolation.
+- Without the list, the outer skin wins every ray pick (`app.js` nearest hit) and the inner plies are
+  unreachable.
+
+### 6.2 States
+
+| Surface | Loading | Empty | Error | Success | Partial |
+|---|---|---|---|---|---|
+| Cutaway (op) | 4:3 box in `--line` colour reserves the space; no spinner | op outside `LAYUP_SCOPE`: toggle hidden | image fails: "Cutaway picture didn't load" + Retry link, 3D toggle still works | PNG fills pane, caption "After <op>: <op> plies accented, later ops not yet laid" | n/a (strict build guarantees every scoped shot) |
+| Glance view | same reserved boxes | built without `--renders`: pinned item absent | same message per hero | both heroes + legend | n/a |
+| Ply list | instant (from graph.json) | component with no plies: chip does not expand | n/a | list docked | isolate active: accent outline on pane + "Showing … · Show all" bar |
+| Whole site | M1 behaviour | no `--renders`: M1 UI exactly | M1 behaviour | cutaway surfaces present | n/a |
+
+### 6.3 Look and accessibility
+
+- **Tokens:** there is no DESIGN.md. Reuse the `app.css` tokens and add cloth tokens for light and
+  dark: `--und` (amber), `--bid` (teal), `--foam` (pale grey), `--unverified` (hatch). The Blender
+  materials use the same hues, so the PNGs and the legend match.
+- **Dark mode:** renders use `film_transparent` (PNG with alpha), so the section sits on the page
+  background in either theme. No white slab in dark mode.
+- **Touch:** every control is ≥ 44 px (toggle, chips, ply rows, Show all, Close).
+- **Keyboard:** the toggle is an arrow-key radio group; chips and ply rows are buttons; Esc resets
+  the isolation or closes the full-screen view.
+- **Alt text:** generated from `layup.json`, never hand-typed. For example: "Section at BL 5: bottom
+  skin 3 plies, top skin 4 plies, shear web 6 plies". Op frames read "After <op>: …".
+- **Contrast:** legend text uses `--fg` and stays ≥ 4.5:1. Lay-order numbers on bands use the
+  darker shade of each hue plus a background-colour halo.
 
 ## 7. Testing
 
@@ -220,8 +288,15 @@ Renders are **not committed**. The site build copies them in, and `scripts/deplo
   - fabric-gpu rc ≠ 0 → exit ≠ 0
   - local/deployed script mismatch → exit ≠ 0
 
-**Viewer (node `--test` on `*.test.mjs`, plus the browser e2e):** tap an inner shear-web ply in the
-ply list and assert it is isolated and highlighted.
+**Viewer (node `--test` on `*.test.mjs`, plus the browser e2e, per §6):**
+- Tap an inner shear-web ply in the ply list; assert it is isolated and highlighted and the "Show all"
+  bar appears.
+- Changing op or pressing Esc resets the isolation.
+- The toggle is hidden on a non-layup op and restores the remembered choice on a layup op.
+- The toggle still works when `localStorage` throws.
+- Alt text equals the `layup.json`-derived string.
+- A site built without `--renders` shows no toggle and no glance item.
+- Checked at 1180×820 and 820×1180.
 
 **compute-fabric-dev:** extend `deploy/anvil/tests/test_blender_payload.py`:
 - The shot/manifest contract, checked without a GPU.
@@ -316,7 +391,7 @@ No critical gaps remain: every failure mode has a test and fails loud.
 - [ ] **T2 (P1, human ~2h / CC ~15min)** — export — nest ply nodes under their components; write `layup.json` + `shots.json`. Surfaced by: D1, issue 8. Files: `guide/export_glb.py`, `tests/guide/test_export_glb.py`.
 - [ ] **T3 (P1, human ~1d / CC ~45min)** — blender — `fabric_blender.py` helper, `smoke.py` refactor, `layup_cutaway.py`, atomic output, per-ply shading. Surfaced by: issue 6; OV4, OV6. Files: `compute-fabric-dev/deploy/anvil/jobs/blender/*`, `deploy/anvil/tests/test_blender_payload.py`.
 - [ ] **T4 (P1, human ~3h / CC ~20min)** — dispatch — `render_cutaway.sh` with the render key, lease check, bare script name, and PATH-stub tests. Surfaced by: issues 5, 9; OV6. Files: `guide/render_cutaway.sh`, `tests/guide/test_render_cutaway.py`.
-- [ ] **T5 (P1, human ~3h / CC ~20min)** — site — optional strict `--renders`, panels, Layup section and legend; deploy passes `--renders`. Surfaced by: issue 3. Files: `guide/build_site.py`, `guide/viewer/*`, `scripts/deploy_guide.sh`, `tests/guide/test_build_site.py`.
+- [ ] **T5 (P1, human ~3h / CC ~20min)** — site — optional strict `--renders`, the §6.1 toggle, pinned glance item + legend, §6.2 states, §6.3 tokens and alt text; deploy passes `--renders`. Surfaced by: issue 3; design review. Files: `guide/build_site.py`, `guide/viewer/*`, `scripts/deploy_guide.sh`, `tests/guide/test_build_site.py`.
 - [ ] **T6 (P2, human ~4h / CC ~30min)** — viewer — ply list with isolate, plus the e2e test. Surfaced by: OV7. Files: `guide/viewer/js/app.js`, `tests/guide/test_viewer_e2e.py`.
 
 ## GSTACK REVIEW REPORT
@@ -326,10 +401,10 @@ No critical gaps remain: every failure mode has a test and fails loud.
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
 | Codex Review | `/codex review` | Independent 2nd opinion | 1 | issues_found | 8 outside-voice findings, all accepted (OV1 flat core verified independently) |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | clean | 9 issues + 8 outside-voice, 0 critical gaps, all resolved |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | clean | score: 3/10 → 8/10, 7 decisions; mockup B approved (HTML, tailnet) |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
 - **CROSS-MODEL:** Codex surfaced what the Claude pass missed: the degenerate core, foam overlap, ply band merging, render-key coverage, and viewer occlusion. One tension with D1 (viewer plies unreachable) was resolved by adding a ply list, which keeps the D1 choice.
-- **VERDICT:** ENG CLEARED — ready for writing-plans.
+- **VERDICT:** ENG + DESIGN CLEARED — ready for writing-plans.
 
 NO UNRESOLVED DECISIONS
