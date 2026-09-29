@@ -2,12 +2,12 @@
 # canard.core is the only part open-ez generates today, and it is the Roncz R1145MS core.
 - {id: canard.core, label: Roncz canard foam core, fidelity: unvalidated}
 - {id: canard.core_gu, label: GU canard foam core, fidelity: no-geometry}
-- {id: canard.shear_web, label: Shear web, fidelity: no-geometry}
+- {id: canard.shear_web, label: Shear web, fidelity: unvalidated}
 - {id: canard.lift_tabs, label: Lift tabs and inserts, fidelity: no-geometry}
-- {id: canard.spar_cap_bottom, label: Bottom spar cap, fidelity: no-geometry}
-- {id: canard.skin_bottom, label: Bottom skin, fidelity: no-geometry}
-- {id: canard.spar_cap_top, label: Top spar cap, fidelity: no-geometry}
-- {id: canard.skin_top, label: Top skin, fidelity: no-geometry}
+- {id: canard.spar_cap_bottom, label: Bottom spar cap, fidelity: unvalidated}
+- {id: canard.skin_bottom, label: Bottom skin, fidelity: unvalidated}
+- {id: canard.spar_cap_top, label: Top spar cap, fidelity: unvalidated}
+- {id: canard.skin_top, label: Top skin, fidelity: unvalidated}
 - {id: canard.hinge_foam, label: Elevator hinge foam inserts, fidelity: no-geometry}
 - {id: canard.alignment_pins, label: Canard alignment pins (F28), fidelity: no-geometry}
 - {id: canard.rear_tabs, label: Rear alignment tabs, fidelity: no-geometry}
