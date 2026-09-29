@@ -16,7 +16,9 @@ SH = ROOT / "guide" / "render_cutaway.sh"
 STUB_SSH = r'''#!/bin/bash
 host="$1"; shift; cmd="$*"; echo "ssh $cmd" >> "$STUB_LOG"
 case "$cmd" in
-  flux-lock-status) if [ "${STUB_LEASE:-0}" = 3 ]; then echo "LEASED — held by w9-battery"; exit 3; fi; echo "FREE"; exit 0;;
+  flux-lock-status) if [ "${STUB_LEASE:-0}" = 3 ]; then
+      printf 'HELD  — a flux job holds the anvil GPU lock:\n  holder| pid=42\n  holder| runner=w9-battery\n  holder| started=2026-09-29T18:11:58+00:00\n'
+      [ -n "${STUB_ETA:-}" ] && printf '  holder| eta=%s\n' "$STUB_ETA"; exit 3; fi; echo "FREE"; exit 0;;
   sha256sum*) f="${cmd##*/}"; if [ -n "${STUB_SHA_BAD:-}" ]; then echo "0000  x"; else shasum -a 256 "$STUB_SCRIPTS/$f"; fi;;
   "test -f"*) exit 0;;
   *) exit 0;;
@@ -59,8 +61,32 @@ def run(e, *args, **extra):
 def test_lease_busy_stops_before_dispatch(env):
     e, t, *_ = env
     r = run(e, STUB_LEASE="3")
-    assert r.returncode == 3 and "GPU lease busy: LEASED" in r.stderr
+    assert r.returncode == 3
+    assert "GPU lease held by w9-battery since 2026-09-29T18:11:58" in r.stderr
+    assert "ETA: none stamped by the holder" in r.stderr and "--wait" in r.stderr
     assert not (t / "gpu_args").exists()
+
+
+def test_lease_busy_reports_stamped_eta(env):
+    e, t, *_ = env
+    r = run(e, STUB_LEASE="3", STUB_ETA="2026-09-29T19:30:00Z")
+    assert r.returncode == 3 and "ETA: 2026-09-29T19:30:00Z" in r.stderr
+
+
+def test_wait_queues_through_fabric_gpu(env):
+    e, t, *_ = env
+    r = run(e, "--wait=600", STUB_LEASE="3")
+    assert r.returncode == 0, r.stderr
+    args = (t / "gpu_args").read_text().split()
+    assert "--no-wait" not in args and args[args.index("--wait-s") + 1] == "600"
+    assert "queuing behind w9-battery" in r.stderr
+
+
+def test_wait_default_is_four_hours(env):
+    e, t, *_ = env
+    assert run(e, "--wait").returncode == 0
+    args = (t / "gpu_args").read_text().split()
+    assert args[args.index("--wait-s") + 1] == "14400"
 
 
 def test_happy_path(env):
@@ -70,7 +96,7 @@ def test_happy_path(env):
     args = (t / "gpu_args").read_text().split()
     key = rk.key_of(rk.file_shas(export, scripts))
     assert args[:3] == ["run", "blender.sh", "layup_cutaway"] and re.fullmatch(r"[a-z0-9_]+", args[2])
-    assert args[3].endswith(f"layup-{key[:16]}") and args[4:6] == ["--no-wait", "--expect-s"]
+    assert args[3].endswith(f"layup-{key[:16]}") and args[4:6] == ["--no-wait", "--expect-s"]  # no --wait: refuse, don't queue
     assert (t / "cache" / key / "manifest.json").exists() and not (t / "cache" / f"{key}.tmp").exists()
 
 

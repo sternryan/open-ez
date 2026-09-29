@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Render the layup cutaway on anvil's GPU through fabric-gpu. HITL only; never put this on a timer.
-# usage: guide/render_cutaway.sh [--only SHOT_ID] [--dry-run]
+# usage: guide/render_cutaway.sh [--only SHOT_ID] [--wait[=SECONDS]] [--dry-run]
+#   --wait  queue behind a busy GPU lease via fabric-gpu (default 14400 s) instead of refusing
 # exit: 0 ok · 2 usage/missing inputs · 3 GPU lease busy · 4 deployed scripts differ · 5 render check failed
 set -euo pipefail
-ONLY=""; DRY=""
+ONLY=""; DRY=""; WAIT_S=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --only) ONLY="${2:?--only needs a shot id}"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
-    *) echo "usage: render_cutaway.sh [--only SHOT_ID] [--dry-run]" >&2; exit 2 ;;
+    --wait) WAIT_S=14400; shift ;;
+    --wait=*) WAIT_S="${1#--wait=}"; [[ "$WAIT_S" =~ ^[0-9]+$ ]] || { echo "--wait=SECONDS needs a number" >&2; exit 2; }; shift ;;
+    *) echo "usage: render_cutaway.sh [--only SHOT_ID] [--wait[=SECONDS]] [--dry-run]" >&2; exit 2 ;;
   esac
 done
 cd "$(dirname "$0")/.."
@@ -45,7 +48,20 @@ for s in layup_cutaway.py fabric_blender.py layup_contract.py; do
   got=$(ssh "$ANVIL" "sha256sum $DEPLOYED/$s" | cut -d' ' -f1)
   [ "$want" = "$got" ] || { echo "deployed $s differs from $SCRIPTS/$s; redeploy to anvil first" >&2; exit 4; }
 done
-if ! status=$(ssh "$ANVIL" flux-lock-status); then echo "GPU lease busy: $status" >&2; exit 3; fi
+# Lease: report who holds it, for how long, and the ETA the holder stamped (if any), so the caller
+# can decide: wait (--wait), or ask Ryan to pause the holder. A render has no frontier/CPU substitute.
+if ! status=$(ssh "$ANVIL" flux-lock-status); then
+  field() { sed -n "s/^ *holder| $1=//p" <<<"$status" | head -1; }
+  holder=$(field runner); started=$(field started); eta=$(field eta)
+  held=$($PY -c 'import sys,datetime as d; s=sys.argv[1]
+try: print(int((d.datetime.now(d.timezone.utc)-d.datetime.fromisoformat(s.replace("Z","+00:00"))).total_seconds()//60),"min")
+except Exception: print("unknown time")' "$started")
+  echo "GPU lease held by ${holder:-unknown} since ${started:-unknown} (${held}); ETA: ${eta:-none stamped by the holder}" >&2
+  if [ -z "$WAIT_S" ]; then
+    echo "re-run with --wait[=SECONDS] to queue behind it, or ask Ryan whether to pause the holder" >&2; exit 3
+  fi
+  echo "queuing behind ${holder:-the holder} for up to ${WAIT_S}s" >&2
+fi
 
 JOB=/srv/gpu-jobs/blender/layup-${KEY:0:16}
 if [ -n "$DRY" ]; then echo "dry run: would render key $KEY into $JOB"; exit 0; fi
@@ -53,7 +69,8 @@ N=$($PY -c 'import json,sys; print(len(json.load(open(sys.argv[1]))))' "$STAGE/s
 EXPECT=$((60 + 45 * N))
 ssh "$ANVIL" "rm -rf $JOB && mkdir -p $JOB/in"
 rsync -a "$STAGE/" "$ANVIL:$JOB/in/"
-set +e; "$FABRIC_GPU" run blender.sh layup_cutaway "$JOB" --no-wait --expect-s "$EXPECT"; rc=$?; set -e
+if [ -n "$WAIT_S" ]; then LEASE_FLAGS=(--wait-s "$WAIT_S"); else LEASE_FLAGS=(--no-wait); fi
+set +e; "$FABRIC_GPU" run blender.sh layup_cutaway "$JOB" "${LEASE_FLAGS[@]}" --expect-s "$EXPECT"; rc=$?; set -e
 [ "$rc" = 0 ] || { echo "fabric-gpu run failed rc=$rc (payload log: ssh $ANVIL cat $JOB/out/log.txt)" >&2; exit "$rc"; }
 
 waited=0
