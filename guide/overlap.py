@@ -19,5 +19,8 @@ class SourceIndex:
         for t in texts:
             self._set |= shingles(t, n)
 
+    def __len__(self) -> int:
+        return len(self._set)
+
     def hits(self, text: str) -> list[str]:
         return sorted(" ".join(s) for s in shingles(text, self.n) & self._set)
