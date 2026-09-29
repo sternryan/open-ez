@@ -8,7 +8,8 @@ import pytest
 from guide import layup
 from guide.schema import load_graph
 
-G = load_graph(Path("guide/graph"))
+ROOT = Path(__file__).resolve().parents[2]
+G = load_graph(ROOT / "guide" / "graph")
 
 
 @pytest.mark.parametrize("where,expected", [

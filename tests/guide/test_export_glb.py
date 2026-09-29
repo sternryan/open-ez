@@ -36,7 +36,7 @@ def test_nested_ply_nodes(tmp_path):
 
 
 def test_layup_files_match_the_graph(tmp_path):
-    g = load_graph(Path("guide/graph"))
+    g = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
     write_layup_files(g, tmp_path)
     j = json.loads((tmp_path / "layup.json").read_text())
     assert set(j["nodes"]) == {p.node for p in layup.plies(g)}
