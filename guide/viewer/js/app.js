@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { GLANCE, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
+import { GLANCE, plyRows, isolateLabel, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
@@ -20,6 +20,7 @@ try {
 let view = readView(storage ?? { getItem() { return null; } });
 const byId = new Map(graph.ops.map(o => [o.id, o]));
 const meshes = new Map();
+const plyNode = new Map(); let isolated = null;
 let current = null;
 
 // ---- 3D
@@ -44,8 +45,11 @@ new GLTFLoader().load(cfg.model, gltf => {
     const nm = x => x.userData?.name ?? x.name;
     let n = o; while (n && !graph.components[nm(n)] && n.parent) n = n.parent;
     const cid = graph.components[nm(n)] ? nm(n) : nm(o);
+    // Each mesh gets its own material instance, so isolating one ply never leaks opacity to another.
     o.material = new THREE.MeshStandardMaterial({ color: 0xc9c4b8 });
     meshes.set(o, cid);
+    let q = o; while (q && !/\.p\d+$/.test(nm(q)) && q.parent) q = q.parent;
+    if (q && /\.p\d+$/.test(nm(q))) plyNode.set(o, nm(q));
   });
   const box = new THREE.Box3().setFromObject(gltf.scene), c = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3()).length();
@@ -53,6 +57,7 @@ new GLTFLoader().load(cfg.model, gltf => {
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
   applyVariantVisibility();
   if (current && byId.has(current)) highlight(byId.get(current).components);
+  if (isolated) isolate(isolated);
 }, undefined, () => { $("#model-status").textContent = "3D unavailable — steps and sources still work"; });
 
 function applyVariantVisibility() {
@@ -87,12 +92,17 @@ function markSelected(ids) {
   for (const li of document.querySelectorAll("#ops li")) li.classList.toggle("selected", ids.includes(li.dataset.op));
 }
 function selectOp(id) {
-  current = id; const op = byId.get(id); markSelected([id]);
+  current = id; const op = byId.get(id); markSelected([id]); $("#plydock").hidden = true;
   $("#op-title").textContent = op.title;
   $("#op-summary").textContent = op.stub ? "Prerequisite outside this slice." : op.summary;
   $("#parts").replaceChildren(...op.components.map(cid => {
-    const b = document.createElement("span"); b.className = "chip"; b.dataset.cid = cid; b.dataset.badge = badge(graph, cid);
-    b.textContent = `${graph.components[cid]?.label ?? cid} · ${b.dataset.badge}`; b.onclick = () => selectComponent(cid); return b;
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.cid = cid; b.dataset.badge = badge(graph, cid);
+    b.textContent = `${graph.components[cid]?.label ?? cid} · ${b.dataset.badge}`;
+    const rows = cutawayFor(graph, id) ? plyRows(graph, cid) : [];
+    if (rows.length) b.textContent += ` · ${rows.length} plies`;
+    if (rows.length) { b.setAttribute("aria-controls", "plydock"); b.setAttribute("aria-expanded", "false"); }
+    b.onclick = e => { selectComponent(cid); if (rows.length) toggleDock(cid, e.detail === 0); };
+    return b;
   }));
   $("#changes").replaceChildren(...(op.changes ?? []).map(c => {
     const d = document.createElement("div"); d.className = "change";
@@ -111,6 +121,7 @@ function selectOp(id) {
     cb.type = "checkbox"; cb.checked = done.has(i); cb.onchange = () => store.toggle(id, i);
     li.append(cb, " ", t); ul.append(li);
   });
+  syncChecklistHeading();
   highlight(op.components);
   showAll(); applyPane();
 }
@@ -121,16 +132,58 @@ function selectComponent(cid) {
 }
 function clearDetail() {
   for (const id of ["#op-title", "#op-summary", "#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
+  $("#plydock").hidden = true; showAll(); syncChecklistHeading();
   highlight([]);
   applyPane();
 }
-function showAll() { /* replaced in Task 11 (ply isolate) */ }
+function syncChecklistHeading() { $("#checklist-h").hidden = $("#checklist").children.length === 0; }
+function isolate(node) {
+  isolated = node;
+  for (const [m] of meshes) {
+    const on = plyNode.get(m) === node;
+    m.material.transparent = !on; m.material.opacity = on ? 1 : 0.15; m.material.depthWrite = on;
+    m.material.needsUpdate = true; // transparent toggles the OPAQUE shader define; without this nothing ghosts on screen
+  }
+  const cid = $("#plydock").dataset.cid;
+  $("#isotext").textContent = isolateLabel(graph, cid, node); $("#isobar").hidden = false;
+  $("#viewport").classList.add("isolating");
+  for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", String(b.dataset.node === node));
+}
+function showAll() {
+  isolated = null;
+  for (const [m] of meshes) {
+    m.material.transparent = false; m.material.opacity = 1; m.material.depthWrite = true; m.material.needsUpdate = true;
+  }
+  $("#isobar").hidden = true; $("#viewport").classList.remove("isolating");
+  for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", "false");
+}
+function toggleDock(cid, viaKeyboard) {
+  const dock = $("#plydock");
+  if (!dock.hidden && dock.dataset.cid === cid) { dock.hidden = true; return; }
+  dock.dataset.cid = cid;
+  dock.replaceChildren(...plyRows(graph, cid).map(r => {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.node = r.node; b.setAttribute("aria-pressed", String(isolated === r.node));
+    const sw = document.createElement("i"); sw.className = `sw ${r.position_verified ? r.cloth.toLowerCase() : "unverified"}`;
+    b.append(sw, `${r.order} · ${r.cloth} · ${r.where}`);
+    b.onclick = () => (isolated === r.node ? showAll() : isolate(r.node));
+    return b;
+  }));
+  dock.setAttribute("role", "group"); dock.setAttribute("aria-label", `${graph.components[cid]?.label ?? cid} plies`);
+  dock.hidden = false;
+  if (viaKeyboard) dock.querySelector("button")?.focus(); // dock sits after the chips in tab order; land on the first row
+}
+$("#showall").onclick = showAll;
+// chips reflect whether the dock is open for them, however the dock got closed
+new MutationObserver(() => { const d = $("#plydock");
+  for (const b of document.querySelectorAll("#parts .chip[aria-controls]")) b.setAttribute("aria-expanded", String(!d.hidden && d.dataset.cid === b.dataset.cid));
+}).observe($("#plydock"), { attributes: true, attributeFilter: ["hidden", "data-cid"] });
 function applyPane() {
   const mode = current ? paneMode(graph, current, view) : "3d";
   $("#viewtoggle").hidden = !(current && current !== GLANCE && cutawayFor(graph, current));
   for (const b of document.querySelectorAll("#viewtoggle button")) b.setAttribute("aria-checked", String(b.dataset.view === view));
   $("#viewport").classList.toggle("paned", mode !== "3d");
   $("#c").hidden = mode !== "3d"; $("#parts").hidden = mode !== "3d";
+  if (mode !== "3d") { $("#plydock").hidden = true; showAll(); }
   for (const b of document.querySelectorAll("#viewtoggle button")) b.tabIndex = b.dataset.view === view ? 0 : -1;
   $("#cutpane").hidden = mode !== "cutaway"; $("#glance").hidden = mode !== "glance";
   $("#legend").hidden = mode !== "glance"; document.querySelector("main").classList.toggle("glance", mode === "glance");
@@ -149,10 +202,11 @@ function zoom(src, alt) {
   $("#zoombody").replaceChildren(im); $("#zoom").showModal();
 }
 function selectGlance() {
-  current = GLANCE; markSelected([GLANCE]); highlight([]); showAll();
+  current = GLANCE; markSelected([GLANCE]); highlight([]); showAll(); $("#plydock").hidden = true;
   $("#op-title").textContent = "Canard layup at a glance";
   $("#op-summary").textContent = graph.cutaway.count_note;
   for (const id of ["#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
+  syncChecklistHeading();
   $("#glance").replaceChildren(...graph.cutaway.heroes.map(h => {
     const f = document.createElement("figure"), b = document.createElement("button"), im = document.createElement("img");
     b.className = "imgbtn"; b.setAttribute("aria-label", `Enlarge section at BL ${h.bl}`);
@@ -181,7 +235,8 @@ $("#cutzoom").onclick = () => zoom($("#cutimg").src, $("#cutimg").alt);
 $("#cutretry").onclick = () => { const c = cutawayFor(graph, current); if (c) showCut({ ...c, src: `${c.src}?r=${Date.now()}` }); };
 $("#zoomclose").onclick = () => $("#zoom").close();
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#zoom").open) showAll(); });
-window.__guide = { selectComponent, paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
+window.__guide = { selectComponent, isolated: () => isolated, meshPlies: () => [...new Set(plyNode.values())],
+  meshOpacities: () => [...meshes.keys()].map(m => ({ node: plyNode.get(m) ?? null, component: meshes.get(m), opacity: m.material.opacity })), paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
   visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
   renderList(); applyVariantVisibility();

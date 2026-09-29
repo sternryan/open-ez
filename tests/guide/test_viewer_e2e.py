@@ -293,3 +293,282 @@ def test_phone_cutaway_pane_inside_viewport_and_clear_of_toggle(csite):
             assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
             b.close()
     s.shutdown()
+
+
+# ---- M2 Task 11: ply list with isolate + empty Checklist heading
+GL = ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
+P3 = "canard.shear_web.p3"
+
+
+def _open_gl(p, url, width):
+    b = p.chromium.launch(args=GL)
+    pg = b.new_page(viewport={"width": width, "height": 900})
+    pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+    pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.shear-web"]')
+    pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=10000)
+    return b, pg
+
+
+def _inside(pg, sel):
+    return pg.evaluate("""(s) => { const v = document.querySelector('#viewport').getBoundingClientRect(),
+        r = document.querySelector(s).getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.left >= v.left - 1 && r.right <= v.right + 1 && r.top >= v.top - 1 && r.bottom <= v.bottom + 1; }""", sel)
+
+
+def _all_opaque(pg):
+    return all(m["opacity"] == 1 for m in pg.evaluate("window.__guide.meshOpacities()"))
+
+
+@pytest.mark.parametrize("width", [1180, 820])
+def test_ply_list_isolates_inner_web_ply(csite, width):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, width)
+        assert not pg.is_visible("#plydock")
+        # chip without plies must not open the dock (spec 6.2 empty state)
+        pg.click('#parts .chip[data-cid="canard.core"]')
+        assert not pg.is_visible("#plydock")
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.is_visible("#plydock") and pg.locator("#plydock button").count() == 6
+        assert _inside(pg, "#plydock")
+        for sel in ('#parts .chip', '#plydock button'):
+            for h in pg.eval_on_selector_all(sel, "els => els.map(e => e.getBoundingClientRect().height)"):
+                assert h >= 44, (sel, h)
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.evaluate("window.__guide.isolated()") == P3
+        ops = pg.evaluate("window.__guide.meshOpacities()")
+        assert any(m["node"] == P3 and m["opacity"] == 1 for m in ops)
+        assert all(m["opacity"] == 1 for m in ops if m["node"] == P3)
+        assert all(m["opacity"] < 1 for m in ops if m["node"] != P3) and len(ops) > 1
+        assert pg.is_visible("#isobar") and _inside(pg, "#isobar") and pg.is_visible("#plydock")
+        assert pg.text_content("#isotext") == "Showing Shear web ply 3"
+        assert pg.get_attribute(f'#plydock button[data-node="{P3}"]', "aria-pressed") == "true"
+        assert pg.get_attribute("#plydock", "role") == "group" and "plies" in pg.get_attribute("#plydock", "aria-label")
+        assert pg.get_attribute("#isotext", "aria-live") == "polite"
+        chip = pg.locator('#parts .chip[data-cid="canard.shear_web"]')
+        assert chip.get_attribute("aria-expanded") == "true" and chip.get_attribute("aria-controls") == "plydock"
+        assert pg.eval_on_selector("#viewport", "e => e.classList.contains('isolating')")
+        pg.keyboard.press("Escape")
+        assert pg.evaluate("window.__guide.isolated()") is None and not pg.is_visible("#isobar")
+        assert _all_opaque(pg) and not pg.eval_on_selector("#viewport", "e => e.classList.contains('isolating')")
+        # same ply twice toggles back
+        pg.click(f'#plydock button[data-node="{P3}"]'); assert pg.evaluate("window.__guide.isolated()") == P3
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.evaluate("window.__guide.isolated()") is None and _all_opaque(pg)
+        # Show all button
+        pg.click(f'#plydock button[data-node="{P3}"]'); pg.click("#showall")
+        assert pg.evaluate("window.__guide.isolated()") is None and not pg.is_visible("#isobar") and _all_opaque(pg)
+        # changing op resets and hides dock
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        assert pg.evaluate("window.__guide.isolated()") is None and not pg.is_visible("#plydock")
+        assert not pg.is_visible("#isobar") and _all_opaque(pg)
+        b.close()
+    s.shutdown()
+
+
+def test_ply_list_keyboard(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, 1180)
+        pg.focus('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.evaluate("document.activeElement.tagName") == "BUTTON"
+        pg.keyboard.press("Enter")
+        assert pg.is_visible("#plydock")
+        assert pg.evaluate("document.activeElement.closest('#plydock') !== null")  # focus lands on first row
+        pg.keyboard.press("Tab")
+        assert pg.evaluate("document.activeElement.closest('#plydock') !== null")
+        node = pg.evaluate("document.activeElement.dataset.node")
+        assert node.endswith(".p2")
+        pg.keyboard.press("Enter")
+        assert pg.evaluate("window.__guide.isolated()") == node
+        pg.keyboard.press("Escape")
+        assert pg.evaluate("window.__guide.isolated()") is None
+        pg.keyboard.press("Tab"); pg.keyboard.press("Space")  # next row via Space
+        assert pg.evaluate("window.__guide.isolated()") is not None
+        pg.keyboard.press("Escape")
+        assert pg.evaluate("window.__guide.isolated()") is None and _all_opaque(pg)
+        b.close()
+    s.shutdown()
+
+
+def test_empty_checklist_heading_hidden(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url, width=1180)
+        pg.select_option("#variant", "roncz")
+        pg.click('#ops li[data-op="__glance"]')
+        assert not pg.is_visible("#checklist-h")
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        assert pg.is_visible("#checklist-h") and pg.locator("#checklist li").count() > 0
+        pg.click('#ops li[data-op="r30.elevators"]')
+        assert pg.locator("#checklist li").count() == 0 and not pg.is_visible("#checklist-h")
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.select_option("#variant", "gu")  # r30 op no longer visible -> clearDetail
+        assert not pg.is_visible("#checklist-h")
+        b.close()
+    s.shutdown()
+
+
+def _rect(pg, sel):
+    return pg.evaluate("s => { const r = document.querySelector(s).getBoundingClientRect(); return {l: r.left, r: r.right, t: r.top, b: r.bottom}; }", sel)
+
+
+@pytest.mark.parametrize("width", [1180, 820])
+def test_cutaway_toggle_clears_isolation_and_dock(csite, width):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, width)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.evaluate("window.__guide.isolated()") == P3
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        assert not pg.is_visible("#plydock") and not pg.is_visible("#isobar")
+        assert pg.evaluate("window.__guide.isolated()") is None
+        pg.click('#viewtoggle [data-view="3d"]')
+        assert _all_opaque(pg) and not pg.is_visible("#plydock") and not pg.is_visible("#isobar")
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("width", [1180, 820])
+def test_dock_never_covers_chips_and_chip_closes_it(csite, width):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, width)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.is_visible("#plydock")
+        d = _rect(pg, "#plydock")
+        for r in pg.eval_on_selector_all("#parts .chip", "els => els.map(e => { const r = e.getBoundingClientRect(); return {l: r.left, r: r.right, t: r.top, b: r.bottom}; })"):
+            assert not (d["l"] < r["r"] and r["l"] < d["r"] and d["t"] < r["b"] and r["t"] < d["b"]), (d, r)
+        assert _inside(pg, "#plydock")
+        if width == 1180:  # guard: chips must really wrap, or the overlap check above is vacuous
+            tops = pg.eval_on_selector_all("#parts .chip", "els => els.map(e => Math.round(e.getBoundingClientRect().top))")
+            assert len(set(tops)) >= 2, tops
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert not pg.is_visible("#plydock")
+        b.close()
+    s.shutdown()
+
+
+def test_phone_isobar_clear_of_toggle_and_toggle_clickable(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, 390)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.evaluate("window.__guide.isolated()") == P3
+        t, i = _rect(pg, "#viewtoggle"), _rect(pg, "#isobar")
+        assert not (t["l"] < i["r"] and i["l"] < t["r"] and t["t"] < i["b"] and i["t"] < t["b"]), (t, i)
+        assert pg.eval_on_selector("#showall", "e => e.getBoundingClientRect().height") >= 44
+        d = _rect(pg, "#plydock")
+        assert d["t"] >= i["b"] - 1, (d, i)
+        assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        pg.click('#viewtoggle [data-view="cutaway"]', timeout=3000)
+        assert pg.evaluate("window.__guide.isolated()") is None and not pg.is_visible("#isobar")
+        b.close()
+    s.shutdown()
+
+
+def test_parts_empty_area_passes_clicks_to_canvas(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, 1180)
+        pt = pg.evaluate("""() => { const pr = document.querySelector('#parts').getBoundingClientRect();
+            const chips = [...document.querySelectorAll('#parts .chip')].map(c => c.getBoundingClientRect());
+            for (let y = pr.top + 2; y < pr.bottom; y += 4) for (let x = pr.left + 2; x < pr.right; x += 4)
+                if (!chips.some(r => x >= r.left - 1 && x <= r.right + 1 && y >= r.top - 1 && y <= r.bottom + 1)) return [x, y];
+            return null; }""")
+        assert pt, "no empty point inside #parts box"
+        assert pg.evaluate("([x, y]) => document.elementFromPoint(x, y).id", pt) == "c"
+        assert pg.evaluate("() => { const r = document.querySelector('#parts .chip').getBoundingClientRect(); return !!document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2).closest('.chip'); }")
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.evaluate("() => { const r = document.querySelector('#plydock button').getBoundingClientRect(); return !!document.elementFromPoint(r.left + 5, r.top + 5).closest('#plydock'); }")
+        b.close()
+    s.shutdown()
+
+
+def test_isolate_before_glb_loads_labels_and_ghosts_late_meshes(csite):
+    held = []
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=GL)
+        pg = b.new_page(viewport={"width": 1180, "height": 900})
+        pg.route("**/models/longez.glb", lambda route: held.append(route))  # park the request
+        pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.text_content("#isotext") == "Showing Shear web ply 3"
+        assert held
+        held[0].continue_()
+        pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=10000)
+        ops = pg.evaluate("window.__guide.meshOpacities()")
+        assert any(m["node"] == P3 and m["opacity"] == 1 for m in ops)
+        assert all(m["opacity"] < 1 for m in ops if m["node"] != P3)
+        b.close()
+    s.shutdown()
+
+
+def test_showall_button_dark_mode_styled(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=GL)
+        pg = b.new_page(viewport={"width": 1180, "height": 900}, color_scheme="dark")
+        pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=10000)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]'); pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.eval_on_selector("#showall", "e => getComputedStyle(e).backgroundColor") == "rgba(0, 0, 0, 0)"
+        assert pg.eval_on_selector("#showall", "e => e.getBoundingClientRect().height") >= 44
+        b.close()
+    s.shutdown()
+
+
+def _dark_pixels(pg, clip):
+    import io
+    from PIL import Image
+    im = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("L")
+    return sum(1 for v in im.getdata() if v < 200)
+
+
+@pytest.mark.parametrize("width", [1180])  # 820 measured 3907 -> 2538 (layout leaves too little model in the clip): not a stable >50% drop
+def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
+    """Pixel-level: material.transparent flips need needsUpdate or nothing ghosts after the first frame."""
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, width)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        pg.wait_for_timeout(500)
+        c = pg.eval_on_selector("#c", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width, h: r.height}; }")
+        c0 = c["y"]
+        # isolate first so the isobar is laid out, then use the region below it, right half of the canvas
+        pg.click(f'#plydock button[data-node="{P3}"]'); pg.wait_for_timeout(300)
+        ib = _rect(pg, "#isobar")
+        pg.keyboard.press("Escape"); pg.wait_for_timeout(500)
+        top = max(c0, ib["b"] + 4)  # page coords: right half of #c, below the isobar
+        clip = {"x": c["x"] + c["w"] / 2, "y": top, "width": c["w"] / 2, "height": c0 + c["h"] - top}
+        before = _dark_pixels(pg, clip)
+        pg.click(f'#plydock button[data-node="{P3}"]'); pg.wait_for_timeout(500)
+        iso = _dark_pixels(pg, clip)
+        pg.keyboard.press("Escape"); pg.wait_for_timeout(500)
+        after = _dark_pixels(pg, clip)
+        print("DARK", width, before, iso, after)
+        assert before > 500, before
+        assert iso < before * 0.5, (before, iso)
+        assert abs(after - before) <= before * 0.2, (before, after)
+        b.close()
+    s.shutdown()
+
+
+def test_gu_shear_web_offers_no_plies(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_gl(p, url, 1180)
+        pg.select_option("#variant", "gu"); pg.click('#ops li[data-op="c10.shear-web"]')
+        chip = pg.locator('#parts .chip[data-cid="canard.shear_web"]')
+        assert chip.count() == 1 and "plies" not in chip.text_content()
+        chip.click()
+        assert not pg.is_visible("#plydock")
+        b.close()
+    s.shutdown()
