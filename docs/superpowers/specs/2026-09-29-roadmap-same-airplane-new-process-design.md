@@ -1,6 +1,6 @@
 # Roadmap: same airplane, new process
 
-Status: approved in conversation 2026-09-29, pending written review.
+Status: approved by the owner 2026-09-29.
 
 ## 1. Intent
 
@@ -85,6 +85,14 @@ Each block proves something before the next one relies on it.
 - **Geometry.** Every station and planform value is in the published frame, with a source or a
   visible flag. The 2026-09-29 planform correction does the canard and the stations. The wing (span,
   chords, sweep, dihedral) gets the same treatment next.
+- **Reference-data audit (first task).** `data/validation/reference_data.json` was assembled in an
+  automated planning session in March 2026 without the documents in hand. Its canard entries prove
+  the point: they cite "Section IIA, Table 1, p.4 (CP-31)" for a 147 in span and 15.6 sq ft area,
+  but those are the code's own original values (147 × the average of an invented 17/13.5 taper), and
+  neither number is in the Canard Pusher text. Every entry, including the anonymised builder
+  weigh-ins, is re-checked against a document actually held. Anything that can't be found is
+  demoted to an unverified claim, and no physics check may treat it as truth. The 15.25 in canard
+  chord is that invented taper's average, so it carries no plans information at all.
 - **Mass/CG ledger.** One row per part: mass, CG station, class (primary structure, secondary,
   non-structural), process, and source. Its targets are the book's published totals: empty weight,
   gross weight and CG limits.
@@ -127,6 +135,13 @@ Each block proves something before the next one relies on it.
 
   It flags stiffness changes that could affect flutter or how the canard and wing share load.
 - **4. Process lane.**
+  - **Step 0, scale prototype (the owner's first prints).** A small-scale model printed directly
+    (no molds, no cure, ordinary filament), assembled into a little airplane that only has to fly
+    briefly. It exercises the geometry pipeline end to end (sectioning, registration, assembly) and
+    shows the shape in the hand. If it flies, it is a cheap look at canard-first stall behaviour and
+    CG sensitivity, with the caveat that small-scale Reynolds numbers change airfoil behaviour, so
+    it informs but never certifies. Filament purchasing for the mold trial waits until this step is
+    done and the mold trial is actually next.
   - **Step 1, filament trial (can start now, in parallel with Blocks 1–3).** Decides "print the
     tool, or print the plug and cast the tool" from the owner's own data, on the owner's printer
     (Bambu P2S: 256 mm cube, 300°C nozzle, passive enclosure up to about 50°C; official list includes
