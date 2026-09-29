@@ -39,70 +39,36 @@ def _extract_cls_and_ref(rest: str) -> tuple[str, str]:
             return word, m.group(2).strip()
     return "?", rest
 
+OWNER = re.compile(r"owner'?s?\s+manual", re.I)
+BACK_COVER = re.compile(r"back\s+cover", re.I)
+
+
 def _has_location_cue(text: str) -> bool:
     """Check if text contains a location cue: page reference, section, back cover, or owner manual."""
     if not text:
         return False
-    text_lower = text.lower()
-    # Page reference
-    if PAGE.search(text):
-        return True
-    # Section reference
-    if SECTION.search(text):
-        return True
-    # Back cover or owner manual
-    if "back cover" in text_lower or "owner" in text_lower:
-        return True
-    return False
+    return bool(PAGE.search(text) or SECTION.search(text) or BACK_COVER.search(text) or OWNER.search(text))
+
 
 def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
-    """Extract page and chapter from ref and optional next line.
+    """Extract (page, chapter) from the entry ref plus the first description line.
 
-    Rules:
-    1. Find page on ref; if absent, on first description line.
-    2. chapter=None if ref or description line names Section other than I or contains "owner".
-    3. page "back-cover" ONLY when "back cover" literally appears AND no numbered page.
-    4. Section I with no page → (None, None), never fabricate "back-cover".
-    5. Return (page, chapter).
+    All cues are evaluated on the combined text (ref first, then next line):
+    - numbered page wins over back-cover; back-cover only when literally present.
+    - chapter None if a non-Section-I section or an owner's manual is named anywhere.
+    - Section I (word-bounded) keeps the page's chapter; no page -> (None, None).
     """
-    # Check for page number in current ref
-    page_m = PAGE.search(ref)
-    page_location = "ref"
-    if not page_m and next_line:
-        page_m = PAGE.search(next_line)
-        page_location = "next"
+    combined = f"{ref} {next_line}".strip()
+    page_m = PAGE.search(ref) or (PAGE.search(next_line) if next_line else None)
+    sections = {m.group(1).upper() for m in SECTION.finditer(combined)}
+    no_chapter = bool(OWNER.search(combined)) or any(x != "I" for x in sections)
 
-    # Extract page string if found
-    page_str = None
     if page_m:
-        page_str = f"{int(page_m.group(1))}-{int(page_m.group(2))}"
-        chapter_from_page = int(page_m.group(1))
-    else:
-        chapter_from_page = None
-
-    # Check for section reference and owner in ref (even if page is on next_line)
-    section_m = SECTION.search(ref)
-    section_name = section_m.group(1).upper() if section_m else None
-    is_owner = "owner" in ref.lower()
-
-    # Determine chapter
-    chapter = None
-    if is_owner:
-        chapter = None  # Owner manual → no chapter
-    elif section_name and section_name != "I":
-        chapter = None  # Non-I section → no chapter
-    elif page_str:
-        chapter = chapter_from_page  # Use page's chapter number
-    else:
-        chapter = None
-
-    # Determine page value
-    if page_str:
-        return page_str, chapter
-    elif "back cover" in ref.lower():
+        chapter = None if no_chapter else int(page_m.group(1))
+        return f"{int(page_m.group(1))}-{int(page_m.group(2))}", chapter
+    if BACK_COVER.search(combined):
         return "back-cover", None
-    else:
-        return None, chapter
+    return None, None
 
 
 def parse_lpcs(text: str) -> list[PlansChange]:

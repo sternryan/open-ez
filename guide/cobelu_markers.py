@@ -34,6 +34,7 @@ def parse_markers(md_text: str, chapter: int) -> list[Marker]:
         h = HEAD.match(line)
         if h:
             heading_text = h.group(1)
+            heading = MARK.sub("", heading_text).strip()
             # Check for markers on the heading line itself
             for m in MARK.finditer(heading_text):
                 cls_text = m.group(3)
@@ -42,10 +43,7 @@ def parse_markers(md_text: str, chapter: int) -> list[Marker]:
                     continue  # Skip markers with invalid class codes
                 cls_code = cls_text if cls_text in KNOWN_CLASSES else "?"
                 # Strip markers from heading
-                heading = MARK.sub("", heading_text).strip()
                 out.append(Marker(int(m.group(1)), int(m.group(2)), cls_code, chapter, heading, line_num))
-            if not MARK.search(heading_text):
-                heading = heading_text
             continue
         for m in MARK.finditer(line):
             cls_text = m.group(3)
