@@ -11,7 +11,7 @@
     - {doc: scan-1980, scan_pp: 54}
     - {doc: cobelu, heading: STEP 1 -, figure: I/images/10/10_04.png}
   changes:
-    - {cp: 27, lpc: 44, class: MEO, status: verified, kind: official, note: Step 1 calls for a pair of 7x14x41 blocks in two places; only one block is needed., annotation_pp: 54}
+    - {cp: 27, lpc: 44, class: MEO, status: verified, kind: official, note: "Step 1 calls for a pair of 7x14x41 blocks in two places; only one block is needed.", annotation_pp: 54}
     - {cp: 27, lpc: 51, class: MEO, status: conflict, kind: official, note: "Both sources agree the winglet reference should point to chapter 20. They disagree on what the plans say today: the Canard Pusher entry says chapter 13, while this first-edition page and the owner's note say chapter 19.", annotation_pp: 54}
   completion:
     - Templates glued to plywood and trimmed, numbers copied to both faces
@@ -30,9 +30,9 @@
     - {doc: scan-1980, scan_pp: 56}
     - {doc: cobelu, heading: STEP 2 -, figure: I/images/10/10_09.png}
   changes:
-    - {cp: 25, lpc: 16, class: MEO, status: verified, kind: official, note: The line to mark is waterline 19.4 on the shear web face; it is not a centerline, so drop that word in both places., annotation_pp: 55}
-    - {cp: 26, lpc: 30, class: MEO, status: verified, kind: official, note: The three holes in the upper-right lift tab drawing are 1/4 inch., annotation_pp: 56}
-    - {cp: 26, lpc: 38, class: MEO, status: verified, kind: official, note: The shear web UND count is 6 pieces, not the 12 printed in two places., annotation_pp: 56}
+    - {cp: 25, lpc: 16, class: MEO, status: verified, kind: official, note: "The line to mark is waterline 19.4 on the shear web face; it is not a centerline, so drop that word in both places.", annotation_pp: 55}
+    - {cp: 26, lpc: 30, class: MEO, status: verified, kind: official, note: "The three holes in the upper-right lift tab drawing are 1/4 inch.", annotation_pp: 56}
+    - {cp: 26, lpc: 38, class: MEO, status: verified, kind: official, note: "The shear web UND count is 6 pieces, not the 12 printed in two places.", annotation_pp: 56}
   completion:
     - Cores straight along a taut string, no dihedral or sweep
     - Aluminum inserts recessed and set in wet micro

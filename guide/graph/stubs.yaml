@@ -22,5 +22,5 @@
   title: Plans back cover 3-view (reference)
   stub: true
   changes:
-    - {cp: 25, lpc: 7, class: MEO, status: verified, kind: official, note: The wing root leading-edge station on the 3-view is 113.9 in; the printed 113.4 is wrong., annotation_pp: 171}
-    - {cp: 25, lpc: 24, class: MEO, status: verified, kind: official, note: The nose gear centerline sits at waterline -22; the 3-view shows -23., annotation_pp: 171}
+    - {cp: 25, lpc: 7, class: MEO, status: verified, kind: official, note: "The wing root leading-edge station on the 3-view is 113.9 in; the printed 113.4 is wrong.", annotation_pp: 171}
+    - {cp: 25, lpc: 24, class: MEO, status: verified, kind: official, note: "The nose gear centerline sits at waterline -22; the 3-view shows -23.", annotation_pp: 171}
