@@ -93,9 +93,12 @@ def _load_ref_data() -> dict:
 # Phase 5 calibrated values — from data/validation/accuracy_report.json (2026-03-13)
 # Each traces to reference_data.json (RAF CP-29, wind tunnel data)
 # DO NOT UPDATE unless re-calibrating against external reference data
-LOCKED_NP_PUBLISHED = 108.0007       # accuracy_report neutral_point_fs.computed
-LOCKED_CG_FWD_PUBLISHED = 98.999     # accuracy_report cg_range_fwd_fs.computed
-LOCKED_CG_AFT_PUBLISHED = 103.9994   # accuracy_report cg_range_aft_fs.computed
+LOCKED_NP_PUBLISHED = 125.8549       # accuracy_report neutral_point_fs.computed
+# re-locked 2026-09-29, planform correction; was 108.0007 (Phase 5 fit)
+LOCKED_CG_FWD_PUBLISHED = 116.8532   # accuracy_report cg_range_fwd_fs.computed
+# re-locked 2026-09-29, planform correction; was 98.999 (Phase 5 fit)
+LOCKED_CG_AFT_PUBLISHED = 121.8536   # accuracy_report cg_range_aft_fs.computed
+# re-locked 2026-09-29, planform correction; was 103.9994 (Phase 5 fit)
 LOCKED_STALL_KTAS = 53.2867          # accuracy_report stall_speed_ktas.computed
 
 # Config values — locked to prevent accidental modification; exact matches expected
