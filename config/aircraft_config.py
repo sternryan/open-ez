@@ -228,6 +228,44 @@ class GeometricParams:
         return internal_fs - self.datum_offset_in
 
 
+PROVENANCE_STATUSES = frozenset(
+    {"book", "cp-corrected", "derived-unsourced", "converted-unsourced", "unsourced", "conflict"}
+)
+
+
+def _p(status: str, source: str = "", confidence: str = "n/a", note: str = "") -> dict:
+    return {"status": status, "source": source, "confidence": confidence, "note": note}
+
+
+# Where each planform/station value comes from. Statuses: book (plans page), cp-corrected (a
+# Canard Pusher correction), derived-unsourced (computed from an unverified input),
+# converted-unsourced (shifted between frames, never checked), unsourced, conflict.
+# tests/test_geometry_provenance.py fails if a matching GeometricParams field lacks an entry.
+GEOMETRY_PROVENANCE: dict[str, dict] = {
+    "canard_span": _p("unsourced", note="147 has no source; see the planform-correction spec"),
+    "canard_root_chord": _p("unsourced", note="taper has no source"),
+    "canard_tip_chord": _p("unsourced", note="taper has no source"),
+    "canard_sweep_le": _p("unsourced", note="book says zero sweep (p.71)"),
+    "canard_incidence": _p("unsourced", note="set by incidence blocks; value not in the book"),
+    "canard_oswald_e": _p("unsourced", note="aero estimate, not a plans value"),
+    "canard_le_wl": _p("unsourced", note="not in the book"),
+    "canard_vertical_offset_in": _p("unsourced", note="canard AC to wing plane separation; not checked against the book"),
+    "wing_span": _p("unsourced", note="not verified against the book"),
+    "wing_root_chord": _p("unsourced", note="not verified against the book"),
+    "wing_tip_chord": _p("unsourced", note="not verified against the book"),
+    "wing_sweep_le": _p("unsourced", note="not verified against the book"),
+    "wing_dihedral": _p("unsourced", note="not verified against the book"),
+    "fs_nose": _p("unsourced"),
+    "fs_canard_le": _p("unsourced", note="book: FS 18.7 (p.171)"),
+    "fs_pilot_seat": _p("unsourced"),
+    "fs_rear_seat": _p("unsourced"),
+    "fs_wing_le": _p("unsourced", note="Phase 5 NP fit"),
+    "fs_firewall": _p("unsourced"),
+    "fs_tail": _p("unsourced"),
+    "datum_offset_in": _p("unsourced", note="fitted so computed NP matched published FS 108"),
+}
+
+
 @dataclass
 class MaterialParams:
     """Composite layup and foam specifications."""
