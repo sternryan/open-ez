@@ -37,6 +37,12 @@ sys.modules.setdefault("OCP", MagicMock())
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from core.reference import truth_specs  # noqa: E402
+from core.sources import check_citation  # noqa: E402
+
+NOT_GRADED = "NOT GRADED"
+_USE_ENTRY = object()
+
 
 # ---------------------------------------------------------------------------
 # Core grading logic
@@ -97,6 +103,47 @@ def grade_metric(
     return (grade, round(error_abs, 6), round(error_pct, 6))
 
 
+def spec_fields(
+    truth: dict,
+    key: str,
+    computed: float,
+    *,
+    tolerance_abs: object = _USE_ENTRY,
+) -> dict:
+    """
+    Grade ``computed`` against ``truth[key]`` (a confirmed or derived entry).
+
+    A key absent from ``truth`` (its reference is unverified) is never skipped: the
+    metric keeps its computed value and is emitted with grade "NOT GRADED".
+    """
+    entry = truth.get(key)
+    if entry is None:
+        return {
+            "computed": round(computed, 4),
+            "reference": None,
+            "tolerance_abs": None,
+            "tolerance_pct": None,
+            "error_abs": None,
+            "error_pct": None,
+            "grade": NOT_GRADED,
+            "reason": "reference unverified",
+        }
+    tol_abs = entry.get("tolerance_abs") if tolerance_abs is _USE_ENTRY else tolerance_abs
+    tol_pct = entry.get("tolerance_pct") if tolerance_abs is _USE_ENTRY else None
+    grade, err_abs, err_pct = grade_metric(
+        computed, entry["value"], tolerance_abs=tol_abs, tolerance_pct=tol_pct
+    )
+    return {
+        "computed": round(computed, 4),
+        "reference": entry["value"],
+        "tolerance_abs": tol_abs,
+        "tolerance_pct": tol_pct,
+        "error_abs": err_abs,
+        "error_pct": err_pct,
+        "grade": grade,
+    }
+
+
 def validate_sources(report: dict, ref_data: dict) -> None:
     """
     Validate that all metric sources in the report are traceable and not self-referential.
@@ -112,7 +159,17 @@ def validate_sources(report: dict, ref_data: dict) -> None:
     """
     # Build valid source set from reference_data.json keys
     valid_sources: set[str] = {"vspaero_native"}
-    for section in ("aircraft_specs", "airfoil_data"):
+    # aircraft_specs: only confirmed/derived entries are truth; confirmed ones must
+    # carry a registry citation (the new `cite` form replaces source_id).
+    for top_key, entry in truth_specs(ref_data).items():
+        if entry["status"] == "confirmed":
+            check_citation(entry["cite"])
+        valid_sources.add(f"reference_data.json:aircraft_specs.{top_key}")
+    # Unverified specs are still legitimate to name as a source of a NOT GRADED metric.
+    for top_key, entry in ref_data.get("aircraft_specs", {}).items():
+        if entry.get("status") == "unverified":
+            valid_sources.add(f"reference_data.json:aircraft_specs.{top_key}")
+    for section in ("airfoil_data",):
         section_data = ref_data.get(section, {})
         for top_key, top_val in section_data.items():
             # Top-level key: e.g. reference_data.json:aircraft_specs.neutral_point_fs
@@ -192,7 +249,7 @@ def collect_metrics(
         List of metric dicts.
     """
     metrics: list[dict] = []
-    specs = ref_data["aircraft_specs"]
+    specs = truth_specs(ref_data)
     airfoils = ref_data["airfoil_data"]
     geo = config_module.geometry  # type: ignore[attr-defined]
 
@@ -202,102 +259,50 @@ def collect_metrics(
     stability = engine.calculate_cg_envelope()  # type: ignore[union-attr]
 
     # --- Neutral Point ---
-    np_ref_entry = specs["neutral_point_fs"]
     computed_np_pub = geo.to_published_datum(stability.neutral_point)
-    np_grade, np_err_abs, np_err_pct = grade_metric(
-        computed_np_pub,
-        np_ref_entry["value"],
-        tolerance_abs=np_ref_entry.get("tolerance_abs"),
-        tolerance_pct=np_ref_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "neutral_point_fs",
             "description": "Longitudinal Neutral Point (published datum)",
-            "computed": round(computed_np_pub, 4),
-            "reference": np_ref_entry["value"],
-            "tolerance_abs": np_ref_entry.get("tolerance_abs"),
-            "tolerance_pct": np_ref_entry.get("tolerance_pct"),
-            "error_abs": np_err_abs,
-            "error_pct": np_err_pct,
-            "grade": np_grade,
+            **spec_fields(specs, "neutral_point_fs", computed_np_pub),
             "source": "reference_data.json:aircraft_specs.neutral_point_fs",
             "units": "inches (published FS datum)",
         }
     )
 
     # --- CG Forward Limit ---
-    cg_fwd_entry = specs["cg_range_fwd_fs"]
     computed_cg_fwd_pub = geo.to_published_datum(stability.cg_range_fwd)
-    cg_fwd_grade, cg_fwd_err_abs, cg_fwd_err_pct = grade_metric(
-        computed_cg_fwd_pub,
-        cg_fwd_entry["value"],
-        tolerance_abs=cg_fwd_entry.get("tolerance_abs"),
-        tolerance_pct=cg_fwd_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "cg_range_fwd_fs",
             "description": "Forward CG limit (published datum)",
-            "computed": round(computed_cg_fwd_pub, 4),
-            "reference": cg_fwd_entry["value"],
-            "tolerance_abs": cg_fwd_entry.get("tolerance_abs"),
-            "tolerance_pct": cg_fwd_entry.get("tolerance_pct"),
-            "error_abs": cg_fwd_err_abs,
-            "error_pct": cg_fwd_err_pct,
-            "grade": cg_fwd_grade,
+            **spec_fields(specs, "cg_range_fwd_fs", computed_cg_fwd_pub),
             "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
             "units": "inches (published FS datum)",
         }
     )
 
     # --- CG Aft Limit ---
-    cg_aft_entry = specs["cg_range_aft_fs"]
     computed_cg_aft_pub = geo.to_published_datum(stability.cg_range_aft)
-    cg_aft_grade, cg_aft_err_abs, cg_aft_err_pct = grade_metric(
-        computed_cg_aft_pub,
-        cg_aft_entry["value"],
-        tolerance_abs=cg_aft_entry.get("tolerance_abs"),
-        tolerance_pct=cg_aft_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "cg_range_aft_fs",
             "description": "Aft CG limit (published datum)",
-            "computed": round(computed_cg_aft_pub, 4),
-            "reference": cg_aft_entry["value"],
-            "tolerance_abs": cg_aft_entry.get("tolerance_abs"),
-            "tolerance_pct": cg_aft_entry.get("tolerance_pct"),
-            "error_abs": cg_aft_err_abs,
-            "error_pct": cg_aft_err_pct,
-            "grade": cg_aft_grade,
+            **spec_fields(specs, "cg_range_aft_fs", computed_cg_aft_pub),
             "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
             "units": "inches (published FS datum)",
         }
     )
 
     # --- Static Margin ---
-    sm_entry = specs["static_margin_pct"]
     # StabilityMetrics.static_margin is already stored in percent (margin * 100.0
     # at analysis.py line 367). Do NOT multiply by 100 again.
     computed_sm = stability.static_margin
-    sm_grade, sm_err_abs, sm_err_pct = grade_metric(
-        computed_sm,
-        sm_entry["value"],
-        tolerance_abs=sm_entry.get("tolerance_abs"),
-        tolerance_pct=sm_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "static_margin_pct",
             "description": "Longitudinal static margin (% MAC)",
-            "computed": round(computed_sm, 4),
-            "reference": sm_entry["value"],
-            "tolerance_abs": sm_entry.get("tolerance_abs"),
-            "tolerance_pct": sm_entry.get("tolerance_pct"),
-            "error_abs": sm_err_abs,
-            "error_pct": sm_err_pct,
-            "grade": sm_grade,
+            **spec_fields(specs, "static_margin_pct", computed_sm),
             "source": "reference_data.json:aircraft_specs.static_margin_pct",
             "units": "percent MAC",
         }
@@ -307,10 +312,9 @@ def collect_metrics(
     # Performance metrics
     # -------------------------------------------------------------------------
 
-    # --- Stall Speed (first-principles, published reference areas) ---
-    stall_entry = specs["stall_speed_ktas"]
-    wing_area_sqft = specs["wing_area_sqft"]["value"]  # 94.2 sqft (published)
-    canard_area_sqft = specs["canard_area_sqft"]["value"]  # 15.6 sqft (published)
+    # --- Stall Speed (first-principles, confirmed reference areas) ---
+    wing_area_sqft = specs["wing_area_sqft"]["value"]  # confirmed (om-1980:p3)
+    canard_area_sqft = specs["canard_area_sqft"]["value"]  # confirmed (om-1980:p3)
     total_area_sqft = wing_area_sqft + canard_area_sqft
     W = config_module.flight_condition.gross_weight_lb  # type: ignore[attr-defined]
     rho = 0.002377  # slug/ft^3 sea-level standard atmosphere
@@ -318,61 +322,34 @@ def collect_metrics(
     v_fps = math.sqrt(2.0 * W / (rho * total_area_sqft * cl_max))
     computed_stall_ktas = v_fps / 1.6878  # 1 knot = 1.6878 ft/s
 
-    stall_grade, stall_err_abs, stall_err_pct = grade_metric(
-        computed_stall_ktas,
-        stall_entry["value"],
-        tolerance_abs=stall_entry.get("tolerance_abs"),
-        tolerance_pct=stall_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "stall_speed_ktas",
-            "description": "Canard stall speed at gross weight (first-principles, published areas)",
-            "computed": round(computed_stall_ktas, 4),
-            "reference": stall_entry["value"],
-            "tolerance_abs": stall_entry.get("tolerance_abs"),
-            "tolerance_pct": stall_entry.get("tolerance_pct"),
-            "error_abs": stall_err_abs,
-            "error_pct": stall_err_pct,
-            "grade": stall_grade,
+            "description": "Canard stall speed at gross weight (first-principles, manual reference areas)",
+            **spec_fields(specs, "stall_speed_ktas", computed_stall_ktas),
             "source": "reference_data.json:aircraft_specs.stall_speed_ktas",
             "units": "knots TAS",
             "convention_note": (
-                f"Uses published reference areas: "
+                f"Uses manual reference areas: "
                 f"wing={wing_area_sqft} sqft + canard={canard_area_sqft} sqft = "
                 f"{total_area_sqft} sqft. CLmax={cl_max} (canard stalls first)."
             ),
         }
     )
 
-    # --- Max Gross Weight (exact match — no tolerance in reference_data) ---
-    mgw_entry = specs["max_gross_weight_lb"]
+    # --- Max Gross Weight (exact match; no tolerance in reference_data) ---
     computed_mgw = config_module.flight_condition.gross_weight_lb  # type: ignore[attr-defined]
-    # tolerance_abs=null in reference_data → use exact match (tolerance_abs=0.0)
-    mgw_grade, mgw_err_abs, mgw_err_pct = grade_metric(
-        computed_mgw,
-        mgw_entry["value"],
-        tolerance_abs=0.0,  # exact match required (FAA-approved hard limit)
-        tolerance_pct=None,
-    )
     metrics.append(
         {
             "metric_id": "max_gross_weight_lb",
-            "description": "Maximum gross weight (FAA-approved, hard limit)",
-            "computed": round(computed_mgw, 4),
-            "reference": mgw_entry["value"],
-            "tolerance_abs": 0.0,
-            "tolerance_pct": None,
-            "error_abs": mgw_err_abs,
-            "error_pct": mgw_err_pct,
-            "grade": mgw_grade,
+            "description": "Maximum gross weight (hard limit)",
+            **spec_fields(specs, "max_gross_weight_lb", computed_mgw, tolerance_abs=0.0),
             "source": "reference_data.json:aircraft_specs.max_gross_weight_lb",
             "units": "pounds",
         }
     )
 
     # --- Empty Weight ---
-    ew_entry = specs["empty_weight_lb"]
     sw = config_module.structural_weights  # type: ignore[attr-defined]
     # Sum all structural component weights from config
     computed_empty_weight = (
@@ -388,50 +365,20 @@ def collect_metrics(
         + 25.0   # Prop & Spinner
         + 30.0   # Engine Accessories
     )
-    ew_grade, ew_err_abs, ew_err_pct = grade_metric(
-        computed_empty_weight,
-        ew_entry["value"],
-        tolerance_abs=ew_entry.get("tolerance_abs"),
-        tolerance_pct=ew_entry.get("tolerance_pct"),
-    )
-    # Build metric dict as variable to allow adding community_validation field
-    community_builds = ref_data.get("community_builds", [])
-    ew_metric: dict = {
-        "metric_id": "empty_weight_lb",
-        "description": "Estimated empty weight (structural + propulsion components)",
-        "computed": round(computed_empty_weight, 4),
-        "reference": ew_entry["value"],
-        "tolerance_abs": ew_entry.get("tolerance_abs"),
-        "tolerance_pct": ew_entry.get("tolerance_pct"),
-        "error_abs": ew_err_abs,
-        "error_pct": ew_err_pct,
-        "grade": ew_grade,
-        "source": "reference_data.json:aircraft_specs.empty_weight_lb",
-        "units": "pounds",
-    }
-    if community_builds:
-        community_weights = [b["empty_weight_lb"] for b in community_builds]
-        ew_metric["convention_note"] = (
-            "Config structural weights are a partial model (wing, canard, fuselage, "
-            "landing gear, electrical, instruments, interior + propulsion estimates). "
-            "Missing: avionics, fairings, paint, wiring harness, miscellaneous hardware. "
-            f"Community builds weigh {min(community_weights)}-{max(community_weights)} lb, "
-            f"validating the {ew_entry['value']} lb reference."
-        )
-        ew_metric["community_validation"] = {
-            "source": "reference_data.json:community_builds",
-            "sample_size": len(community_weights),
-            "weight_range_lb": [min(community_weights), max(community_weights)],
-            "weight_mean_lb": round(sum(community_weights) / len(community_weights), 1),
-            "note": (
-                f"Community build weights ({min(community_weights)}-{max(community_weights)} lb, "
-                f"n={len(community_weights)}) validate the reference empty weight of "
-                f"{ew_entry['value']} lb. Computed {round(computed_empty_weight, 1)} lb gap "
-                f"({round(ew_err_abs, 1)} lb) is due to partial weight model "
-                f"(excludes avionics, fairings, paint, wiring harness)."
+    metrics.append(
+        {
+            "metric_id": "empty_weight_lb",
+            "description": "Estimated empty weight (structural + propulsion components)",
+            **spec_fields(specs, "empty_weight_lb", computed_empty_weight),
+            "source": "reference_data.json:aircraft_specs.empty_weight_lb",
+            "units": "pounds",
+            "convention_note": (
+                "Config structural weights are a partial model (wing, canard, fuselage, "
+                "landing gear, electrical, instruments, interior + propulsion estimates). "
+                "Missing: avionics, fairings, paint, wiring harness, miscellaneous hardware."
             ),
         }
-    metrics.append(ew_metric)
+    )
 
     # -------------------------------------------------------------------------
     # Airfoil metrics (from config.aero_limits, against wind tunnel reference)
@@ -542,32 +489,17 @@ def collect_metrics(
     # -------------------------------------------------------------------------
 
     # --- Wing Area ---
-    wing_area_entry = specs["wing_area_sqft"]
     computed_wing_area_sqft = geo.wing_area  # config.geometry.wing_area (already in sqft)
-    wa_grade, wa_err_abs, wa_err_pct = grade_metric(
-        computed_wing_area_sqft,
-        wing_area_entry["value"],
-        tolerance_abs=wing_area_entry.get("tolerance_abs"),
-        tolerance_pct=wing_area_entry.get("tolerance_pct"),
-    )
     metrics.append(
         {
             "metric_id": "wing_area_sqft",
             "description": "Main wing planform area",
-            "computed": round(computed_wing_area_sqft, 4),
-            "reference": wing_area_entry["value"],
-            "tolerance_abs": wing_area_entry.get("tolerance_abs"),
-            "tolerance_pct": wing_area_entry.get("tolerance_pct"),
-            "error_abs": wa_err_abs,
-            "error_pct": wa_err_pct,
-            "grade": wa_grade,
+            **spec_fields(specs, "wing_area_sqft", computed_wing_area_sqft),
             "source": "reference_data.json:aircraft_specs.wing_area_sqft",
             "units": "square feet",
             "convention_note": (
-                "Code computes full trapezoidal planform area (~110 sqft). "
-                "Published reference uses RAF semi-panel convention (94.2 sqft). "
-                "FAIL grade expected — convention difference, not a physics error. "
-                "See reference_data.json notes for full explanation."
+                "Reference is the manual's wing area, which excludes the canard "
+                "(om-1980:p3; total 94.8 sq ft)."
             ),
         }
     )
@@ -587,7 +519,7 @@ def build_report(metrics: list[dict], vspaero_provenance: dict) -> dict:
         Complete accuracy report dict ready for JSON serialization.
     """
     # Count grades
-    grade_counts: dict[str, int] = {"pass": 0, "marginal": 0, "fail": 0, "ungraded": 0}
+    grade_counts: dict[str, int] = {"pass": 0, "marginal": 0, "fail": 0, "ungraded": 0, "not graded": 0}
     for m in metrics:
         g = m["grade"].lower()
         if g in grade_counts:
@@ -610,6 +542,7 @@ def build_report(metrics: list[dict], vspaero_provenance: dict) -> dict:
             "marginal": grade_counts["marginal"],
             "fail": grade_counts["fail"],
             "ungraded": grade_counts["ungraded"],
+            "not_graded": grade_counts["not graded"],
         },
         "metrics": metrics,
     }
@@ -682,6 +615,7 @@ def main() -> None:
     print(f"  MARGINAL: {summary['marginal']}")
     print(f"  FAIL:     {summary['fail']}")
     print(f"  UNGRADED: {summary['ungraded']}")
+    print(f"  NOT GRADED (unverified reference): {summary['not_graded']}")
     print()
 
     # Print metric table
@@ -692,8 +626,8 @@ def main() -> None:
             f"{m['metric_id']:<35} "
             f"{m['grade']:<10} "
             f"{m['computed']:>12.4f} "
-            f"{m['reference']:>12.4f} "
-            f"{m['error_abs']:>12.4f}"
+            f"{'-' if m['reference'] is None else format(m['reference'], '.4f'):>12} "
+            f"{'-' if m['error_abs'] is None else format(m['error_abs'], '.4f'):>12}"
         )
 
 

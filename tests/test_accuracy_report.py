@@ -53,7 +53,7 @@ REQUIRED_METRIC_KEYS = {
     "units",
 }
 
-VALID_GRADES = {"PASS", "MARGINAL", "FAIL", "UNGRADED"}
+VALID_GRADES = {"PASS", "MARGINAL", "FAIL", "UNGRADED", "NOT GRADED"}
 
 
 # ---------------------------------------------------------------------------
@@ -126,9 +126,18 @@ def test_report_schema(accuracy_report: dict) -> None:
         assert isinstance(m["computed"], (int, float)), (
             f"Metric '{m['metric_id']}' 'computed' must be numeric, got {type(m['computed'])}"
         )
-        assert isinstance(m["reference"], (int, float)), (
-            f"Metric '{m['metric_id']}' 'reference' must be numeric, got {type(m['reference'])}"
-        )
+        if m["grade"] == "NOT GRADED":
+            # Unverified reference: no reference value, and the reason is recorded.
+            assert m["reference"] is None, (
+                f"Metric '{m['metric_id']}' is NOT GRADED but carries a reference"
+            )
+            assert m.get("reason") == "reference unverified", (
+                f"Metric '{m['metric_id']}' NOT GRADED without reason 'reference unverified'"
+            )
+        else:
+            assert isinstance(m["reference"], (int, float)), (
+                f"Metric '{m['metric_id']}' 'reference' must be numeric, got {type(m['reference'])}"
+            )
 
 
 def test_source_traceability(accuracy_report: dict, ref_data: dict) -> None:
@@ -178,6 +187,7 @@ def test_summary_counts(accuracy_report: dict) -> None:
         "MARGINAL": 0,
         "FAIL": 0,
         "UNGRADED": 0,
+        "NOT GRADED": 0,
     }
     for m in metrics:
         grade = m.get("grade", "UNGRADED")
@@ -185,6 +195,10 @@ def test_summary_counts(accuracy_report: dict) -> None:
 
     assert summary["total"] == len(metrics), (
         f"summary.total={summary['total']} != len(metrics)={len(metrics)}"
+    )
+    # NOT GRADED (unverified reference) is counted on its own, never as PASS/FAIL.
+    assert summary["not_graded"] == grade_counts["NOT GRADED"], (
+        f"summary.not_graded={summary['not_graded']} != counted NOT GRADED={grade_counts['NOT GRADED']}"
     )
     assert summary["pass"] == grade_counts["PASS"], (
         f"summary.pass={summary['pass']} != counted PASS grades={grade_counts['PASS']}"
@@ -232,7 +246,7 @@ def test_calibration_log_schema(calibration_log: dict) -> None:
 
 
 def test_all_grades_valid(accuracy_report: dict) -> None:
-    """Every metric grade must be one of PASS, MARGINAL, FAIL, UNGRADED."""
+    """Every metric grade must be one of PASS, MARGINAL, FAIL, UNGRADED, NOT GRADED."""
     metrics = accuracy_report["metrics"]
     for m in metrics:
         grade = m.get("grade")

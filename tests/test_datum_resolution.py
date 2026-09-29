@@ -94,9 +94,9 @@ class TestReferenceDataSchema:
         )
 
     def test_top_level_structure(self):
-        """Top-level keys: metadata, sources, aircraft_specs, airfoil_data, community_builds."""
+        """Top-level keys: metadata, sources, aircraft_specs, airfoil_data (community_builds removed 2026-09-29)."""
         data = _load_ref_data()
-        required_keys = {"metadata", "sources", "aircraft_specs", "airfoil_data", "community_builds"}
+        required_keys = {"metadata", "sources", "aircraft_specs", "airfoil_data"}
         missing = required_keys - set(data.keys())
         assert not missing, (
             f"reference_data.json missing top-level keys: {missing}"
@@ -116,17 +116,18 @@ class TestReferenceDataSchema:
             )
 
     def test_aircraft_specs_have_provenance(self):
-        """Each aircraft_specs entry must have source_id and confidence fields."""
+        """Each aircraft_specs entry has an audit status and its matching provenance field."""
         data = _load_ref_data()
         specs = data["aircraft_specs"]
         assert len(specs) > 0, "aircraft_specs is empty"
         for spec_name, spec in specs.items():
-            assert "source_id" in spec, (
-                f"Spec '{spec_name}' missing 'source_id' field"
+            assert "source_id" not in spec, f"Spec '{spec_name}' still carries retired 'source_id'"
+            status = spec.get("status")
+            assert status in {"confirmed", "derived", "unverified"}, (
+                f"Spec '{spec_name}' has no valid 'status'"
             )
-            assert "confidence" in spec, (
-                f"Spec '{spec_name}' missing 'confidence' field"
-            )
+            field = {"confirmed": "cite", "derived": "formula", "unverified": "was_cited"}[status]
+            assert spec.get(field), f"Spec '{spec_name}' ({status}) missing '{field}' field"
 
     def test_airfoil_data_has_both_profiles(self):
         """airfoil_data must contain roncz_r1145ms and eppler_1230 entries."""
@@ -139,23 +140,10 @@ class TestReferenceDataSchema:
             "airfoil_data missing 'eppler_1230' entry (main wing airfoil)"
         )
 
-    def test_community_builds_array_with_provenance(self):
-        """community_builds must be a list with at least 3 entries, each having builder_id and confidence."""
+    def test_community_builds_removed(self):
+        """community_builds was unsourced and is removed (Block 1 reference audit)."""
         data = _load_ref_data()
-        builds = data["community_builds"]
-        assert isinstance(builds, list), (
-            f"community_builds should be a list, got {type(builds)}"
-        )
-        assert len(builds) >= 3, (
-            f"community_builds should have at least 3 entries, got {len(builds)}"
-        )
-        for i, build in enumerate(builds):
-            assert "builder_id" in build, (
-                f"community_builds[{i}] missing 'builder_id' field"
-            )
-            assert "confidence" in build, (
-                f"community_builds[{i}] missing 'confidence' field"
-            )
+        assert "community_builds" not in data
 
 
 # ---------------------------------------------------------------------------
@@ -166,38 +154,18 @@ class TestReferenceDataSchema:
 class TestDatumReferenceDataConsistency:
     """Verify consistency between reference_data.json and computed physics values."""
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 7; gap +17.85 in")
-    def test_published_np_matches_translation(self):
-        """Published NP in reference_data.json must match translated internal NP within 8 inches.
+    def test_published_np_is_unverified_not_truth(self):
+        """The neutral point reference (108.0) is unverified: kept for history, never graded against.
 
-        Loads NP from reference_data.json (published datum), computes internal NP
-        via PhysicsEngine, translates via to_published_datum(), and checks they agree.
-
-        NOTE: The simplified NP formula (Anderson eq. 5.69 with geometry-based canard
-        efficiency) yields ~159.3 in internal coordinates vs. the ~153.5 cited in
-        early planning docs. This maps to ~113.8 published vs reference 108.0 —
-        a 5.8 in discrepancy traced to config.geometry.fs_wing_le=133 possibly using
-        the wrong datum (see CLAUDE.md Known Issues). Tolerance set to 8 in to catch
-        gross formula errors while accepting the known datum/geometry uncertainty.
-        Phase 4 will refine this comparison using OpenVSP VSPAERO output.
+        The model's NP is not compared to it. The accuracy report emits the NP metric as
+        NOT GRADED, and truth_specs() excludes the entry.
         """
-        from core.analysis import PhysicsEngine
+        from core.reference import truth_specs
 
         data = _load_ref_data()
-        ref_np_published = data["aircraft_specs"]["neutral_point_fs"]["value"]
-
-        engine = PhysicsEngine()
-        metrics = engine.calculate_cg_envelope()
-        computed_np_published = config.geometry.to_published_datum(metrics.neutral_point)
-
-        delta = abs(computed_np_published - ref_np_published)
-        assert delta <= 8.0, (
-            f"Published NP from reference_data.json ({ref_np_published:.1f}) "
-            f"differs from computed+translated NP ({computed_np_published:.2f}) "
-            f"by {delta:.2f} in, exceeding 8 in tolerance. "
-            f"Internal NP = {metrics.neutral_point:.2f}, offset = {config.geometry.datum_offset_in}. "
-            f"Check NP formula or datum_offset_in value."
-        )
+        entry = data["aircraft_specs"]["neutral_point_fs"]
+        assert entry["status"] == "unverified"
+        assert "neutral_point_fs" not in truth_specs(data)
 
     def test_summary_shows_dual_display(self):
         """StabilityMetrics.summary() must contain '(internal)' and '(published)' labels."""
@@ -216,12 +184,12 @@ class TestDatumReferenceDataConsistency:
             "Dual FS display not implemented."
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 8; gap +17.85 in")
+    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 8; gap fwd +19.85 in, aft +18.85 in")
     def test_published_cg_range_is_reasonable(self):
         """Translated CG range limits must be within ±10 inches of reference data CG range.
 
         Verifies the datum translation produces CG limits consistent with
-        published Long-EZ CG envelope from RAF CP-29.
+        the manual CG envelope (om-1980:p28, F.S. 97 to 103).
         """
         from core.analysis import PhysicsEngine
 
