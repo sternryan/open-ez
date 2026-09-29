@@ -80,3 +80,29 @@ def test_phone_width_no_horizontal_scroll(site):
         assert pg.evaluate("document.documentElement.scrollWidth") <= 390
         b.close()
     s.shutdown()
+
+def test_glb_loads_and_maps_dotted_component_and_canvas_click_selects(site):
+    s, url = serve(site)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=["--use-gl=swiftshader", "--enable-unsafe-swiftshader"])
+        pg = b.new_page(viewport={"width": 1280, "height": 900})
+        pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+        pg.wait_for_function("window.__guide.meshComponents().includes('canard.core')", timeout=10000)
+        pg.select_option("#variant", "gu")
+        pg.wait_for_timeout(500)  # let a frame render
+        box = pg.locator("#c").bounding_box()
+        pg.click("#c", position={"x": box["width"] / 2, "y": box["height"] / 2})
+        assert "c10.cores" in pg.eval_on_selector_all("#ops li.selected", "els => els.map(e => e.dataset.op)")
+        b.close()
+    s.shutdown()
+
+def test_variant_change_clears_detail_of_invisible_op(site):
+    s, url = serve(site)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url)
+        pg.select_option("#variant", "gu"); pg.click('#ops li[data-op="c10.cores"]')
+        assert pg.inner_text("#op-title")
+        pg.select_option("#variant", "roncz")
+        assert pg.inner_text("#op-title") == "" and pg.locator("#parts .chip").count() == 0
+        b.close()
+    s.shutdown()
