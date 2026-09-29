@@ -7,7 +7,15 @@ import { visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph
 const $ = s => document.querySelector(s);
 let storage; try { storage = window.localStorage; } catch { storage = null; }
 const store = makeStore(storage ?? { getItem() { return null; }, setItem() {} });
-const [graph, cfg] = await Promise.all([fetch("graph.json").then(r => r.json()), fetch("config.json").then(r => r.json())]);
+let graph, cfg;
+try {
+  [graph, cfg] = await Promise.all([
+    fetch("graph.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+    fetch("config.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })]);
+} catch {
+  const li = document.createElement("li"); li.textContent = "Could not load graph.json"; $("#ops").append(li);
+  throw new Error("graph load failed");
+}
 const byId = new Map(graph.ops.map(o => [o.id, o]));
 const meshes = new Map();
 let current = null;
@@ -99,6 +107,14 @@ function selectComponent(cid) {
   const ids = opsForComponent(graph, cid).filter(i => visible.has(i));
   markSelected(ids); highlight([cid]);
 }
-window.__guide = { selectComponent };
-$("#variant").onchange = () => { renderList(); current = null; };
+function clearDetail() {
+  for (const id of ["#op-title", "#op-summary", "#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
+  highlight([]);
+}
+window.__guide = { selectComponent, meshComponents: () => [...new Set(meshes.values())] };
+$("#variant").onchange = () => {
+  renderList();
+  const still = current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
+  if (still) markSelected([current]); else { current = null; clearDetail(); }
+};
 renderList();
