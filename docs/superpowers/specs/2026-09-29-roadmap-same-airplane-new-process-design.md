@@ -14,6 +14,21 @@ shape, weights and CG envelope, but uses a new process and modern systems:
 **Owner rulings (2026-09-29):** the Roncz canard, and a Rotax engine. The Rotax model is chosen
 by a fit-and-CG trade (Block 6), not up front.
 
+**Service assumptions (owner, 2026-09-29):** based at KOAK; design for outdoor tie-down (a hangar is
+hoped for, not assumed); the airplane travels, so hot ramps elsewhere are in the envelope; paint is
+chosen for thermal performance.
+
+**Working epoxy (owner, 2026-09-29): MGS/Hexion L285 with H286 or H287, 80°C post-cure** (the
+manufacturer's powered-aircraft schedule; LBA-approved for gliders, motor gliders and powered
+aircraft). Design temperature 72–75°C: MGS's 72°C powered-aircraft standard, with a hot-ramp
+allowance. After humidity conditioning, MGS gives Tg 78–82°C (H286) and 83–88°C (H287), which
+clears the design temperature narrowly. Sources: MGS L285 technical data; EASA CS-22 AMC 22.613(c).
+- **First question for the outside reviewer:** is that wet-Tg margin acceptable, with a light paint
+  scheme and sun covers as operational mitigations? A common rule of thumb asks for about 28°C of
+  margin, which no homebuilder-post-curable system meets. That rule is not yet sourced.
+- L285 is a laminating resin, not an infusion resin, so the working process is vacuum-bagged wet
+  layup. Infusion for large skins stays open until an infusion system meets the same Tg bar.
+
 The 1970s plans are the baseline and the teacher, not the method. Rehearsing the build the way the
 plans describe it surfaces the lessons, and the lessons become the requirements for the new build.
 
@@ -119,9 +134,11 @@ Each block proves something before the next one relies on it.
     - Print identical small mold plaques in PETG, ASA, PC, PAHT-CF and PPA-CF.
     - Seal them the same way, then run the chosen epoxy's real cure and post-cure on each.
     - Measure warp, surface transfer, release and porosity.
-    - The pass/fail bar is set by the epoxy's post-cure temperature, so the trial's own spec is
-      written once the epoxy system is chosen. Heat-deflection values come from the filament
-      datasheets, cited.
+    - **Pass/fail bar:** the plaque holds shape and surface under vacuum through L285's 80°C
+      post-cure. Datasheet heat deflection (Bambu, ISO 75 at 1.8 MPa): PETG 62°C (expected to
+      fail), ASA 92°C (marginal), PC 117°C, PAHT-CF 170°C, PPA-CF 196°C. The two CF nylons have
+      glass transitions of 70°C and 85°C, close to the cure temperature, so creep over a long cure
+      is the thing to measure. Whether the CF values are for annealed parts is not yet confirmed.
     - Expected shape of the answer: printing the tool directly is plausible for small parts; large
       surfaces (many 256 mm sections) likely still favour plug → cast, because registration, bonded
       joints and thermal expansion over the span are the hard problems.
