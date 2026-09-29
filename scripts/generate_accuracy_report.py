@@ -597,6 +597,7 @@ def build_report(metrics: list[dict], vspaero_provenance: dict) -> dict:
         "metadata": {
             "generated": datetime.now(timezone.utc).isoformat(),
             "vspaero_provenance": vspaero_provenance,
+            "geometry_basis": "book (planform correction 2026-09-29); NP is a check, not a fit; see docs/geometry-correction-ledger.md",
             "traceability": (
                 "All metric sources trace to reference_data.json (external published/measured) "
                 "or vspaero_native. No sources from physics_baseline.json (self-referential). "
