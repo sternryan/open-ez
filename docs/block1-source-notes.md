@@ -1,0 +1,200 @@
+# Block 1 source notes
+
+Citations use ids from `data/sources/registry.yaml`; every paraphrase is 10 words or fewer, in our own words. Nothing here is copied from the sources, and no claim is made about the plans' copyright status.
+
+## Owner's Manual (om-1980)
+
+Page numbers are printed page numbers. The local copy is a transcription (page 14 is missing), so numeric tables and chart labels may carry transcription errors; the copy caveat column says where.
+
+### Dimensions and weights
+
+| value | citation | what the page says (≤10 words, own words) | copy caveat |
+|---|---|---|---|
+| Wing span 26.1 ft | om-1980:p3 | dimensions table, wing span entry | transcription; verify against image |
+| Wing area 81.99 sq ft | om-1980:p3 | dimensions table, wing area beside span | transcription |
+| Canard span 11.8 ft | om-1980:p3 | dimensions table, canard span entry | transcription |
+| Canard area 12.8 sq ft | om-1980:p3 | dimensions table, canard area beside span | transcription |
+| Total area 94.8 sq ft | om-1980:p3 | dimensions table, wing plus canard total | transcription; 81.99 + 12.8 = 94.79 |
+| Length 201.4 in | om-1980:p3 | dimensions table, overall length | transcription |
+| Height 94.5 in | om-1980:p3 | dimensions table, overall height | transcription |
+| Empty weight about 750 lb | om-1980:p4 | normal equipped empty weight, approximate | transcription; "approximately" is the page's own hedge |
+| Max takeoff gross 1325 lb | om-1980:p4 | allowable takeoff gross, with exceptions noted | transcription |
+| Max gross 1325 lb (placard) | om-1980:p23 | placard list repeats maximum gross | transcription |
+| 1425 lb band, pointer | om-1980:p5 | higher gross allowed only under stated conditions | transcription |
+| 1425 lb band, pointer | om-1980:p28 | chart page notes higher gross, refers to p36 | transcription |
+| 1425 lb conditions | om-1980:p36 (end) and om-1980:p37 | takeoff-only overweight, six operating restrictions | transcription; p36 prints 1420, not 1425 (see contradictions) |
+| Landing weight cap 1325 lb | om-1980:p37 | landing weight still limited to normal gross | transcription |
+| Useful load 575 lb | not stated | derivable only: 1325 minus 750 | our arithmetic, not a page value |
+
+### CG limits, datum, reference stations
+
+| value | citation | what the page says (≤10 words, own words) | copy caveat |
+|---|---|---|---|
+| CG limits FS 97.0 fwd / 103.0 aft | om-1980:p23 | placard block lists both limits with gross | transcription of a text list |
+| CG limits, weight-vs-CG chart | om-1980:p28 | envelope chart, limits 97 and 103 | captain read chart image 2026-09-29: fwd 97, aft 103, 1325 max, 1425 takeoff-only band |
+| Aft-limit prose | om-1980:p25 | sample loading judged aft of the 103 limit | transcription |
+| Datum FS 0.0 | om-1980:p25 | CG is inches aft of datum, F.S. 0.0 | transcription; p25 is the only page that names the datum |
+| Instrument panel reference FS 40 | om-1980:p34 | panel reference station; check against flying surfaces | transcription |
+| Instrument panel FS 40 (again) | om-1980:p35 | gear arms measured from the panel front at 40 | transcription |
+| Main gear FS 110.5 ± 1 | om-1980:p34 | main gear must sit at this station | transcription |
+| Main gear arm method | om-1980:p35 | add dimension A to 40 for the main arm | transcription |
+| Nose gear about FS 20 | om-1980:p35 | subtract B from 40; result should be about 20 | transcription |
+| Empty CG 111.7 method | om-1980:p36 | sample empty moment over weight gives 111.7 | transcription |
+| First flight box | om-1980:p34 (points to p28) | initial flights should stay inside a smaller box | box shape is on the chart image |
+| Neutral point | not found | no neutral-point or aerodynamic-center statement in the manual | searched: neutral point, N.P., aerodynamic center; only "neutralized" controls hit |
+
+**p28 chart image (captain read).** The forward limit, F.S. 97, is hand-lettered. The aft-limit label "F.S 103" and the "Light Pilot Sample" label are typed overlays on the hand-drawn chart; the underlying drawing still hatches the region aft of F.S. 104 (the pre-LPC 116 limit). The max gross line sits at 1325, with a hatched takeoff-only band from 1325 to 1425 pointing to a conditions page. The light-pilot sample circle is plotted near F.S. 102.9 at about 1100 lb, not at 103.96 / 1113 as the table says, so the plotted point disagrees with the table. The heavy-pilot circle sits near F.S. 101 at about 1325. Conclusion: the limits used are 97 / 103 / 1325 / 1425 from the chart plus the p23 placard; the chart's plotted light-pilot point is not used.
+
+### Loading arms and sample loadings
+
+The sample table starts on p25 and ends on p26 in this transcription. The empty-aircraft and oil rows are on p25 (the light-pilot and heavy-pilot column headings too); fuel, pilot, passenger, baggage and total rows are on p26.
+
+| value | citation | what the page says (≤10 words, own words) | copy caveat |
+|---|---|---|---|
+| Pilot arm FS 59 | om-1980:p25 (formula) and om-1980:p26 (table rows) | pilot moment uses weight times 59 | transcription; p27 also shows 59.0 on blank forms |
+| Passenger arm FS 103 | om-1980:p25 (formula) and om-1980:p26 (table row) | passenger moment uses weight times 103 | transcription |
+| Fuel arm FS 104.5 | om-1980:p26 | fuel rows both use station 104.5 | transcription; p25 formula instead gives 6.0 per gallon |
+| Baggage arm FS 90 | om-1980:p26 | baggage row uses station 90 | transcription; blank forms on p26-27 also print 90 |
+| Oil arm FS 140 | om-1980:p25 | oil row, 8 lb at station 140 | transcription |
+| Fuel moment per gallon 6.0 | om-1980:p25 | fuel moment is gallons times 6.0 | transcription |
+| Sample empty 730 lb at 111.7, moment 81541 | om-1980:p25 | empty aircraft row, identical in both columns | transcription; 730 x 111.7 = 81541 checks |
+| Light pilot: 240 fuel, 135 pilot | om-1980:p26 | fuel 240 lb, pilot 135 lb, no passenger | transcription |
+| Light pilot total 1113 lb, CG 103.96 | om-1980:p26 (table) and om-1980:p25 (prose) | total row and prose agree on weight and CG | transcription |
+| Heavy pilot: 150 fuel, 210 pilot, 210 passenger, 15 baggage | om-1980:p26 | fuel, both seats and baggage rows in second column | transcription; column assignment inferred from row order because the layout is flattened |
+| Heavy pilot total 1323 lb, CG 101.06 | om-1980:p26 | total row for second sample | transcription |
+| Empty-weight-record instruction | om-1980:p36 | record 730 and 81541 in the p26 table | transcription |
+
+### Printed typos in the sample table (recomputed by us)
+
+All recomputation is from the printed weights and stations; the printed moments that disagree are errata, not values to match.
+
+| item | printed | recomputed | note |
+|---|---|---|---|
+| Light pilot moment, 135 x 59.0 | 7865 (om-1980:p26) | 7965 | transposed digit |
+| Light total moment, sum of correct rows: 81541 + 1120 + 25080 + 7965 | 115708 (om-1980:p26 table) | 115706 | prose on om-1980:p25 says 115706, which matches |
+| Light total moment using the misprinted 7865 | n/a | 115606 | neither printed total equals this |
+| Light CG, 115706 / 1113 | 103.96 (both pages) | 103.96 | agrees; p25 prose prints the divisor as 11133 (typo for 1113) |
+| Heavy moments: 81541 + 1120 + 15675 + 12390 + 21630 + 1350 | 122706 (om-1980:p26) | 133706 | printed total is short by 11000 |
+| Heavy weight, 730+8+150+210+210+15 | 1323 | 1323 | agrees |
+| Heavy CG, 133706 / 1323 | 101.06 | 101.06 | agrees with recomputed 133706, confirming the total moment typo |
+| Individual rows | | | oil 8x140=1120, fuel 240x104.5=25080, fuel 150x104.5=15675, heavy pilot 210x59=12390, passenger 210x103=21630, baggage 15x90=1350: all match print |
+
+Light-pilot sample: the p25 prose itself says the loading is outside the envelope, since 103.96 exceeds the 103 aft limit.
+
+### Speeds, performance, range
+
+| value | citation | what the page says (≤10 words, own words) | copy caveat |
+|---|---|---|---|
+| Vne | not found by that name | manual uses red-line speed instead | see next row |
+| Red line 190 kt (220 mph) | om-1980:p23 | placard lists red line speed 190 knots | transcription; not the 200 kt in reference_data |
+| Maneuver speed 120 kt | om-1980:p23 | placard maneuver speed, also mentioned on p15 | transcription |
+| Max true cruise 161 kt (Lycoming) | om-1980:p15 | maximum true cruise at 75% power, high throttle | transcription; reference_data says 160 |
+| Stall 56 kt | not found | manual describes full aft stick below 60 kt | om-1980:p19; no stall speed number of 56; p19 also mentions 55 kt minimum in pull-ups; touchdown 55 kt on p17 |
+| Range 800 nm | not found as a number | range is a chart procedure, not a stated figure | om-1980:p59 procedure and chart page; no 800 value |
+| Fuel capacity | om-1980:p8 | two 28 gallon tanks, 52 gallon full-fill note | transcription |
+| Useful load 575 | not stated | see weights table | derived only |
+
+### Contradictions with the plan's assumed pages and with registry text
+
+- Samples: the plan says p27; actual is p25 (header, empty, oil) and p26 (rest). p27 holds blank "your airplane" forms.
+- Pilot arm: plan says p26; the formula stating 59 is on p25 and the table rows on p26.
+- Max gross: plan says p3; the 1325 statement is on p4 (and p23 placards). p3 has only dimensions.
+- Datum: p25 does define it, as the plan guessed.
+- 1425 conditions: the manual's conditions page is p36 (end) to p37, and p36 prints 1420, not 1425. p5 and p28 both say 1425.
+- Edition: the registry calls om-1980 the first edition, May 1980. The transcription's aft CG limit 103 matches the plans change CP37 made (see the CP section below): CP37 (Jul 1983) moved the Long-EZ aft limit from 104 to 103, so this text likely reflects a later revision than May 1980. CP27 (Jan 1981) also cites "owners manual page 30" for the 1425 conditions, where this transcription has p36-37. The registry edition text now records the revision (LPC 116), and the original edition date is unconfirmed.
+
+## reference_data.json claims vs CP-29/CP-31
+
+What the two issues are: `cp-29` is The Canard Pusher No. 29, July 1981. `cp-31` is The Canard Pusher No. 31, January 1982. Both are quarterly RAF newsletters of about 12 pages: builder hints and mail, accident notes, plans-change lists, cost and shopping notes, a general Long-EZ description page, and a specifications page. Neither is the Owner's Manual and neither is "Plans Section IIA". The reference file's claim that CP-29 is the Owner's Manual and CP-31 is "Plans Section IIA" is false. Page numbers below are PDF pages in the OCR copies (p1 to p12 each); the registry entries for these need `page_basis: pdf`.
+
+The only relevant page in each issue is the "brief Long-EZ specifications" box (cp-29:p11, cp-31:p11), which lists span, area, empty weights, gross and performance. cp-31:p2 states Canada's takeoff weight limit.
+
+| reference_data entry (value) | cited page in file | result | hit / note |
+|---|---|---|---|
+| wing_span_in 316.8 (26.4 ft) | raf-cp31 p.4 | not found in CP-29/CP-31 | cp-29:p11 and cp-31:p11 give span 26.3 ft, not 26.4 |
+| wing_area_sqft 94.2 | raf-cp31 p.4 | not found in CP-29/CP-31 | cp-29:p11 gives total area 94.1; cp-31:p11 OCR reads 94.1 |
+| canard_span_in 147.0 | raf-cp31 p.4 | not found in CP-29/CP-31 | |
+| canard_area_sqft 15.6 | raf-cp31 p.4 | not found in CP-29/CP-31 | |
+| aspect_ratio 7.3 | raf-cp31 p.4 | not found in CP-29/CP-31 | |
+| max_gross_weight_lb 1425 | raf-cp29 p.12 | not found in CP-29/CP-31 | both issues give 1325: cp-29:p11, cp-31:p11; cp-31:p2 Canada limit 1325 |
+| empty_weight_lb 850 | raf-cp29 p.12 | not found in CP-29/CP-31 | cp-29:p11 and cp-31:p11 list empty equipped 750, basic 710 |
+| useful_load_lb 575 | raf-cp29 p.12 | not found in CP-29/CP-31 | solo weight 960 appears; 1325 - 750 gives 575 by arithmetic |
+| cg_range_fwd_fs 99.0 | raf-cp29 p.13 | not found in CP-29/CP-31 | no CG limit numbers in either issue |
+| cg_range_aft_fs 104.0 | raf-cp29 p.13 | not found in CP-29/CP-31 | 104 was the aft limit before CP37 changed it (below), not from these issues |
+| neutral_point_fs 108.0 | raf-cp29 p.18 | not found in CP-29/CP-31 | |
+| cruise_speed_ktas 160 | raf-cp29 p.20 | not found as stated | cp-29:p11 lists 75% cruise at 8000 ft, 183 mph, about 159 kt |
+| stall_speed_ktas 56 | raf-cp29 p.20 | not found in CP-29/CP-31 | |
+| range_nm 800 | raf-cp29 p.20 | not found in CP-29/CP-31 | cp-29:p11 gives range in statute miles (1370 solo, 965 two-place at 75%) |
+| vne_ktas 200 | raf-cp29 p.8 | not found in CP-29/CP-31 | |
+| static_margin_pct 12.0 | raf-cp29 (derived) | not found in CP-29/CP-31 | derived from an unsupported NP and CG |
+
+Cruise, range and weight numbers on the spec page vary by issue (CP-32 reads 800 lb empty equipped and 1325/1425 gross), so any CP spec box needs an issue-specific citation.
+
+## Canard Pusher text: CG, NP, weights
+
+Citations here are `cp-text:p<issue>` (page basis is issue per the registry). Search covered the whole 1-82 sectioned text.
+
+### CG limits
+
+The Long-EZ limits change over time. The Owner's Manual text (97 to 103) matches the state after CP37, not the earlier one.
+
+| finding | citation | note |
+|---|---|---|
+| Aft CG limit recommended forward by one inch after a spin accident | cp-text:p37 | interim recommendation, Jul 1983 |
+| Plans change LPC #116 moves Long-EZ aft limit from 104 to 103 | cp-text:p37 (listed in the plans-change index in cp-text:p69) | made mandatory in CP 39 |
+| Aft limit F.S. 103 made mandatory and permanent | cp-text:p39 | Jan 1984 |
+| Prototype N79RA tested to the 103 aft limit without departures | cp-text:p39 | |
+| Long-EZ may spin at or aft of the aft limit (LPC #115) | cp-text:p36 | Apr 1983; text change, not a new number |
+| Later refers to "FS 103 aft limit" as the standing limit | cp-text:p76 | |
+| Vortilon stall data quoted from 97 to 102.2 inches | cp-text:p42 | VariEze installation text; not a limit statement |
+
+Forward limit: no issue changes the Long-EZ forward limit of 97 (the only 97-inch hit is the vortilon range above). So 97 to 103 stands after CP39, and 97 to 104 before CP37. The reference file's 99 to 104 matches no source found: 104 was the old aft limit, and 99 has no hit.
+
+Non-Long-EZ CG hits, which must not be used: cp-text:p13 (VariEze forward limit on structural grounds), cp-text:p19 (VariEze aft limit at F.S. 100.5 short canard and 99.5 long canard), cp-text:p21 (VariEze canard shortened to 142 in, aft limit moved), cp-text:p12 (main gear target F.S. 108.0 in a VariEze weight and balance discussion; an F.S. 108 that is a gear station, not a neutral point).
+
+### Neutral point
+
+No Canard Pusher issue gives a Long-EZ neutral point. The only NP hit is cp-text:p73, which defines static margin in words (distance from CG to neutral point) while discussing one modified airplane. No number appears. So reference_data's neutral_point_fs 108 has no source anywhere in the corpus searched, and the manual gives none either.
+
+### Empty weight and gross weight
+
+| finding | citation | note |
+|---|---|---|
+| Long-EZ specification table shows 750 with a bare and equipped column | cp-text:p23 | Jan 1980, first Long-EZ comparison |
+| Gross weight 1325 in the spec box | cp-text:p24 to cp-text:p31 | box repeats each issue; p29, p30, p31 carry 1325 |
+| Spec box reads 1325/1425 | cp-text:p32 | first issue with both numbers |
+| Spec box reads 1425 | cp-text:p34 onward | through at least p39 |
+| Builder empty weight table based on N26MS | cp-text:p27 | derivation of basic and equipped empty weights |
+| Same issue says 1425 gross is in the manual at "page 30" | cp-text:p27 | page number differs from this transcription (p36-37) |
+| Operating limits given for gross weights up to 1425 | cp-text:p66 | flight-test article, not a design limit |
+| Canada allows 1325 lb maximum takeoff | cp-31:p2 | not the CP text file |
+| No 850 lb Long-EZ empty weight | cp-text:p53 | 849 lb appears in a builder report only, not a spec |
+
+So 1425 lb entered the RAF spec box in CP32 (Apr 1982, alongside 1325), and the 1425 conditions text was already in the manual by CP27 (Jan 1981). Nothing gives a Long-EZ empty weight of 850 as a design value.
+
+## Roncz canard
+
+Search covered the CP 1–82 sectioned text and issues 83–109 per-issue text (terms: Roncz, R1145, 1145MS, new canard, canard with chord/area/span/incidence, CG limit, GU canard, canard templates); about 460 raw hits, every Roncz/1145 hit read. CP-43 and CP-44 were fetched and OCR'd.
+
+| finding | citation | note |
+|---|---|---|
+| RAF testing a Roncz canard for Long-EZ, no data yet | cp-text:p39 | Jan 1984 |
+| Roncz canard flown in several configurations on N26MS | cp-text:p41 | Jul 1984 |
+| New R1145MS canard flown on N79RA; more lift, span cut | cp-text:p43; cp-43:p1 | Jan 1985 |
+| Roncz elevator tip-to-tip 130 in, versus 140 in GU | cp-text:p43; cp-43:p1 | elevator span, not overall canard span; captain checked the OCR page |
+| Final plans canard: flush hinges, vortilons mandatory | cp-text:p44; cp-44:p2 | Apr 1985 |
+| Builders cut canard short from a plans error; C1 dimension fixes | cp-text:p46 | LPC 123; the text does not say which feature the fixed dimensions measure |
+| Plans canard length is optimum; do not vary it | cp-text:p46 | no number |
+| Foam block size corrections | cp-text:p46 | LPC 124; block sizes, not chord or span |
+| Set canard incidence by leveling against top longeron | cp-text:p47 | no angle given |
+| GU elevator-stop caution does not apply to Roncz | cp-text:p48 | |
+| Roncz elevator travel limits | cp-text:p67 | elevator, not planform |
+| Roncz elevator chord equals GU elevator chord, 4.6 in | cp-107 per-issue text (2002-01) | elevator chord, not canard chord; issue 107 is not in the registry, so not a model citation |
+
+Verdict (Task 7 decision input):
+- Roncz span: only the elevator tip-to-tip 130 in (cp-43:p1); the overall canard span is not stated.
+- Roncz chord: NOT FOUND.
+- Roncz area: NOT FOUND.
+- Roncz incidence: NOT FOUND (method only, cp-text:p47).
+- CG limit change with the Roncz canard: NOT FOUND; the 97/103 limits stand (aft 103 from LPC 116, CP 37/39).
+The numbers likely live on the Roncz canard plans sheets, which are not in the corpus.
