@@ -52,3 +52,11 @@ def test_invalid_class_rejected():  # {CP1 PC2 the} → no match (invalid class)
 Text with {CP1 PC2 the} marker."""
     ms = parse_markers(md, 10)
     assert len(ms) == 0  # Invalid class code → no marker accepted
+
+
+def test_heading_updates_when_marker_class_invalid():
+    md = """### STEP A
+### STEP B {CP1 PC2 the}
+Body {CP3 PC4 MEO} here."""
+    ms = parse_markers(md, 10)
+    assert len(ms) == 1 and ms[0].heading == "STEP B"

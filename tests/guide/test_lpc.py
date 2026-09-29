@@ -138,3 +138,33 @@ def test_obs_class():  # OBS is a known class
 LPC #64, OBS, Page 3-4"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
     assert got[64].cls == "OBS" and got[64].page == "3-4"
+
+
+def test_section_ii_on_next_line_no_chapter():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #12, MEO,
+Section II, page 12-1"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[12].page == "12-1" and got[12].chapter is None
+
+
+def test_owners_manual_on_next_line_no_chapter():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #12, MEO,
+Owners manual page 3-4"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[12].page == "3-4" and got[12].chapter is None
+
+
+def test_back_cover_on_next_line():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #12, MEO,
+Back cover of plans"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert (got[12].page, got[12].chapter) == ("back-cover", None)
+
+
+def test_bare_owner_prose_rejected():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #5 the owner said so"""
+    assert parse_lpcs(fixture) == []
