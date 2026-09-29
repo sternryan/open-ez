@@ -32,7 +32,7 @@ def _extract_cls_and_ref(rest: str) -> tuple[str, str]:
     """
     rest = rest.strip()
     # Try to match: 2-4 uppercase letters followed by whitespace or separator
-    m = re.match(r'^([A-Z]{2,4})(?:\s|[:,\-])(.*)$', rest)
+    m = re.match(r'^([A-Z]{2,4})(?:[\s:,.\-]|$)(.*)$', rest)
     if m:
         word = m.group(1)
         if word in KNOWN_CLASSES:
@@ -61,7 +61,11 @@ def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
     # Precedence: entry ref's own location cue wins; description line only as fallback.
     loc = ref if _has_location_cue(ref) else next_line
     # Page number alone may still come from the description line when the ref has none.
-    page_m = PAGE.search(loc) or (PAGE.search(next_line) if next_line else None)
+    # Only when the entry line has no cue at all, or its only cue is "Section I".
+    ref_secs = {m.group(1) for m in SECTION.finditer(ref)}
+    fallback_ok = not _has_location_cue(ref) or (
+        ref_secs == {"I"} and not (PAGE.search(ref) or BACK_COVER.search(ref) or OWNER.search(ref)))
+    page_m = PAGE.search(loc) or (PAGE.search(next_line) if next_line and fallback_ok else None)
     sections = {m.group(1) for m in SECTION.finditer(loc)}
     no_chapter = bool(OWNER.search(loc)) or any(x != "I" for x in sections)
 

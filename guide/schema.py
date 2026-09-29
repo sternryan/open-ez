@@ -13,8 +13,31 @@ KIND = {"official", "community"}
 RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml"}
 
 
+OP_KEYS = {"id", "chapter", "title", "summary", "variants", "requires", "components", "geometry_visible", "materials",
+           "sources", "changes", "completion", "inspection", "stub"}
+CHANGE_KEYS = {"cp", "lpc", "class", "status", "kind", "note", "annotation_pp"}
+MATERIAL_KEYS = {"cloth", "plies", "where"}
+ANNOTATION_KEYS = {"scan_pp", "cp", "lpc", "class", "text", "confirmed"}
+COMPONENT_KEYS = {"id", "label", "fidelity"}
+
+
 class SchemaError(ValueError):
     pass
+
+
+def _extra(d, allowed: set, where: str) -> None:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
+    bad = sorted((k for k in d if k not in allowed), key=str)
+    if bad:
+        raise SchemaError(f"{where}: unknown key(s) {bad}")
+
+
+def _bool(d: dict, key: str, default: bool, where: str) -> bool:
+    v = d.get(key, default)
+    if not isinstance(v, bool):
+        raise SchemaError(f"{where}: {key} must be a boolean, got {v!r}")
+    return v
 
 
 @dataclass(frozen=True)
@@ -88,8 +111,12 @@ def _read(path: Path):
 
 
 def _op(d: dict, file_name: str, idx: int) -> Operation:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{file_name} entry {idx}: must be a mapping")
+    op_id = d.get("id", f"entry_{idx}")
+    where = f"{file_name} entry {idx} ({op_id})"
+    _extra(d, OP_KEYS, where)
     try:
-        op_id = d.get("id", f"entry_{idx}")
         sources = []
         for s in d.get("sources", []):
             try:
@@ -98,12 +125,16 @@ def _op(d: dict, file_name: str, idx: int) -> Operation:
                 raise SchemaError(f"{file_name} entry {idx} ({op_id}): source error: {e}") from e
 
         changes = []
-        for c in d.get("changes", []):
+        for ci, c in enumerate(d.get("changes", [])):
+            _extra(c, CHANGE_KEYS, f"{where} change {ci}")
             try:
                 changes.append(Change(cp=c["cp"], lpc=c["lpc"], cls=c["class"], status=c["status"], kind=c["kind"],
                        note=c.get("note", ""), annotation_pp=c.get("annotation_pp")))
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"{file_name} entry {idx} ({op_id}): change error: {e}") from e
+
+        for mi, m in enumerate(d.get("materials", [])):
+            _extra(m, MATERIAL_KEYS, f"{where} material {mi}")
 
         return Operation(
             id=d["id"],
@@ -113,13 +144,13 @@ def _op(d: dict, file_name: str, idx: int) -> Operation:
             variants=tuple(d.get("variants", ["both"])),
             requires=tuple(d.get("requires", [])),
             components=tuple(d.get("components", [])),
-            geometry_visible=bool(d.get("geometry_visible", True)),
+            geometry_visible=_bool(d, "geometry_visible", True, where),
             materials=tuple(d.get("materials", [])),
             sources=tuple(sources),
             changes=tuple(changes),
             completion=tuple(d.get("completion", [])),
-            inspection=bool(d.get("inspection", False)),
-            stub=bool(d.get("stub", False)),
+            inspection=_bool(d, "inspection", False, where),
+            stub=_bool(d, "stub", False, where),
         )
     except (KeyError, TypeError, ValueError, AttributeError) as e:
         op_id = d.get("id", f"entry_{idx}")
@@ -130,7 +161,11 @@ def load_graph(graph_dir: Path) -> Graph:
     g = Graph()
     comp = graph_dir / "components.yaml"
     if comp.exists():
-        for idx, c in enumerate(_read(comp)):
+        comp_data = _read(comp)
+        if not isinstance(comp_data, list):
+            raise SchemaError("components.yaml: must be a list of components")
+        for idx, c in enumerate(comp_data):
+            _extra(c, COMPONENT_KEYS, f"components.yaml entry {idx}")
             try:
                 g.components[c["id"]] = Component(c["id"], c.get("label", c["id"]), c["fidelity"])
             except (KeyError, TypeError, ValueError, AttributeError) as e:
@@ -148,13 +183,17 @@ def load_graph(graph_dir: Path) -> Graph:
             raise SchemaError(f"pages.yaml: {e}") from e
     ann = graph_dir / "annotations.yaml"
     if ann.exists():
-        try:
-            g.annotations = [
-                Annotation(a["scan_pp"], a["cp"], a["lpc"], a["class"], a.get("text", ""), bool(a.get("confirmed", False)))
-                for idx, a in enumerate(_read(ann))
-            ]
-        except (KeyError, TypeError, ValueError, AttributeError) as e:
-            raise SchemaError(f"annotations.yaml entry {idx}: {e}") from e
+        ann_data = _read(ann)
+        if not isinstance(ann_data, list):
+            raise SchemaError("annotations.yaml: must be a list of annotations")
+        for idx, a in enumerate(ann_data):
+            where = f"annotations.yaml entry {idx}"
+            _extra(a, ANNOTATION_KEYS, where)
+            try:
+                g.annotations.append(Annotation(a["scan_pp"], a["cp"], a["lpc"], a["class"], a.get("text", ""),
+                                                _bool(a, "confirmed", False, where)))
+            except (KeyError, TypeError, ValueError, AttributeError) as e:
+                raise SchemaError(f"{where}: {e}") from e
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue

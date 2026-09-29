@@ -42,7 +42,7 @@ def gdir(tmp_path):
           summary: Level the jigged cores and confirm zero twist before skinning.
           variants: [gu]
           requires: [c10.cores]
-          components: []
+          components: [canard.spar_cap_bottom]
           geometry_visible: false
           inspection: true
           sources: [{doc: scan-1980, scan_pp: 59}]
@@ -102,8 +102,9 @@ def test_authored_texts_excludes_annotations(gdir):
 def test_op_missing_title_raises(gdir):
     p = gdir / "ch10.yaml"
     p.write_text(p.read_text().replace("title: Cut the foam cores", ""))
-    with pytest.raises(SchemaError, match="ch10.yaml") and pytest.raises(SchemaError, match="c10.cores"):
+    with pytest.raises(SchemaError) as ei:
         load_graph(gdir)
+    assert "ch10.yaml" in str(ei.value) and "c10.cores" in str(ei.value)
 
 def test_source_with_unknown_key_raises(gdir):
     p = gdir / "ch10.yaml"
@@ -140,3 +141,50 @@ def test_stub_with_bad_variants_and_components(gdir):
     """)
     errs = validate(load_graph(gdir))
     assert any("vari" in e for e in errs) and any("canard.ghost" in e for e in errs)
+
+
+def test_comma_in_unquoted_flow_map_note_raises(gdir):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("note: Shear web line moves to WL 19.4.,", "note: Line moves, not WL 19.4,"))
+    with pytest.raises(SchemaError, match="not WL 19.4") as ei:
+        load_graph(gdir)
+    assert "unknown key" in str(ei.value) and "c10.cores" in str(ei.value)
+
+def test_misspelled_key_raises(gdir):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("requires: [c03.layup-skills]", "requries: [c03.layup-skills]"))
+    with pytest.raises(SchemaError, match="requries"):
+        load_graph(gdir)
+
+@pytest.mark.parametrize("key", ["geometry_visible", "inspection", "stub"])
+def test_string_boolean_raises(gdir, key):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("title: Check for twist", f'title: Check for twist\n  {key}: "false"'))
+    if key in ("geometry_visible", "inspection"):  # avoid duplicate-key overwrite masking the string
+        p.write_text(p.read_text().replace("  geometry_visible: false\n", "", 1).replace("  inspection: true\n", "", 1))
+    with pytest.raises(SchemaError, match=key):
+        load_graph(gdir)
+
+def test_unknown_key_in_component_annotation_material(gdir):
+    (gdir / "components.yaml").write_text("- {id: a, label: A, fidelity: unvalidated, bogus: 1}\n")
+    with pytest.raises(SchemaError, match="bogus"):
+        load_graph(gdir)
+
+def test_annotation_unknown_key_and_string_confirmed(gdir):
+    (gdir / "annotations.yaml").write_text("- {scan_pp: 58, cp: 25, lpc: 16, class: MEO, text: x, confirmed: 'false'}\n")
+    with pytest.raises(SchemaError):
+        load_graph(gdir)
+    (gdir / "annotations.yaml").write_text("- {scan_pp: 58, cp: 25, lpc: 16, class: MEO, texts: x}\n")
+    with pytest.raises(SchemaError, match="texts"):
+        load_graph(gdir)
+
+def test_material_unknown_key_raises(gdir):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("components: [canard.core]", "components: [canard.core]\n  materials: [{cloth: BID, plies: 2, wher: x}]"))
+    with pytest.raises(SchemaError, match="wher"):
+        load_graph(gdir)
+
+def test_components_yaml_scalar_raises(gdir):
+    (gdir / "components.yaml").write_text("hello\n")
+    with pytest.raises(SchemaError, match="components.yaml"):
+        load_graph(gdir)

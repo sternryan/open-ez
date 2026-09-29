@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
         idx = SourceIndex(texts)
 
         if len(idx) == 0:
-            print("SOURCES: 0 texts, 0 shingles indexed — vacuous gate passes")
+            print("SOURCES: 0 shingles indexed — vacuous gate, FAIL")
             return 2
 
         print(f"SOURCES: {len(texts)} texts, {len(idx)} shingles indexed")

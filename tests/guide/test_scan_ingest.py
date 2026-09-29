@@ -19,23 +19,11 @@ def test_render_pages_zero_padded(tmp_path):
     assert sorted(p.name for p in (tmp_path / "pages").iterdir()) == ["001.jpg", "002.jpg"]
 
 
-def test_main_refuses_out_inside_repo(tmp_path, monkeypatch):
-    """main() should refuse if --out points inside the git repo root"""
-    # Create a tmp repo-like structure
-    repo_root = tmp_path / "fake_repo"
-    repo_root.mkdir()
-    (repo_root / ".git").mkdir()
-    (repo_root / "guide").mkdir()
-    monkeypatch.chdir(repo_root / "guide")
-
-    out_inside_repo = repo_root / "output"
+def test_main_refuses_out_inside_repo_even_with_cwd_elsewhere(tmp_path, monkeypatch):
+    from guide.scan_ingest import REPO_ROOT
+    monkeypatch.chdir(tmp_path)  # no .git above CWD; guard must use the module's repo root
     pdf = tmp_path / "t.pdf"
     doc = fitz.open(); doc.new_page(); doc.save(pdf)
-
-    # Call main with --out inside repo
-    exit_code = main([str(pdf), "--out", str(out_inside_repo)])
-
-    # Should refuse with exit 2
-    assert exit_code == 2
-    # Should not create output directory
-    assert not out_inside_repo.exists()
+    target = REPO_ROOT / "private" / "scan-test-should-not-exist"
+    assert main([str(pdf), "--out", str(target)]) == 2
+    assert not target.exists()

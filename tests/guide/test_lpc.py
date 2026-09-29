@@ -191,3 +191,12 @@ def test_curly_apostrophe_owners_manual():
 LPC #12, MEO, owner’s manual page 3-4"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
     assert got[12].page == "3-4" and got[12].chapter is None
+
+
+def test_class_followed_by_period_or_eol():
+    got = {c.lpc: c for c in parse_lpcs("THE CANARD PUSHER NO. 25\nLPC #26, MEO.\nLPC #27, MEO\ndesc\n")}
+    assert got[26].cls == "MEO" and got[27].cls == "MEO"
+
+def test_back_cover_entry_line_ignores_next_line_page():
+    got = {c.lpc: c for c in parse_lpcs("THE CANARD PUSHER NO. 25\nLPC #9, MEO, Back cover.\nsee Page 10-3\n")}
+    assert (got[9].page, got[9].chapter) == ("back-cover", None)

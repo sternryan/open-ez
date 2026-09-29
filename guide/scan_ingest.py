@@ -13,6 +13,7 @@ from pathlib import Path
 import fitz
 import yaml
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
 REF = re.compile(r"\b(?:PAGE|PG|P6)\b\s*\.?\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})", re.I)
 
 
@@ -70,27 +71,15 @@ def main(argv: list[str] | None = None) -> int:
         print("error: tesseract not found in PATH", file=sys.stderr)
         return 2
 
-    # Find git repo root by walking up from current directory
-    git_root = None
-    current = Path.cwd()
-    while current != current.parent:
-        if (current / ".git").exists():
-            git_root = current
-            break
-        current = current.parent
-
-    # Resolve --out and check it's not inside the repo
-    out_resolved = a.out.resolve()
-    if git_root is not None:
-        try:
-            # Check if out_resolved is inside git_root
-            out_resolved.relative_to(git_root)
-            # If we get here, it IS inside the repo
-            print(f"error: --out must be outside the git repo (repo root: {git_root})", file=sys.stderr)
-            return 2
-        except ValueError:
-            # NOT inside repo, which is what we want
-            pass
+    # Guard against writing inside this repo: root derived from the module, not the CWD.
+    out_resolved = a.out.expanduser().resolve()
+    try:
+        out_resolved.relative_to(REPO_ROOT)
+    except ValueError:
+        pass  # outside the repo, as required
+    else:
+        print(f"error: --out must be outside the git repo (repo root: {REPO_ROOT})", file=sys.stderr)
+        return 2
 
     n = render_pages(a.pdf, a.out / "pages")
     ocr_pages(a.out / "pages", a.out / "text")
