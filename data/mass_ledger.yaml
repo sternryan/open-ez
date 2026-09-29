@@ -1,0 +1,26 @@
+# Mass/CG ledger. Block 1: the empty aircraft is one row (Block 2 decomposes it).
+# Page numbers are the transcription's printed pages (see data/sources/registry.yaml om-1980 note).
+empty: {weight_lb: 730, arm_in: 111.7, cite: "om-1980:p25 sample empty aircraft 730 at 111.7"}
+loads:
+  oil:       {arm_in: 140.0, cite: "om-1980:p25 oil row station 140"}
+  fuel:      {arm_in: 104.5, cite: "om-1980:p26 fuel rows station 104.5"}
+  pilot:     {arm_in: 59.0,  cite: "om-1980:p25 pilot moment = weight x 59"}
+  passenger: {arm_in: 103.0, cite: "om-1980:p25 passenger moment = weight x 103"}
+  baggage:   {arm_in: 90.0,  cite: "om-1980:p26 baggage row station 90"}
+envelope: {fwd_fs: 97.0, aft_fs: 103.0, max_lb: 1325, takeoff_only_max_lb: 1425,
+           cite: "om-1980:p28 weight and CG chart (read from the image)",
+           placard_cite: "om-1980:p23 CG limits fwd 97.0 aft 103.0",
+           max_cite: "om-1980:p4 max takeoff gross 1325"}
+samples:
+  light_pilot: {items: {oil: 8, fuel: 240, pilot: 135}, book_total_lb: 1113, book_cg_in: 103.96,
+                cite: "om-1980:p26 sample loadings table (rows start p25)"}
+  heavy_pilot: {items: {oil: 8, fuel: 150, pilot: 210, passenger: 210, baggage: 15},
+                book_total_lb: 1323, book_cg_in: 101.06,
+                cite: "om-1980:p26 sample loadings table (rows start p25)"}
+errata:
+  - {what: "light_pilot pilot moment", book: 7865, computed: 7965, cite: "om-1980:p26"}
+  - {what: "heavy_pilot total moment", book: 122706, computed: 133706, cite: "om-1980:p26",
+     note: "the printed CG 101.06 matches the computed moment, so the total is a typo"}
+  - {what: "light_pilot total moment", book: 115708, computed: 115706, cite: "om-1980:p26",
+     note: "the p25 prose prints 115706"}
+  - {what: "light_pilot CG divisor in prose", book: 11133, computed: 1113, cite: "om-1980:p25"}
