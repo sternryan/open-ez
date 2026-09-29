@@ -61,7 +61,7 @@ def test_renders_strict(tmp_path, kw, needle):
 
 def test_renders_stale_layup(tmp_path):
     e = make_export(tmp_path / "e"); r = make_renders(tmp_path / "r", e)
-    (e / "layup.json").write_text((e / "layup.json").read_text().replace('"semi_span": 73.5', '"semi_span": 70'))
+    (e / "layup.json").write_text((e / "layup.json").read_text().replace('"semi_span": 63.0', '"semi_span": 70'))
     with pytest.raises(SchemaError, match="layup.json"):
         build(REPO_GRAPH, tmp_path / "site", models=e / "longez.glb", scan_base=None, docs=None, renders=r)
 

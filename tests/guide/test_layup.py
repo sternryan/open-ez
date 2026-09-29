@@ -96,8 +96,8 @@ def test_alt_text_is_generated_from_counts():
 
 
 def test_layup_json_shape():
-    j = layup.layup_json(layup.plies(G), 73.5)
-    assert j["ops"] == list(layup.INCLUDED_OPS) and j["semi_span"] == 73.5
+    j = layup.layup_json(layup.plies(G), 63.0)
+    assert j["ops"] == list(layup.INCLUDED_OPS) and j["semi_span"] == 63.0
     n = j["nodes"]["canard.shear_web.p1"]
     assert n["component"] == "canard.shear_web" and n["cloth"] == "UND" and n["op_index"] == 0
 

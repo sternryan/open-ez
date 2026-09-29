@@ -22,7 +22,7 @@ def make_export(d: Path) -> Path:
     for i, p in enumerate(pl):
         comps.setdefault(p.component, {})[p.node] = cq.Workplane().box(1, 1, 1).translate((i * 1.5, 0, 2))
     export_components(comps, d / "longez.glb")
-    (d / "layup.json").write_text(json.dumps(layup.layup_json(pl, 73.5)))
+    (d / "layup.json").write_text(json.dumps(layup.layup_json(pl, 63.0)))
     (d / "shots.json").write_text(json.dumps(layup.shots()))
     return d
 

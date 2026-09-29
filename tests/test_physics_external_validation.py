@@ -73,11 +73,9 @@ class TestGeometryAgainstPublishedPlans:
         assert 5.5 <= ar <= 8.5, f"Wing AR {ar:.2f} outside expected range [5.5, 8.5]"
 
     def test_canard_span_is_reasonable(self):
-        """Canard span is ~12.25 ft (147 in) per plans."""
+        """Canard span is 126 in (Roncz core, jig blocks 126 in apart, cobelu ch 30)."""
         span_in = config.geometry.canard_span
-        assert abs(span_in - 147.0) / 147.0 < 0.05, (
-            f"Canard span {span_in:.1f} in deviates >5% from published 147.0 in"
-        )
+        assert span_in == 126.0, f"Canard span {span_in:.1f} in, expected 126.0 in"
 
     def test_wing_sweep_within_expected_range(self):
         """Wing LE sweep should be ~23-27 degrees for Long-EZ planform."""

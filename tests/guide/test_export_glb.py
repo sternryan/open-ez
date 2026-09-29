@@ -68,4 +68,4 @@ def test_real_export_nests_plies_and_keeps_inches(tmp_path):  # viewer parent wa
     for node, info in json.loads((tmp_path / "layup.json").read_text())["nodes"].items():
         assert parent[idx[node]] == info["component"], node
     ys = [v for a in j["accessors"] if "max" in a and len(a["max"]) == 3 for v in (a["min"][1], a["max"][1])]
-    assert min(ys) >= -1e-6 and abs(max(ys) - 73.5) < 0.01  # inches, BL 0..semi-span before the root Z-up→Y-up rotation
+    assert min(ys) >= -1e-6 and abs(max(ys) - 63.0) < 0.01  # inches, BL 0..semi-span before the root Z-up→Y-up rotation

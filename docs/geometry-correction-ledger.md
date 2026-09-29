@@ -29,3 +29,39 @@ plan's rule against measuring undimensioned images).
 
 **Decision:** Task 3 uses `canard_chord = 15.25` (the mean of the old 17.0 / 13.5 pair) with status
 `unsourced` and an empty source.
+
+## Test ledger
+
+Every test that moved when the geometry switched to book values in the published frame
+(`datum_offset_in = 0`, single canard chord, canard span 126 in). Computed after the change:
+NP 125.85 in (published 108.0, gap +17.85); CG fwd 116.85 (published 99.0, gap +17.85); CG aft
+121.85 (published 104.0, gap +17.85). No tolerance or bound was widened.
+
+- **(a)** Pinned to a retired number: the expectation was updated to the new value.
+- **(b)** A physics sanity bound that book geometry now fails: strict `xfail` citing its row; the
+  bound itself is unchanged.
+- **(c)** Test-oracle defect: the test's own method was unreliable; the oracle was fixed, bounds kept.
+
+The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out of scope and has no row.
+
+| # | test | old expectation | new value | category | why |
+|---|---|---|---|---|---|
+| 1 | `tests/guide/test_export_glb.py::test_real_export_nests_plies_and_keeps_inches` (also `tests/guide/render_fixture.py`, `tests/guide/test_layup.py::test_layup_json_shape`, `tests/guide/test_build_site.py::test_renders_stale_layup` (its replace target): same retired number) | max Y (semi-span) 73.5 in | 63.0 in | (a) | 73.5 came from the retired 147 in canard span; book span is 126 in (semi-span 63.0). |
+| 2 | `tests/guide/test_layup_geometry.py::test_foam_volume_is_core_minus_cutters` | cutter volumes from `core.intersect(cutter)` on the generator core | cutter volumes from the ruled loft `build_layup` cuts, plus assert loft volume within 1% of generator core; original 1% asserts kept | (c) | `core.intersect` on the BSPLINE core is nondeterministic in OCCT (bottom spar cap 0.0 on first call, 32.4 on repeats, same inputs). |
+| 3 | `tests/test_canard_stall_and_downwash.py::TestCanardMAC::test_canard_mac_less_than_root_chord` | MAC < root chord 17.0 and > tip chord 13.5 | renamed `test_canard_mac_equals_chord_for_rectangle`: MAC == `canard_chord`, root == tip | (a) | Pinned to the retired 17.0 / 13.5 taper; the canard is now a rectangle. |
+| 4 | `tests/test_datum_resolution.py::TestDatumOffset::test_datum_offset_field_exists` | float, > 0 | float, == 0.0 | (a) | Retired fitted offset 45.5. |
+| 5 | `tests/test_datum_resolution.py::TestDatumOffset::test_np_translates_to_published_range` | `to_published_datum(153.5)` in [98, 114] | renamed `test_to_published_datum_is_identity`: `to_published_datum(x) == x` | (a) | Pinned to retired offset (153.5 - 45.5). |
+| 6 | `tests/test_datum_resolution.py::TestDatumOffset::test_offset_is_positive` | offset > 0 | renamed `test_offset_is_zero`: offset == 0.0 | (a) | Retired fitted offset 45.5. |
+| 7 | `tests/test_datum_resolution.py::TestDatumReferenceDataConsistency::test_published_np_matches_translation` | computed NP within 8 in of 108.0 | unchanged, strict xfail; gap +17.85 in (125.85 vs 108.0) | (b) | Physics bound; book geometry does not yet reproduce the published NP. Reported in Task 5. |
+| 8 | `tests/test_datum_resolution.py::TestDatumReferenceDataConsistency::test_published_cg_range_is_reasonable` | CG fwd/aft within 10 in of 99.0 / 104.0 | unchanged, strict xfail; gap fwd +17.85 in (116.85 vs 99.0), aft +17.85 in (121.85 vs 104.0) | (b) | Physics bound, same NP offset carried into the CG limits. |
+| 9 | `tests/test_physics_external_validation.py::TestGeometryAgainstPublishedPlans::test_canard_span_is_reasonable` | span within 5% of 147.0 in | span == 126.0 in | (a) | 147 is retired. 126 = Roncz core, jig blocks 126 in apart (cobelu ch 30); the 142 in GU span (plans p.54) is reference only. Note: `reference_data.json` `canard_span_in` 147 (labelled raf-cp31) was not found in the CP1-82 text search and is contradicted by the book; left unchanged, flagged for the lead. |
+| 10 | `tests/test_physics_regression.py::test_physics_regressions_match_accuracy_report` | matches old `accuracy_report.json` (Phase 5 fit, NP 108.0007) | not changed now | (a) | Baseline is the retired Phase 5 report. Stays red until Task 5 regenerates the report. |
+| 11 | `tests/test_precision_validation.py::test_np_precision_2inch` | NP within 2 in of 108.0 | unchanged, strict xfail; gap +17.85 in | (b) | Physics bound (2.0 in tolerance); Phase 5 fit retired. |
+| 12 | `tests/test_precision_validation.py::test_cg_fwd_limit_precision` | CG fwd within 1 in of 99.0 | unchanged, strict xfail; gap +17.85 in | (b) | Physics bound (1.0 in tolerance); Phase 5 fit retired. |
+| 13 | `tests/test_precision_validation.py::test_cg_aft_limit_precision` | CG aft within 1 in of 104.0 | unchanged, strict xfail; gap +17.85 in | (b) | Physics bound (1.0 in tolerance); Phase 5 fit retired. |
+| 14 | `tests/test_regression_lock.py::test_regression_neutral_point_external_truth` (split from `test_regression_neutral_point`) | NP within 2 in of 108.0 (reference_data) | unchanged, strict xfail; gap +17.85 in | (b) | External-truth half of the split. |
+| 15 | `tests/test_regression_lock.py::test_regression_neutral_point_drift` (split) | NP within 0.01 in of `LOCKED_NP_PUBLISHED` (108.0007) | `LOCKED_NP_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
+| 16 | `tests/test_regression_lock.py::test_regression_cg_fwd_external_truth` (split from `test_regression_cg_fwd`) | CG fwd within 1 in of 99.0 | unchanged, strict xfail; gap +17.85 in | (b) | External-truth half of the split. |
+| 17 | `tests/test_regression_lock.py::test_regression_cg_fwd_drift` (split) | CG fwd within 0.01 in of `LOCKED_CG_FWD_PUBLISHED` | `LOCKED_CG_FWD_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
+| 18 | `tests/test_regression_lock.py::test_regression_cg_aft_external_truth` (split from `test_regression_cg_aft`) | CG aft within 1 in of 104.0 | unchanged, strict xfail; gap +17.85 in | (b) | External-truth half of the split. |
+| 19 | `tests/test_regression_lock.py::test_regression_cg_aft_drift` (split) | CG aft within 0.01 in of `LOCKED_CG_AFT_PUBLISHED` | `LOCKED_CG_AFT_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |

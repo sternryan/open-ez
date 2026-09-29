@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "created": "2026-03-10",
     "description": "Curated external reference dataset for Long-EZ Model 61. Each entry cites its source. Used by Phase 4+ validation to compare computed values against published specifications. This is the single authoritative source of published specs, wind tunnel data, and community build measurements.",
-    "datum_note": "All fuselage stations (FS) in this file use the PUBLISHED Long-EZ datum from RAF CP-29/CP-31 (nose = FS 0). Internal code FS values differ by ~45.5 inches. Use config.geometry.to_published_datum() to convert."
+    "datum_note": "All fuselage stations (FS) in this file use the PUBLISHED Long-EZ datum from RAF CP-29/CP-31 (nose = FS 0). Code stations use the published datum directly (datum_offset_in = 0)."
   },
   "sources": {
     "raf-cp29": {
