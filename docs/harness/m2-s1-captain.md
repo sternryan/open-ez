@@ -31,3 +31,4 @@
 - T6 · captain re-verify · done · tests/guide 146 passed. commit 630afa2.
 - final · captain · FOUND: every M2 test (layup, layup_geometry, export_glb, render_cutaway) was cwd-relative (plan's `Path("guide/graph")`), 17 failed + 6 errors when run from /tmp; M1 tests were not. Crew/sonnet anchored to ROOT = Path(__file__).resolve().parents[2] (test files only). Re-verified 146 passed from repo root AND /tmp. commit ab913fc.
 - final · captain · compute-fabric-dev: another lane committed 4b7c15a on top of 39ed122 during the session (not ours; untouched). Other-lane untracked docs still untouched.
+- T7 · lead · live · smoke OPTIX OK after refactor; hero-bl5 rendered (3 runs: silent death → traceback-to-out/ fix; no section face → weld before MANIFOLD cut; wide frame + LE nose fix). Ryan GATE PASS on v2 2026-09-29. Renders key 3802227e…

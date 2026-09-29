@@ -75,8 +75,10 @@ def _normals(p: np.ndarray, side: str) -> np.ndarray:
     return n if (n[:, 1].mean() * want) > 0 else -n
 
 
-def _band(p: np.ndarray, side: str, d0: float, d1: float) -> np.ndarray:
+def _band(p: np.ndarray, side: str, d0: float, d1: float, le_forward: bool = False) -> np.ndarray:
     n = _normals(p, side)
+    if le_forward:  # skins start at the LE: offset straight forward there so top and bottom meet at the nose
+        n[0] = (-1.0, 0.0)
     return np.vstack([p + d0 * n, (p + d1 * n)[::-1]])
 
 
@@ -102,7 +104,7 @@ def _skin_ply(pf: Planform, p: layup.Ply) -> cq.Solid:
     side = "top" if p.component == "canard.skin_top" else "bottom"
     d0 = (p.order - 1) * (PLY_T + PLY_GAP)
     end = p.bl_max if p.bl_max is not None else pf.semi_span
-    return _loft(lambda bl: _band(pf.surface(bl, side), side, d0, d0 + PLY_T), 0.0, end)
+    return _loft(lambda bl: _band(pf.surface(bl, side), side, d0, d0 + PLY_T, le_forward=True), 0.0, end)
 
 
 def _web_ply(pf: Planform, p: layup.Ply, pad: float = 0.0) -> cq.Solid:

@@ -58,6 +58,9 @@ set +e; "$FABRIC_GPU" run blender.sh layup_cutaway "$JOB" --no-wait --expect-s "
 
 waited=0
 until ssh "$ANVIL" "test -f $JOB/out/manifest.json"; do
+  if ssh "$ANVIL" "grep -q LAYUP_CUTAWAY_FAILED $JOB/out/log.txt 2>/dev/null"; then
+    echo "render job failed on anvil:" >&2; ssh "$ANVIL" "tail -20 $JOB/out/log.txt" >&2; exit 5
+  fi
   [ "$waited" -ge $((EXPECT + 300)) ] && { echo "no manifest after ${waited}s; see ssh $ANVIL cat $JOB/out/log.txt" >&2; exit 5; }
   sleep "$POLL_S"; waited=$((waited + POLL_S)); [ "$POLL_S" = 0 ] && waited=$((waited + 1))
 done
