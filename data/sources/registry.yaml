@@ -3,10 +3,11 @@
 sources:
   om-1980:
     title: Long-EZ Owner's Manual
-    edition: first edition, May 1980 (Rutan Aircraft Factory)
+    edition: RAF Owner's Manual (transcription); includes LPC 116 aft limit 103 (CP 37, 1983), so later than May 1980 first edition; exact revision unconfirmed
     obtain: public transcription in the cobelu/Long-EZ repository ("Owners Manual")
     copy: transcription
     page_basis: printed
+    note: printed page numbers are the transcription's; original page numbers differ (e.g. CP 37 cites page 30 for the CG chart)
   plans-1980:
     title: Long-EZ plans, Section I
     edition: March 1980 first edition
@@ -30,4 +31,28 @@ sources:
     edition: dated per citation
     obtain: recorded in docs/geometry-correction-ledger.md
     copy: owner
+    page_basis: pdf
+  cp-29:
+    title: The Canard Pusher No. 29
+    edition: July 1981
+    obtain: cozybuilders.org Canard Pusher archive (1981-07_cp-29.pdf)
+    copy: ocr
+    page_basis: pdf
+  cp-31:
+    title: The Canard Pusher No. 31
+    edition: January 1982
+    obtain: cozybuilders.org Canard Pusher archive (1982-01_cp-31.pdf)
+    copy: ocr
+    page_basis: pdf
+  cp-43:
+    title: The Canard Pusher No. 43
+    edition: January 1985
+    obtain: cozybuilders.org Canard Pusher archive (1985-01_cp-43.pdf)
+    copy: ocr
+    page_basis: pdf
+  cp-44:
+    title: The Canard Pusher No. 44
+    edition: April 1985
+    obtain: cozybuilders.org Canard Pusher archive (1985-04_cp-44.pdf)
+    copy: ocr
     page_basis: pdf
