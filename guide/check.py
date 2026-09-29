@@ -9,7 +9,7 @@ from guide.linker import candidates, recall
 from guide.lpc import parse_lpcs
 from guide.overlap import SourceIndex
 from guide.schema import SchemaError, authored_texts, load_graph, validate
-from guide.sources import ENV, load_markers, load_source_texts, source_paths
+from guide.sources import ENV, load_markers, load_source_texts, source_paths, source_problems
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,18 +29,49 @@ def main(argv: list[str] | None = None) -> int:
     if a.schema_only:
         print("OVERLAP GATE NOT RUN (--schema-only)")
     else:
+        # Parse chapters early to catch errors
+        try:
+            chapters_set = {int(c) for c in a.chapters.split(",")}
+        except ValueError:
+            print(f"--chapters parse error: '{a.chapters}' is not a comma-separated list of integers")
+            return 2
+
         paths = source_paths()
         missing = [ENV[k] for k, p in paths.items() if p is None]
-        if missing:
-            print(f"SOURCES MISSING: {', '.join(missing)} — full-mode gate cannot run")
+        problems = source_problems(paths)
+
+        if missing or problems:
+            if missing:
+                print(f"SOURCES MISSING: {', '.join(missing)} — full-mode gate cannot run")
+            for p in problems:
+                print(p)
             return 2
-        idx = SourceIndex(load_source_texts(paths))
+
+        texts = load_source_texts(paths)
+        idx = SourceIndex(texts)
+
+        if len(idx) == 0:
+            print("SOURCES: 0 texts, 0 shingles indexed — vacuous gate passes")
+            return 2
+
+        print(f"SOURCES: {len(texts)} texts, {len(idx)} shingles indexed")
+
         for loc, text in authored_texts(g):
             for h in idx.hits(text):
-                fails.append(f"OVERLAP: {loc}: '{h}'")
+                # Truncate to first 3 words + "…"
+                words = h.split()[:3]
+                truncated = " ".join(words) + "…"
+                fails.append(f"OVERLAP: {loc}: '{truncated}'")
+
         cands = candidates(g, parse_lpcs(paths["cp"].read_text(errors="ignore")), load_markers(paths["cobelu"]))
-        hits, misses = recall(g, cands, {int(c) for c in a.chapters.split(",")})
-        print(f"RECALL: {len(hits)}/{len(hits) + len(misses)} confirmed annotations recovered")
+        hits, misses = recall(g, cands, chapters_set)
+
+        total = len(hits) + len(misses)
+        if total == 0:
+            print("RECALL: 0/0 (no confirmed annotations in scope)")
+        else:
+            print(f"RECALL: {len(hits)}/{total} confirmed annotations recovered")
+
         fails += [f"RECALL MISS: scan_pp {m.scan_pp} CP {m.cp} LPC {m.lpc}" for m in misses]
 
     for f in fails:
