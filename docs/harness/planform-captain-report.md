@@ -71,6 +71,13 @@ All six tasks are **done** and re-verified by the captain. Nothing was pushed.
    - The oracle now intersects the ruled loft that `build_layup` cuts. A new assert checks that the
      loft is within the existing 1% of the generator core. Both original 1% asserts are kept.
    - The foam itself was always correct: one solid, valid, base minus foam = 83.73 against 83.75 removed.
+   - The lead ruled "fix the oracle" (matches what shipped). Ledger row 2 now records the repro and the
+     BRepGProp numbers.
+   - **Withdrawn claim.** My first note said the generator's spline section is about 4% under the true
+     airfoil area (9.085 against 9.456 in²). Re-measured with BRepGProp, the generator section is 9.463
+     against 9.456, a 0.07% difference. The 9.085, and the 511.3 and 571.4 volumes, came from cq's
+     `Volume()`, which under-reads BSPLINE solids. They did not come from the flaky boolean. There is no
+     generator area deficit, so nothing was added to open issues.
 4. **Red intermediate commits.**
    - 10c4ce9 carried row 10 (fixed at 8525552) and three drift locks (fixed at d50714a), as the plan's
      task order implies.
