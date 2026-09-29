@@ -1,0 +1,9 @@
+# Prior owner's handwritten plans-change notes in the owner's set (transcribed gist, our words).
+# Confirmed by the owner against the page images 2026-09-28.
+- {scan_pp: 54, cp: 27, lpc: 44, class: MEO, text: "Step 1: two 7x14x41 blocks should be one block", confirmed: true}
+- {scan_pp: 54, cp: 27, lpc: 51, class: MEO, text: "Step 1 winglet reference should be chapter 20, not 19", confirmed: true}
+- {scan_pp: 55, cp: 25, lpc: 16, class: MEO, text: "Drop 'centerline' twice; WL 19.4 is correct but not centered on the shear web", confirmed: true}
+- {scan_pp: 56, cp: 26, lpc: 30, class: MEO, text: "Lift-tab drawing: the three holes should be 1/4 inch", confirmed: true}
+- {scan_pp: 56, cp: 26, lpc: 38, class: MEO, text: "Shear web UND: cut 6 pieces, not 12", confirmed: true}
+- {scan_pp: 171, cp: 25, lpc: 7, class: MEO, text: "Wing root leading edge is 113.9, not 113.4", confirmed: true}
+- {scan_pp: 171, cp: 25, lpc: 24, class: MEO, text: "Nose gear centerline is WL -22, not -23", confirmed: true}
