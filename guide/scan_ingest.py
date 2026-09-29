@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -12,7 +13,7 @@ from pathlib import Path
 import fitz
 import yaml
 
-REF = re.compile(r"(?:PAGE|PG|P6)\s*\.?\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})", re.I)
+REF = re.compile(r"\b(?:PAGE|PG|P6)\b\s*\.?\s*(\d{1,2})\s*[-–—]\s*(\d{1,2})", re.I)
 
 
 def parse_page_ref(text: str) -> str | None:
@@ -22,10 +23,10 @@ def parse_page_ref(text: str) -> str | None:
 
 def render_pages(pdf: Path, out_dir: Path, dpi: int = 150) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
-    doc = fitz.open(pdf)
-    for i, page in enumerate(doc, start=1):
-        page.get_pixmap(dpi=dpi).save(out_dir / f"{i:03d}.jpg", jpg_quality=80)
-    return len(doc)
+    with fitz.open(pdf) as doc:
+        for i, page in enumerate(doc, start=1):
+            page.get_pixmap(dpi=dpi).save(out_dir / f"{i:03d}.jpg", jpg_quality=80)
+        return len(doc)
 
 
 def _ocr(img: Path) -> str:
@@ -42,19 +43,19 @@ def ocr_pages(pages_dir: Path, text_dir: Path) -> int:
 
 
 def propose_page_map(pdf: Path) -> dict[int, str | None]:
-    doc = fitz.open(pdf)
     out: dict[int, str | None] = {}
-    tmp = Path(tempfile.mkdtemp()) / "strip.png"
-    for i, page in enumerate(doc, start=1):
-        r = page.rect
-        ref = None
-        for clip in (fitz.Rect(0, r.height * 0.86, r.width, r.height), fitz.Rect(0, 0, r.width, r.height * 0.10)):
-            page.get_pixmap(dpi=150, clip=clip).save(tmp)
-            ref = parse_page_ref(_ocr(tmp))
-            if ref:
-                break
-        out[i] = ref
-    tmp.unlink(missing_ok=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir) / "strip.png"
+        with fitz.open(pdf) as doc:
+            for i, page in enumerate(doc, start=1):
+                r = page.rect
+                ref = None
+                for clip in (fitz.Rect(0, r.height * 0.86, r.width, r.height), fitz.Rect(0, 0, r.width, r.height * 0.10)):
+                    page.get_pixmap(dpi=150, clip=clip).save(tmp)
+                    ref = parse_page_ref(_ocr(tmp))
+                    if ref:
+                        break
+                out[i] = ref
     return out
 
 
@@ -63,6 +64,34 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("pdf", type=Path)
     ap.add_argument("--out", type=Path, default=Path("~/.cache/long-ez/scan-1980").expanduser())
     a = ap.parse_args(argv)
+
+    # Check if tesseract is available
+    if shutil.which("tesseract") is None:
+        print("error: tesseract not found in PATH", file=sys.stderr)
+        return 2
+
+    # Find git repo root by walking up from current directory
+    git_root = None
+    current = Path.cwd()
+    while current != current.parent:
+        if (current / ".git").exists():
+            git_root = current
+            break
+        current = current.parent
+
+    # Resolve --out and check it's not inside the repo
+    out_resolved = a.out.resolve()
+    if git_root is not None:
+        try:
+            # Check if out_resolved is inside git_root
+            out_resolved.relative_to(git_root)
+            # If we get here, it IS inside the repo
+            print(f"error: --out must be outside the git repo (repo root: {git_root})", file=sys.stderr)
+            return 2
+        except ValueError:
+            # NOT inside repo, which is what we want
+            pass
+
     n = render_pages(a.pdf, a.out / "pages")
     ocr_pages(a.out / "pages", a.out / "text")
     (a.out / "page_map.proposed.yaml").write_text(yaml.safe_dump(propose_page_map(a.pdf)))
