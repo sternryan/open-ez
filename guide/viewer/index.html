@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Long-EZ Build Rehearsal</title>
+  <link rel="stylesheet" href="css/app.css">
+  <script type="importmap">
+    {"imports": {"three": "./vendor/three/build/three.module.js",
+                 "three/addons/": "./vendor/three/examples/jsm/"}}
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Long-EZ Build Rehearsal <small>canard</small></h1>
+    <label>Canard <select id="variant"><option value="roncz">Roncz (ch 30)</option><option value="gu">GU (ch 10, original)</option></select></label>
+  </header>
+  <main>
+    <nav><ol id="ops"></ol></nav>
+    <section id="viewport"><canvas id="c"></canvas><p id="model-status"></p><div id="parts"></div></section>
+    <aside>
+      <h2 id="op-title"></h2><p id="op-summary"></p>
+      <div id="changes"></div>
+      <div id="source"></div>
+      <h3>Checklist</h3><ul id="checklist"></ul>
+    </aside>
+  </main>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
