@@ -166,14 +166,13 @@ class WingGenerator(FoamCore):
             # Get airfoil wire at local chord
             wire = station.airfoil.get_cadquery_wire(station.chord)
 
-            # Transform to station position
-            # Wire is in XY plane; we need to:
-            # 1. Translate by x_offset in X (sweep)
-            # 2. Translate by butt_line in Y (spanwise)
-            # 3. Translate by z_offset in Z (dihedral)
+            # The profile is built in the XY plane (x = chord, y = thickness); G-code and
+            # DXF export consume it that way, so rotate it here, not in the airfoil:
+            # +90 deg about X maps thickness to +Z.
+            wire_xz = wire.rotate(cq.Vector(0, 0, 0), cq.Vector(1, 0, 0), 90)
 
-            # CadQuery wire manipulation
-            wire_moved = wire.moved(
+            # Place the station: sweep along X, span along Y (butt line), dihedral along Z.
+            wire_moved = wire_xz.moved(
                 cq.Location(
                     cq.Vector(station.x_offset, station.butt_line, station.z_offset)
                 )
