@@ -1,0 +1,33 @@
+# Every citation in open-ez points at one of these ids. `copy` says what the local copy is;
+# `page_basis` says which page numbers citations use. Local copies are private and never committed.
+sources:
+  om-1980:
+    title: Long-EZ Owner's Manual
+    edition: first edition, May 1980 (Rutan Aircraft Factory)
+    obtain: public transcription in the cobelu/Long-EZ repository ("Owners Manual")
+    copy: transcription
+    page_basis: printed
+  plans-1980:
+    title: Long-EZ plans, Section I
+    edition: March 1980 first edition
+    obtain: owner's printed set (phone scan, private)
+    copy: scan
+    page_basis: pdf
+  cp-text:
+    title: The Canard Pusher, issues 1-82, sectioned text
+    edition: RAF newsletter 1974-1994, community text compilation
+    obtain: cozybuilders.org Canard Pusher archive (CPs_1_to_82_Sections.txt)
+    copy: transcription
+    page_basis: issue
+  cobelu:
+    title: cobelu/Long-EZ plans transcription
+    edition: community markdown transcription of Section I
+    obtain: github.com/cobelu/Long-EZ
+    copy: transcription
+    page_basis: pdf
+  owner-check:
+    title: Owner by-eye reads of the plans scan
+    edition: dated per citation
+    obtain: recorded in docs/geometry-correction-ledger.md
+    copy: owner
+    page_basis: pdf
