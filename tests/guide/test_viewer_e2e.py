@@ -125,3 +125,171 @@ def test_gu_lists_no_geometry_chip_and_hides_unused_meshes(site):
         assert "canard.core" not in pg.evaluate("window.__guide.visibleMeshComponents()")
         b.close()
     s.shutdown()
+
+
+# ---- M2 Task 9: cutaway toggle, glance view, states
+from tests.guide.render_fixture import ROOT, make_export, make_renders  # noqa: E402
+
+
+@pytest.fixture
+def csite(tmp_path):
+    e = make_export(tmp_path / "e"); r = make_renders(tmp_path / "r", e)
+    out = tmp_path / "site"
+    build(ROOT / "guide" / "graph", out, models=e / "longez.glb", scan_base=None, docs=None, renders=r)
+    return out
+
+
+def test_cutaway_toggle_memory_and_hidden_on_non_layup(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url, width=1180)
+        pg.select_option("#variant", "roncz")
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        assert pg.is_visible("#viewtoggle")
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"
+        assert pg.get_attribute("#cutimg", "src") == "renders/op-r30-bottom-skin.png"
+        assert pg.get_attribute("#cutimg", "alt").startswith("After ")
+        assert not pg.is_visible("#c") and not pg.is_visible("#parts") and pg.is_visible("#cutpane")
+        assert pg.get_attribute('#viewtoggle [data-view="cutaway"]', "aria-checked") == "true"
+        assert pg.get_attribute('#viewtoggle [data-view="3d"]', "aria-checked") == "false"
+        assert "not to scale" in pg.text_content("#cutcap").lower()
+        pg.click('#viewtoggle [data-view="3d"]')
+        assert pg.is_visible("#c") and not pg.is_visible("#cutpane")
+        assert pg.get_attribute('#viewtoggle [data-view="3d"]', "aria-checked") == "true"
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        pg.click('#ops li[data-op="r30.jig-assemble"]')
+        assert pg.is_visible("#c") and not pg.is_visible("#cutpane")
+        assert not pg.is_visible("#viewtoggle") and pg.evaluate("window.__guide.paneMode()") == "3d"
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"  # remembered
+        b.close()
+    s.shutdown()
+
+
+def test_glance_view(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        for width in (1180, 820):
+            b, pg = open_page(p, url, width=width)
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.click('#ops li[data-op="__glance"]')
+            assert pg.locator("#glance img").count() == 2 and pg.is_visible("#legend")
+            assert "shear web 6 at BL 5" in pg.text_content("#op-summary")
+            assert pg.evaluate("window.__guide.paneMode()") == "glance"
+            assert not pg.is_visible("#c") and not pg.is_visible("#parts")
+            assert "not to scale" in pg.text_content("#legend").lower()
+            # heroes are wide frames: nothing wider than its container, viewport contains the stack
+            assert pg.evaluate("""() => [...document.querySelectorAll('#glance img')].every(i => {
+                const f = i.closest('figure').getBoundingClientRect();
+                return i.getBoundingClientRect().width <= f.width + 1; })""")
+            for w in (820, 390):
+                pg.set_viewport_size({"width": w, "height": 900}); pg.wait_for_timeout(100)
+                assert pg.evaluate("""() => { const v = document.querySelector('#viewport').getBoundingClientRect(),
+                    g = document.querySelector('#glance').getBoundingClientRect();
+                    return v.bottom >= g.bottom - 1 && v.top <= g.top + 1; }""")
+                assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            pg.set_viewport_size({"width": width, "height": 900})
+            # glance is not an op: variant change, resize, canvas click, then a real op must not throw
+            pg.select_option("#variant", "gu")
+            assert pg.evaluate("window.__guide.paneMode()") == "glance"
+            pg.set_viewport_size({"width": width, "height": 700})
+            pg.select_option("#variant", "roncz")
+            pg.click('#ops li[data-op="__glance"]')
+            pg.click('#ops li[data-op="r30.bottom-skin"]')
+            assert pg.evaluate("window.__guide.paneMode()") == "3d"
+            pg.click("#c", position={"x": 20, "y": 20}, force=True)
+            pg.click('#ops li[data-op="__glance"]')
+            pg.click('#ops li[data-op="r30.jig-assemble"]')
+            assert errors == []
+            b.close()
+    s.shutdown()
+
+
+def test_missing_cutaway_png_shows_retry(csite):  # Review Focus 4
+    png = csite / "renders" / "op-r30-bottom-skin.png"
+    png_bak = csite / "bak.png"; shutil.copy(png, png_bak); png.unlink()
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url)
+        pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        pg.wait_for_selector("#cuterr:not([hidden])")
+        assert pg.is_visible("text=Cutaway picture didn't load")
+        assert not pg.is_visible("#cutzoom") and not pg.is_visible("#cutimg")
+        assert pg.get_attribute("#cutzoom", "hidden") is not None
+        shutil.copy(png_bak, png)
+        pg.click("#cutretry")
+        pg.wait_for_selector("#cutimg", state="visible")
+        assert "?r=" in pg.get_attribute("#cutimg", "src") and pg.is_visible("#cutzoom")
+        assert not pg.is_visible("#cuterr")
+        pg.click('#viewtoggle [data-view="3d"]')
+        assert pg.evaluate("window.__guide.paneMode()") == "3d"
+        assert pg.is_visible("#c")
+        b.close()
+    s.shutdown()
+
+
+def test_toggle_works_when_localstorage_throws(csite):
+    s, url = serve(csite)
+    init = "Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})"
+    with sync_playwright() as p:
+        b, pg = open_page(p, url, init=init)
+        pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"
+        b.close()
+    s.shutdown()
+
+
+def test_site_without_renders_has_no_toggle_or_glance(site):
+    s, url = serve(site)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url)
+        assert pg.locator('#ops li[data-op="__glance"]').count() == 0
+        assert not pg.is_visible("#viewtoggle")
+        b.close()
+    s.shutdown()
+
+
+def test_toggle_keyboard_and_zoom_escape(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url)
+        pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.focus('#viewtoggle [data-view="3d"]')
+        assert pg.get_attribute('#viewtoggle [data-view="3d"]', "tabindex") == "0"
+        assert pg.get_attribute('#viewtoggle [data-view="cutaway"]', "tabindex") == "-1"
+        pg.keyboard.press("ArrowRight")
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"
+        assert pg.get_attribute('#viewtoggle [data-view="cutaway"]', "aria-checked") == "true"
+        assert pg.get_attribute('#viewtoggle [data-view="cutaway"]', "tabindex") == "0"
+        pg.keyboard.press("ArrowDown")
+        assert pg.evaluate("window.__guide.paneMode()") == "3d"
+        pg.keyboard.press("ArrowUp")
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"
+        pg.click("#cutzoom")
+        assert pg.evaluate("document.querySelector('#zoom').open")
+        pg.keyboard.press("Escape")
+        assert not pg.evaluate("document.querySelector('#zoom').open")
+        b.close()
+    s.shutdown()
+
+
+def test_phone_cutaway_pane_inside_viewport_and_clear_of_toggle(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        for w in (820, 390):
+            b, pg = open_page(p, url, width=w)
+            pg.select_option("#variant", "roncz"); pg.click('#ops li[data-op="r30.bottom-skin"]')
+            pg.click('#viewtoggle [data-view="cutaway"]')
+            pg.wait_for_timeout(200)
+            r = pg.evaluate("""() => { const q = s => document.querySelector(s).getBoundingClientRect();
+                return {v: q('#viewport'), p: q('#cutpane'), t: q('#viewtoggle'), i: q('#cutimg'), a: q('aside')}; }""")
+            assert r["v"]["bottom"] >= r["p"]["bottom"] - 1
+            assert r["i"]["top"] >= r["t"]["bottom"] - 1
+            assert r["a"]["top"] >= r["v"]["bottom"] - 1
+            assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            b.close()
+    s.shutdown()
