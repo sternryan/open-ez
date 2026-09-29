@@ -98,3 +98,45 @@ def test_authored_texts_excludes_annotations(gdir):
     locs = [loc for loc, _ in authored_texts(load_graph(gdir))]
     assert "c10.cores.summary" in locs and "c10.cores.changes[0].note" in locs
     assert not any(loc.startswith("annotation") for loc in locs)
+
+def test_op_missing_title_raises(gdir):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("title: Cut the foam cores", ""))
+    with pytest.raises(SchemaError, match="ch10.yaml") and pytest.raises(SchemaError, match="c10.cores"):
+        load_graph(gdir)
+
+def test_source_with_unknown_key_raises(gdir):
+    p = gdir / "ch10.yaml"
+    p.write_text(p.read_text().replace("sources: [{doc: scan-1980, scan_pp: 58}]", "sources: [{doc: scan-1980, scan_pp: 58, foo: bar}]"))
+    with pytest.raises(SchemaError):
+        load_graph(gdir)
+
+def test_pages_yaml_as_list_raises(gdir):
+    p = gdir / "pages.yaml"
+    p.write_text("- item1\n- item2\n")
+    with pytest.raises(SchemaError):
+        load_graph(gdir)
+
+def test_stub_with_bad_variants_and_components(gdir):
+    write(gdir, "ch10.yaml", """
+        - id: c03.layup-skills
+          chapter: 3
+          title: Composite layup skills
+          stub: true
+          variants: [vari]
+          components: [canard.ghost]
+        - id: c10.cores
+          chapter: 10
+          title: Cut the foam cores
+          summary: Hot-wire the four canard cores from the templates.
+          variants: [gu]
+          requires: [c03.layup-skills]
+          components: [canard.core]
+          geometry_visible: true
+          sources: [{doc: scan-1980, scan_pp: 58}]
+          changes:
+            - {cp: 25, lpc: 16, class: MEO, status: verified, kind: official, note: Shear web line moves to WL 19.4., annotation_pp: 58}
+          completion: [Four cores cut and labeled]
+    """)
+    errs = validate(load_graph(gdir))
+    assert any("vari" in e for e in errs) and any("canard.ghost" in e for e in errs)

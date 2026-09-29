@@ -87,52 +87,90 @@ def _read(path: Path):
         raise SchemaError(f"{path.name}: malformed YAML: {e}") from e
 
 
-def _op(d: dict) -> Operation:
-    return Operation(
-        id=d["id"],
-        chapter=int(d["chapter"]),
-        title=d["title"],
-        summary=d.get("summary", ""),
-        variants=tuple(d.get("variants", ["both"])),
-        requires=tuple(d.get("requires", [])),
-        components=tuple(d.get("components", [])),
-        geometry_visible=bool(d.get("geometry_visible", True)),
-        materials=tuple(d.get("materials", [])),
-        sources=tuple(Source(**s) for s in d.get("sources", [])),
-        changes=tuple(
-            Change(cp=c["cp"], lpc=c["lpc"], cls=c["class"], status=c["status"], kind=c["kind"],
-                   note=c.get("note", ""), annotation_pp=c.get("annotation_pp"))
-            for c in d.get("changes", [])
-        ),
-        completion=tuple(d.get("completion", [])),
-        inspection=bool(d.get("inspection", False)),
-        stub=bool(d.get("stub", False)),
-    )
+def _op(d: dict, file_name: str, idx: int) -> Operation:
+    try:
+        op_id = d.get("id", f"entry_{idx}")
+        sources = []
+        for s in d.get("sources", []):
+            try:
+                sources.append(Source(**s))
+            except (TypeError, ValueError, AttributeError) as e:
+                raise SchemaError(f"{file_name} entry {idx} ({op_id}): source error: {e}") from e
+
+        changes = []
+        for c in d.get("changes", []):
+            try:
+                changes.append(Change(cp=c["cp"], lpc=c["lpc"], cls=c["class"], status=c["status"], kind=c["kind"],
+                       note=c.get("note", ""), annotation_pp=c.get("annotation_pp")))
+            except (KeyError, TypeError, ValueError, AttributeError) as e:
+                raise SchemaError(f"{file_name} entry {idx} ({op_id}): change error: {e}") from e
+
+        return Operation(
+            id=d["id"],
+            chapter=int(d["chapter"]),
+            title=d["title"],
+            summary=d.get("summary", ""),
+            variants=tuple(d.get("variants", ["both"])),
+            requires=tuple(d.get("requires", [])),
+            components=tuple(d.get("components", [])),
+            geometry_visible=bool(d.get("geometry_visible", True)),
+            materials=tuple(d.get("materials", [])),
+            sources=tuple(sources),
+            changes=tuple(changes),
+            completion=tuple(d.get("completion", [])),
+            inspection=bool(d.get("inspection", False)),
+            stub=bool(d.get("stub", False)),
+        )
+    except (KeyError, TypeError, ValueError, AttributeError) as e:
+        op_id = d.get("id", f"entry_{idx}")
+        raise SchemaError(f"{file_name} entry {idx} ({op_id}): {e}") from e
 
 
 def load_graph(graph_dir: Path) -> Graph:
     g = Graph()
     comp = graph_dir / "components.yaml"
     if comp.exists():
-        for c in _read(comp):
-            g.components[c["id"]] = Component(c["id"], c.get("label", c["id"]), c["fidelity"])
+        for idx, c in enumerate(_read(comp)):
+            try:
+                g.components[c["id"]] = Component(c["id"], c.get("label", c["id"]), c["fidelity"])
+            except (KeyError, TypeError, ValueError, AttributeError) as e:
+                raise SchemaError(f"components.yaml entry {idx}: {e}") from e
     pages = graph_dir / "pages.yaml"
     if pages.exists():
-        g.pages = {int(k): str(v) for k, v in (_read(pages) or {}).items()}
+        try:
+            pages_data = _read(pages)
+            if not isinstance(pages_data, dict):
+                raise SchemaError("pages.yaml: must be a mapping, not a list")
+            g.pages = {int(k): str(v) for k, v in (pages_data or {}).items()}
+        except SchemaError:
+            raise
+        except (TypeError, ValueError, AttributeError) as e:
+            raise SchemaError(f"pages.yaml: {e}") from e
     ann = graph_dir / "annotations.yaml"
     if ann.exists():
-        g.annotations = [
-            Annotation(a["scan_pp"], a["cp"], a["lpc"], a["class"], a.get("text", ""), bool(a.get("confirmed", False)))
-            for a in _read(ann)
-        ]
+        try:
+            g.annotations = [
+                Annotation(a["scan_pp"], a["cp"], a["lpc"], a["class"], a.get("text", ""), bool(a.get("confirmed", False)))
+                for idx, a in enumerate(_read(ann))
+            ]
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
+            raise SchemaError(f"annotations.yaml entry {idx}: {e}") from e
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue
-        for d in _read(f):
-            op = _op(d)
-            if op.id in g.ops:
-                raise SchemaError(f"duplicate op id {op.id} in {f.name}")
-            g.ops[op.id] = op
+        try:
+            ops_data = _read(f)
+            if not isinstance(ops_data, list):
+                raise SchemaError(f"{f.name}: must be a list of operations")
+            for idx, d in enumerate(ops_data):
+                op = _op(d, f.name, idx)
+                if op.id in g.ops:
+                    raise SchemaError(f"duplicate op id {op.id} in {f.name}")
+                g.ops[op.id] = op
+        except SchemaError:
+            raise
+        except (TypeError, ValueError, AttributeError) as e:
+            raise SchemaError(f"{f.name}: {e}") from e
     return g
 
 
@@ -166,14 +204,24 @@ def validate(g: Graph) -> list[str]:
         for r in op.requires:
             if r not in g.ops:
                 errs.append(f"{op.id}: requires unknown op {r}")
-        if op.stub:
-            continue
+        # Check variants and components for ALL ops (including stubs)
         for v in op.variants:
             if v not in VARIANTS:
                 errs.append(f"{op.id}: bad variant {v}")
         for cid in op.components:
             if cid not in g.components:
                 errs.append(f"{op.id}: unknown component {cid}")
+        # Check change status and kind for ALL ops (including stubs)
+        for ch in op.changes:
+            if ch.status not in STATUS:
+                errs.append(f"{op.id}: bad change status {ch.status}")
+            if ch.kind not in KIND:
+                errs.append(f"{op.id}: bad change kind {ch.kind}")
+            if ch.status == "verified" and ch.kind == "official" and (ch.cp <= 0 or ch.lpc <= 0):
+                errs.append(f"{op.id}: verified official change needs cp and lpc")
+        # Only non-stub ops need summary, sources, completion
+        if op.stub:
+            continue
         if not op.summary.strip():
             errs.append(f"{op.id}: summary required")
         if not op.sources:
@@ -183,13 +231,6 @@ def validate(g: Graph) -> list[str]:
         for s in op.sources:
             if s.scan_pp is not None and s.scan_pp not in g.pages:
                 errs.append(f"{op.id}: scan_pp {s.scan_pp} not in pages.yaml")
-        for ch in op.changes:
-            if ch.status not in STATUS:
-                errs.append(f"{op.id}: bad change status {ch.status}")
-            if ch.kind not in KIND:
-                errs.append(f"{op.id}: bad change kind {ch.kind}")
-            if ch.status == "verified" and ch.kind == "official" and (ch.cp <= 0 or ch.lpc <= 0):
-                errs.append(f"{op.id}: verified official change needs cp and lpc")
     for a in g.annotations:
         if a.confirmed and (a.cp, a.lpc) not in linked:
             errs.append(f"annotation scan_pp {a.scan_pp} CP {a.cp} LPC {a.lpc} not linked to any op")
