@@ -40,3 +40,9 @@ def test_multiline_description_joined():  # Review Focus 4
 
 def test_toc_headers_do_not_attribute():
     assert all(c.cp in (24, 25) for c in parse_lpcs(FIXTURE))
+
+def test_body_header_without_period():  # Header without period should still match
+    fixture_no_period = """THE CANARD PUSHER  NO 26 Oct 80
+LPC #40, MEO, Page 12-1."""
+    got = {c.lpc: c for c in parse_lpcs(fixture_no_period)}
+    assert got[40].cp == 26
