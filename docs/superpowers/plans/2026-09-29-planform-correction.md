@@ -28,7 +28,7 @@ evidence table.
   ledger row.
 - **Scan hygiene:** no scan content in the repo; quote at most a few words of plans text. Never claim
   the plans are out of copyright.
-- **open-ez is PUBLIC:** no tailnet hostnames, no 100.x IPs, no `/Users/…` paths in any committed file.
+- **open-ez is PUBLIC:** no tailnet hostnames, no tailnet IPs, no home-directory paths in any committed file.
 - **Commit hygiene:**
   - Commit messages carry no trailers of any kind.
   - Stage named files only.
@@ -511,9 +511,9 @@ plus any snapshot file the triage marked (a).
 - [ ] **Step 1:** `git fetch origin`; confirm "behind 0".
 - [ ] **Step 2:** `TMPDIR=/tmp ~/.claude/bin/grade-diff.sh -s <session> -r origin/main..HEAD ~/open-ez`,
   unsandboxed. Expect `VERDICT: PASS`.
-- [ ] **Step 3:** Leak scan:
-  `git diff origin/main..HEAD | grep -E '^\+' | grep -cE '(ts\.net|100\.[0-9]+\.[0-9]+\.[0-9]+|/Users/|Downloads|public domain)'`
-  must print 0.
+- [ ] **Step 3:** Leak scan: run the pre-push leak check from the M1 plan
+  (`docs/superpowers/plans/2026-09-28-build-guide-m1.md`, the `git diff origin/main | grep -nE …` line),
+  restricted to added lines. It must find nothing.
 - [ ] **Step 4:** Run a green test unpiped, then `git push origin main` in the same turn as the grade.
 - [ ] **Step 5:** Update memory `project_longez_build_guide` with the NP gap and the chord status.
   Tell Ryan about the by-eye check on p.171 (FS 18.7).
