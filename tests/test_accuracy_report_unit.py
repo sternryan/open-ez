@@ -137,9 +137,28 @@ def test_validate_sources_accepts_reference_data_source():
             }
         ]
     }
-    ref_data = {"aircraft_specs": {"neutral_point_fs": {}}, "airfoil_data": {}}
+    ref_data = {
+        "aircraft_specs": {
+            "neutral_point_fs": {"status": "confirmed", "cite": "om-1980:p3", "value": 1.0}
+        },
+        "airfoil_data": {},
+    }
     # Should not raise
     validate_sources(report, ref_data)
+
+
+def test_validate_sources_rejects_confirmed_spec_with_bad_citation():
+    from scripts.generate_accuracy_report import validate_sources
+
+    report = {"metrics": []}
+    ref_data = {
+        "aircraft_specs": {
+            "neutral_point_fs": {"status": "confirmed", "cite": "nowhere:p1", "value": 1.0}
+        },
+        "airfoil_data": {},
+    }
+    with pytest.raises(ValueError, match="unknown source id"):
+        validate_sources(report, ref_data)
 
 
 def test_validate_sources_accepts_vspaero_native():

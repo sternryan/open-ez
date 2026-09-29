@@ -24,7 +24,7 @@ def test_physics_regressions_match_accuracy_report(tmp_path):
     """Regression check: current physics outputs match Phase 5 calibrated values.
 
     Validates all PASS metrics from accuracy_report.json (9 of 12 metrics).
-    FAIL metrics (static_margin_pct, empty_weight_lb, wing_area_sqft) are known
+    static_margin_pct is NOT GRADED (reference unverified); FAIL metrics (empty_weight_lb, wing_area_sqft) are known
     convention differences, not regressions — they are excluded from this check.
     """
     runner = RegressionRunner(tolerance=0.05)

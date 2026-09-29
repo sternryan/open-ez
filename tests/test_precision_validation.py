@@ -47,51 +47,29 @@ def _load_ref_data() -> dict:
 # ---------------------------------------------------------------------------
 
 
-# Resolved Phase 5: calibrated fs_wing_le from NP delta analysis (delta <2")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 11; gap +17.85 in")
-def test_np_precision_2inch():
-    """VAL-01: Computed NP translated to published datum must be within 2\" of 108.0.
+def test_np_reference_is_unverified_not_graded():
+    """The NP reference (108.0) is unverified, so the model's NP is NOT GRADED against it.
 
-    Known status: XFAIL. The config.geometry.fs_wing_le=133 uses an internal datum
-    value that places NP ~5.79\" aft of the published value. Phase 5 corrects this
-    by calibrating fs_wing_le against the published FS datum.
-
-    This test documents:
-      - Target tolerance: 2.0\" (from reference_data.json neutral_point_fs.tolerance_abs)
-      - Reference value: 108.0\" (published FS datum, RAF CP-29)
-      - Expected delta until Phase 5 fixes: ~5.79\"
+    The value stays in reference_data.json for history only; truth_specs() excludes it.
     """
-    from core.analysis import PhysicsEngine
+    from core.reference import truth_specs
 
     data = _load_ref_data()
-    ref_np = data["aircraft_specs"]["neutral_point_fs"]["value"]
-    tolerance = data["aircraft_specs"]["neutral_point_fs"]["tolerance_abs"]
-
-    engine = PhysicsEngine()
-    metrics = engine.calculate_cg_envelope()
-    computed_np_published = config.geometry.to_published_datum(metrics.neutral_point)
-    delta = abs(computed_np_published - ref_np)
-
-    assert delta <= tolerance, (
-        f"NP precision check FAILED (expected for Phase 4): "
-        f"computed NP = {computed_np_published:.2f}\" (published datum), "
-        f"reference = {ref_np:.1f}\", delta = {delta:.2f}\" exceeds {tolerance:.1f}\" tolerance. "
-        f"Internal NP = {metrics.neutral_point:.2f}\". "
-        f"Phase 5 target: calibrate fs_wing_le to reduce delta to <{tolerance:.1f}\"."
-    )
+    assert data["aircraft_specs"]["neutral_point_fs"]["status"] == "unverified"
+    assert "neutral_point_fs" not in truth_specs(data)
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG fwd limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 12; gap +17.85 in")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 12; gap +19.85 in (116.85 vs 97.0)")
 def test_cg_fwd_limit_precision():
-    """VAL-01: Computed CG forward limit (published datum) must be within 1\" of 99.0.
+    """VAL-01: Computed CG forward limit (published datum) must be within 1\" of 97.0.
 
     Known status: XFAIL. The same fs_wing_le datum error that affects NP also
-    shifts the computed CG envelope fwd limit away from the published 99.0\" FS.
+    shifts the computed CG envelope fwd limit away from the published 97.0\" FS.
 
     This test documents:
       - Target tolerance: 1.0\" (from reference_data.json cg_range_fwd_fs.tolerance_abs)
-      - Reference value: 99.0\" (published FS datum, RAF CP-29)
+      - Reference value: 97.0\" (published FS datum, om-1980:p28)
     """
     from core.analysis import PhysicsEngine
 
@@ -114,16 +92,16 @@ def test_cg_fwd_limit_precision():
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG aft limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 13; gap +17.85 in")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 13; gap +18.85 in (121.85 vs 103.0)")
 def test_cg_aft_limit_precision():
-    """VAL-01: Computed CG aft limit (published datum) must be within 1\" of 104.0.
+    """VAL-01: Computed CG aft limit (published datum) must be within 1\" of 103.0.
 
     Known status: XFAIL. Same fs_wing_le datum error shifts CG aft limit from
-    published 104.0\" FS.
+    published 103.0\" FS.
 
     This test documents:
       - Target tolerance: 1.0\" (from reference_data.json cg_range_aft_fs.tolerance_abs)
-      - Reference value: 104.0\" (published FS datum, RAF CP-29)
+      - Reference value: 103.0\" (published FS datum, om-1980:p28)
     """
     from core.analysis import PhysicsEngine
 
@@ -281,61 +259,35 @@ def test_airfoil_cm_zero_in_reference_data():
 # ---------------------------------------------------------------------------
 
 
-# Resolved Phase 5: stall speed passes with published reference areas (VAL-04 XPASS confirmed)
-def test_stall_speed_within_5pct():
-    """VAL-04: First-principles stall speed must be within 5% of published 56 KTAS.
+def test_stall_speed_reference_is_unverified_not_graded():
+    """The stall speed reference (56 KTAS) is unverified, so stall speed is NOT GRADED.
 
-    Computation uses:
-      - Published reference areas: 94.2 sqft (wing) + 15.6 sqft (canard) = 109.8 sqft total
-        (NOT config areas — per Pitfall 3 in Phase 4 research: area convention mismatch)
-      - config.flight_condition.gross_weight_lb = 1425 lb
-      - config.aero_limits.canard_clmax = 1.35 (canard stalls first — limiting CLmax)
-      - Sea-level density: 0.002377 slug/ft^3
-
-    Formula: V_stall_fps = sqrt(2 * W / (rho * S * CLmax))
-             V_stall_ktas = V_stall_fps / 1.6878
-
-    Reference: RAF CP-29 Performance section, p.20 — canard stall at gross weight.
+    The first-principles stall speed is still computed, from the confirmed areas
+    (wing 81.99 sqft + canard 12.8 sqft, om-1980:p3), canard CLmax 1.35 and config gross weight.
     """
+    from core.reference import truth_specs
+
     data = _load_ref_data()
-    ref_stall_ktas = data["aircraft_specs"]["stall_speed_ktas"]["value"]
-    tolerance_abs = data["aircraft_specs"]["stall_speed_ktas"]["tolerance_abs"]
+    assert data["aircraft_specs"]["stall_speed_ktas"]["status"] == "unverified"
+    truth = truth_specs(data)
+    assert "stall_speed_ktas" not in truth
 
-    # Published reference areas from RAF CP-31 (use these, NOT config areas)
-    wing_area_sqft = data["aircraft_specs"]["wing_area_sqft"]["value"]    # 94.2 sqft
-    canard_area_sqft = data["aircraft_specs"]["canard_area_sqft"]["value"]  # 15.6 sqft
-    total_area_sqft = wing_area_sqft + canard_area_sqft                    # 109.8 sqft
-
-    W = config.flight_condition.gross_weight_lb                             # 1425 lb
+    S = truth["wing_area_sqft"]["value"] + truth["canard_area_sqft"]["value"]
+    W = config.flight_condition.gross_weight_lb
     rho = 0.002377  # slug/ft^3 (sea-level standard atmosphere)
-    S = total_area_sqft                                                     # 109.8 sqft
-    cl_max = config.aero_limits.canard_clmax                                # 1.35 (canard stalls first)
-
-    v_fps = math.sqrt(2.0 * W / (rho * S * cl_max))
-    v_ktas = v_fps / 1.6878  # 1 knot = 1.6878 ft/s
-
-    delta = abs(v_ktas - ref_stall_ktas)
-    tolerance_pct = 0.05 * ref_stall_ktas  # 5% of 56 KTAS = 2.8 KTAS
-
-    assert delta <= tolerance_pct, (
-        f"Stall speed first-principles check: "
-        f"computed V_stall = {v_ktas:.1f} KTAS, "
-        f"published = {ref_stall_ktas} KTAS, "
-        f"delta = {delta:.2f} KTAS exceeds 5% tolerance ({tolerance_pct:.2f} KTAS). "
-        f"Areas used: wing={wing_area_sqft} sqft + canard={canard_area_sqft} sqft = {S} sqft. "
-        f"W={W} lb, rho={rho} slug/ft^3, CLmax={cl_max}. "
-        f"Phase 5 target: lift distribution modeling to match 56 KTAS within 5%."
-    )
+    v_ktas = math.sqrt(2.0 * W / (rho * S * config.aero_limits.canard_clmax)) / 1.6878
+    assert 30.0 < v_ktas < 100.0, f"computed stall speed {v_ktas:.1f} KTAS is not physical"
 
 
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 22; gap +100 lb (1425.0 vs 1325)")
 def test_gross_weight_matches_published():
-    """VAL-04: config.flight_condition.gross_weight_lb must equal published 1425 lb exactly.
+    """VAL-04: config.flight_condition.gross_weight_lb must equal the manual 1325 lb max takeoff gross exactly.
 
     This is an exact match check — no tolerance. The FAA-approved maximum gross
     weight for Long-EZ Model 61 is a hard regulatory limit, not an estimate.
     The config must match this value precisely.
 
-    Reference: RAF CP-29, Weight & Balance section, p.12.
+    Reference: om-1980:p4 (max takeoff gross); the manual also has a 1425 lb takeoff-only band (om-1980:p28).
     """
     data = _load_ref_data()
     ref_gross_weight = data["aircraft_specs"]["max_gross_weight_lb"]["value"]
