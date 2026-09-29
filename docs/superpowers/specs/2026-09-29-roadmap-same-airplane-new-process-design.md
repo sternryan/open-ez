@@ -112,6 +112,21 @@ Each block proves something before the next one relies on it.
 
   It flags stiffness changes that could affect flutter or how the canard and wing share load.
 - **4. Process lane.**
+  - **Step 1, filament trial (can start now, in parallel with Blocks 1–3).** Decides "print the
+    tool, or print the plug and cast the tool" from the owner's own data, on the owner's printer
+    (Bambu P2S: 256 mm cube, 300°C nozzle, passive enclosure up to about 50°C; official list includes
+    PC, PET-CF, PA6-CF, PAHT-CF and PPA-CF).
+    - Print identical small mold plaques in PETG, ASA, PC, PAHT-CF and PPA-CF.
+    - Seal them the same way, then run the chosen epoxy's real cure and post-cure on each.
+    - Measure warp, surface transfer, release and porosity.
+    - The pass/fail bar is set by the epoxy's post-cure temperature, so the trial's own spec is
+      written once the epoxy system is chosen. Heat-deflection values come from the filament
+      datasheets, cited.
+    - Expected shape of the answer: printing the tool directly is plausible for small parts; large
+      surfaces (many 256 mm sections) likely still favour plug → cast, because registration, bonded
+      joints and thermal expansion over the span are the hard problems.
+  - Printed jigs, drill guides and incidence blocks, and printed copies of the book's hot-wire
+    templates (so the rehearsal can become physical), are in this lane too.
   - Print plugs from the CAD surfaces, sectioned to fit the printer.
   - Seal and fair the plugs, cast high-temperature molds from them, and plan the cure.
   - Check dimensions against the model.
