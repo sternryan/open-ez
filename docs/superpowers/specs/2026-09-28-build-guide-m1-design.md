@@ -109,3 +109,8 @@ directory is symlinked in at deploy time, never built into the site.
 5. The tailnet URL loads on the owner's iPad, verified by loading it.
 6. A fresh-context grader tries to prove 1–5 false before anything is called done.
 7. Acceptance per §1.
+
+## 11. Source gaps (updated 2026-09-29)
+
+- The owner's set is the Section I book only. The 14 appendix sheets (18x24 full-size drawings: A-2 hot-wire templates, A-9/A-10 trim templates, A-7 layout, A-13 incidence blocks) are not in it, and cobelu does not have them either. Fidelity badges therefore top out at `plans-checked`; `a-sheet-verified` stays unreachable until a source for the A-sheets is found.
+- The wing-root leading-edge check (section 9) can proceed from the book: the back-cover 3-view, chapter 19, and CP25 LPC7.
