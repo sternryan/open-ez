@@ -46,3 +46,9 @@ Text with {CP27 LPC 44 MEO} marker."""
     ms = parse_markers(md, 10)
     assert len(ms) == 1
     assert (ms[0].cp, ms[0].lpc, ms[0].cls) == (27, 44, "MEO")
+
+def test_invalid_class_rejected():  # {CP1 PC2 the} → no match (invalid class)
+    md = """### STEP 1 -
+Text with {CP1 PC2 the} marker."""
+    ms = parse_markers(md, 10)
+    assert len(ms) == 0  # Invalid class code → no marker accepted
