@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-HEADER = re.compile(r"^\s*THE CANARD PUSHER\s+NO\.\s*(\d+)", re.I)
+HEADER = re.compile(r"^\s*THE CANARD PUSHER\s+NO\.?\s*(\d+)", re.I)
 ENTRY = re.compile(r"^\s*LPC\s*#\s*(\d+)\s*,\s*([A-Z]{2,4})\s*,?\s*(.*)$")
 PAGE = re.compile(r"Page\s+(\d{1,2})\s*[-–]\s*(\d{1,2})", re.I)
 
