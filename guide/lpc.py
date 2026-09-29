@@ -12,7 +12,7 @@ from dataclasses import dataclass
 HEADER = re.compile(r"^\s*THE CANARD PUSHER\s+NO\.?\s*(\d+)", re.I)
 ENTRY = re.compile(r"^\s*LPC\s*#\s*(\d+)\s*[:,\-]?\s*(.*)$", re.I)
 PAGE = re.compile(r"(?:page|pages|pg)s?\s+(\d{1,2})\s*[-–]\s*(\d{1,2})", re.I)
-SECTION = re.compile(r"Section\s+([IV]+(?:[A-Z]+)?)\b", re.I)
+SECTION = re.compile(r"Section\s+((?:I|II|III|IV|V|VI|VII|VIII|IX|X)[ABCL]?)\b")
 KNOWN_CLASSES = {"MEO", "MAN", "DES", "OPT", "OBS"}
 
 
@@ -39,7 +39,7 @@ def _extract_cls_and_ref(rest: str) -> tuple[str, str]:
             return word, m.group(2).strip()
     return "?", rest
 
-OWNER = re.compile(r"owner'?s?\s+manual", re.I)
+OWNER = re.compile(r"owner[\u2019']?s?[\u2019']?\s+manual", re.I)
 BACK_COVER = re.compile(r"back\s+cover", re.I)
 
 
@@ -58,15 +58,17 @@ def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
     - chapter None if a non-Section-I section or an owner's manual is named anywhere.
     - Section I (word-bounded) keeps the page's chapter; no page -> (None, None).
     """
-    combined = f"{ref} {next_line}".strip()
-    page_m = PAGE.search(ref) or (PAGE.search(next_line) if next_line else None)
-    sections = {m.group(1).upper() for m in SECTION.finditer(combined)}
-    no_chapter = bool(OWNER.search(combined)) or any(x != "I" for x in sections)
+    # Precedence: entry ref's own location cue wins; description line only as fallback.
+    loc = ref if _has_location_cue(ref) else next_line
+    # Page number alone may still come from the description line when the ref has none.
+    page_m = PAGE.search(loc) or (PAGE.search(next_line) if next_line else None)
+    sections = {m.group(1) for m in SECTION.finditer(loc)}
+    no_chapter = bool(OWNER.search(loc)) or any(x != "I" for x in sections)
 
     if page_m:
         chapter = None if no_chapter else int(page_m.group(1))
         return f"{int(page_m.group(1))}-{int(page_m.group(2))}", chapter
-    if BACK_COVER.search(combined):
+    if BACK_COVER.search(loc):
         return "back-cover", None
     return None, None
 

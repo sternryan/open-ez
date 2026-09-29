@@ -168,3 +168,26 @@ def test_bare_owner_prose_rejected():
     fixture = """THE CANARD PUSHER NO. 25
 LPC #5 the owner said so"""
     assert parse_lpcs(fixture) == []
+
+
+def test_entry_ref_location_wins_over_description_section():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #90, MEO, Section I, page 20-4.
+Step 6 also see Section III notes"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert (got[90].page, got[90].chapter) == ("20-4", 20)
+
+
+def test_prose_lowercase_section_not_a_section():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #12, MEO, Page 3-4
+the section is short"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert (got[12].page, got[12].chapter) == ("3-4", 3)
+
+
+def test_curly_apostrophe_owners_manual():
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #12, MEO, owner’s manual page 3-4"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[12].page == "3-4" and got[12].chapter is None
