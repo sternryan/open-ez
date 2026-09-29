@@ -41,3 +41,7 @@ Thumbs.db
 # Simulation artifacts
 *.vspaero
 *.tri
+.superpowers/
+site/
+.venv/
+output/guide/
