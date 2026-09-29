@@ -711,6 +711,7 @@ class VSPBridge:
             "",
             f"  double fuse_length = {geo.fs_tail - geo.fs_nose};",
             '  SetParmVal(fid, "Length", "Design", fuse_length);',
+            f'  SetParmVal(fid, "X_Rel_Location", "XForm", {geo.fs_nose});',
             "",
             "  // Fuselage cross-sections",
             f"  // Cockpit width: {geo.cockpit_width} in",

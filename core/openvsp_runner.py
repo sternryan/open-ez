@@ -353,6 +353,7 @@ class OpenVSPRunner:
             fuse_id = vsp.AddGeom("FUSELAGE", "")
             vsp.SetGeomName(fuse_id, "Fuselage")
             vsp.SetParmVal(fuse_id, "Length", "Design", geom.fuselage_length)
+            vsp.SetParmVal(fuse_id, "X_Rel_Location", "XForm", geom.fs_nose)
 
             vsp.WriteVSPFile(str(output_path))
             logger.info("Native VSP3 model exported to %s", output_path)

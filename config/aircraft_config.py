@@ -89,6 +89,12 @@ class LaminateDefinition:
         return ["engrave_labels", "pocket_features", "profile_cut"]
 
 
+# Canard chord: Task 1 chord search found no sourced value (docs/geometry-correction-ledger.md).
+CHORD = 15.25
+CHORD_STATUS = "unsourced"
+CHORD_SOURCE = ""
+
+
 @dataclass
 class GeometricParams:
     """Primary aircraft geometry - all dimensions in inches unless noted."""
@@ -104,25 +110,25 @@ class GeometricParams:
     wing_oswald_e: float = 0.80  # Oswald efficiency factor (typical for tapered wing)
 
     # === CANARD (Roncz R1145MS - SAFETY CRITICAL) ===
-    canard_span: float = 147.0  # Total span (12.25 ft)
-    canard_root_chord: float = 17.0  # Root chord
-    canard_tip_chord: float = 13.5  # Tip chord
-    canard_sweep_le: float = 13.5  # Leading edge sweep (degrees)
+    canard_span: float = 126.0  # Roncz structural core, BL +/-63 (cobelu ch 30 jig blocks); tips not modelled
+    canard_chord: float = CHORD  # constant chord (book planform is a rectangle); see GEOMETRY_PROVENANCE
+    canard_sweep_le: float = 0.0  # zero sweep (plans p.71)
     canard_incidence: float = -1.5  # Relative to longerons (degrees)
     canard_oswald_e: float = 0.75  # Oswald efficiency factor (lower AR, less efficient)
 
     # === FUSELAGE STATIONS (FS) ===
-    fs_nose: float = 0.0  # Nose reference
-    fs_canard_le: float = 36.0  # Canard leading edge
-    fs_pilot_seat: float = 80.0  # F-22 bulkhead (pilot)
-    fs_rear_seat: float = 115.0  # F-28 bulkhead (passenger/baggage)
-    fs_wing_le: float = 125.61  # Wing leading edge at root (calibrated Phase 5: see calibration_log.json)
-    fs_firewall: float = 180.0  # Engine firewall (F-28)
-    fs_tail: float = 214.0  # Tail cone terminus
+    fs_nose: float = -45.5  # internal 0.0 shifted to the published frame (see provenance)
+    fs_canard_le: float = 18.7  # plans back cover, p.171
+    fs_pilot_seat: float = 34.5  # F-22 (internal 80.0 shifted)
+    fs_rear_seat: float = 69.5  # F-28 (internal 115.0 shifted)
+    fs_firewall: float = 134.5  # internal 180.0 shifted
+    fs_tail: float = 168.5  # internal 214.0 shifted
+    wing_root_bl: float = 23.3  # wing root butt line
+    wing_le_anchor: Tuple[float, float] = (113.9, 58.0)  # (FS, BL): wing LE at the strake junction, CP25 LPC 7
 
     # === DATUM OFFSET (internal -> published coordinate translation) ===
-    datum_offset_in: float = 45.5  # Internal FS 153.5 maps to published FS ~108 (RAF CP-29)
-    # Note: Previously estimated at ~51". Actual offset derived from NP comparison.
+    datum_offset_in: float = 0.0  # stations are in the published frame
+    # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
     # internal_fs - datum_offset_in = published_fs
 
     # === OPENVSP GEOMETRY (positions for 3D model) ===
@@ -131,7 +137,7 @@ class GeometricParams:
     winglet_height: float = 16.0  # Winglet vertical span in inches (Long-EZ winglets, Rutan Ch.19)
     winglet_root_chord: float = 20.0  # Winglet root chord at wing tip junction (inches)
     winglet_tip_chord: float = 12.0  # Winglet tip chord (inches)
-    fuselage_length: float = 214.0  # Total fuselage length nose to tail (= fs_tail, inches)
+    fuselage_length: float = 214.0  # Total fuselage length nose to tail (= fs_tail - fs_nose, inches)
 
     # === CANARD DOWNWASH ===
     canard_vertical_offset_in: float = (
@@ -147,6 +153,20 @@ class GeometricParams:
     pilot_height_max: float = 77.0  # Max pilot height (inches)
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
+    @property
+    def canard_root_chord(self) -> float:
+        return self.canard_chord
+
+    @property
+    def canard_tip_chord(self) -> float:
+        return self.canard_chord
+
+    @property
+    def fs_wing_le(self) -> float:
+        """Wing root LE station, derived from the book anchor via the (unverified) wing sweep."""
+        fs, bl = self.wing_le_anchor
+        return fs - (bl - self.wing_root_bl) * math.tan(math.radians(self.wing_sweep_le))
+
     @property
     def canard_arm(self) -> float:
         """Distance from wing AC to canard AC (critical for stability).
@@ -213,11 +233,11 @@ class GeometricParams:
         return self.fs_canard_le
 
     def to_published_datum(self, internal_fs: float) -> float:
-        """Convert internal fuselage station to published Long-EZ datum.
+        """Convert a code fuselage station to the published Long-EZ datum.
 
-        The internal coordinate system uses a different zero reference than
-        the published Rutan plans. This method translates internal FS values
-        to the published coordinate system for human-readable output.
+        Since the 2026-09-29 planform correction, code stations are already in
+        the published frame (datum_offset_in = 0), so this is the identity. It
+        is kept so existing callers don't break.
 
         Args:
             internal_fs: Fuselage station in internal coordinates (inches)
@@ -242,10 +262,11 @@ def _p(status: str, source: str = "", confidence: str = "n/a", note: str = "") -
 # converted-unsourced (shifted between frames, never checked), unsourced, conflict.
 # tests/test_geometry_provenance.py fails if a matching GeometricParams field lacks an entry.
 GEOMETRY_PROVENANCE: dict[str, dict] = {
-    "canard_span": _p("unsourced", note="147 has no source; see the planform-correction spec"),
-    "canard_root_chord": _p("unsourced", note="taper has no source"),
-    "canard_tip_chord": _p("unsourced", note="taper has no source"),
-    "canard_sweep_le": _p("unsourced", note="book says zero sweep (p.71)"),
+    "canard_span": _p("book", "cobelu ch30 Step 18 / Fig 30-20: outboard jig blocks 126 in apart (core to BL +/-63)", "high",
+                      "Roncz core only; curled tips not modelled; GU span is 142 (p.54), reference only"),
+    "canard_chord": _p(CHORD_STATUS, CHORD_SOURCE, "n/a" if CHORD_STATUS == "unsourced" else "high",
+                       "no sourced value; mean of the retired 17.0/13.5 taper; see docs/geometry-correction-ledger.md Chord search"),
+    "canard_sweep_le": _p("book", "plans p.71 (zero sweep); p.171 planform", "high"),
     "canard_incidence": _p("unsourced", note="set by incidence blocks; value not in the book"),
     "canard_oswald_e": _p("unsourced", note="aero estimate, not a plans value"),
     "canard_le_wl": _p("unsourced", note="not in the book"),
@@ -255,14 +276,16 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "wing_tip_chord": _p("unsourced", note="not verified against the book"),
     "wing_sweep_le": _p("unsourced", note="not verified against the book"),
     "wing_dihedral": _p("unsourced", note="not verified against the book"),
-    "fs_nose": _p("unsourced"),
-    "fs_canard_le": _p("unsourced", note="book: FS 18.7 (p.171)"),
-    "fs_pilot_seat": _p("unsourced"),
-    "fs_rear_seat": _p("unsourced"),
-    "fs_wing_le": _p("unsourced", note="Phase 5 NP fit"),
-    "fs_firewall": _p("unsourced"),
-    "fs_tail": _p("unsourced"),
-    "datum_offset_in": _p("unsourced", note="fitted so computed NP matched published FS 108"),
+    "fs_nose": _p("converted-unsourced", note="internal 0.0 shifted; CONFLICT: book datum FS 0 and nose tip FS -6.8 (p.171)"),
+    "fs_canard_le": _p("book", "plans p.171 back-cover 3-view, canard LE", "medium", "read from the image; confirm by eye"),
+    "fs_pilot_seat": _p("converted-unsourced", note="internal 80.0 shifted by -45.5"),
+    "fs_rear_seat": _p("converted-unsourced", note="internal 115.0 shifted by -45.5"),
+    "fs_firewall": _p("converted-unsourced", note="internal 180.0 shifted by -45.5"),
+    "fs_tail": _p("converted-unsourced", note="internal 214.0 shifted by -45.5"),
+    "wing_le_anchor": _p("cp-corrected", "plans p.171 prints 113.4; CP25 LPC7 (MEO) corrects to 113.9", "high",
+                         "the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
+    "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment"),
+    "datum_offset_in": _p("book", "published frame by definition (offset 0)", "high", "was 45.5, fitted to NP; retired"),
 }
 
 
@@ -492,8 +515,8 @@ class StrakeConfig:
     """Strake geometry for wing-fuselage integration."""
 
     # === GEOMETRY ===
-    fs_leading_edge: float = 110.0  # Forward extent (FS inches)
-    fs_trailing_edge: float = 145.0  # Blends into wing box
+    fs_leading_edge: float = 64.5  # Forward extent (FS inches) (internal 110.0 shifted)
+    fs_trailing_edge: float = 99.5  # Blends into wing box (internal 145.0 shifted)
     inboard_width: float = 8.0  # At fuselage junction (inches)
     outboard_taper: float = 0.6  # Width reduction ratio at BL 23.3
 
@@ -594,21 +617,21 @@ class StructuralWeightParams:
     """Measured structural component weights (from builder records)."""
 
     wing_weight_lb: float = 85.0
-    wing_arm_in: float = 140.0
+    wing_arm_in: float = 94.5  # internal 140.0 shifted by -45.5
     canard_weight_lb: float = 25.0
-    canard_arm_in: float = 45.0
+    canard_arm_in: float = -0.5  # internal 45.0 shifted by -45.5
     fuselage_weight_lb: float = 120.0
-    fuselage_arm_in: float = 100.0
+    fuselage_arm_in: float = 54.5  # internal 100.0 shifted by -45.5
     landing_gear_weight_lb: float = 45.0
-    landing_gear_arm_in: float = 130.0
+    landing_gear_arm_in: float = 84.5  # internal 130.0 shifted by -45.5
     electrical_weight_lb: float = 25.0
-    electrical_arm_in: float = 165.0
+    electrical_arm_in: float = 119.5  # internal 165.0 shifted by -45.5
     instruments_weight_lb: float = 15.0
-    instruments_arm_in: float = 75.0
+    instruments_arm_in: float = 29.5  # internal 75.0 shifted by -45.5
     interior_weight_lb: float = 20.0
-    interior_arm_in: float = 95.0
+    interior_arm_in: float = 49.5  # internal 95.0 shifted by -45.5
     fuel_density_lb_per_gal: float = 6.01  # 100LL avgas
-    fuel_arm_in: float = 127.5  # Strake fuel CG location
+    fuel_arm_in: float = 82.0  # Strake fuel CG location (internal 127.5 shifted by -45.5)
 
 
 @dataclass
