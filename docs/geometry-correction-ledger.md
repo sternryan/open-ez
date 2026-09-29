@@ -65,3 +65,20 @@ The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out o
 | 17 | `tests/test_regression_lock.py::test_regression_cg_fwd_drift` (split) | CG fwd within 0.01 in of `LOCKED_CG_FWD_PUBLISHED` | `LOCKED_CG_FWD_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
 | 18 | `tests/test_regression_lock.py::test_regression_cg_aft_external_truth` (split from `test_regression_cg_aft`) | CG aft within 1 in of 104.0 | unchanged, strict xfail; gap +17.85 in | (b) | External-truth half of the split. |
 | 19 | `tests/test_regression_lock.py::test_regression_cg_aft_drift` (split) | CG aft within 0.01 in of `LOCKED_CG_AFT_PUBLISHED` | `LOCKED_CG_AFT_PUBLISHED` unchanged for now; re-locked in Task 6 | (a) | Pinned to the retired Phase 5 fit. Stays red until Task 6. |
+
+## NP gap
+
+Values read from `data/validation/accuracy_report.json` (regenerated 2026-09-29).
+
+| Quantity | Computed (FS in) | Reference (FS in) | Gap (computed - reference, in) | Grade |
+|---|---|---|---|---|
+| Neutral point | 125.8549 | 108.0 (RAF CP-29 p.18) | +17.8549 | FAIL (tol 2.0 in) |
+| CG fwd limit | 116.8532 | 99.0 | +17.8532 | FAIL |
+| CG aft limit | 121.8536 | 104.0 | +17.8536 | FAIL |
+
+The geometry is book-true and the NP is checked against the published value, not fitted to it; the +17.85 in gap is reported as found.
+
+The CG limits are computed as the NP minus fixed fractions of the MAC (the retired Phase 5 margins,
+still in `core.analysis`), so their gaps mirror the NP gap and are not independent evidence. The
+report's `static_margin_pct` moved from 1.91 to 36.05 (reference 12.0); it failed before and still
+fails.
