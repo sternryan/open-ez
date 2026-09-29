@@ -8,7 +8,11 @@ The end state is a Long-EZ that the owner will trust with his life. It keeps the
 shape, weights and CG envelope, but uses a new process and modern systems:
 - 3D-printed plugs, cast high-temperature molds and carbon fiber, instead of hot-wire foam and moldless
   fiberglass;
+- a Rotax engine in place of the plans' Lycoming/Continental;
 - a modern panel, avionics, gear and electrical system.
+
+**Owner rulings (2026-09-29):** the Roncz canard, and a Rotax engine. The Rotax model is chosen
+by a fit-and-CG trade (Block 6), not up front.
 
 The 1970s plans are the baseline and the teacher, not the method. Rehearsing the build the way the
 plans describe it surfaces the lessons, and the lessons become the requirements for the new build.
@@ -58,7 +62,7 @@ Each block proves something before the next one relies on it.
 | 3 | Equivalence engine | on paper, a changed part matches or beats the book part where it matters | 2 |
 | 4 | Process lane | the owner can make what the model says, to the shape it says | 3 |
 | 5 | Physical evidence | the paper answers hold in material, and outside review agrees | 4 |
-| 6 | Systems (runs in parallel from block 2) | panel, avionics, gear and electrical fit the weight/CG budget and are installable | 1, then 2 |
+| 6 | Engine and systems (runs in parallel from block 2) | the Rotax installation fits the cowl and keeps CG in the envelope; panel, avionics, gear and electrical fit the budget | 1, then 2 |
 | 7 | Build and Phase 1 plan | the airplane is built to the evidence, with a flight test program | 5, 6 |
 
 ### Block 1: Baseline truth
@@ -117,8 +121,23 @@ Each block proves something before the next one relies on it.
   - Run ASTM coupon tests (for example D3039 tension and D7264 flexure) to establish allowables.
   - Proof-load each primary part.
   - Package the evidence for outside review.
-- **6. Systems.** Panel, avionics, gear, engine installation and electrical. These are mostly
-  purchased, certified parts with a lighter proof burden, and they feed the mass/CG ledger.
+- **6. Engine and systems.**
+  - **The engine comes first**, because it is the largest single mass at the tail and sets the CG.
+    As soon as the Block 2 ledger closes, swap the book engine's row for each Rotax candidate
+    (for example the 912 and 915 families) and check:
+    - **CG:** a lighter engine at the tail moves the CG forward. Show the envelope still holds at
+      every loading, and say what is moved or added aft to restore it.
+    - **Size and cowl:** the engine, gearbox, radiator(s) and intake fit inside the book's cowl
+      lines, or the cowl change is called out as a departure from the outer shape.
+    - **Pusher specifics:** gearbox and propeller rotation in a pusher, cooling airflow for the
+      liquid-cooled heads with no propwash over the engine, and the thrust line's effect on pitch
+      trim.
+    - **Performance:** power and propeller changes alter takeoff, climb and cruise, so the
+      inherited flight evidence covers handling but not performance.
+  - Engine weights, dimensions and the pusher installation facts come from the manufacturer's
+    installation manuals and are cited, not recalled.
+  - Panel, avionics, gear and electrical are mostly purchased, certified parts with a lighter proof
+    burden. They feed the same mass/CG ledger.
 - **7. Build and Phase 1.**
   - Build to the evidence.
   - Keep a photo and log trail. It doubles as the evidence for the major-portion (51%) rule.
@@ -127,9 +146,11 @@ Each block proves something before the next one relies on it.
 
 ## 5. Known issues this roadmap must resolve
 
-- **Canard choice.** "Same airplane" still needs an explicit choice between the GU canard and the
-  Roncz canard. The repo defaults to the Roncz for its rain behaviour, but the choice changes span,
-  vortilons and the evidence base.
+- **Canard choice: resolved, Roncz** (owner, 2026-09-29). Its span, vortilons and evidence base
+  are the baseline.
+- **Engine: Rotax, model open.** The engine swap is the one planned change that touches CG and
+  possibly the cowl, so it is checked against the ledger before any structural work depends on
+  the CG envelope.
 - **Carbon-specific risks** the new process must answer:
   - RF blocking (antennas buried in glass structure today);
   - galvanic corrosion at metal fittings;
@@ -142,7 +163,8 @@ Each block proves something before the next one relies on it.
 
 ## 6. Out of scope
 
-- Changes to the outer shape or the aerodynamics.
+- Changes to the outer shape or the aerodynamics, except a cowl change forced by the engine,
+  which must be called out and analysed.
 - Certification beyond experimental amateur-built.
 - Publishing plans content. The plans remain under copyright, and the repo holds its own words and
   its own code only.
