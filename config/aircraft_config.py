@@ -262,11 +262,11 @@ def _p(status: str, source: str = "", confidence: str = "n/a", note: str = "") -
 # converted-unsourced (shifted between frames, never checked), unsourced, conflict.
 # tests/test_geometry_provenance.py fails if a matching GeometricParams field lacks an entry.
 GEOMETRY_PROVENANCE: dict[str, dict] = {
-    "canard_span": _p("book", "cobelu ch30 Step 18 / Fig 30-20: outboard jig blocks 126 in apart (core to BL +/-63)", "high",
-                      "Roncz core only; curled tips not modelled; GU span is 142 (p.54), reference only"),
+    "canard_span": _p("book", "cobelu:p13 ch30 Step 18 jig blocks", "high",
+                      "Fig 30-20: outboard jig blocks 126 in apart (core to BL +/-63); page 13 of the ch30 PDF. Roncz core only; curled tips not modelled; GU span is 142 (p.54), reference only"),
     "canard_chord": _p(CHORD_STATUS, CHORD_SOURCE, "n/a" if CHORD_STATUS == "unsourced" else "high",
                        "no sourced value; mean of the retired 17.0/13.5 taper; see docs/geometry-correction-ledger.md Chord search"),
-    "canard_sweep_le": _p("book", "plans p.71 (zero sweep); p.171 planform", "high"),
+    "canard_sweep_le": _p("book", "plans-1980:p71", "high", "zero sweep (ch12 canard installation); p.171 planform agrees"),
     "canard_incidence": _p("unsourced", note="set by incidence blocks; value not in the book"),
     "canard_oswald_e": _p("unsourced", note="aero estimate, not a plans value"),
     "canard_le_wl": _p("unsourced", note="not in the book"),
@@ -277,16 +277,16 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "wing_sweep_le": _p("unsourced", note="not verified against the book"),
     "wing_dihedral": _p("unsourced", note="not verified against the book"),
     "fs_nose": _p("converted-unsourced", note="internal 0.0 shifted; CONFLICT: book datum FS 0 and nose tip FS -6.8 (p.171)"),
-    "fs_canard_le": _p("book", "plans p.171 back-cover 3-view: F.S. 18.7 at B.L. 71 (canard tip LE)", "high",
-                        "owner confirmed by eye 2026-09-29; zero sweep makes the tip LE station the LE station everywhere"),
+    "fs_canard_le": _p("book", "plans-1980:p171 F.S. 18.7 at B.L. 71", "high",
+                        "back-cover 3-view, canard tip LE; owner check (2026-09-29 by-eye read, recorded in docs/geometry-correction-ledger.md); zero sweep makes the tip LE station the LE station everywhere"),
     "fs_pilot_seat": _p("converted-unsourced", note="internal 80.0 shifted by -45.5"),
     "fs_rear_seat": _p("converted-unsourced", note="internal 115.0 shifted by -45.5"),
     "fs_firewall": _p("converted-unsourced", note="internal 180.0 shifted by -45.5"),
     "fs_tail": _p("converted-unsourced", note="internal 214.0 shifted by -45.5"),
-    "wing_le_anchor": _p("cp-corrected", "plans p.171 prints 113.4; CP25 LPC7 (MEO) corrects to 113.9", "high",
-                         "the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
+    "wing_le_anchor": _p("cp-corrected", "cp-text:p25 LPC 7 wing root LE 113.9", "high",
+                         "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
     "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment"),
-    "datum_offset_in": _p("book", "published frame by definition (offset 0)", "high", "was 45.5, fitted to NP; retired"),
+    "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 
 
