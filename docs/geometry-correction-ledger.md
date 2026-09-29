@@ -83,3 +83,16 @@ The CG limits are computed as the NP minus fixed fractions of the MAC (the retir
 still in `core.analysis`), so their gaps mirror the NP gap and are not independent evidence. The
 report's `static_margin_pct` moved from 1.91 to 36.05 (reference 12.0); it failed before and still
 fails.
+
+## Owner by-eye check (2026-09-29)
+
+Plans p.171 back-cover 3-view, read by the owner:
+- **F.S. 18.7 at B.L. 71**, marked at the canard tip leading edge in plan view. Confirms
+  `fs_canard_le = 18.7`; provenance raised to high confidence.
+- **B.L. 71 is the tip station**, i.e. a 142 in total span. That is the GU canard span (p.54); the
+  1980 first edition predates the Roncz canard. The Roncz core stays 126 in (BL ±63) with tips not
+  modelled; the Roncz tip station is not confirmed by this drawing.
+- **W.L. 18.9** is marked at the canard in the side view. The config's `canard_le_wl = 12.0` is
+  unsourced, and cobelu template sheet C-3 labels **W.L. 19.8**. 18.9 vs 19.8 may be a digit
+  transposition in one source or two different reference points (e.g. chord line vs a template
+  datum). Not changed here: a Block 1 item.
