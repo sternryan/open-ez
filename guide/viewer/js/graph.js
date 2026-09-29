@@ -25,17 +25,23 @@ export function scanView(source, cfg) {
 export function makeStore(storage) {
   const mem = new Map();
   const key = id => `longez.check.${id}`;
+
+  const get = (opId) => {
+    if (!mem.has(opId)) {
+      let v = [];
+      try {
+        const p = JSON.parse(storage.getItem(key(opId)) || "[]");
+        if (Array.isArray(p)) v = p.filter(Number.isInteger);
+      } catch { /* storage blocked or invalid JSON */ }
+      mem.set(opId, new Set(v));
+    }
+    return mem.get(opId);
+  };
+
   return {
-    get(opId) {
-      if (!mem.has(opId)) {
-        let v = [];
-        try { v = JSON.parse(storage.getItem(key(opId)) || "[]"); } catch { /* storage blocked */ }
-        mem.set(opId, new Set(v));
-      }
-      return mem.get(opId);
-    },
+    get,
     toggle(opId, i) {
-      const s = this.get(opId);
+      const s = get(opId);
       s.has(i) ? s.delete(i) : s.add(i);
       try { storage.setItem(key(opId), JSON.stringify([...s])); } catch { /* keep in memory */ }
     },

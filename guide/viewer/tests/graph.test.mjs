@@ -41,3 +41,34 @@ test("makeStore survives a throwing storage", () => {  // Review Focus 2
   s.toggle("a", 1);
   assert.deepEqual([...s.get("a")], [1]);
 });
+
+test("makeStore tolerates non-array storage (object)", () => {
+  const mock = { getItem() { return "{}"; }, setItem() {} };
+  const s = makeStore(mock);
+  assert.deepEqual([...s.get("x")], []);
+});
+
+test("makeStore tolerates non-array storage (string)", () => {
+  const mock = { getItem() { return '"abc"'; }, setItem() {} };
+  const s = makeStore(mock);
+  assert.deepEqual([...s.get("y")], []);
+});
+
+test("makeStore persists across instances via storage", () => {
+  const storage = new Map();
+  storage.getItem = (k) => storage.get(k) ?? null;
+  storage.setItem = (k, v) => storage.set(k, v);
+
+  const s1 = makeStore(storage);
+  s1.toggle("z", 5);
+  s1.toggle("z", 7);
+
+  const s2 = makeStore(storage);
+  assert.deepEqual([...s2.get("z")].sort((a, b) => a - b), [5, 7]);
+});
+
+test("scanView with relative base path", () => {
+  const cfg = { scanBase: "private/scan-1980/pages/" };
+  assert.deepEqual(scanView({ scan_pp: 58 }, cfg),
+    { kind: "scan", url: "private/scan-1980/pages/058.jpg" });
+});
