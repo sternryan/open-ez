@@ -30,9 +30,9 @@ def test_page_and_chapter():
     assert (got[16].page, got[16].chapter) == ("10-5", 10)
     assert (got[17].page, got[17].chapter, got[17].cls) == ("12-1", 12, "OPT")
 
-def test_no_page_entry_is_kept():  # Review Focus 4
+def test_no_page_entry_is_kept():  # LPC with "back cover" text
     c = {c.lpc: c for c in parse_lpcs(FIXTURE)}[7]
-    assert c.page == "back-cover" and c.chapter is None
+    assert c.page == "back-cover" and c.chapter is None  # "Back cover of plans" → back-cover
 
 def test_multiline_description_joined():  # Review Focus 4
     c = {c.lpc: c for c in parse_lpcs(FIXTURE)}[7]
@@ -47,11 +47,12 @@ LPC #40, MEO, Page 12-1."""
     got = {c.lpc: c for c in parse_lpcs(fixture_no_period)}
     assert got[40].cp == 26
 
-def test_no_comma_after_number():  # LPC #99  MEO, Section I, ...
+def test_no_comma_after_number():  # LPC #99  MEO, Section I with page on next line
     fixture = """THE CANARD PUSHER NO. 25
-LPC #50  MEO, Section I, Canard"""
+LPC #50  MEO, Section I
+Page 3-4 more text"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
-    assert got[50].cls == "MEO" and got[50].page == "back-cover"
+    assert got[50].cls == "MEO" and got[50].page == "3-4" and got[50].chapter == 3
 
 def test_no_commas_at_all():  # LPC #99  MEO  Page 9-9
     fixture = """THE CANARD PUSHER NO. 25
@@ -77,7 +78,7 @@ LPC #54, Section III, Page 10-5"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
     assert got[54].cls == "?" and got[54].page == "10-5" and got[54].chapter is None
 
-def test_section_ii_has_no_chapter():  # Section II → chapter None
+def test_section_non_i_has_no_chapter():  # Non-I section → chapter None
     fixture = """THE CANARD PUSHER NO. 25
 LPC #55, MEO, Section II, Page 12-1"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
@@ -101,3 +102,39 @@ def test_pg_abbreviation():  # Accept "pg" (case-insensitive)
 LPC #58, MEO, pg 10-5"""
     got = {c.lpc: c for c in parse_lpcs(fixture)}
     assert got[58].page == "10-5" and got[58].chapter == 10
+
+def test_section_i_no_page():  # Section I with no page → (None, None)
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #59, MEO, Section I."""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[59].page is None and got[59].chapter is None
+
+def test_owners_manual_no_chapter():  # Owner's Manual → chapter None
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #60, MEO, Owner's Manual page 3-4"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[60].page == "3-4" and got[60].chapter is None
+
+def test_prose_rejection_wrong_ref():  # "LPC #12 was wrong, see CP 20." → no entry
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #61 was wrong, see CP 20."""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert 61 not in {c.lpc for c in got}
+
+def test_prose_rejection_not():  # "LPC #12 NOT the same" → no entry
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #62 NOT the same"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert 62 not in {c.lpc for c in got}
+
+def test_prose_rejection_see():  # "LPC #12 SEE CP 20" → no entry
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #63 SEE CP 20"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert 63 not in {c.lpc for c in got}
+
+def test_obs_class():  # OBS is a known class
+    fixture = """THE CANARD PUSHER NO. 25
+LPC #64, OBS, Page 3-4"""
+    got = {c.lpc: c for c in parse_lpcs(fixture)}
+    assert got[64].cls == "OBS" and got[64].page == "3-4"

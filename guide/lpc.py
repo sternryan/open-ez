@@ -12,7 +12,8 @@ from dataclasses import dataclass
 HEADER = re.compile(r"^\s*THE CANARD PUSHER\s+NO\.?\s*(\d+)", re.I)
 ENTRY = re.compile(r"^\s*LPC\s*#\s*(\d+)\s*[:,\-]?\s*(.*)$", re.I)
 PAGE = re.compile(r"(?:page|pages|pg)s?\s+(\d{1,2})\s*[-–]\s*(\d{1,2})", re.I)
-SECTION = re.compile(r"Section\s+([IV]+(?:[A-Z]+)?)", re.I)
+SECTION = re.compile(r"Section\s+([IV]+(?:[A-Z]+)?)\b", re.I)
+KNOWN_CLASSES = {"MEO", "MAN", "DES", "OPT", "OBS"}
 
 
 @dataclass(frozen=True)
@@ -26,70 +27,102 @@ class PlansChange:
 
 
 def _extract_cls_and_ref(rest: str) -> tuple[str, str]:
-    """Extract class code (if present) from rest of line. Return (cls, ref)."""
+    """Extract class code (if present, must be a known class) from rest of line.
+    Return (cls, ref). cls defaults to "?" if no known class found.
+    """
     rest = rest.strip()
     # Try to match: 2-4 uppercase letters followed by whitespace or separator
-    # But NOT "Section" or "Page"
     m = re.match(r'^([A-Z]{2,4})(?:\s|[:,\-])(.*)$', rest)
     if m:
         word = m.group(1)
-        if word.upper() not in ("SECTION", "PAGE", "PAGES", "PG"):
+        if word in KNOWN_CLASSES:
             return word, m.group(2).strip()
     return "?", rest
 
+def _has_location_cue(text: str) -> bool:
+    """Check if text contains a location cue: page reference, section, back cover, or owner manual."""
+    if not text:
+        return False
+    text_lower = text.lower()
+    # Page reference
+    if PAGE.search(text):
+        return True
+    # Section reference
+    if SECTION.search(text):
+        return True
+    # Back cover or owner manual
+    if "back cover" in text_lower or "owner" in text_lower:
+        return True
+    return False
+
 def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
-    """Extract page and chapter from ref text. Check next line if needed."""
-    # Check for Section reference first
-    section_m = SECTION.search(ref)
-    is_section_i = section_m and section_m.group(1).upper() == "I"
-    is_non_i_section = section_m and section_m.group(1).upper() != "I"
+    """Extract page and chapter from ref and optional next line.
 
+    Rules:
+    1. Find page on ref; if absent, on first description line.
+    2. chapter=None if ref or description line names Section other than I or contains "owner".
+    3. page "back-cover" ONLY when "back cover" literally appears AND no numbered page.
+    4. Section I with no page → (None, None), never fabricate "back-cover".
+    5. Return (page, chapter).
+    """
     # Check for page number in current ref
-    m = PAGE.search(ref)
-    if m:
-        page_str = f"{int(m.group(1))}-{int(m.group(2))}"
-        # Non-I section: chapter is None
-        if is_non_i_section:
-            return page_str, None
-        # Section I or no section: chapter is from page number
-        return page_str, int(m.group(1))
+    page_m = PAGE.search(ref)
+    page_location = "ref"
+    if not page_m and next_line:
+        page_m = PAGE.search(next_line)
+        page_location = "next"
 
-    # No page found - check for back-cover indicators
-    if "back cover" in ref.lower() or "owner" in ref.lower():
+    # Extract page string if found
+    page_str = None
+    if page_m:
+        page_str = f"{int(page_m.group(1))}-{int(page_m.group(2))}"
+        chapter_from_page = int(page_m.group(1))
+    else:
+        chapter_from_page = None
+
+    # Check for section reference and owner in ref (even if page is on next_line)
+    section_m = SECTION.search(ref)
+    section_name = section_m.group(1).upper() if section_m else None
+    is_owner = "owner" in ref.lower()
+
+    # Determine chapter
+    chapter = None
+    if is_owner:
+        chapter = None  # Owner manual → no chapter
+    elif section_name and section_name != "I":
+        chapter = None  # Non-I section → no chapter
+    elif page_str:
+        chapter = chapter_from_page  # Use page's chapter number
+    else:
+        chapter = None
+
+    # Determine page value
+    if page_str:
+        return page_str, chapter
+    elif "back cover" in ref.lower():
         return "back-cover", None
-
-    # Section I with no page number: return back-cover as placeholder, chapter None
-    if is_section_i:
-        return "back-cover", None
-
-    # Non-I section with no page: return back-cover with chapter None
-    if is_non_i_section:
-        return "back-cover", None
-
-    # Check next line for page (Section I without page yet)
-    if next_line:
-        m = PAGE.search(next_line)
-        if m:
-            return f"{int(m.group(1))}-{int(m.group(2))}", int(m.group(1))
-
-    return None, None
+    else:
+        return None, chapter
 
 
 def parse_lpcs(text: str) -> list[PlansChange]:
     out: list[PlansChange] = []
     cp = 0
     cur: dict | None = None
-    lines_list = text.splitlines()
 
     def flush():
         if cur is not None and cp_of_cur is not None:
-            # Try to get page from next line (first description line)
+            # Entry acceptance: must have known class OR location cue
+            has_known_class = cur["cls"] in KNOWN_CLASSES
             next_line = cur["lines"][0] if cur["lines"] else ""
+            has_location_cue = _has_location_cue(cur["ref"]) or _has_location_cue(next_line)
+            if not (has_known_class or has_location_cue):
+                return  # Reject prose lines
             page, chapter = _page(cur["ref"], next_line)
             out.append(PlansChange(cur["lpc"], cur["cls"], page, chapter, cp_of_cur, " ".join(cur["lines"]).strip()))
 
     cp_of_cur: int | None = None
-    for i, line in enumerate(lines_list):
+    for line in text.splitlines():
         h = HEADER.match(line)
         e = ENTRY.match(line)
         if h or e or not line.strip():
