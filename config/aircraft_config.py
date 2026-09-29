@@ -117,12 +117,12 @@ class GeometricParams:
     canard_oswald_e: float = 0.75  # Oswald efficiency factor (lower AR, less efficient)
 
     # === FUSELAGE STATIONS (FS) ===
-    fs_nose: float = -45.5  # internal 0.0 shifted to the published frame (see provenance)
+    fs_nose: float = -6.8  # book: plans-1980:p171 nose tip F.S. -6.8
     fs_canard_le: float = 18.7  # plans back cover, p.171
-    fs_pilot_seat: float = 34.5  # F-22 (internal 80.0 shifted)
-    fs_rear_seat: float = 69.5  # F-28 (internal 115.0 shifted)
-    fs_firewall: float = 134.5  # internal 180.0 shifted
-    fs_tail: float = 168.5  # internal 214.0 shifted
+    fs_pilot_seat: float = 59.0  # book: pilot CG station, om-1980:p25 (not a bulkhead; F22 is a forward bulkhead)
+    fs_rear_seat: float = 103.0  # book: passenger CG station, om-1980:p25 (not a bulkhead; F28 is a forward bulkhead)
+    fs_firewall: float = 125.0  # book: plans-1980:p101 firewall line at F.S. 125
+    fs_tail: float = 168.5  # converted-unsourced (internal 214.0 shifted); no printed aft-end station
     wing_root_bl: float = 23.3  # wing root butt line
     wing_le_anchor: Tuple[float, float] = (113.9, 58.0)  # (FS, BL): wing LE at the strake junction, CP25 LPC 7
 
@@ -137,7 +137,7 @@ class GeometricParams:
     winglet_height: float = 16.0  # Winglet vertical span in inches (Long-EZ winglets, Rutan Ch.19)
     winglet_root_chord: float = 20.0  # Winglet root chord at wing tip junction (inches)
     winglet_tip_chord: float = 12.0  # Winglet tip chord (inches)
-    fuselage_length: float = 214.0  # Total fuselage length nose to tail (= fs_tail - fs_nose, inches)
+    fuselage_length: float = 214.0  # conflict: left at 214 (tail unsourced); manual overall length 201.4 (om-1980:p3); fs_tail - fs_nose = 175.3
 
     # === CANARD DOWNWASH ===
     canard_vertical_offset_in: float = (
@@ -276,13 +276,18 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "wing_tip_chord": _p("unsourced", note="not verified against the book"),
     "wing_sweep_le": _p("unsourced", note="not verified against the book"),
     "wing_dihedral": _p("unsourced", note="not verified against the book"),
-    "fs_nose": _p("converted-unsourced", note="internal 0.0 shifted; CONFLICT: book datum FS 0 and nose tip FS -6.8 (p.171)"),
+    "fs_nose": _p("book", "plans-1980:p171 nose tip F.S. -6.8", "high",
+                  "nose tip callout on the back-cover 3-view; the datum F.S. 0.0 (om-1980:p25) lies 6.8 in aft of the nose tip"),
     "fs_canard_le": _p("book", "plans-1980:p171 F.S. 18.7 at B.L. 71", "high",
                         "back-cover 3-view, canard tip LE; owner check (2026-09-29 by-eye read, recorded in docs/geometry-correction-ledger.md); zero sweep makes the tip LE station the LE station everywhere"),
-    "fs_pilot_seat": _p("converted-unsourced", note="internal 80.0 shifted by -45.5"),
-    "fs_rear_seat": _p("converted-unsourced", note="internal 115.0 shifted by -45.5"),
-    "fs_firewall": _p("converted-unsourced", note="internal 180.0 shifted by -45.5"),
-    "fs_tail": _p("converted-unsourced", note="internal 214.0 shifted by -45.5"),
+    "fs_pilot_seat": _p("book", "om-1980:p25 pilot moment = weight x 59", "high",
+                        "the pilot's CG station; the model uses this field as the pilot arm (core/analysis.py) and as a loft station; the old F-22 label was wrong (F22 is a forward bulkhead)"),
+    "fs_rear_seat": _p("book", "om-1980:p25 passenger moment = weight x 103", "high",
+                       "passenger CG station; used as loft station and turtleback start; the old F-28 label was wrong (F28 is a forward bulkhead)"),
+    "fs_firewall": _p("book", "plans-1980:p101 firewall line at F.S. 125", "high",
+                      "spar aft face F.S. 125 (plans-1980:p88) agrees; p171 side view line at 125"),
+    "fs_tail": _p("converted-unsourced", note="internal 214.0 shifted by -45.5; no fuselage aft-end station printed in Section I"),
+    "fuselage_length": _p("conflict", note="left at 214 (tail unsourced); manual overall length 201.4 (om-1980:p3); fs_tail - fs_nose = 175.3 with book nose; Block 1 flag"),
     "wing_le_anchor": _p("cp-corrected", "cp-text:p25 LPC 7 wing root LE 113.9", "high",
                          "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
     "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment"),
@@ -516,8 +521,8 @@ class StrakeConfig:
     """Strake geometry for wing-fuselage integration."""
 
     # === GEOMETRY ===
-    fs_leading_edge: float = 64.5  # Forward extent (FS inches) (internal 110.0 shifted)
-    fs_trailing_edge: float = 99.5  # Blends into wing box (internal 145.0 shifted)
+    fs_leading_edge: float = 50.0  # book: plans-1980:p147 strake LE at fuselage side F.S. 50 (p171 agrees; LE is swept: 73.3 at BL 23, 99.5 at BL 45)
+    fs_trailing_edge: float = 99.5  # converted-unsourced (internal 145.0 shifted); no printed strake TE — 99.5 is coincidentally the book LE at BL 45
     inboard_width: float = 8.0  # At fuselage junction (inches)
     outboard_taper: float = 0.6  # Width reduction ratio at BL 23.3
 
@@ -618,21 +623,23 @@ class StructuralWeightParams:
     """Measured structural component weights (from builder records)."""
 
     wing_weight_lb: float = 85.0
-    wing_arm_in: float = 94.5  # internal 140.0 shifted by -45.5
+    wing_arm_in: float = 94.5  # unsourced (internal 140.0 shifted by -45.5); Block 2 replaces
     canard_weight_lb: float = 25.0
-    canard_arm_in: float = -0.5  # internal 45.0 shifted by -45.5
+    canard_arm_in: float = field(
+        default_factory=lambda: GeometricParams().fs_canard_le + 0.25 * GeometricParams().canard_chord
+    )  # canard structural weight at the canard (quarter chord), Block 1
     fuselage_weight_lb: float = 120.0
-    fuselage_arm_in: float = 54.5  # internal 100.0 shifted by -45.5
+    fuselage_arm_in: float = 54.5  # unsourced (internal 100.0 shifted by -45.5); Block 2 replaces
     landing_gear_weight_lb: float = 45.0
-    landing_gear_arm_in: float = 84.5  # internal 130.0 shifted by -45.5
+    landing_gear_arm_in: float = 84.5  # unsourced (internal 130.0 shifted by -45.5); Block 2 replaces
     electrical_weight_lb: float = 25.0
-    electrical_arm_in: float = 119.5  # internal 165.0 shifted by -45.5
+    electrical_arm_in: float = 119.5  # unsourced (internal 165.0 shifted by -45.5); Block 2 replaces
     instruments_weight_lb: float = 15.0
-    instruments_arm_in: float = 29.5  # internal 75.0 shifted by -45.5
+    instruments_arm_in: float = 29.5  # unsourced (internal 75.0 shifted by -45.5); Block 2 replaces
     interior_weight_lb: float = 20.0
-    interior_arm_in: float = 49.5  # internal 95.0 shifted by -45.5
+    interior_arm_in: float = 49.5  # unsourced (internal 95.0 shifted by -45.5); Block 2 replaces
     fuel_density_lb_per_gal: float = 6.01  # 100LL avgas
-    fuel_arm_in: float = 82.0  # Strake fuel CG location (internal 127.5 shifted by -45.5)
+    fuel_arm_in: float = 104.5  # book: om-1980:p26 fuel station 104.5
 
 
 @dataclass

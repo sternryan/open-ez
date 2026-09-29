@@ -198,3 +198,78 @@ Verdict (Task 7 decision input):
 - Roncz incidence: NOT FOUND (method only, cp-text:p47).
 - CG limit change with the Roncz canard: NOT FOUND; the 97/103 limits stand (aft 103 from LPC 116, CP 37/39).
 The numbers likely live on the Roncz canard plans sheets, which are not in the corpus.
+
+## Fuselage stations (Task 6)
+
+Every station below was read on the page image (crops of the scan at 300-600 dpi), not from OCR. Datum: the plans define F.S. 0 as "near the nose" and count aft (plans-1980:p29), but the back-cover 3-view puts the nose tip at F.S. -6.8, so the datum is a shop reference, not the nose tip. The Section I scan has no full-size fuselage side view; the A-pages (bulkhead patterns, side profile) are not in it, and no bulkhead F22, F28, seat or firewall drawing prints a fuselage-side station scale.
+
+### Callouts read on the page image
+
+| value | citation | what the page says (≤10 words) | copy caveat |
+|---|---|---|---|
+| F.S. -6.8 | plans-1980:p171 | nose tip callout on the plan view | handwritten-style label; sign read as minus; matches the plan's own nose apex |
+| F.S. 18.7 at B.L. 71 | plans-1980:p171 | canard tip leading edge station | already `book` in the model |
+| F.S. 17 | plans-1980:p171 | nose wheel axle, side view (W.L. -22 per CP25 LPC 24) | book prints 17; manual says about 20 |
+| F.S. 37 | plans-1980:p171 | plan-view leader at the canopy's forward edge | label names no part; feature attribution is by alignment only |
+| F.S. 50 | plans-1980:p171; plans-1980:p147 | where the strake leading edge starts at the fuselage side | read twice, two pages agree |
+| F.S. 73.3 at B.L. 23 | plans-1980:p171; plans-1980:p147 | strake leading edge at butt line 23 | read twice, two pages agree |
+| F.S. 99.5 at B.L. 45 | plans-1980:p147 | strake leading edge meets the rib at butt line 45 | a leading-edge point, not a trailing edge |
+| F.S. 113.4 (113.9) | plans-1980:p171; cp-text:p25 | wing root leading edge; CP25 corrects to 113.9 | already `cp-corrected` in the model |
+| F.S. 110.5 | plans-1980:p171; plans-1980:p50 | main gear axle centerline | read twice; manual says 110.5 +/- 1 |
+| F.S. 125.5 at B.L. 26.75 | plans-1980:p50 | aft face of center-section spar, reference for gear | text callout, read on the image; CP36 note relocated it in the chapter |
+| F.S. 125 | plans-1980:p171 | vertical line at aft end of cockpit, unnamed | label only, no part name |
+| F.S. 118.5 and 125 at centerline | plans-1980:p88 | spar forward and aft faces, 6.5 in deep | same spar as p50 (125 here, 125.5 there) |
+| F.S. 123.54 / 129.9 | plans-1980:p88 | spar end bulkhead corners at B.L. 56.46 / 55.5 | local spar geometry, swept spar |
+| F.S. 125 (labelled FIREWALL) | plans-1980:p101 | firewall line on the aileron-mixer detail | labels F.S. 124, 127, 128 beside it are parts positions |
+| F.S. 118.5 | plans-1980:p147 | aft end of fuel tank at butt line 23 | equals the spar forward face |
+| F.S. 103.5 | plans-1980:p147 | baffle foot near the fuel gauge and tank sump | local tank feature |
+| F.S. 148.4 at B.L. 23, W.L. 17.5 | plans-1980:p126 | where wing trailing edge meets the engine cowline | text callout and diagram agree; 148.4 read twice |
+| F.S. 155.6 and 149.6 at B.L. 55.5 | plans-1980:p126 | wing trailing edge and hinge line at butt line 55.5 | wing features, not fuselage |
+| F.S. 125.6, 130.5 | plans-1980:p126 | wing foam edge and shear web stations | wing features |
+| F.S. 49.8 | plans-1980:p106 | pitch trim handle bracket point, 9.5 in aft of panel | local part position; 40 + 9.5 = 49.5, not 49.8 |
+| F.S. 40 | plans-1980:p106; om-1980:p34 | front side of instrument panel | manual p35 says front side of the panel |
+| F.S. 56.75 | plans-1980:p116 | canopy safety catch screw location | local hardware |
+| F.S. 44, 74, 104 | plans-1980:p117 | canopy latch bracket positions along the longeron | local hardware; read on image, not by OCR |
+| F.S. 52 to 60 | plans-1980:p159 | length of left console vertical face | text, read from the OCR line and page context; local part |
+| F.S. 67.5, 68, 54.7 | cobelu:p1 LandingBrake | landing brake hole and mounting points | Section VI text; local parts |
+| F.S. 156, 159.7, 160.5, 176.8, 186.8, 190, 196.6 | plans-1980:p135; plans-1980:p171 | winglet and rudder points; 196.6 is the top aft corner | winglet stations, not fuselage; 196.6 read on both pages |
+| F.S. 154 or 156 at B.L. 157 | plans-1980:p171 | wing tip leading edge | second digit ambiguous on the 3-view; p135 and p126 print 156 |
+| No station | plans-1980:p9, p51, p66 | OCR "FS" hits are not stations | p9 gallons, p51 glass size, p66 nothing on the image |
+
+### Manual figures
+
+| value | citation | what the page says (≤10 words) | copy caveat |
+|---|---|---|---|
+| Instrument panel reference F.S. 40 | om-1980:p34 | reference must sit right relative to the surfaces | transcription |
+| Main gear F.S. 110.5 +/- 1 in | om-1980:p34 | tolerance for rotation speed and ground handling | transcription; plans p171 and p50 print 110.5 |
+| Nose gear about F.S. 20 | om-1980:p35 | 40 minus dimension B, "should be about" | approximate; plans p171 prints 17 for the axle |
+| Length 201.4 in, height 94.5 in | om-1980:p3 | overall dimensions table | transcription; the table does not say what ends the length |
+| Front cockpit 70 in, rear 54 in | om-1980:p3 | cockpit lengths | not stations |
+
+### Datum and bulkhead facts
+
+- F22 and F28 are forward bulkheads next to the canard, not seat bulkheads (cobelu:p4 ch04 lists the panel, F22 and F28 as forward bulkheads; canard lift tabs bear on F22 and alignment pins sit in F28: cobelu:p12 ch12). The rear-seat bulkhead is a different part (plans-1980:p40). The model comments tying `fs_pilot_seat` to F22 and `fs_rear_seat` to F28 have no book support.
+- Fuselage side foam is cut from a 103 x 21 in rectangle (cobelu:p5 ch05); a part length, not a station span.
+
+### Model mapping
+
+| model field | current | book value | citation | status proposal |
+|---|---|---|---|---|
+| fs_nose | -45.5 | -6.8 | plans-1980:p171 | `book` at -6.8, high (done) |
+| fs_canard_le | 18.7 | 18.7 | plans-1980:p171 | stays `book` |
+| fs_pilot_seat | 34.5 | 59.0 (pilot CG station, manual moment arm) | om-1980:p25 | `book` at 59.0, high (captain decision: the model uses it as the pilot arm); the "F-22" label was wrong and is dropped |
+| fs_rear_seat | 69.5 | 103.0 (passenger CG station, manual moment arm) | om-1980:p25 | `book` at 103.0, high (captain decision); the "F-28" label was wrong and is dropped |
+| fs_firewall | 134.5 | 125 (firewall line, spar aft face 125 to 125.5) | plans-1980:p101; plans-1980:p88; plans-1980:p50 | `book` at 125.0, high (done); p171 prints an unnamed F.S. 125 line at the same place |
+| fs_tail | 168.5 | none printed for a fuselage aft end | plans-1980:p171 | stays `converted-unsourced`; note "no fuselage aft-end station printed in Section I" |
+| fuselage_length | 214.0 | none; overall 201.4 (manual) and 203.4 (p171 stations, nose to winglet top) | om-1980:p3; plans-1980:p171 | `conflict`: left at 214.0 (tail unsourced), tracked in GEOMETRY_PROVENANCE (done) |
+| StrakeConfig.fs_leading_edge | 64.5 | 50 at the fuselage side, 73.3 at B.L. 23, 99.5 at B.L. 45 | plans-1980:p147; plans-1980:p171 | `book` at 50.0 (done); the LE is swept, so one number is a simplification |
+| StrakeConfig.fs_trailing_edge | 99.5 | the strake blends into the wing; nearest printed points are 99.5 (LE at B.L. 45) and 118.5 (tank aft end at B.L. 23) | plans-1980:p147 | no book trailing edge; stays 99.5 `converted-unsourced` (done); the 99.5 match with the book LE at BL 45 is a coincidence of the shift |
+| wing_le_anchor | (113.9, 58) | 113.4 printed, 113.9 by CP25 | plans-1980:p171; cp-text:p25 | stays `cp-corrected` |
+| StructuralWeightParams.canard_arm_in | -0.5 | fs_canard_le + 0.25 x canard chord | plans-1980:p171 | quarter chord, computed from GeometricParams defaults (done); fuel_arm_in also moves to the manual's 104.5 (om-1980:p26), a captain deviation from the plan; other arms stay `unsourced`, Block 2 replaces |
+
+### Length conflict
+
+- Model: 214.0 = fs_tail - fs_nose with the old nose at -45.5. With the book nose at -6.8 and the tail unchanged the identity gives 175.3; keeping 214 puts the fuselage end at F.S. 207.2, past every printed station.
+- Manual: 201.4 overall, no definition on the page. Nose tip -6.8 plus 201.4 is F.S. 194.6. Plans p171 and p135 both print 196.6 for the top aft corner of the winglet, which gives 203.4, 2.0 in more than the manual. Nothing on any page equates 201.4 with a station.
+- No page prints a station for the spinner, propeller plane or cowl end. A pixel-scale read of the p171 side view (about 2.55 px per inch, fitted on the printed -6.8, 17, 50, 110.5, 125, 196.6 leaders) puts the propeller disc near F.S. 159 and the dashed spinner outline near F.S. 173; this is an estimate, not a book value.
+- What is unknown: what the manual's 201.4 measures, and where the fuselage ends.

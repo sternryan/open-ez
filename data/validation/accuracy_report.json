@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-29T23:36:35.719795+00:00",
+    "generated": "2026-09-29T23:52:23.020196+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -30,7 +30,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 125.8549,
+      "computed": 123.136,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -44,12 +44,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 116.8532,
+      "computed": 113.9798,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 19.853207,
-      "error_pct": 20.467224,
+      "error_abs": 16.97977,
+      "error_pct": 17.504917,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -57,12 +57,12 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 121.8536,
+      "computed": 119.0659,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 18.853566,
-      "error_pct": 18.304433,
+      "error_abs": 16.065947,
+      "error_pct": 15.598007,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
@@ -70,7 +70,7 @@
     {
       "metric_id": "static_margin_pct",
       "description": "Longitudinal static margin (% MAC)",
-      "computed": 36.048,
+      "computed": 37.1492,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,

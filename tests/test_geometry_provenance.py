@@ -16,7 +16,7 @@ from config.aircraft_config import (
     config,
 )
 
-PATTERN = re.compile(r"^(fs_|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$)")
+PATTERN = re.compile(r"^(fs_|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$)")
 
 
 def geometry_fields() -> set[str]:
@@ -42,7 +42,7 @@ def test_no_stale_provenance_entries():
     assert stale == [], f"provenance for fields that no longer exist: {stale}"
 
 
-OLD = {"fs_pilot_seat": 80.0, "fs_rear_seat": 115.0, "fs_firewall": 180.0, "fs_tail": 214.0, "fs_nose": 0.0}
+OLD = {"fs_tail": 214.0}
 SHIFT = 45.5
 
 
@@ -84,16 +84,34 @@ def test_other_stations_shift_uniformly():  # Review Focus 3
     for name, old in OLD.items():
         assert getattr(g, name) == pytest.approx(old - SHIFT), name
         assert GEOMETRY_PROVENANCE[name]["status"] == "converted-unsourced", name
-    s = StrakeConfig()
-    assert (s.fs_leading_edge, s.fs_trailing_edge) == (110.0 - SHIFT, 145.0 - SHIFT)
-    assert g.fuselage_length == 214.0 == g.fs_tail - g.fs_nose
+    assert StrakeConfig().fs_trailing_edge == 145.0 - SHIFT
+    # tail unsourced, so the length is left alone and flagged, not recomputed from the book nose
+    assert g.fuselage_length == 214.0
+    assert GEOMETRY_PROVENANCE["fuselage_length"]["status"] == "conflict"
+
+
+def test_book_stations_block1():
+    g = config.geometry
+    assert g.fs_nose == pytest.approx(-6.8)
+    assert g.fs_firewall == pytest.approx(125.0)
+    assert g.fs_pilot_seat == pytest.approx(59.0)
+    assert g.fs_rear_seat == pytest.approx(103.0)
+    for name in ("fs_nose", "fs_firewall", "fs_pilot_seat", "fs_rear_seat"):
+        assert GEOMETRY_PROVENANCE[name]["status"] == "book", name
+    assert GEOMETRY_PROVENANCE["fs_nose"]["source"].startswith("plans-1980:p171")
+    assert StrakeConfig().fs_leading_edge == pytest.approx(50.0)
+    w = StructuralWeightParams()
+    assert w.canard_arm_in == pytest.approx(g.fs_canard_le + 0.25 * g.canard_chord)
+    assert w.fuel_arm_in == pytest.approx(104.5)
+    assert g.fuselage_length == 214.0
+    assert GEOMETRY_PROVENANCE["fuselage_length"]["status"] == "conflict"
 
 
 def test_weight_arms_shift_uniformly():
     old = {
-        "wing_arm_in": 140.0, "canard_arm_in": 45.0, "fuselage_arm_in": 100.0,
+        "wing_arm_in": 140.0, "fuselage_arm_in": 100.0,
         "landing_gear_arm_in": 130.0, "electrical_arm_in": 165.0,
-        "instruments_arm_in": 75.0, "interior_arm_in": 95.0, "fuel_arm_in": 127.5,
+        "instruments_arm_in": 75.0, "interior_arm_in": 95.0,
     }
     w = StructuralWeightParams()
     for name, o in old.items():
