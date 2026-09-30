@@ -37,7 +37,7 @@ sys.modules.setdefault("OCP", MagicMock())
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from core.reference import truth_specs  # noqa: E402
+from core.reference import truth_airfoil, truth_specs  # noqa: E402
 from core.sources import check_citation  # noqa: E402
 
 NOT_GRADED = "NOT GRADED"
@@ -169,17 +169,17 @@ def validate_sources(report: dict, ref_data: dict) -> None:
     for top_key, entry in ref_data.get("aircraft_specs", {}).items():
         if entry.get("status") == "unverified":
             valid_sources.add(f"reference_data.json:aircraft_specs.{top_key}")
-    for section in ("airfoil_data",):
-        section_data = ref_data.get(section, {})
-        for top_key, top_val in section_data.items():
-            # Top-level key: e.g. reference_data.json:aircraft_specs.neutral_point_fs
-            valid_sources.add(f"reference_data.json:{section}.{top_key}")
-            # Also allow nested keys (e.g. airfoil_data.roncz_r1145ms.cl_max)
-            if isinstance(top_val, dict):
-                for sub_key in top_val:
-                    valid_sources.add(
-                        f"reference_data.json:{section}.{top_key}.{sub_key}"
-                    )
+    # airfoil_data: confirmed entries must carry a registry citation; unverified entries
+    # need no source id and are still legitimate sources of NOT GRADED metrics.
+    for name, entries in truth_airfoil(ref_data).items():
+        for key, entry in entries.items():
+            if entry["status"] == "confirmed":
+                check_citation(entry["cite"])
+    for name, af in ref_data.get("airfoil_data", {}).items():
+        valid_sources.add(f"reference_data.json:airfoil_data.{name}")
+        for key, e in af.items():
+            if isinstance(e, dict):
+                valid_sources.add(f"reference_data.json:airfoil_data.{name}.{key}")
 
     for metric in report.get("metrics", []):
         source = metric.get("source", "")
@@ -345,7 +345,7 @@ def collect_metrics(
     """
     metrics: list[dict] = []
     specs = truth_specs(ref_data)
-    airfoils = ref_data["airfoil_data"]
+    airfoils = truth_airfoil(ref_data)
     geo = config_module.geometry  # type: ignore[attr-defined]
 
     # -------------------------------------------------------------------------
@@ -430,6 +430,7 @@ def collect_metrics(
             "description": "Canard stall speed at gross weight (first-principles, manual reference areas)",
             **spec_fields(specs, "stall_speed_ktas", computed_stall_ktas),
             "source": "reference_data.json:aircraft_specs.stall_speed_ktas",
+            "notes": "Its CLmax input (canard CLmax 1.35, airfoil_data.roncz_r1145ms.cl_max) is unverified (not found in the CP text, cobelu, plans OCR, or the public web); the computed value is kept and the drift lock stays.",
             "units": "knots TAS",
             "convention_note": (
                 f"Uses manual reference areas: "
@@ -486,105 +487,26 @@ def collect_metrics(
     # Airfoil metrics (from config.aero_limits, against wind tunnel reference)
     # -------------------------------------------------------------------------
 
-    # --- Canard CLmax (Roncz R1145MS) ---
-    roncz_clmax_entry = airfoils["roncz_r1145ms"]["cl_max"]
-    computed_canard_clmax = config_module.aero_limits.canard_clmax  # type: ignore[attr-defined]
-    c_clmax_grade, c_clmax_err_abs, c_clmax_err_pct = grade_metric(
-        computed_canard_clmax,
-        roncz_clmax_entry["value"],
-        tolerance_abs=0.05,   # Matching test_precision_validation.py
-        tolerance_pct=None,
-    )
-    metrics.append(
-        {
-            "metric_id": "canard_clmax",
-            "description": "Canard (Roncz R1145MS) maximum lift coefficient",
-            "computed": round(computed_canard_clmax, 6),
-            "reference": roncz_clmax_entry["value"],
-            "tolerance_abs": 0.05,
-            "tolerance_pct": None,
-            "error_abs": c_clmax_err_abs,
-            "error_pct": c_clmax_err_pct,
-            "grade": c_clmax_grade,
-            "source": "reference_data.json:airfoil_data.roncz_r1145ms.cl_max",
-            "units": "dimensionless",
-        }
-    )
+    def _airfoil(mid, desc, af, key, computed, tol, src, units):
+        metrics.append(
+            {
+                "metric_id": mid,
+                "description": desc,
+                **spec_fields(airfoils[af], key, computed, tolerance_abs=tol),
+                "source": f"reference_data.json:airfoil_data.{af}.{key}",
+                "units": units,
+            }
+        )
 
-    # --- Wing CLmax (Eppler 1230) ---
-    eppler_clmax_entry = airfoils["eppler_1230"]["cl_max"]
-    computed_wing_clmax = config_module.aero_limits.wing_clmax  # type: ignore[attr-defined]
-    w_clmax_grade, w_clmax_err_abs, w_clmax_err_pct = grade_metric(
-        computed_wing_clmax,
-        eppler_clmax_entry["value"],
-        tolerance_abs=0.05,   # Matching test_precision_validation.py
-        tolerance_pct=None,
-    )
-    metrics.append(
-        {
-            "metric_id": "wing_clmax",
-            "description": "Main wing (Eppler 1230) maximum lift coefficient",
-            "computed": round(computed_wing_clmax, 6),
-            "reference": eppler_clmax_entry["value"],
-            "tolerance_abs": 0.05,
-            "tolerance_pct": None,
-            "error_abs": w_clmax_err_abs,
-            "error_pct": w_clmax_err_pct,
-            "grade": w_clmax_grade,
-            "source": "reference_data.json:airfoil_data.eppler_1230.cl_max",
-            "units": "dimensionless",
-        }
-    )
-
-    # --- Canard alpha_0L (Roncz R1145MS) ---
-    roncz_a0l_entry = airfoils["roncz_r1145ms"]["alpha_zero_lift_deg"]
-    computed_canard_alpha_0l = config_module.aero_limits.canard_alpha_0L  # type: ignore[attr-defined]
-    c_a0l_grade, c_a0l_err_abs, c_a0l_err_pct = grade_metric(
-        computed_canard_alpha_0l,
-        roncz_a0l_entry["value"],
-        tolerance_abs=0.5,    # Matching test_precision_validation.py (degrees)
-        tolerance_pct=None,
-    )
-    metrics.append(
-        {
-            "metric_id": "canard_alpha_0l_deg",
-            "description": "Canard (Roncz R1145MS) zero-lift angle of attack",
-            "computed": round(computed_canard_alpha_0l, 6),
-            "reference": roncz_a0l_entry["value"],
-            "tolerance_abs": 0.5,
-            "tolerance_pct": None,
-            "error_abs": c_a0l_err_abs,
-            "error_pct": c_a0l_err_pct,
-            "grade": c_a0l_grade,
-            "source": "reference_data.json:airfoil_data.roncz_r1145ms.alpha_zero_lift_deg",
-            "units": "degrees",
-        }
-    )
-
-    # --- Wing alpha_0L (Eppler 1230) ---
-    eppler_a0l_entry = airfoils["eppler_1230"]["alpha_zero_lift_deg"]
-    computed_wing_alpha_0l = config_module.aero_limits.wing_alpha_0L  # type: ignore[attr-defined]
-    w_a0l_grade, w_a0l_err_abs, w_a0l_err_pct = grade_metric(
-        computed_wing_alpha_0l,
-        eppler_a0l_entry["value"],
-        tolerance_abs=0.5,    # Matching test_precision_validation.py (degrees)
-        tolerance_pct=None,
-    )
-    metrics.append(
-        {
-            "metric_id": "wing_alpha_0l_deg",
-            "description": "Main wing (Eppler 1230) zero-lift angle of attack",
-            "computed": round(computed_wing_alpha_0l, 6),
-            "reference": eppler_a0l_entry["value"],
-            "tolerance_abs": 0.5,
-            "tolerance_pct": None,
-            "error_abs": w_a0l_err_abs,
-            "error_pct": w_a0l_err_pct,
-            "grade": w_a0l_grade,
-            "source": "reference_data.json:airfoil_data.eppler_1230.alpha_zero_lift_deg",
-            "units": "degrees",
-        }
-    )
+    al = config_module.aero_limits  # type: ignore[attr-defined]
+    _airfoil("canard_clmax", "Canard (Roncz R1145MS) maximum lift coefficient",
+             "roncz_r1145ms", "cl_max", al.canard_clmax, 0.05, None, "dimensionless")
+    _airfoil("wing_clmax", "Main wing (Eppler 1230) maximum lift coefficient",
+             "eppler_1230", "cl_max", al.wing_clmax, 0.05, None, "dimensionless")
+    _airfoil("canard_alpha_0l_deg", "Canard (Roncz R1145MS) zero-lift angle of attack",
+             "roncz_r1145ms", "alpha_zero_lift_deg", al.canard_alpha_0L, 0.5, None, "degrees")
+    _airfoil("wing_alpha_0l_deg", "Main wing (Eppler 1230) zero-lift angle of attack",
+             "eppler_1230", "alpha_zero_lift_deg", al.wing_alpha_0L, 0.5, None, "degrees")
 
     # -------------------------------------------------------------------------
     # Geometry metrics

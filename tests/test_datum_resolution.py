@@ -106,7 +106,6 @@ class TestReferenceDataSchema:
         """Each source entry must have title and type fields."""
         data = _load_ref_data()
         sources = data["sources"]
-        assert len(sources) > 0, "sources registry is empty"
         for source_id, source in sources.items():
             assert "title" in source, (
                 f"Source '{source_id}' missing 'title' field"

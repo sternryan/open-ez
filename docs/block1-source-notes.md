@@ -353,3 +353,28 @@ Four labelled waterlines touch the canard; none is a leading-edge waterline. On 
 | Roncz elevator 65 in each side | cobelu:ch30 sheet C-1 | elevator planform half-length | agrees with cp-43:p1 130 in |
 | No canard chord printed | plans-1980:p54, p55, p56, p57; cobelu:ch30 sheets C-1, C-3, C-4 | no chord figure on the canard or template pages | templates are full size but carry no chord dimension; GU template pages A-2, A-9, A-10 are not in the scan |
 | Roncz chord about 12 in (derived, low confidence) | cobelu:ch30 sheet C-1 full-scale section | section drawn full scale; measured against its 3 in spar cap and 1 in tube | measured 11.6 to 12.2 in on the scan; scan scale unverified, do not use as a model value |
+
+## airfoil_data (follow-up)
+
+Block 1 follow-up 2. None of the eight `airfoil_data` values, nor either cited source (`roncz-wt`, a Purdue report; `eppler-report`, a UIUC/Stuttgart compilation), was found in the CP 1 to 109 text, the CP OCR, cobelu, the plans OCR, or the public web. All eight are `unverified`, nothing is registered, and the airfoil metrics are NOT GRADED. The values are kept in the JSON for history with `was_cited`; sources `roncz-wt` and `eppler-report` are deleted.
+
+| airfoil | value | verdict |
+|---|---|---|
+| roncz_r1145ms | cl_max 1.35 | NOT FOUND |
+| roncz_r1145ms | cm_zero -0.05 | NOT FOUND |
+| roncz_r1145ms | alpha_zero_lift_deg -3.0 | NOT FOUND |
+| roncz_r1145ms | cd_min 0.006 | NOT FOUND |
+| eppler_1230 | cl_max 1.45 | NOT FOUND |
+| eppler_1230 | cm_zero -0.02 | NOT FOUND |
+| eppler_1230 | alpha_zero_lift_deg -2.0 | NOT FOUND |
+| eppler_1230 | cd_min 0.0055 | NOT FOUND |
+
+URLs actually read:
+
+| URL | what it says (≤10 words) |
+|---|---|
+| https://m-selig.ae.illinois.edu/ads/coord_database.html | coordinates only, no airfoil characteristics |
+| https://m-selig.ae.illinois.edu/ads/ref/Roncz.html | lists Long-EZ airfoils |
+| https://m-selig.ae.illinois.edu/ads/aircraft.html | lists Long-EZ airfoils |
+| http://cozybuilders.org/mail_list/topics97/airfoils.txt | 1997 post: no R1145MS data at UIUC |
+| http://airfoiltools.com/airfoil/details?airfoil=e1230-il | XFOIL predictions only, Re up to 1M |
