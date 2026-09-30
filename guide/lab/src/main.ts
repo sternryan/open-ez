@@ -7,6 +7,13 @@ import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
 import { surf } from './core/materials'
 import { workshopEnvironment } from './scene/env'
+import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
+import { orientation, type Pose } from './logic/pose'
+import { labShots, LAB_FOV, type LabShot } from './shots'
+import { CameraRig, easeInOut, type Shot } from './camera'
+import { barOps, makeStore, type GraphLite, type Variant } from './logic/graph'
+import { initUI } from './ui/ui'
+import './style.css'
 
 const INCH = 0.0254
 const params = new URLSearchParams(location.search)
@@ -18,12 +25,24 @@ const setStatus = (msg: string | null, err = false) => {
   statusEl.classList.toggle('err', err)
 }
 
-interface Graph { components: Record<string, unknown>; layup?: { nodes?: Record<string, { cloth?: string }> } | null }
+interface Graph extends GraphLite { components: Record<string, unknown>; layup?: { nodes?: Record<string, { cloth?: string }> } | null }
 interface Cfg { model: string }
-interface LabHook { ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number }; advance(seconds: number): void }
+interface CamState { pos: number[]; target: number[]; fov: number }
+interface LabHook {
+  ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number }; advance(seconds: number): void
+  selected(): string | null; select(opId: string | null): void; camera(): CamState; shot(name: string): CamState | null; flying(): boolean
+  /** the pose the canard is in, or is turning to */
+  pose(): Pose; flipping(): boolean; tableTopY(): number
+  /** authored lab shots, model inches in the canard's frame (target is the tours.yaml target) */
+  labShots(): Record<string, LabShot>
+}
 declare global { interface Window { __lab?: LabHook } }
 
-const hook: LabHook = { ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0 }), advance: () => {} }
+const hook: LabHook = {
+  ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0 }), advance: () => {},
+  selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
+  pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
+}
 if (TEST) window.__lab = hook
 
 // The export has one mesh per face (~1,800). They are static, so bake each mesh's world transform and merge everything that
@@ -74,6 +93,27 @@ function mergeModel(scene: THREE.Object3D, graph: Graph): { cid: string; node: s
   return out
 }
 
+/** Distance along `dir` from `target` at which the box spans `fill` of the frame width, as a Shot. */
+function fitShot(box: THREE.Box3, target: THREE.Vector3, dir: THREE.Vector3, fovDeg: number, aspect: number, fill: number): Shot {
+  const cam = new THREE.PerspectiveCamera(fovDeg, aspect, 0.05, 90)
+  const pts: THREE.Vector3[] = []
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) pts.push(new THREE.Vector3(x, y, z))
+  const spread = (d: number) => {
+    cam.position.copy(target).addScaledVector(dir, d)
+    cam.lookAt(target)
+    cam.updateMatrixWorld(true)
+    cam.updateProjectionMatrix()
+    let lo = 1e9, hi = -1e9
+    for (const p of pts) { const x = p.clone().project(cam).x; lo = Math.min(lo, x); hi = Math.max(hi, x) }
+    return (hi - lo) / 2
+  }
+  let a = 0.5, b = 12
+  for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (spread(m) > fill) a = m; else b = m }
+  const d = (a + b) / 2
+  const p = target.clone().addScaledVector(dir, d)
+  return { pos: [p.x, p.y, p.z], target: target.toArray() as [number, number, number], fov: fovDeg }
+}
+
 async function boot() {
   NOISE3D.value = makeNoise3D(64)
   const canvas = document.getElementById('gl') as HTMLCanvasElement
@@ -87,9 +127,10 @@ async function boot() {
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.NoToneMapping
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFShadowMap
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.shadowMap.autoUpdate = false
   renderer.localClippingEnabled = true
+  renderer.info.autoReset = false // count the whole frame (every pipeline pass), not just the last render call
 
   const coarse = matchMedia('(pointer: coarse)').matches
   const q = params.get('q') || (coarse ? 'mid' : 'high')
@@ -98,61 +139,43 @@ async function boot() {
   const scene = new THREE.Scene()
   scene.background = null // a colour background would force-clear on every render() call
   scene.environment = workshopEnvironment(renderer)
-  scene.environmentIntensity = 1.0
+  scene.environmentIntensity = 1.5
 
-  // ---- lights ----
-  const key = new THREE.DirectionalLight(0xffe9cf, 3.2)
-  key.position.set(2.6, 4.4, 2.2)
+  // ---- lights: a warm key from the overhead fixtures (one shadowed spot over the table), a cool low fill, the room env for the rest ----
+  const key = new THREE.SpotLight(0xffe6c8, 21, 0, 0.5, 1, 2)
+  key.position.set(-0.7, ROOM.h - 0.35, 0.5)
   key.castShadow = true
-  key.shadow.mapSize.set(2048, 2048)
-  const sc = key.shadow.camera
-  sc.left = -2.4; sc.right = 2.4; sc.top = 2.4; sc.bottom = -2.4; sc.near = 0.5; sc.far = 12
-  key.shadow.bias = -0.0004
-  key.shadow.normalBias = 0.01
+  const sm = quality === 'low' ? 1024 : quality === 'mid' ? 2048 : 4096
+  key.shadow.mapSize.set(sm, sm)
+  key.shadow.camera.near = 0.5
+  key.shadow.camera.far = 6
+  key.shadow.bias = -0.0008
+  key.shadow.normalBias = 0.03
   key.shadow.radius = 4
   scene.add(key, key.target)
-  const fill = new THREE.DirectionalLight(0xbcd0ff, 0.6)
-  fill.position.set(-3, 2.2, -2.5)
+  const fill = new THREE.DirectionalLight(0xb9cfff, 0.9)
+  fill.position.set(-3, 1.6, 2.4)
   scene.add(fill)
-
-  // ---- floor and pedestal ----
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(40, 96), surf({ color: 0x5c5148, metalness: 0, roughness: 0.66, detail: 1.4, colorVar: 0.18, roughVar: 0.5 }))
-  floor.rotation.x = -Math.PI / 2
-  floor.receiveShadow = true
-  scene.add(floor)
-  // A dark warm dome so the floor's edge never meets a black void (the real backdrop is a later task).
-  const dc = document.createElement('canvas')
-  dc.width = 4; dc.height = 128
-  const dg = dc.getContext('2d')!
-  const dl = dg.createLinearGradient(0, 0, 0, 128)
-  dl.addColorStop(0, '#1b1612'); dl.addColorStop(0.5, '#2a231d'); dl.addColorStop(0.52, '#3a3128'); dl.addColorStop(1, '#3a3128')
-  dg.fillStyle = dl; dg.fillRect(0, 0, 4, 128)
-  const dt = new THREE.CanvasTexture(dc); dt.colorSpace = THREE.SRGBColorSpace
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ map: dt, side: THREE.BackSide, depthWrite: false })))
-
-  const plinthProfile = [[0, 0], [0.34, 0], [0.34, 0.03], [0.31, 0.05], [0.31, 0.09], [0.2, 0.12], [0.16, 0.16], [0.16, 0.7], [0.19, 0.74], [0.19, 0.78], [0.27, 0.8], [0.27, 0.84], [0, 0.84]]
-  const plinth = new THREE.Mesh(new THREE.LatheGeometry(plinthProfile.map(([x, y]) => new THREE.Vector2(x, y)), 64),
-    surf({ color: 0x2b2926, metalness: 0.15, roughness: 0.55, detail: 2.0, colorVar: 0.1, roughVar: 0.4 }))
-  plinth.castShadow = true
-  plinth.receiveShadow = true
-  scene.add(plinth)
 
   // ---- camera ----
   const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.05, 90)
-  camera.position.set(3.4, 2.2, 3.0)
+  camera.position.set(-3.4, 1.9, 2.6)
   const controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
   controls.dampingFactor = 0.075
   controls.minDistance = 0.4
-  controls.maxDistance = 9
-  controls.maxPolarAngle = Math.PI * 0.49
+  controls.maxDistance = 7.5
+  controls.maxPolarAngle = Math.PI * 0.495 // never orbit under the floor: the target sits at table height, so the eye stays above it
   controls.rotateSpeed = 0.7
 
+  const rig = new CameraRig(camera, controls)
+
   const pipeline = new Pipeline(renderer, { ao: quality !== 'low', msaa: quality === 'low' ? 0 : 4, aoSamples: 8 })
-  pipeline.aoScale = 0.4
+  pipeline.aoScale = 0.5
+  pipeline.params.ao = 0.55
   pipeline.params.dofTaps = 14
   pipeline.params.sharpen = 0.25
-  pipeline.params.bloom = 0.05
+  pipeline.params.bloom = 0.12
   const dofOn = quality === 'high'
 
   const resize = () => {
@@ -163,16 +186,29 @@ async function boot() {
     camera.aspect = W / H
     camera.updateProjectionMatrix()
     pipeline.setSize(Math.round(W * dpr), Math.round(H * dpr))
+    // Portrait screens see far less width: pull every shot back, as airsup does.
+    rig.scale = camera.aspect >= 1 ? Math.max(1, 1.6 / camera.aspect) : Math.min(3.2, (1.6 / camera.aspect) * 0.82)
+    if (rig.lastUser < 0 && !rig.flying && currentShot) rig.set(currentShot) // the user has not touched the camera: keep the framing
   }
+  let currentShot: string | null = null
+  // keep every landing spot inside the room, whatever the portrait pull-back does
+  rig.clampPos = (v) => { v.x = THREE.MathUtils.clamp(v.x, ROOM.x0 + 0.4, ROOM.x1 - 0.5); v.z = THREE.MathUtils.clamp(v.z, ROOM.z0 + 0.5, ROOM.z1 - 0.4); v.y = THREE.MathUtils.clamp(v.y, 0.25, ROOM.h - 0.45) }
   window.addEventListener('resize', resize)
   resize()
 
   // ---- deterministic time ----
   let simT = 0
-  const step = (dt: number) => { simT += dt; controls.update() }
+  let stepPose: (dt: number) => void = () => {}
+  const step = (dt: number) => {
+    simT += dt
+    stepPose(dt)
+    rig.update(dt)
+    controls.update()
+  }
   const render = () => {
     pipeline.params.dofFocus = camera.position.distanceTo(controls.target)
     pipeline.params.dofAperture = dofOn ? 9 : 0
+    renderer.info.reset()
     pipeline.render(scene, camera, simT)
   }
   let last = performance.now()
@@ -187,9 +223,14 @@ async function boot() {
 
   // ---- data + model ----
   const merged: Merged[] = []
-  const root = new THREE.Group()
+  // canardRoot carries the pose (right side up, or inverted in the jig) and everything that must follow the canard: the meshes,
+  // the section cut's owner and, in later tasks, load paths and labels. Its origin is the canard's box centre, in metres.
+  const canardRoot = new THREE.Group()
+  canardRoot.name = 'canardRoot'
+  scene.add(canardRoot)
+  const root = new THREE.Group() // the model frame: inches, as exported
   root.scale.setScalar(INCH)
-  scene.add(root)
+  canardRoot.add(root)
   hook.meshNames = () => merged.map((m) => m.node ?? m.cid)
   try {
     const [graph, cfg] = await Promise.all([
@@ -220,27 +261,123 @@ async function boot() {
     cut.collect(root)
     cut.update()
 
-    // Sit the canard on the plinth, centred, and frame it large.
+    // ---- the shop: sized from the model's own box, the canard laid on its jig blocks ----
     root.updateMatrixWorld(true)
     const box = new THREE.Box3().setFromObject(root)
     const c = box.getCenter(new THREE.Vector3())
     const size = box.getSize(new THREE.Vector3())
-    const PLINTH_TOP = 0.84
-    root.position.set(-c.x, PLINTH_TOP + 0.02 - box.min.y, -c.z)
-    plinth.position.set(0, 0, 0)
-    root.updateMatrixWorld(true)
-    const b2 = new THREE.Box3().setFromObject(root)
-    const centre = b2.getCenter(new THREE.Vector3())
-    const aim = centre.clone().add(new THREE.Vector3(0, -0.28, 0)) // aim below the wing so the plinth stays in frame
-    controls.target.copy(aim)
+    const shop = buildWorkshop(size.z, size.x)
+    scene.add(shop.group)
+    root.position.copy(c).multiplyScalar(-1) // canardRoot's origin is the box centre
+    const restY = shop.jigTopY + size.y / 2 + 0.001
+    const halfW = size.x / 2, halfH = size.y / 2
+
+    // ---- pose: upright, or inverted (rotated half a turn about the span axis, Z) with its top surface on the jig blocks ----
+    // The box is symmetric about its centre, so both poses rest at the same height. A flip turns about the span axis and lifts
+    // just enough that no corner of the box goes through the blocks.
+    const FLIP_SECONDS = 1.2
+    const angleOf = (p: Pose) => (p === 'inverted' ? Math.PI : 0)
+    let pose: Pose = 'upright'
+    let flipFrom = 0, flipTo = 0, flipT = 1
+    const applyPose = (angle: number, e: number) => {
+      const s = Math.abs(Math.sin(angle)), k = Math.abs(Math.cos(angle))
+      canardRoot.rotation.set(0, 0, angle)
+      canardRoot.position.set(0, restY + (halfW * s + halfH * k - halfH) + 0.03 * Math.sin(Math.PI * e), 0)
+      canardRoot.updateMatrixWorld(true)
+    }
+    applyPose(0, 0)
+    stepPose = (dt) => {
+      if (flipT >= 1) return
+      flipT = Math.min(1, flipT + dt / FLIP_SECONDS)
+      const e = easeInOut(flipT)
+      applyPose(flipFrom + (flipTo - flipFrom) * e, e)
+      pipeline.shadowDirty = true
+    }
+    const setPose = (p: Pose, animate: boolean) => {
+      if (p === pose && flipT >= 1) return
+      const cur = flipT >= 1 ? angleOf(pose) : flipFrom + (flipTo - flipFrom) * easeInOut(flipT)
+      pose = p
+      flipFrom = cur
+      flipTo = angleOf(p)
+      flipT = animate ? 0 : 1
+      applyPose(animate ? flipFrom : flipTo, 0)
+      pipeline.shadowDirty = true
+    }
+    /** model inches -> world metres, with the canard in pose `p` (rest height, no lift) */
+    const modelToWorld = (p: Pose): THREE.Matrix4 => {
+      const m = new THREE.Matrix4().compose(new THREE.Vector3(0, restY, 0), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angleOf(p)), new THREE.Vector3(1, 1, 1))
+      return m.multiply(new THREE.Matrix4().compose(root.position.clone(), new THREE.Quaternion(), new THREE.Vector3(INCH, INCH, INCH)))
+    }
+    const cb = new THREE.Box3().setFromObject(root)
+    const centre = cb.getCenter(new THREE.Vector3())
     key.target.position.copy(centre)
-    const span = Math.max(size.x, size.z)
-    const dir = new THREE.Vector3(0.9, 0.3, 0.7).normalize()
-    const fov = THREE.MathUtils.degToRad(camera.fov)
-    const dist = span / (0.8 * 2 * Math.tan(fov / 2) * Math.min(camera.aspect, 1.9))
-    camera.position.copy(aim).addScaledVector(dir, dist)
-    controls.update()
+    key.target.updateMatrixWorld()
     pipeline.shadowDirty = true
+
+    // ---- shots: home is fitted to the canard's box; each op's lab shot is authored in the canard's frame (src/shots.ts) and
+    // carried through the pose the canard will be in for that op ----
+    const homeTarget = centre.clone().add(new THREE.Vector3(0, -0.06, 0))
+    rig.shots.home = fitShot(cb, homeTarget, new THREE.Vector3(-0.66, 0.26, 0.7).normalize(), 30, 1.6, 0.7)
+    let lab: Record<string, LabShot> = {}
+    const buildShots = (v: Variant) => {
+      lab = labShots(graph.tours ?? {}, (id) => orientation(graph, v, id))
+      for (const id of Object.keys(rig.shots)) if (id !== 'home') delete rig.shots[id]
+      for (const [id, ls] of Object.entries(lab)) {
+        const m = modelToWorld(orientation(graph, v, id))
+        const tgt = new THREE.Vector3(...ls.target).applyMatrix4(m), pos = new THREE.Vector3(...ls.position).applyMatrix4(m)
+        rig.shots[id] = { pos: [pos.x, pos.y, pos.z], target: [tgt.x, tgt.y, tgt.z], fov: LAB_FOV }
+      }
+    }
+    const snap = (name: string): CamState | null => {
+      if (!rig.shots[name]) return null
+      const l = rig.landing(name)
+      return { pos: l.pos.toArray(), target: l.target.toArray(), fov: l.fov }
+    }
+
+    // ---- UI ----
+    let storage: Storage | null = null
+    try { storage = window.localStorage } catch { storage = null } // some browsers throw on access
+    const store = makeStore(storage ?? { getItem: () => null, setItem: () => {} })
+    let variant: Variant = 'roncz'
+    let selected: string | null = null
+    const goto = (shot: string, fly: boolean) => {
+      currentShot = shot
+      if (fly) rig.fly(shot, 1.8, 0.05); else rig.set(shot)
+    }
+    buildShots(variant)
+    const select = (id: string | null, fly = true) => {
+      selected = id
+      ui.setSelected(id)
+      setPose(orientation(graph, variant, id), fly)
+      goto(id && rig.shots[id] ? id : 'home', fly)
+    }
+    const ui = initUI({
+      onVariant(v) {
+        if (v === variant) return
+        variant = v
+        buildShots(v)
+        ui.setVariant(v)
+        const ops = barOps(graph, v)
+        ui.setOps(ops)
+        select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
+      },
+      onHome: () => goto('home', true),
+      onSelect: (id) => select(id),
+    }, store)
+    ui.setVariant(variant)
+    const firstOps = barOps(graph, variant)
+    ui.setOps(firstOps)
+    const want = params.get('op')
+    select(firstOps.find((o) => o.id === want)?.id ?? firstOps[0]?.id ?? null, false)
+
+    hook.selected = () => selected
+    hook.select = (id) => select(id)
+    hook.camera = () => ({ pos: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov })
+    hook.shot = snap
+    hook.flying = () => rig.flying
+    hook.pose = () => pose
+    hook.flipping = () => flipT < 1
+    hook.labShots = () => lab
     setStatus(null)
     hook.ready = true
   } catch (e) {
