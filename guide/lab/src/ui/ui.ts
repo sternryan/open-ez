@@ -1,0 +1,131 @@
+import type { Op, Variant } from '../logic/graph'
+
+type Store = { get(id: string): Set<number>; toggle(id: string, i: number): void }
+export interface UIHandlers {
+  onVariant(v: Variant): void
+  onHome(): void
+  onSelect(opId: string): void
+}
+
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
+
+/** DOM side of the lab: control card, step card and the bottom op bar. No three.js in here. */
+export function initUI(h: UIHandlers, store: Store) {
+  const chips = $('chips'), title = $('step-title'), summary = $('step-summary'), list = $('checklist')
+  const step = $('step'), head = $('step-head'), variant = $('variant')
+  let ops: Op[] = []
+  let selected: string | null = null
+  const phone = matchMedia('(max-width: 640px)')
+
+  const setOpen = (open: boolean) => { step.dataset.open = String(open); head.setAttribute('aria-expanded', String(open)) }
+  // Phones start collapsed to the title line; wide screens always show the body (the toggle is inert there).
+  setOpen(!phone.matches)
+  phone.addEventListener('change', () => setOpen(!phone.matches))
+  head.addEventListener('click', () => { if (phone.matches) setOpen(step.dataset.open !== 'true') })
+
+  // Desktop: when the whole card (summary and checklist) would cover more than ~40% of the canvas height, the checklist folds
+  // behind its heading so the card stays a strip and the canard keeps the room. Phones already collapse the whole body.
+  const COVER = 0.4
+  let listOpen = true
+  const fit = () => {
+    if (phone.matches) { step.dataset.compact = 'false'; return }
+    step.dataset.compact = 'false'
+    step.dataset.list = 'open'
+    // the card is height-capped, so measure what it wants (heading plus the body's full scroll height), not what it got
+    const natural = head.offsetHeight + $('step-body').scrollHeight
+    const compact = natural > window.innerHeight * COVER && list.children.length > 0
+    step.dataset.compact = String(compact)
+    step.dataset.list = compact && !listOpen ? 'closed' : 'open'
+    $('checklist-h').setAttribute('aria-expanded', String(!compact || listOpen))
+  }
+  $('checklist-h').addEventListener('click', () => {
+    if (step.dataset.compact !== 'true') return
+    listOpen = !listOpen
+    fit()
+  })
+  window.addEventListener('resize', fit)
+
+  variant.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button[data-variant]') as HTMLElement | null
+    if (b) h.onVariant(b.dataset.variant as Variant)
+  })
+  $('home').addEventListener('click', () => h.onHome())
+  $('bar-home').addEventListener('click', () => h.onHome())
+  chips.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button[data-op]') as HTMLElement | null
+    if (b) h.onSelect(b.dataset.op!)
+  })
+
+  const renderCount = (op: Op | null) => {
+    const total = op?.completion?.length ?? 0
+    const done = op ? [...store.get(op.id)].filter((i) => i < total).length : 0
+    $('check-count').textContent = total ? `${done}/${total}` : ''
+  }
+
+  const showStep = (op: Op | null) => {
+    list.replaceChildren()
+    if (!op) {
+      title.textContent = ops.length ? 'Pick a step' : 'No steps for this variant'
+      summary.textContent = ops.length ? '' : 'The build steps for this canard are not written yet.'
+      $('step-count').textContent = ''
+      $('checklist-h').hidden = true
+      renderCount(null)
+      return
+    }
+    const idx = ops.findIndex((o) => o.id === op.id)
+    $('step-count').textContent = `${idx + 1} / ${ops.length}`
+    title.textContent = op.title
+    summary.textContent = op.summary
+    const done = store.get(op.id)
+    ;(op.completion ?? []).forEach((text, i) => {
+      const li = document.createElement('li')
+      const label = document.createElement('label')
+      const cb = document.createElement('input')
+      cb.type = 'checkbox'
+      cb.checked = done.has(i)
+      cb.addEventListener('change', () => { store.toggle(op.id, i); renderCount(op) })
+      label.append(cb, document.createTextNode(text))
+      li.append(label)
+      list.append(li)
+    })
+    $('checklist-h').hidden = list.children.length === 0
+    renderCount(op)
+    listOpen = false
+    fit()
+  }
+
+  return {
+    setVariant(v: Variant) {
+      for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))
+    },
+    setOps(next: Op[]) {
+      ops = next
+      chips.replaceChildren()
+      if (!next.length) {
+        const n = document.createElement('span')
+        n.className = 'none'
+        n.textContent = 'No steps for this variant yet'
+        chips.append(n)
+        return
+      }
+      for (const op of next) {
+        const b = document.createElement('button')
+        b.type = 'button'
+        b.dataset.op = op.id
+        b.title = op.title
+        b.textContent = op.title.length > 34 ? op.title.slice(0, 32).trimEnd() + '…' : op.title
+        chips.append(b)
+      }
+    },
+    setSelected(id: string | null) {
+      selected = id
+      for (const b of chips.querySelectorAll('button[data-op]')) {
+        const on = (b as HTMLElement).dataset.op === id
+        if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current')
+        if (on) (b as HTMLElement).scrollIntoView?.({ block: 'nearest', inline: 'center' })
+      }
+      showStep(ops.find((o) => o.id === id) ?? null)
+    },
+    get selected() { return selected },
+  }
+}

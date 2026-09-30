@@ -1,53 +1,36 @@
 import * as THREE from 'three'
+import { FIXTURES, FIXTURE_LEN, FIXTURE_Y, ROOM, WINDOW } from './workshop'
 
 /**
- * A warm workshop, baked to a PMREM environment map: a dim wood-and-plaster dome, long overhead
- * fluorescent-style strips, a window-like side panel and a low floor bounce. Only used for image-based light and reflections.
+ * The shop, baked to a PMREM environment map for image-based light and reflections. It is the same room the scene draws
+ * (same walls, fixture and window positions), seen from table height, so a glossy ply reflects the tubes and the window
+ * that are really overhead.
  */
 export function workshopEnvironment(renderer: THREE.WebGLRenderer): THREE.Texture {
   const s = new THREE.Scene()
-
-  const grad = document.createElement('canvas')
-  grad.width = 4
-  grad.height = 256
-  const g = grad.getContext('2d')!
-  const lg = g.createLinearGradient(0, 0, 0, 256)
-  lg.addColorStop(0, '#5a5148') // ceiling
-  lg.addColorStop(0.45, '#3b322a') // walls
-  lg.addColorStop(0.55, '#2a221b')
-  lg.addColorStop(1, '#1a1410') // floor
-  g.fillStyle = lg
-  g.fillRect(0, 0, 4, 256)
-  const gt = new THREE.CanvasTexture(grad)
-  gt.colorSpace = THREE.SRGBColorSpace
-  s.add(new THREE.Mesh(new THREE.SphereGeometry(30, 32, 16), new THREE.MeshBasicMaterial({ map: gt, side: THREE.BackSide })))
-
-  const sb = document.createElement('canvas')
-  sb.width = sb.height = 128
-  const c = sb.getContext('2d')!
-  const rg = c.createRadialGradient(64, 64, 8, 64, 64, 64)
-  rg.addColorStop(0, '#ffffff')
-  rg.addColorStop(0.6, '#eeeeee')
-  rg.addColorStop(1, '#000000')
-  c.fillStyle = rg
-  c.fillRect(0, 0, 128, 128)
-  const st = new THREE.CanvasTexture(sb)
-
-  const panel = (w: number, h: number, p: [number, number, number], look: [number, number, number], color: number, k: number) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: st, color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide }))
-    m.position.set(...p)
-    m.lookAt(...look)
-    s.add(m)
+  const Y0 = 1.0 // eye height the map is captured from; the room is shifted down by this
+  const R = ROOM
+  const mat = (hex: number, k = 1) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k), side: THREE.BackSide })
+  // room shell: one BackSide box per surface group so floor, walls and ceiling get their own tone
+  const wallsMat = [mat(0x6f747b), mat(0x6f747b), mat(0x40454b), mat(0x77736c, 0.85), mat(0x6f747b), mat(0x6f747b)] // +x -x +y(ceiling) -y(floor) +z -z
+  const shell = new THREE.Mesh(new THREE.BoxGeometry(R.x1 - R.x0, R.h, R.z1 - R.z0), wallsMat)
+  shell.position.set((R.x0 + R.x1) / 2, R.h / 2 - Y0, (R.z0 + R.z1) / 2)
+  s.add(shell)
+  const glow = (hex: number, k: number) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k) })
+  for (const f of FIXTURES) {
+    const t = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.03, FIXTURE_LEN), glow(0xfff0dc, 9))
+    t.position.set(f.x, FIXTURE_Y - Y0, f.z)
+    s.add(t)
   }
-  // three long tube fixtures overhead, running along the shop
-  for (const z of [-3.2, 0, 3.2]) panel(14, 0.9, [0, 8, z], [0, 0, z], 0xfff0dc, 7.0)
-  panel(3, 9, [-10, 3.5, -1], [0, 1.5, 0], 0xffe2bd, 2.6) // warm window light
-  panel(16, 1.2, [0, 3.2, 9], [0, 1.0, 0], 0xf2f4ff, 1.6) // long front strip
-  panel(12, 1.4, [0, 4.5, -9], [0, 1.2, 0], 0xb9cfff, 1.5) // cool back rim
-  panel(12, 12, [0, -3, 0], [0, 1, 0], 0x4a3a2c, 0.8) // floor bounce
+  const w = new THREE.Mesh(new THREE.BoxGeometry(WINDOW.w, WINDOW.h, 0.05), glow(0xd2e6ff, 4.5))
+  w.position.set(WINDOW.x, WINDOW.y - Y0, WINDOW.z + 0.05)
+  s.add(w)
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.6), glow(0x2ee6c8, 2.5))
+  strip.position.set(R.x1 - 0.3, 1.6 - Y0, -2.95)
+  s.add(strip)
 
   const pm = new THREE.PMREMGenerator(renderer)
-  const tex = pm.fromScene(s, 0.02).texture
+  const tex = pm.fromScene(s, 0.03).texture
   pm.dispose()
   return tex
 }

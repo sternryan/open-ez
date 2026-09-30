@@ -4,26 +4,45 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Long-EZ build lab</title>
-  <style>
-    :root { --ink: #eee7dc; --bg: #14110e; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-    #app { position: fixed; inset: 0; }
-    #gl { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
-    #chip { position: fixed; top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
-      padding: 7px 13px; border-radius: 999px; background: rgba(20, 17, 14, 0.62); backdrop-filter: blur(6px);
-      border: 1px solid rgba(238, 231, 220, 0.16); font-size: 13px; letter-spacing: 0.04em; pointer-events: none; }
-    #chip b { font-weight: 600; }
-    #status { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); font-size: 13px; opacity: 0.8;
-      padding: 6px 12px; border-radius: 8px; background: rgba(20, 17, 14, 0.6); pointer-events: none; max-width: 90vw; text-align: center; }
-    #status.err { opacity: 1; background: rgba(120, 30, 20, 0.85); }
-    #status[hidden] { display: none; }
-  </style>
 </head>
 <body>
-  <div id="app"><canvas id="gl" tabindex="0"></canvas></div>
-  <div id="chip"><b>Long-EZ build lab</b> &middot; canard</div>
+  <div id="app"><canvas id="gl" tabindex="0" aria-label="3D view of the canard in the workshop"></canvas></div>
+
+  <aside id="controls" class="card" aria-label="View controls">
+    <div class="group">
+      <span class="label">Canard</span>
+      <div id="variant" class="seg" role="group" aria-label="Canard variant">
+        <button type="button" data-variant="roncz" aria-pressed="true">Roncz</button>
+        <button type="button" data-variant="gu" aria-pressed="false">GU</button>
+      </div>
+    </div>
+    <div class="group">
+      <span class="label">View</span>
+      <button type="button" id="home" class="btn">Home view</button>
+    </div>
+    <!-- later tasks add ghost, section, paths and play controls here -->
+  </aside>
+
+  <section id="step" class="card" aria-live="polite" data-open="true">
+    <button type="button" id="step-head" aria-expanded="true" aria-controls="step-body">
+      <span class="label">Step <span id="step-count" class="mono"></span></span>
+      <h2 id="step-title"></h2>
+      <span class="chev" aria-hidden="true"></span>
+    </button>
+    <div id="step-body">
+      <p id="step-summary"></p>
+      <button type="button" class="label" id="checklist-h" aria-controls="checklist">Checklist <span id="check-count" class="mono"></span><span class="fold" aria-hidden="true"></span></button>
+      <ul id="checklist"></ul>
+    </div>
+  </section>
+
+  <nav id="opbar" aria-label="Build steps">
+    <button type="button" id="bar-home" class="icon" aria-label="Home view" title="Home view">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+    </button>
+    <div id="chips" role="list"></div>
+  </nav>
+
   <div id="status" role="status">Loading the canard&hellip;</div>
   <script type="module" src="/src/main.ts"></script>
 </body>
