@@ -19,8 +19,14 @@ from config.aircraft_config import (
 PATTERN = re.compile(r"^(fs_|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$)")
 
 
+# Read-only properties that still carry provenance (no stored field to match PATTERN).
+TRACKED_PROPERTIES = {"fuselage_length"}
+
+
 def geometry_fields() -> set[str]:
-    return {f.name for f in dataclasses.fields(GeometricParams) if PATTERN.match(f.name)}
+    return {
+        f.name for f in dataclasses.fields(GeometricParams) if PATTERN.match(f.name)
+    } | TRACKED_PROPERTIES
 
 
 def test_every_geometry_field_has_provenance():
@@ -85,8 +91,9 @@ def test_other_stations_shift_uniformly():  # Review Focus 3
         assert getattr(g, name) == pytest.approx(old - SHIFT), name
         assert GEOMETRY_PROVENANCE[name]["status"] == "converted-unsourced", name
     assert StrakeConfig().fs_trailing_edge == 145.0 - SHIFT
-    # tail unsourced, so the length is left alone and flagged, not recomputed from the book nose
-    assert g.fuselage_length == 214.0
+    # one basis: fs_tail - fs_nose (tail unsourced, so the conflict stays flagged)
+    assert g.fuselage_length == pytest.approx(g.fs_tail - g.fs_nose)
+    assert g.fuselage_length == pytest.approx(175.3)
     assert GEOMETRY_PROVENANCE["fuselage_length"]["status"] == "conflict"
 
 
@@ -103,8 +110,12 @@ def test_book_stations_block1():
     w = StructuralWeightParams()
     assert w.canard_arm_in == pytest.approx(g.fs_canard_le + 0.25 * g.canard_chord)
     assert w.fuel_arm_in == pytest.approx(104.5)
-    assert g.fuselage_length == 214.0
+    assert g.fuselage_length == pytest.approx(g.fs_tail - g.fs_nose)
     assert GEOMETRY_PROVENANCE["fuselage_length"]["status"] == "conflict"
+    assert GEOMETRY_PROVENANCE["fuselage_length"]["note"] == (
+        "fs_tail - fs_nose (175.3); fs_tail unsourced; manual overall length 201.4 "
+        "(om-1980:p3) includes more than the fuselage; conflict kept"
+    )
 
 
 def test_weight_arms_shift_uniformly():
@@ -197,3 +208,9 @@ def test_canard_area_matches_chord_times_span_and_the_manual():
 
 def test_derived_status_is_recognised():
     assert "derived" in PROVENANCE_STATUSES
+
+
+def test_fuselage_length_is_a_read_only_property_not_a_stored_field():
+    assert "fuselage_length" not in {f.name for f in dataclasses.fields(GeometricParams)}
+    with pytest.raises(AttributeError):
+        config.geometry.fuselage_length = 214.0

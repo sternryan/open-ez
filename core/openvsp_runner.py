@@ -301,13 +301,14 @@ class OpenVSPRunner:
             # Main wing
             wing_id = vsp.AddGeom("WING", "")
             vsp.SetGeomName(wing_id, "MainWing")
-            vsp.SetParmVal(wing_id, "Span", "XSec_1", geom.wing_span / 2)
+            vsp.SetParmVal(wing_id, "Span", "XSec_1", geom.wing_panel_span)
             vsp.SetParmVal(wing_id, "Root_Chord", "XSec_1", geom.wing_root_chord)
             vsp.SetParmVal(wing_id, "Tip_Chord", "XSec_1", geom.wing_tip_chord)
             vsp.SetParmVal(wing_id, "Sweep", "XSec_1", geom.wing_sweep_le)
             vsp.SetParmVal(wing_id, "Dihedral", "XSec_1", geom.wing_dihedral)
             vsp.SetParmVal(wing_id, "Twist", "XSec_1", -geom.wing_washout)
             vsp.SetParmVal(wing_id, "X_Rel_Location", "XForm", geom.wing_le_fs)
+            vsp.SetParmVal(wing_id, "Y_Rel_Location", "XForm", geom.wing_root_bl)
             vsp.SetParmVal(wing_id, "Z_Rel_Location", "XForm", geom.wing_le_wl)
 
             # Elevon control surface
@@ -339,9 +340,9 @@ class OpenVSPRunner:
                 "X_Rel_Location",
                 "XForm",
                 geom.wing_le_fs
-                + geom.wing_span / 2 * math.tan(math.radians(geom.wing_sweep_le)),
+                + geom.wing_panel_span * math.tan(math.radians(geom.wing_sweep_le)),
             )
-            vsp.SetParmVal(winglet_id, "Y_Rel_Location", "XForm", geom.wing_span / 2)
+            vsp.SetParmVal(winglet_id, "Y_Rel_Location", "XForm", geom.wing_tip_bl)
 
             rudder_id = vsp.AddSubSurf(winglet_id, vsp.SS_CONTROL)
             vsp.SetSubSurfName(winglet_id, rudder_id, "Rudder")
