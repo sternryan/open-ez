@@ -17,6 +17,7 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
+import { Director, canardTour, TOUR_BUILD_RATE } from './director'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import './style.css'
@@ -24,6 +25,10 @@ import './style.css'
 const INCH = 0.0254
 const params = new URLSearchParams(location.search)
 const TEST = params.get('test') === '1'
+// ?rec=1: the recorder. No frame loop; window.__rec.frame(dt) steps the sim clock and draws, so a film is the same on every run. ?clean=1 hides the controls.
+const REC = params.get('rec') === '1'
+if (params.get('clean') === '1') document.body.classList.add('clean')
+if (REC) document.body.classList.add('rec')
 const statusEl = document.getElementById('status') as HTMLElement
 const setStatus = (msg: string | null, err = false) => {
   statusEl.hidden = msg === null
@@ -38,6 +43,8 @@ interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
   ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number }; advance(seconds: number): void
+  /** the tour (the film) is running; the tourSteps index it is on */
+  touring(): boolean; tourIndex(): number
   selected(): string | null; select(opId: string | null): void; camera(): CamState; shot(name: string): CamState | null; flying(): boolean
   /** the pose the canard is in, or is turning to */
   pose(): Pose; flipping(): boolean; tableTopY(): number
@@ -89,6 +96,7 @@ declare global { interface Window { __lab?: LabHook } }
 
 const hook: LabHook = {
   ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0 }), advance: () => {},
+  touring: () => false, tourIndex: () => -1,
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
@@ -186,7 +194,7 @@ async function boot() {
   renderer.info.autoReset = false // count the whole frame (every pipeline pass), not just the last render call
 
   const coarse = matchMedia('(pointer: coarse)').matches
-  const q = params.get('q') || (coarse ? 'mid' : 'high')
+  const q = params.get('q') || (REC || !coarse ? 'high' : 'mid')
   const quality = q === 'low' || q === 'mid' ? q : 'high'
 
   const scene = new THREE.Scene()
@@ -223,10 +231,10 @@ async function boot() {
 
   const rig = new CameraRig(camera, controls)
 
-  const pipeline = new Pipeline(renderer, { ao: quality !== 'low', msaa: quality === 'low' ? 0 : 4, aoSamples: 8 })
+  const pipeline = new Pipeline(renderer, { ao: quality !== 'low', msaa: quality === 'low' ? 0 : 4, aoSamples: REC ? 16 : 8 })
   pipeline.aoScale = 0.5
   pipeline.params.ao = 0.55
-  pipeline.params.dofTaps = 14
+  pipeline.params.dofTaps = REC ? 40 : 14
   pipeline.params.sharpen = 0.25
   pipeline.params.bloom = 0.12
   const dofOn = quality === 'high'
@@ -257,9 +265,11 @@ async function boot() {
   let stepCut: (dt: number) => void = () => {}
   let stepLabels: (dt: number) => void = () => {}
   let stepFlows: (dt: number) => void = () => {}
+  let stepDirector: (t: number) => void = () => {}
   const step = (dt: number) => {
     simT += dt
     GLOW_TIME.value = simT
+    stepDirector(simT)
     stepPose(dt)
     stepBuild(dt)
     stepCut(dt)
@@ -277,7 +287,7 @@ async function boot() {
   let last = performance.now()
   // ?freeze=1 (or __lab.freeze(true)): the frame loop still draws but no longer advances time, so a test or a capture owns the clock
   let frozen = TEST && params.get('freeze') === '1'
-  renderer.setAnimationLoop(() => {
+  if (!REC) renderer.setAnimationLoop(() => {
     const t = performance.now(), dt = Math.min((t - last) / 1000, 0.1)
     last = t
     if (!frozen) step(dt)
@@ -388,12 +398,22 @@ async function boot() {
     let lab: Record<string, LabShot> = {}
     const buildShots = (v: Variant) => {
       lab = labShots(graph.tours ?? {}, (id) => orientation(graph, v, id))
-      for (const id of Object.keys(rig.shots)) if (id !== 'home') delete rig.shots[id]
+      for (const id of Object.keys(rig.shots)) if (id !== 'home' && id !== 'cutclose') delete rig.shots[id]
       for (const [id, ls] of Object.entries(lab)) {
         const m = modelToWorld(orientation(graph, v, id))
         const tgt = new THREE.Vector3(...ls.target).applyMatrix4(m), pos = new THREE.Vector3(...ls.position).applyMatrix4(m)
         rig.shots[id] = { pos: [pos.x, pos.y, pos.z], target: [tgt.x, tgt.y, tgt.z], fov: LAB_FOV }
       }
+    }
+    // the closing shot: a slow 3/4 turn about the cut face at B.L. 20, from the leading-edge side toward the root (model inches, canard upright)
+    const CLOSE = { dist: 47, el: 27, az: -55, target: [4, 0.4, -25] as const }
+    {
+      const up = modelToWorld('upright')
+      const el = (CLOSE.el * Math.PI) / 180, az = (CLOSE.az * Math.PI) / 180
+      const t = new THREE.Vector3(...CLOSE.target)
+      const p = t.clone().add(new THREE.Vector3(CLOSE.dist * Math.cos(el) * Math.sin(az), CLOSE.dist * Math.sin(el), CLOSE.dist * Math.cos(el) * Math.cos(az)))
+      t.applyMatrix4(up); p.applyMatrix4(up)
+      rig.shots.cutclose = { pos: p.toArray(), target: t.toArray(), fov: LAB_FOV }
     }
     const snap = (name: string): CamState | null => {
       if (!rig.shots[name]) return null
@@ -416,7 +436,7 @@ async function boot() {
     graph.__ghost = ghost
     const infos: MeshInfo[] = merged.map((m) => ({ name: m.node ?? m.cid, component: m.cid, ply: m.ply }))
     const opCount = (id: string | null) => (id ? Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).length : 0)
-    let lay = 0, layT = DONE_T, playing = false
+    let lay = 0, layT = DONE_T, playing = false, tourRate = 1
     let bstate = new Map<string, BuildState>()
     let opIdx = new Map<string, number>()
     const phases = new Map<string, Phase>()
@@ -460,6 +480,9 @@ async function boot() {
     }
     const FLOW_LOOK = { base: 0.45, pulse: 2.2, core: 1.6, halo: 0.9, hot: 0.08, dim: 0.85, halfWidth: 0.4 * INCH, px: [7, 20] as [number, number] }
     let pathsOn = true
+    // a tour may change what is shown while it runs (tourOv), but never the person's own setting (pathsOn, labelsOn) or their storage
+    const tourOv: { labels: boolean | null; paths: boolean | null } = { labels: null, paths: null }
+    const pathsShown = () => tourOv.paths ?? pathsOn
     try { pathsOn = storage?.getItem(PATHS_KEY) !== '0' } catch { pathsOn = true }
     const pathsGroup = new THREE.Group()
     pathsGroup.name = 'loadPaths'
@@ -491,7 +514,7 @@ async function boot() {
     const syncPaths = () => {
       for (const o of pathObjs) {
         o.visible = pathVisible(o.p, bstate)
-        o.group.visible = o.visible && pathsOn
+        o.group.visible = o.visible && pathsShown()
       }
     }
     // the laminate dims while any flow is drawn, eased in sim time so a recorded frame is reproducible
@@ -527,7 +550,7 @@ async function boot() {
     stepBuild = (dt) => {
       const count = opCount(selected), before = layT
       let changed = false
-      layT += dt
+      layT += dt * tourRate // a tour runs the build clock faster
       if (playing) {
         while (lay < count && layT >= PLAY_ADVANCE_T) { layT -= PLAY_ADVANCE_T; lay++; changed = true }
         if (lay >= count && layT >= DONE_T) stopPlay() // the cure has run
@@ -645,7 +668,7 @@ async function boot() {
         at: () => { const a = pick(); return a ? wp.copy(a.p).applyMatrix4(root.matrixWorld) : null },
         vis: () => {
           const a = pick()
-          if (!labelsOn || !a || !mine.some(isBuilt)) return 0
+          if (!(tourOv.labels ?? labelsOn) || !a || !mine.some(isBuilt)) return 0
           wp.copy(a.p).applyMatrix4(root.matrixWorld)
           wn.copy(a.n).transformDirection(root.matrixWorld)
           return wn.dot(cp.copy(camera.position).sub(wp)) > 0 ? 1 : 0 // the surface faces away from the camera: hide
@@ -666,9 +689,59 @@ async function boot() {
       setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : 'home', fly)
     }
+    // ---- the tour: src/director.ts scripts the page's own controls with a cursor. A click the director dispatches is told from a person's by
+    // director.busy; anything a person does (op chip, variant, scrubber, Play, the camera, Escape, Tour again) ends the tour where it stands. ----
+    let orb: { r: number; y: number; a0: number } | null = null
+    const director = new Director({
+      act(name) {
+        if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (secOn) setSection(false, secBl) }
+        else if (name === 'finish') { stopPlay(); select(null, true) }
+        else if (name === 'closeup') goto('cutclose', true)
+      },
+      orbit(k, deg, first) {
+        if (first) {
+          const d = camera.position.clone().sub(controls.target)
+          orb = { r: Math.hypot(d.x, d.z), y: d.y, a0: Math.atan2(d.x, d.z) }
+          rig.flying = false
+        }
+        if (!orb) return
+        const a = orb.a0 - (deg * Math.PI / 180) * k
+        camera.position.set(controls.target.x + orb.r * Math.sin(a), controls.target.y + orb.y, controls.target.z + orb.r * Math.cos(a))
+        controls.update()
+      },
+    })
+    // whatever ends the tour (its last step, Escape, a person's click), the section cut, paths and labels go back to what the person had
+    let before: { secOn: boolean; secBl: number } | null = null
+    const endTour = () => {
+      tourRate = 1
+      tourOv.labels = tourOv.paths = null
+      if (before) { const b = before; before = null; setSection(b.secOn, b.secBl) }
+      syncPaths()
+      ui.setTouring(false)
+    }
+    const stopTour = () => {
+      if (!director.active) return
+      director.stop()
+      endTour()
+    }
+    director.onEnd = endTour
+    const startTour = () => {
+      stopPlay()
+      before = { secOn, secBl }
+      director.load(canardTour(graph as never, variant))
+      director.start(simT)
+      tourRate = TOUR_BUILD_RATE
+      ui.setTouring(true)
+    }
+    const userAct = () => { if (director.active && !director.busy) stopTour() }
+    stepDirector = (t) => director.update(t)
+    controls.addEventListener('start', userAct)
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') stopTour() })
+
     const ui = initUI({
       onVariant(v) {
         if (v === variant) return
+        userAct()
         variant = v
         buildShots(v)
         ui.setVariant(v)
@@ -677,13 +750,14 @@ async function boot() {
         select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
       },
       onHome: () => goto('home', true),
-      onSelect: (id) => select(id),
-      onGhost: (on) => setGhost(on),
-      onScrub: (n) => setLay(n),
-      onPlay: () => togglePlay(),
-      onSection: (on, bl) => setSection(on, bl),
-      onLabels: (on) => setLabels(on),
-      onPaths: (on) => setPaths(on),
+      onTour: () => (director.active ? stopTour() : startTour()),
+      onSelect: (id) => { userAct(); select(id) },
+      onGhost: (on) => { userAct(); setGhost(on) },
+      onScrub: (n) => { userAct(); setLay(n) },
+      onPlay: () => { userAct(); togglePlay() },
+      onSection: (on, bl) => { userAct(); setSection(on, bl) },
+      onLabels: (on) => { userAct(); setLabels(on) },
+      onPaths: (on) => { userAct(); setPaths(on) },
     }, store)
     ui.setGhost(ghost)
     ui.setLabels(labelsOn)
@@ -695,6 +769,8 @@ async function boot() {
     const want = params.get('op')
     select(firstOps.find((o) => o.id === want)?.id ?? firstOps[0]?.id ?? null, false)
 
+    hook.touring = () => director.active
+    hook.tourIndex = () => director.seg
     hook.selected = () => selected
     hook.select = (id) => select(id)
     hook.camera = () => ({ pos: camera.position.toArray(), target: controls.target.toArray(), fov: camera.fov })
@@ -743,7 +819,7 @@ async function boot() {
         const c = flowMats[o.p.kind]?.uniforms.uColor.value as THREE.Color | undefined
         const rgb = c ? c.getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace) : { r: 0, g: 0, b: 0 }
         return {
-          id: o.p.id, kind: o.p.kind, visible: o.visible, drawn: o.visible && pathsOn, color: [rgb.r, rgb.g, rgb.b],
+          id: o.p.id, kind: o.p.kind, visible: o.visible, drawn: o.visible && pathsShown(), color: [rgb.r, rgb.g, rgb.b],
           worldPoints: pts.map((v) => v.toArray()),
           clipped: secOn && pts.some((v) => cut.world.distanceToPoint(v) < 0),
         }
@@ -783,6 +859,22 @@ async function boot() {
     }
     setStatus(null)
     hook.ready = true
+    if (REC) {
+      ;(window as unknown as Record<string, unknown>).__rec = {
+        /** begin the film and return its length in seconds; only the canard chapter exists */
+        start(name: string) {
+          if (name !== 'canard') throw new Error(`no film called ${name}`)
+          startTour()
+          return director.duration
+        },
+        /** advance the sim clock by dt seconds; draw=false skips the render (the clock and the DOM still move) */
+        frame(dt: number, draw = true) {
+          step(dt)
+          if (draw) render()
+          return { t: simT, active: director.active }
+        },
+      }
+    }
   } catch (e) {
     console.error(e)
     setStatus(`Could not load the canard model (${(e as Error).message}). The rest of the guide still works at the site root.`, true)

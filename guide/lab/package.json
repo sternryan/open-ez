@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "record": "node tools/record.mjs"
   },
   "dependencies": {
     "three": "^0.185.1"
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@types/node": "^22.20.4",
     "@types/three": "^0.185.0",
+    "playwright": "^1.63.0",
     "tsx": "^4.19.0",
     "typescript": "^5.5.4",
     "vite": "^8.2.2"

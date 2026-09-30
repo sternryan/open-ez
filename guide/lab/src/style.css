@@ -119,3 +119,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
   #step[data-open="false"] #step-body { display: none; }
   #step-body { padding: 0 12px 12px; }
 }
+
+/* film: the cursor that clicks the controls, and the title / closing card. All driven by the sim clock (src/director.ts). */
+#tour[aria-pressed="true"] { background: var(--ink); color: #15120f; font-weight: 600; }
+#cursor { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; opacity: 0; transition: opacity 0.3s; will-change: transform; }
+#cursor > svg:first-child { position: absolute; left: -15px; top: -15px; }
+#cursor .arrow { position: absolute; left: 3px; top: 3px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45)); }
+#cursor .ripple { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.85); opacity: 0; transform: scale(0.3); }
+#endcard { position: fixed; inset: 0; z-index: 45; display: none; place-items: center; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.3), rgba(10, 8, 6, 0.82)); }
+#endcard .ec-in { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 0 24px; }
+#endcard .ec-t { font-size: clamp(26px, 4.2vw, 54px); font-weight: 600; letter-spacing: 0.01em; color: var(--ink); }
+#endcard .ec-s { font-size: clamp(14px, 1.6vw, 20px); color: var(--ink-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+/* recorder: nothing may animate on wall-clock time */
+body.rec * { cursor: none !important; transition: none !important; animation: none !important; }
+/* ?clean=1: the canvas and the film cards only */
+body.clean #controls, body.clean #dock, body.clean #opbar, body.clean #labels, body.clean #cursor { display: none !important; }
