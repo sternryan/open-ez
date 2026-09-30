@@ -243,3 +243,26 @@ def test_ply_arms_lie_inside_their_part(parts, plies):
     for p in plies:
         bb = parts[p.part].solid.val().BoundingBox()
         assert bb.xmin - 1e-6 <= p.arm_in <= bb.xmax + 1e-6, p.node
+
+
+# --- region accessors (the lab export builds each ply's shell on these, so it never re-derives a region) ---
+
+
+def test_region_of_every_ply_is_its_scope_target(plies):
+    for p in plies:
+        reg = fp.region_of(p)
+        assert reg.label() == p.region, p.node
+        place = fp.SCOPE[(p.op, p.where)]
+        assert any(t.part == p.part and t.region is reg for t in place.targets), p.node
+
+
+def test_region_faces_are_the_faces_the_area_is_measured_on(plies, parts):
+    for p in plies:
+        reg = fp.region_of(p)
+        if not isinstance(reg, fp.Face):
+            continue
+        faces = fp.region_faces(p.part, reg.name)
+        area = sum(f.Area() for f in faces)
+        if reg.less_circle_dia:
+            area -= math.pi / 4 * reg.less_circle_dia**2
+        assert area == pytest.approx(p.area_in2, rel=1e-9), p.node

@@ -131,3 +131,13 @@ test('tourChapter: the selected op\'s chapter, else the first real chapter, also
   assert.equal(tourChapter(G, 'gu', null), 10)
   assert.equal(tourChapter({ ops: [], order: [] }, 'gu', null), undefined)
 })
+
+test('the fuselage tour clicks every chapter 4-6 op in graph order, Plays only ops with plies, and has no section steps', async () => {
+  const { fuselageTour } = await import('../src/director')
+  const op = (id: string, chapter: number) => ({ id, chapter, title: id, summary: '', variants: ['both'], components: [] as string[] })
+  const g = { ops: [op('f04.a', 4), op('f05.a', 5), op('f06.a', 6), op('r30.a', 30)], order: ['f04.a', 'f05.a', 'f06.a', 'r30.a'] }
+  const steps = fuselageTour(g, 'roncz', (id) => (id === 'f05.a' ? 2 : 0))
+  const clicks = steps.filter((s) => 'click' in s).map((s) => (s as { click: string }).click)
+  assert.deepEqual(clicks, ['#chips button[data-op="f04.a"]', '#chips button[data-op="f05.a"]', '#play', '#chips button[data-op="f06.a"]'])
+  assert.ok(!steps.some((s) => 'drag' in s))
+})

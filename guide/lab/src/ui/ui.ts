@@ -1,4 +1,5 @@
 import type { Op, Variant } from '../logic/graph'
+import type { Subject } from '../logic/fuselage'
 import { fmtBl } from '../logic/section'
 
 type Store = { get(id: string): Set<number>; toggle(id: string, i: number): void }
@@ -14,7 +15,11 @@ export interface UIHandlers {
   onLabels(on: boolean): void
   onPaths(on: boolean): void
   onQuality(q: 'high' | 'mid' | 'low' | 'auto'): void
+  /** the canard or the fuselage box (optional: a page without the control never calls it) */
+  onSubject?(s: Subject): void
 }
+/** How the section slider reads: the canard's B.L. (the default) or the fuselage's FS. */
+export interface SectionScale { min: number; max: number; fmt: (v: number) => string; label: string }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
 
@@ -78,6 +83,10 @@ export function initUI(h: UIHandlers, store: Store) {
   window.addEventListener('resize', () => { fit(); if (!pop.hidden) placePop() })
   setOpen(!narrow.matches)
 
+  $('subject')?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button[data-subject]') as HTMLElement | null
+    if (b) h.onSubject?.(b.dataset.subject as Subject)
+  })
   variant.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-variant]') as HTMLElement | null
     if (b) h.onVariant(b.dataset.variant as Variant)
@@ -89,6 +98,7 @@ export function initUI(h: UIHandlers, store: Store) {
   $('scrub').addEventListener('input', (e) => h.onScrub(+(e.target as HTMLInputElement).value)) // user input only: setting .value fires no event
   $('play').addEventListener('click', () => h.onPlay())
   const secOn = $('section-on') as HTMLInputElement, secBl = $('section-bl') as HTMLInputElement
+  let secFmt: (v: number) => string = fmtBl
   const secChange = () => h.onSection(secOn.checked, +secBl.value)
   secOn.addEventListener('change', secChange)
   secBl.addEventListener('input', secChange)
@@ -156,12 +166,23 @@ export function initUI(h: UIHandlers, store: Store) {
       secBl.max = String(max)
       secBl.value = String(bl)
       $('section').hidden = false
-      $('section-station').textContent = fmtBl(bl)
+      $('section-station').textContent = secFmt(bl)
+    },
+    /** re-scale the section slider for a subject: the canard's (min 0, B.L.) is what the page starts with */
+    scaleSection(sc: SectionScale, on: boolean, v: number) {
+      secFmt = sc.fmt
+      secBl.min = String(sc.min)
+      secBl.max = String(sc.max)
+      secBl.setAttribute('aria-label', sc.label)
+      secOn.checked = on
+      secBl.value = String(v)
+      $('section').hidden = false
+      $('section-station').textContent = secFmt(v)
     },
     setSection(on: boolean, bl: number) {
       secOn.checked = on
       secBl.value = String(bl)
-      $('section-station').textContent = fmtBl(bl)
+      $('section-station').textContent = secFmt(bl)
     },
     setTouring(on: boolean) {
       $('tour').setAttribute('aria-pressed', String(on))
@@ -191,6 +212,20 @@ export function initUI(h: UIHandlers, store: Store) {
         const q = (b as HTMLElement).dataset.q
         b.setAttribute('aria-pressed', String(q === 'auto' ? auto : !auto && q === tier))
       }
+    },
+    setSubject(s: Subject) {
+      for (const b of document.querySelectorAll('#subject button[data-subject]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.subject === s))
+      variant.hidden = s !== 'canard' // the variant only changes the canard
+      document.body.dataset.subject = s
+    },
+    /** the fuselage rows of the readout: the CG from the mass ledger (null hides the row) and the stripes legend */
+    setCg(cg: { value: string; sub: string | null } | null) {
+      $('t-cg').hidden = cg === null
+      $('t-legend').hidden = cg === null
+      if (!cg) return
+      $('ro-cg').textContent = cg.value
+      $('ro-cg-sub').textContent = cg.sub ?? ''
+      $('t-cg').title = cg.sub ? `${cg.value}. ${cg.sub}` : cg.value
     },
     setVariant(v: Variant) {
       for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))

@@ -118,6 +118,18 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
 #chips button[aria-current="true"] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
 #chips button[aria-current="true"]::before { opacity: 1; background: var(--on-ink); }
 #chips .none { padding: 0 12px; color: var(--ink-dim); }
+/* what to build: the canard or the fuselage box. Inside the bar it has no well of its own, so its buttons are the bar's height. */
+#subject { flex: none; padding: 0; border: 0; background: transparent; gap: 2px; margin-right: 4px; }
+#subject button { height: calc(var(--bar) - 12px); min-height: 0; padding: 0 11px; font-size: 12.5px; }
+@media (pointer: coarse) { #subject button { min-height: 44px; } }
+
+/* fuselage readout rows: the CG (from the mass ledger) and what the amber stripes mean */
+#readout .tile[data-k="cg"] { flex-wrap: wrap; }
+#ro-cg { font-weight: 600 !important; font-size: 12px !important; color: var(--ink-soft); }
+#ro-cg-sub { flex-basis: 100%; font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
+#readout .legend { align-items: center; font-size: 11px; color: var(--ink-dim); }
+#readout .legend .hatch { flex: none; width: 16px; height: 12px; border-radius: 3px;
+  background: repeating-linear-gradient(45deg, #cc6614 0 3px, #d6d0c0 3px 7px); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4); }
 
 #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 13px; padding: 8px 14px; border-radius: 10px; background: var(--card); max-width: 90vw; text-align: center; pointer-events: none; }
 #status.err { background: rgba(120, 30, 20, 0.88); }
@@ -140,7 +152,8 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
   #readout .tile .label { display: none; }
   #readout .tile b { font-size: 12.5px; }
   #readout .layers { flex: 1 1 0; min-width: 0; }
-  #readout .tile[data-k="mass"], #readout .tile[data-k="cloth"] { display: none; }
+  #readout .tile[data-k="mass"], #readout .tile[data-k="cloth"], #readout .tile[data-k="cg"], #readout .legend { display: none; }
+  #subject button { padding: 0 9px; }
   #ro-layers { white-space: nowrap; display: block; }
   #step-head { padding: 8px 12px 9px; }
   #step-title { font-size: 14px; }

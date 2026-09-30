@@ -22,6 +22,10 @@ import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, init
 import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './director'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
+import { FuselageBay } from './fuselageBay'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
+import { STATION } from './scene/fuselageStation'
+import { fuselageTour } from './director'
 import './style.css'
 
 const INCH = 0.0254
@@ -39,7 +43,7 @@ const setStatus = (msg: string | null, err = false) => {
 }
 
 interface PlyRef { node: string; op: string; order: number }
-interface Graph extends GraphLite { loadpaths?: LoadPath[]; components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode> } | null }
+interface Graph extends GraphLite { loadpaths?: LoadPath[]; components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode>; fuselage?: FuseLayup } | null }
 interface LoadPath { id: string; label: string; kind: string; parts: string[]; segments: number[][][] }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
@@ -59,7 +63,7 @@ interface LabHook {
   /** authored lab shots, model inches in the canard's frame (target is the tours.yaml target) */
   labShots(): Record<string, LabShot>
   /** the composite material a mesh got (by mesh name), or null */
-  material(name: string): { kind: string; angles: number[]; wet: number } | null
+  material(name: string): { kind: string; angles: number[]; wet: number; hatch?: boolean; fidelity?: string } | null
   setWet(name: string, w: number): void
   /** world-space box [min, max] in metres of a mesh, for placing close-up cameras */
   meshBox(name: string): number[][] | null
@@ -93,9 +97,19 @@ interface LabHook {
   paths(): { id: string; kind: string; visible: boolean; drawn: boolean; color: number[]; worldPoints: number[][]; clipped: boolean }[]
   /** world metres -> canvas CSS pixels [x, y] with the camera as it is now */
   project(p: number[]): number[]
+  /** what the lab is building: the canard (the default) or the fuselage box (chapters 4-6); setSubject is the control's action */
+  subject(): Subject; setSubject(s: Subject): void
+  /** the fuselage: where each part is now (on the layup table, in the jig, or not made yet) and which way up the box is */
+  placement(): Record<string, 'table' | 'jig' | 'none'>; jigPose(): string
+  /** the fuselage ops' lab shots (world metres), and the CG row as the readout shows it */
+  fuseShots(): Record<string, CamState>; cg(): { value: string; sub: string | null }
+  /** the box's frame (inches: x = FS, y = W.L. - 17.4, z = -B.L.) -> world metres, as the jig holds it now */
+  fuseToWorld(p: number[]): number[]
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
+  /** fuselage subject: the station (FS) and the plane's constant in the box's frame (-FS); keepsAft/removesForward as the canard's pair */
+  fs?: number; keepsAft?: boolean; removesForward?: boolean
   /** true when the plane, in the world as posed now, keeps a point 5 in outboard of the station and removes one 5 in inboard */
   keepsOutboard: boolean; removesInboard: boolean
   cappedNodes: string[]; capsVisible: number; capNodesVisible: string[]; clipped: number
@@ -113,6 +127,7 @@ const hook: LabHook = {
   contextLost: () => false, loseContext: () => false, restoreContext: () => false,
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
+  subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
 }
 if (TEST) window.__lab = hook
 
@@ -137,7 +152,7 @@ function bake(o: THREE.Mesh, flip: boolean): THREE.BufferGeometry {
 
 interface Merged { cid: string; node: string | null; mesh: THREE.Mesh; mat: THREE.Material; spec: MaterialSpec; ply: { op: string; order: number } | null }
 
-function mergeModel(scene: THREE.Object3D, graph: Graph): { cid: string; node: string | null; geo: THREE.BufferGeometry }[] {
+function mergeModel(scene: THREE.Object3D, graph: Graph, parts: Set<string> = new Set()): { cid: string; node: string | null; geo: THREE.BufferGeometry }[] {
   scene.updateMatrixWorld(true)
   const groups = new Map<string, { cid: string; node: string | null; geos: THREE.BufferGeometry[] }>()
   // GLTFLoader strips dots from node names (canard.core -> canardcore); the original is kept in userData.name.
@@ -146,8 +161,10 @@ function mergeModel(scene: THREE.Object3D, graph: Graph): { cid: string; node: s
     const mesh = o as THREE.Mesh
     if (!mesh.isMesh) return
     let n: THREE.Object3D = o
-    while (n && !graph.components[nm(n)] && n.parent) n = n.parent
-    const cid = graph.components[nm(n)] ? nm(n) : nm(o)
+    // a fuselage part node (fuselage.<part>) groups its meshes like a component does; two longerons share one component
+    const group = (x: THREE.Object3D) => !!graph.components[nm(x)] || parts.has(nm(x))
+    while (n && !group(n) && n.parent) n = n.parent
+    const cid = group(n) ? nm(n) : nm(o)
     let q: THREE.Object3D = o
     while (q && !/\.p\d+$/.test(nm(q)) && q.parent) q = q.parent
     const node = q && /\.p\d+$/.test(nm(q)) ? nm(q) : null
@@ -440,8 +457,15 @@ async function boot() {
       fetch(DATA + 'graph.json').then((r) => { if (!r.ok) throw new Error(`graph.json ${r.status}`); return r.json() as Promise<Graph> }),
       fetch(DATA + 'config.json').then((r) => { if (!r.ok) throw new Error(`config.json ${r.status}`); return r.json() as Promise<Cfg> }),
     ])
+    // the fuselage mass ledger (core.ledger.fuselage_ledger_json) ships beside graph.json; a site without one says so in the CG row
+    const ledgerP: Promise<LedgerLite | null> = fetch(DATA + 'ledger.json').then((r) => (r.ok ? (r.json() as Promise<LedgerLite>) : null)).catch(() => null)
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
-    const parts = mergeModel(gltf.scene, graph)
+    const fuseData = graph.layup?.fuselage ?? null
+    const allParts = mergeModel(gltf.scene, graph, new Set(Object.values(fuseData?.parts ?? {}).map((r) => r.node)))
+    // the canard and the fuselage box share the glb; everything below `root` is the canard, exactly as before the fuselage came
+    const parts = allParts.filter((p) => !p.cid.startsWith('fuselage.'))
+    const fuseParts = allParts.filter((p) => p.cid.startsWith('fuselage.')).map((p) => ({ ...p, name: p.node ?? p.cid }))
+    const ledger = await ledgerP
     // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
     // The plane lives in the model frame (`root`), so it follows the flip. As in the 2.1 viewer, the kept side of a CutState is local
     // z < e = -b + 1e-3: the inboard side is removed and the cut face looks toward the root, where the op shots are taken from.
@@ -472,6 +496,9 @@ async function boot() {
     const size = box.getSize(new THREE.Vector3())
     const shop = buildWorkshop(size.z, size.x)
     scene.add(shop.group)
+    // ---- the fuselage station (chapters 4-6): its own corner of the shop, out of every canard shot ----
+    const bay = fuseData && fuseParts.length ? new FuselageBay(fuseParts, fuseData, graph) : null
+    if (bay) scene.add(bay.group)
     root.position.copy(c).multiplyScalar(-1) // canardRoot's origin is the box centre
     const restY = shop.jigTopY + size.y / 2 + 0.001
     const halfW = size.x / 2, halfH = size.y / 2
@@ -525,7 +552,7 @@ async function boot() {
     let lab: Record<string, LabShot> = {}
     const buildShots = (v: Variant) => {
       lab = labShots(graph.tours ?? {}, (id) => orientation(graph, v, id))
-      for (const id of Object.keys(rig.shots)) if (id !== 'home' && id !== 'cutclose') delete rig.shots[id]
+      for (const id of Object.keys(rig.shots)) if (id !== 'home' && id !== 'cutclose' && !fuseShotIds.has(id)) delete rig.shots[id]
       for (const [id, ls] of Object.entries(lab)) {
         const m = modelToWorld(orientation(graph, v, id))
         const tgt = new THREE.Vector3(...ls.target).applyMatrix4(m), pos = new THREE.Vector3(...ls.position).applyMatrix4(m)
@@ -542,6 +569,15 @@ async function boot() {
       t.applyMatrix4(up); p.applyMatrix4(up)
       rig.shots.cutclose = { pos: p.toArray(), target: t.toArray(), fov: LAB_FOV }
     }
+    // the fuselage's shots: one per chapter 4-6 op, aimed where its parts are for that op (src/fuseShots.ts), and its own home view
+    const fuseOpIds = graph.order.filter((id) => FUSE_CHAPTERS.has(graph.ops.find((o) => o.id === id)?.chapter ?? -1))
+    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome'] : [])
+    if (bay) {
+      Object.assign(rig.shots, bay.shots(fuseOpIds, LAB_FOV))
+      const hb = bay.homeBox()
+      // aimed a little toward the nose end: the dock covers the frame's left third
+      rig.shots.fhome = fitShot(hb, hb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(-0.22, -0.05, 0)), new THREE.Vector3(-0.22, 0.6, 0.77).normalize(), 30, 1.6, 0.62)
+    }
     const snap = (name: string): CamState | null => {
       if (!rig.shots[name]) return null
       const l = rig.landing(name)
@@ -554,6 +590,10 @@ async function boot() {
     const store = makeStore(storage ?? { getItem: () => null, setItem: () => {} })
     let variant: Variant = 'roncz'
     let selected: string | null = null
+    // what the lab is building. The canard is the default; the choice is remembered like the other view settings (guarded storage).
+    let subject: Subject = 'canard'
+    const lastSel: Record<Subject, string | null | undefined> = { canard: undefined, fuselage: undefined }
+    let bayStale = true // the canard subject shows the finished box; repaint it only when something it depends on changed
     // ---- build state: recomputed from scratch with visibleSet on every change (op, lay, variant, ghost), never patched ----
     // The look of each mesh (unroll, wet-out front, cure) is plyPhase(op, lay, t), t = seconds since `lay` last changed. All time
     // comes through step(dt), so __lab.advance(s) reproduces any frame.
@@ -562,19 +602,23 @@ async function boot() {
     try { ghost = storage?.getItem(GHOST_KEY) === '1' } catch { ghost = false }
     graph.__ghost = ghost
     const infos: MeshInfo[] = merged.map((m) => ({ name: m.node ?? m.cid, component: m.cid, ply: m.ply }))
-    const opCount = (id: string | null) => (id ? Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).length : 0)
+    const canardCount = (id: string | null) => (id ? Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).length : 0)
+    // op ids never repeat across subjects, so one count serves both (a canard op has no fuselage plies and back)
+    const opCount = (id: string | null) => canardCount(id) + (bay ? bay.opCount(id) : 0)
     let lay = 0, layT = DONE_T, playing = false, tourRate = 1
     let bstate = new Map<string, BuildState>()
     let opIdx = new Map<string, number>()
     const phases = new Map<string, Phase>()
     let shadowSig = ''
+    let bayFsig = ''
     // ?hide=<name prefix>[,..] keeps those meshes out of the scene (for close-ups of work hidden inside the core)
     const hide = (params.get('hide') ?? '').split(',').filter(Boolean)
     const recompute = () => {
       opIdx = new Map(visibleOps(graph, variant).map((o, i) => [o.id, i]))
+      const mine = subject === 'canard' ? infos : bay?.infos ?? []
       bstate = selected && opIdx.has(selected)
-        ? visibleSet(graph, variant, selected, lay, infos)
-        : new Map<string, BuildState>(infos.map((i) => [i.name, 'built']))
+        ? visibleSet(graph, variant, selected, lay, mine)
+        : new Map<string, BuildState>(mine.map((i) => [i.name, 'built']))
     }
     const paint = () => {
       const cur = selected ? opIdx.get(selected) : undefined, count = opCount(selected)
@@ -590,6 +634,12 @@ async function boot() {
         setPlyLook(m.mat, { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' })
         sig += m.mesh.visible && m.mesh.castShadow ? '1' : '0'
       }
+      // the fuselage: its own build state in its subject; the finished box on its jig while the canard is the subject
+      if (bay && (subject === 'fuselage' || bayStale)) {
+        bayFsig = bay.paint(subject === 'fuselage' ? bstate : null, selected, lay, layT, ghost, opIdx)
+        bayStale = false
+      }
+      sig += bayFsig
       if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
     }
     // ---- load paths: airsup's glow-line flows. The points ship in the CadQuery frame (X chord, Y = B.L., Z up), so they hang under a
@@ -640,7 +690,7 @@ async function boot() {
     // recomputed from the build state on every change, never patched; no build state draws nothing
     const syncPaths = () => {
       for (const o of pathObjs) {
-        o.visible = pathVisible(o.p, bstate)
+        o.visible = subject === 'canard' && pathVisible(o.p, bstate)
         o.group.visible = o.visible && pathsShown()
       }
     }
@@ -670,6 +720,7 @@ async function boot() {
     const setGhost = (on: boolean) => {
       ghost = on
       graph.__ghost = on
+      bayStale = true
       try { storage?.setItem(GHOST_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
       ui.setGhost(on)
       refresh()
@@ -714,8 +765,25 @@ async function boot() {
     stepCut = (dt) => {
       if (glow > 0) { glow *= Math.exp(-dt * 4); if (glow < 0.01) glow = 0 }
       if (secOn) { applyCut(); if (dt > 0 && glow > 0) pipeline.shadowDirty = true }
+      if (bay && fglow > 0) { fglow *= Math.exp(-dt * 4); if (fglow < 0.01) fglow = 0 }
+      if (bay && fsecOn) { bay.setStation(true, fsecFs, fglow); if (dt > 0 && fglow > 0) pipeline.shadowDirty = true }
+    }
+    // the fuselage's station cut (a constant-FS plane in the box's frame; forward removed, aft kept), with its own glow and state
+    const FS_MIN = 22, FS_MAX = 125.5
+    let fsecOn = false, fsecFs = 70, fglow = 0
+    const setFuseSection = (on: boolean, fs: number) => {
+      const was = fsecOn
+      fsecOn = on && !!bay
+      fsecFs = Math.max(FS_MIN, Math.min(fs, FS_MAX))
+      fglow = 1
+      bay?.setStation(fsecOn, fsecFs, fglow)
+      if (fsecOn !== was) paint()
+      pipeline.shadowDirty = true
+      ui.setSection(fsecOn, fsecFs)
+      updateReadout()
     }
     const setSection = (on: boolean, bl: number) => {
+      if (subject === 'fuselage') { setFuseSection(on, bl); return }
       const was = secOn
       secOn = on && !!layupN
       secBl = Math.max(0, Math.min(bl, semi))
@@ -729,7 +797,29 @@ async function boot() {
 
     // ---- readout: counts and sourced text only ----
     const CLOTH_ORDER = ['UND', 'BID']
+    const fuseCapped = () => (bay && fsecOn ? bay.capped(fsecFs, (n) => bstate.get(n)) : [])
+    const updateFuseReadout = () => {
+      if (!bay) return
+      const n = opCount(selected)
+      const cnt = new Map<string, number>()
+      for (const m of bay.meshes) {
+        const st = bstate.get(m.name)
+        if (!m.row || (st !== 'built' && st !== 'current')) continue
+        cnt.set(m.row.cloth, (cnt.get(m.row.cloth) ?? 0) + 1)
+      }
+      const cloth = [...cnt].sort(([a], [b]) => (CLOTH_ORDER.indexOf(a) + 1 || 99) - (CLOTH_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b)).map(([k, c]) => `${k} ${c}`).join(' · ')
+      let layers = 'Turn on the section to list the layers there'
+      if (fsecOn) {
+        const cap = fuseCapped()
+        const alive = new Set(cap.filter((m) => m.row).map((m) => m.name))
+        layers = stationSummary(bay.data.parts, cap.filter((m) => !m.row).map((m) => m.part), stationLayers(bay.data.nodes, fsecFs, alive))
+      }
+      ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
+      ui.setCg(cgRow(ledger))
+    }
     const updateReadout = () => {
+      if (subject === 'fuselage') { updateFuseReadout(); return }
+      ui.setCg(null)
       const n = opCount(selected)
       const cnt = new Map<string, number>()
       const lit: Record<string, LayupNode> = {}
@@ -795,35 +885,98 @@ async function boot() {
         at: () => { const a = pick(); return a ? wp.copy(a.p).applyMatrix4(root.matrixWorld) : null },
         vis: () => {
           const a = pick()
-          if (!(tourOv.labels ?? labelsOn) || !a || !mine.some(isBuilt)) return 0
+          if (subject !== 'canard' || !(tourOv.labels ?? labelsOn) || !a || !mine.some(isBuilt)) return 0
           wp.copy(a.p).applyMatrix4(root.matrixWorld)
           wn.copy(a.n).transformDirection(root.matrixWorld)
           return wn.dot(cp.copy(camera.position).sub(wp)) > 0 ? 1 : 0 // the surface faces away from the camera: hide
         },
       })
     }
-    stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt) }
+    // the fuselage's part labels: every part the selected op works on, and every fitted (representational) part in view, so a fitted
+    // shape is never on screen without its "fitted shape" label. The label text comes from the export, which derives it from fidelity.
+    const flabels = new Labels(document.getElementById('labels') as HTMLElement, camera)
+    const fwp = new THREE.Vector3(), fbox = new THREE.Box3()
+    if (bay) {
+      const byPart = new Map<string, typeof bay.meshes[number]>()
+      for (const m of bay.meshes) if (!m.row) byPart.set(m.part, m)
+      for (const [part, m] of byPart) {
+        const row = bay.data.parts[part]
+        const at = () => {
+          const mesh = bay.shown(m.name)
+          if (!mesh) return null
+          fbox.setFromObject(mesh)
+          return fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)
+        }
+        flabels.add({
+          id: m.name, text: row.label, color: bay.labelColor(m), cls: m.hatch ? 'fitted' : '',
+          at,
+          vis: () => {
+            if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return 0
+            const st = bstate.get(m.name)
+            if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return 0
+            const op = selected ? graph.ops.find((o) => o.id === selected) : null
+            return !op || m.hatch || op.components.includes(m.cid) ? 1 : 0
+          },
+        })
+      }
+    }
+    stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt); flabels.update(window.innerWidth, window.innerHeight, dt) }
     const setLabels = (on: boolean) => {
       labelsOn = on
       try { storage?.setItem(LABELS_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
       ui.setLabels(on)
     }
     buildShots(variant)
+    const homeShot = () => (subject === 'canard' ? 'home' : 'fhome')
     const select = (id: string | null, fly = true) => {
       selected = id
+      lastSel[subject] = id
       ui.setSelected(id)
       openOp()
-      setPose(orientation(graph, variant, id), fly)
-      goto(id && rig.shots[id] ? id : 'home', fly)
+      if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
+      goto(id && rig.shots[id] ? id : homeShot(), fly)
+    }
+    const subjectOps = () => (subject === 'canard' ? barOps(graph, variant) : fuseBarOps(graph, variant))
+    // the key light follows the subject: over the canard's table as it always was, or over the fuselage station (a wider cone)
+    const KEY_CANARD = { pos: key.position.clone(), target: key.target.position.clone(), angle: key.angle, penumbra: key.penumbra }
+    const aimKey = () => {
+      if (subject === 'canard' || !bay) {
+        key.position.copy(KEY_CANARD.pos); key.target.position.copy(KEY_CANARD.target); key.angle = KEY_CANARD.angle; key.penumbra = KEY_CANARD.penumbra
+      } else {
+        key.position.set(STATION.table.x + 0.2, ROOM.h - 0.35, (STATION.table.z + STATION.jig.z) / 2 + 0.55)
+        key.target.position.set(STATION.table.x, 1.0, (STATION.table.z + STATION.jig.z) / 2)
+        key.angle = 0.92; key.penumbra = 0.75
+      }
+      key.target.updateMatrixWorld()
+      pipeline.shadowDirty = true
+    }
+    const secScale = () => (subject === 'canard'
+      ? { min: 0, max: semi, fmt: fmtBl, label: 'Section station in buttock line inches' }
+      : { min: FS_MIN, max: FS_MAX, fmt: fmtFs, label: 'Section station in fuselage station inches' })
+    const setSubject = (s: Subject, fly = true, save = true) => {
+      if (!bay && s === 'fuselage') return
+      if (s === subject) return
+      subject = s
+      if (save) try { storage?.setItem(SUBJECT_KEY, s) } catch { /* per-viewer convenience only */ }
+      canardRoot.visible = s === 'canard'
+      ui.setSubject(s)
+      if (layupN || bay) ui.scaleSection(secScale(), s === 'canard' ? secOn : fsecOn, s === 'canard' ? secBl : fsecFs)
+      aimKey()
+      bayStale = true
+      const ops = subjectOps()
+      ui.setOps(ops)
+      const want = lastSel[s]
+      select(want !== undefined && (want === null || ops.some((o) => o.id === want)) ? want : ops[0]?.id ?? null, fly)
+      syncPaths()
     }
     // ---- the tour: src/director.ts scripts the page's own controls with a cursor. A click the director dispatches is told from a person's by
     // director.busy; anything a person does (op chip, variant, scrubber, Play, the camera, Escape, Tour again) ends the tour where it stands. ----
     let orb: { r: number; y: number; a0: number } | null = null
     const director = new Director({
       act(name) {
-        if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (secOn) setSection(false, secBl) }
+        if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
         else if (name === 'finish') { stopPlay(); select(null, true) }
-        else if (name === 'closeup') goto('cutclose', true)
+        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : 'fhome', true)
       },
       orbit(k, deg, first) {
         if (first) {
@@ -842,7 +995,7 @@ async function boot() {
     const endTour = () => {
       tourRate = 1
       tourOv.labels = tourOv.paths = null
-      if (before) { const b = before; before = null; setSection(b.secOn, b.secBl) }
+      if (before) { const b = before; before = null; setSection(b.secOn, b.secBl) } // the subject's own section (a tour never changes subject)
       syncPaths()
       ui.setTouring(false)
     }
@@ -854,6 +1007,15 @@ async function boot() {
     }
     director.onEnd = endTour
     const startTour = (chapter?: number) => {
+      if (subject === 'fuselage' && bay) {
+        stopPlay()
+        before = { secOn: fsecOn, secBl: fsecFs }
+        director.load(fuselageTour(graph as never, variant, (id) => bay.opCount(id)))
+        director.start(simT)
+        tourRate = TOUR_BUILD_RATE
+        ui.setTouring(true)
+        return
+      }
       const ch = chapter ?? tourChapter(graph as never, variant, selected)
       if (ch === undefined) return // nothing to build in this variant
       stopPlay()
@@ -875,11 +1037,13 @@ async function boot() {
         variant = v
         buildShots(v)
         ui.setVariant(v)
+        if (subject !== 'canard') return // the variant only changes the canard; its bar is rebuilt when the canard is chosen again
         const ops = barOps(graph, v)
         ui.setOps(ops)
         select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
       },
-      onHome: () => goto('home', true),
+      onSubject(s) { if (s !== subject) { userAct(); setSubject(s) } },
+      onHome: () => goto(homeShot(), true),
       onTour: () => (director.active ? stopTour() : startTour()),
       onSelect: (id) => { userAct(); select(id) },
       onGhost: (on) => { userAct(); setGhost(on) },
@@ -897,11 +1061,35 @@ async function boot() {
     ui.setPaths(pathsOn)
     if (layupN) ui.initSection(semi, secBl)
     ui.setVariant(variant)
-    const firstOps = barOps(graph, variant)
-    ui.setOps(firstOps)
+    ui.setSubject('canard')
+    const subjEl = document.getElementById('subject')
+    if (subjEl) subjEl.hidden = !bay // no fuselage in this build: no choice to offer
     const want = params.get('op')
-    select(firstOps.find((o) => o.id === want)?.id ?? firstOps[0]?.id ?? null, false)
+    let stored: string | null = null
+    try { stored = storage?.getItem(SUBJECT_KEY) ?? null } catch { stored = null }
+    const wantOp = graph.ops.find((o) => o.id === want)
+    const startSubject: Subject = !bay ? 'canard' : wantOp ? (FUSE_CHAPTERS.has(wantOp.chapter) ? 'fuselage' : 'canard') : parseSubject(stored)
+    if (startSubject === 'fuselage') {
+      lastSel.fuselage = fuseBarOps(graph, variant).find((o) => o.id === want)?.id
+      setSubject('fuselage', false, false)
+    } else {
+      const firstOps = barOps(graph, variant)
+      ui.setOps(firstOps)
+      select(firstOps.find((o) => o.id === want)?.id ?? firstOps[0]?.id ?? null, false)
+    }
 
+    if (bay) hook.meshNames = () => [...merged.map((m) => m.node ?? m.cid), ...bay.meshes.map((m) => m.name)]
+    hook.subject = () => subject
+    hook.setSubject = (s) => setSubject(s)
+    hook.placement = () => {
+      const out: Record<string, 'table' | 'jig' | 'none'> = {}
+      for (const m of bay?.meshes ?? []) if (!m.row) out[m.part] = m.jig.visible ? 'jig' : m.table.visible ? 'table' : 'none'
+      return out
+    }
+    hook.jigPose = () => bay?.pose ?? 'upright'
+    hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
+    hook.cg = () => cgRow(ledger)
+    hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected
@@ -914,22 +1102,31 @@ async function boot() {
     hook.labShots = () => lab
     hook.material = (name) => {
       const m = merged.find((x) => (x.node ?? x.cid) === name)
-      if (!m) return null
+      if (!m) {
+        const f = bay?.meshes.find((x) => x.name === name)
+        if (!f) return null
+        const mat = (f.jig.visible || !f.table.visible ? f.jigMat : f.tableMat)
+        const fi = mat.userData.comp as { wet: number } | undefined
+        return { kind: f.spec.kind, angles: f.spec.angles.slice(), wet: fi?.wet ?? 0, hatch: !!mat.userData.hatch, fidelity: f.fidelity }
+      }
       const info = (m.mesh.material as THREE.Material).userData.comp as { wet: number } | undefined
       return { kind: m.spec.kind, angles: m.spec.angles.slice(), wet: info?.wet ?? 0 }
     }
     hook.setWet = (name, w) => {
       const m = merged.find((x) => (x.node ?? x.cid) === name)
       if (m) setWet(m.mesh.material as THREE.Material, w)
+      const f = bay?.meshes.find((x) => x.name === name)
+      if (f) { setWet(f.jigMat, w); setWet(f.tableMat, w) }
     }
     hook.meshBox = (name) => {
       const m = merged.find((x) => (x.node ?? x.cid) === name)
-      if (!m) return null
-      const bx = new THREE.Box3().setFromObject(m.mesh)
+      const mesh = m ? m.mesh : bay?.shown(name) ?? null
+      if (!mesh) return null
+      const bx = new THREE.Box3().setFromObject(mesh)
       return [bx.min.toArray(), bx.max.toArray()]
     }
     hook.state = () => Object.fromEntries(bstate)
-    hook.phase = (name) => phases.get(name) ?? null
+    hook.phase = (name) => phases.get(name) ?? bay?.phases.get(name) ?? null
     hook.lay = () => lay
     hook.setLay = setLay
     hook.play = () => { togglePlay(); return playing }
@@ -944,7 +1141,7 @@ async function boot() {
       controls.update()
       rig.lastUser = performance.now()
     }
-    hook.labels = () => labels.stats()
+    hook.labels = () => (subject === 'canard' ? labels.stats() : flabels.stats())
     hook.paths = () => {
       pathsGroup.updateWorldMatrix(true, true)
       return pathObjs.map((o) => {
@@ -966,12 +1163,25 @@ async function boot() {
     }
     hook.plyBox = (name) => {
       const ms = merged.filter((m) => nameOf(m) === name || m.cid === name)
+      const f = bay?.meshes.find((x) => x.name === name)
+      if (!ms.length && f) { const b = f.jig.geometry.boundingBox!; return { min: b.min.toArray(), max: b.max.toArray() } } // the box's frame: x = FS
       if (!ms.length) return null
       const bx = new THREE.Box3()
       for (const m of ms) bx.union(m.mesh.geometry.boundingBox!)
       return { min: bx.min.toArray(), max: bx.max.toArray() }
     }
     hook.cut = () => {
+      if (subject === 'fuselage' && bay) {
+        const cap = fuseCapped()
+        const keptX = (x: number) => bay.cut.world.distanceToPoint(new THREE.Vector3(x, 0, 0).applyMatrix4(bay.jigFrame.matrixWorld)) >= 0
+        const capVis = cap.filter((m) => Array.isArray(m.jig.material) && (m.jigMat.userData.back as THREE.Material | undefined)?.userData.u.uGhost.value === 0).map((m) => m.name)
+        return {
+          enabled: fsecOn, bl: fsecFs, fs: fsecFs, planeConstant: fsecOn ? bay.cut.local.constant : null,
+          keepsOutboard: false, removesInboard: false, keepsAft: fsecOn && keptX(fsecFs + 5), removesForward: fsecOn && !keptX(fsecFs - 5),
+          cappedNodes: cap.map((m) => m.name), capsVisible: capVis.length, capNodesVisible: capVis,
+          clipped: fsecOn ? bay.meshes.filter((m) => m.jig.visible && m.jig.geometry.boundingBox!.min.x < fsecFs).length : 0,
+        }
+      }
       const kept = (z: number) => cut.world.distanceToPoint(new THREE.Vector3(0, 0, z).applyMatrix4(root.matrixWorld)) >= 0
       const capNodes = merged.filter((m) => isCapped(m) && Array.isArray(m.mesh.material) && (m.mat.userData.back as THREE.Material | undefined)?.userData.u.uGhost.value === 0).map(nameOf)
       return {

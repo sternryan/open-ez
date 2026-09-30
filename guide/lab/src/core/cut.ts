@@ -1,5 +1,6 @@
 // Adapted from AirsupHQ/airsup-lab src/core/cut.ts (MIT); see NOTICE.
-// Changes: none (unmodified)
+// Changes: the straight cut's plane normal is a constructor option (default (0, 0, -1), the original), so a cut can run across any
+// local axis; the lab's canard keeps the default, the fuselage's station cut uses +X.
 import * as THREE from 'three'
 
 /**
@@ -81,7 +82,11 @@ export class CutState {
     }
   }
 
-  constructor(public owner: THREE.Object3D, public extent: number, public depth = 0, wedge = 0) {
+  /** The straight cut's normal in the owner's frame (the kept side is normal . p + d >= 0). The original is (0, 0, -1). */
+  readonly axis = new THREE.Vector3(0, 0, -1)
+
+  constructor(public owner: THREE.Object3D, public extent: number, public depth = 0, wedge = 0, axis?: THREE.Vector3) {
+    if (axis) this.axis.copy(axis).normalize()
     this.wedge = wedge
     if (wedge > 0) this.planes.push(this.world2)
   }
@@ -104,7 +109,7 @@ export class CutState {
       this.local2.constant = e
       this.world2.copy(this.local2).applyMatrix4(this.owner.matrixWorld)
       this.uPlane2.value.set(this.world2.normal.x, this.world2.normal.y, this.world2.normal.z, this.world2.constant)
-    } else this.local.normal.set(0, 0, -1)
+    } else this.local.normal.copy(this.axis)
     if (this.wedge <= 0) this.local.constant = e
     this.world.copy(this.local).applyMatrix4(this.owner.matrixWorld)
     this.uPlane.value.set(this.world.normal.x, this.world.normal.y, this.world.normal.z, this.world.constant)

@@ -20,8 +20,23 @@ import type { MaterialSpec } from '../logic/materials'
  * (the clear coat is kept above zero when cured so the program stays the same).
  */
 
+/**
+ * The "unverified" treatment: a part whose shape is REPRESENTATIONAL (fitted, not from a printed outline) carries amber diagonal
+ * stripes on its surface and on its cut face, 1.6 in apart in the model frame. uHatch = 0 (every canard part) skips it entirely.
+ */
+const GLSL_HATCH = /* glsl */ `
+if (uHatch > 0.5) {
+  vec3 hp = cutCap ? cutHit : vObj;
+  float hs = (hp.x + hp.y - hp.z) / 1.6;
+  float tri = abs(fract(hs) - 0.5) * 2.0;
+  float aa = clamp(fwidth(hs) * 2.0, 1e-4, 0.5);
+  float stripe = smoothstep(0.52 - aa, 0.52 + aa, tri);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.80, 0.40, 0.08), 0.7 * stripe * (1.0 - 0.6 * aa * 2.0));
+}`
+export const HATCH_COLOR = 0xcc6614
+
 // Future work drawn as a ghost: the material is transparent (JS side); this desaturates it.
-const GLSL_GHOST_PARS = /* glsl */ `uniform float uGhost;\nuniform float uFollow;`
+const GLSL_GHOST_PARS = /* glsl */ `uniform float uGhost;\nuniform float uFollow;\nuniform float uHatch;`
 
 /**
  * 0..1, eased by main.ts: while load paths are drawn the canard's laminate is dimmed and desaturated a little, so the flows'
@@ -30,14 +45,15 @@ const GLSL_GHOST_PARS = /* glsl */ `uniform float uGhost;\nuniform float uFollow
  */
 export const FOLLOW = { value: 0 }
 const GLSL_FOLLOW = /* glsl */ `
-{ float fl = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(fl), (cutCap ? 0.1 : 0.45) * uFollow) * (1.0 - uFollow * (cutCap ? 0.1 : 0.5)); }`
+{ float fl = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(fl), (cutCap ? 0.1 : 0.45) * uFollow) * (1.0 - uFollow * (cutCap ? 0.1 : 0.5)); }` + GLSL_HATCH
 const GLSL_GHOST_COLOR = /* glsl */ `{ float gl = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(gl), 0.75 * uGhost); }`
 
 const GLSL_COMPOSITE_PARS = /* glsl */ GLSL_GHOST_PARS + `
 uniform float uWet;
-uniform vec3 uPly;       // x: model Z of the ply's root end, y: 1 / span length (per inch), z: ply thickness (in)
+uniform vec3 uPly;       // x: coordinate (along uAxis) of the ply's root end, y: 1 / span length (per inch), z: ply thickness (in)
+uniform vec3 uAxis;      // the axis the ply unrolls along, from its root end; (0, 0, 1) for the canard (model Z)
 uniform vec2 uLay;       // x: unrolled fraction of the span (from the root), y: wet-out front, as a fraction of the span
-uniform float uWeb;      // 1 when the ply lies in the model Y-Z plane (shear web), 0 when it lies in X-Z (skins, caps)
+uniform float uWeb;      // 1 when the ply lies in the model Y-Z plane (shear web), 0 when it lies in X-Z (skins, caps), 2 in X-Y
 uniform vec2 uAng;       // cos, sin of the first tow direction, measured from the span axis in the ply's plane
 uniform vec4 uWv;        // x: weave period or foam cells per inch, y: relief in inches, z: UND stitch spacing (in), w: ply order in its op
 vec3 h33(vec3 p) {
@@ -70,7 +86,7 @@ float cmpWetK = 1.0, cmpEdge = 0.0;   // wetness ahead of / at the wet-out front
 #if defined(COMP_UND) || defined(COMP_BID)
 {
   // Position along the span, 0 at the root end and 1 at the tip. A cut face is measured where the plane opens the ply.
-  float sp = (uPly.x - (cutCap ? cutHit.z : vObj.z)) * uPly.y;
+  float sp = (uPly.x - dot(cutCap ? cutHit : vObj, uAxis)) * uPly.y;
   if (uLay.x < 1.0 && sp > uLay.x) discard;   // not unrolled yet
   if (uLay.y < 1.0) {
     // The wet-out front is a soft band about 1.1 in wide, so the front moves from fully dry (uLay.y = 0) to fully wet (1).
@@ -116,7 +132,7 @@ float capFade = 1.0;
 capFade = 0.0; // low tier: albedo only, no weave relief or tow shading; the cut face keeps its ply lines but drops the fibre dots
 #else
 {
-  vec2 q = uWeb > 0.5 ? vObj.zy : vObj.zx;
+  vec2 q = uWeb > 1.5 ? vObj.xy : uWeb > 0.5 ? vObj.zy : vObj.zx;
   float A = dot(q, uAng);                    // along the first tow direction
   float B = dot(q, vec2(-uAng.y, uAng.x));   // across it
   float P = uWv.x;
@@ -263,16 +279,51 @@ export function plySpan(geo: THREE.BufferGeometry): PlySpan {
   return { rootZ: b.max.z, len: b.max.z - b.min.z }
 }
 
+/**
+ * The fuselage's plies lie on faces in any of the three model planes and unroll along their longer in-plane side, so their frame is
+ * read from the geometry: the plane (the dominant normal), the unroll axis and where it starts. The canard keeps plyPlane/plySpan.
+ */
+export interface PlyFrame { web: 0 | 1 | 2; axis: THREE.Vector3; span: PlySpan }
+export function plyFrame(geo: THREE.BufferGeometry): PlyFrame {
+  const pos = geo.attributes.position
+  const idx = geo.index
+  const n = idx ? idx.count : pos.count
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), e1 = new THREE.Vector3(), e2 = new THREE.Vector3()
+  const s = [0, 0, 0]
+  for (let i = 0; i < n; i += 3) {
+    const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2
+    a.fromBufferAttribute(pos, ia); b.fromBufferAttribute(pos, ib); c.fromBufferAttribute(pos, ic)
+    e1.subVectors(b, a); e2.subVectors(c, a)
+    const nv = e1.cross(e2)
+    s[0] += Math.abs(nv.x); s[1] += Math.abs(nv.y); s[2] += Math.abs(nv.z)
+  }
+  const d = s[0] >= s[1] && s[0] >= s[2] ? 0 : s[1] >= s[2] ? 1 : 2
+  geo.computeBoundingBox()
+  const bb = geo.boundingBox!
+  const ext = [bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z]
+  const [p, q] = [0, 1, 2].filter((k) => k !== d)
+  const u = ext[p] >= ext[q] ? p : q
+  const web = (d === 0 ? 1 : d === 1 ? 0 : 2) as 0 | 1 | 2
+  if (u === 2) return { web, axis: new THREE.Vector3(0, 0, 1), span: { rootZ: bb.max.z, len: ext[2] } } // as the canard: from max Z
+  const axis = u === 0 ? new THREE.Vector3(-1, 0, 0) : new THREE.Vector3(0, -1, 0) // from the low end up
+  return { web, axis, span: { rootZ: u === 0 ? -bb.min.x : -bb.min.y, len: ext[u] } }
+}
+
+/** Options the fuselage uses; the canard passes none, and gets exactly its old material. */
+export interface CompositeOpts { axis?: THREE.Vector3; hatch?: boolean }
+
 export interface CompositeInfo { kind: MaterialSpec['kind']; angles: number[]; wet: number }
 
 /** One material per mesh. `web` says the ply lies in the model Y-Z plane (use plyPlane on its geometry). */
-export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web: 0 | 1 = 0, span: PlySpan = { rootZ: 0, len: 1 }): THREE.MeshStandardMaterial {
+export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web: 0 | 1 | 2 = 0, span: PlySpan = { rootZ: 0, len: 1 }, opts: CompositeOpts = {}): THREE.MeshStandardMaterial {
+  const hatch = { value: opts.hatch ? 1 : 0 }
+  const axis = { value: (opts.axis ?? new THREE.Vector3(0, 0, 1)).clone() }
   const common = { metalness: 0, cut, detail: 0 }
   let m: THREE.MeshStandardMaterial
   if (spec.kind === 'foam') {
     m = surf({
       ...common, name: 'foam', color: COLORS.foam, roughness: 0.86, capColor: COLORS.foamCap, capRoughness: 0.88, capMetalness: 0,
-      hooks: { ...HOOKS_FOAM, uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
+      hooks: { ...HOOKS_FOAM, uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
     })
   } else if (spec.kind === 'und' || spec.kind === 'bid') {
     const und = spec.kind === 'und'
@@ -285,13 +336,14 @@ export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web:
       clearcoat: 0.12, clearcoatRoughness: 0.45,
       hooks: {
         ...glassHooks(und ? 'COMP_UND' : 'COMP_BID'),
-        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), und ? 0.009 : 0.013) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, spec.ply?.order ?? 0) } },
+        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), und ? 0.009 : 0.013) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, spec.ply?.order ?? 0) } },
       },
     })
   } else {
     throw new Error(`compositeMaterial: "${spec.kind}" is not a composite kind`)
   }
   m.userData.comp = { kind: spec.kind, angles: spec.angles.slice(), wet: 0 } satisfies CompositeInfo
+  m.userData.hatch = !!opts.hatch
   return m
 }
 
@@ -333,11 +385,13 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
 }
 
 /** A matte non-composite part (no plies). Same ghost handling as the composites. */
-export function partMaterial(cut: CutState | null): THREE.MeshStandardMaterial {
+export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; name?: string } = {}): THREE.MeshStandardMaterial {
+  const color = opts.color ?? 0xe6dfcf // the canard passes nothing: its old pale part colour
   const m = surf({
-    name: 'part', color: 0xe6dfcf, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: 0xe6dfcf,
-    hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, capColor: GLSL_FOLLOW, uniforms: { uGhost: { value: 0 }, uFollow: FOLLOW } },
+    name: opts.name ?? 'part', color, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: color,
+    hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, capColor: GLSL_FOLLOW, uniforms: { uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: { value: opts.hatch ? 1 : 0 } } },
   })
+  m.userData.hatch = !!opts.hatch
   return m
 }
 

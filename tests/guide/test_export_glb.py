@@ -67,5 +67,118 @@ def test_real_export_nests_plies_and_keeps_inches(tmp_path):  # viewer parent wa
     idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
     for node, info in json.loads((tmp_path / "layup.json").read_text())["nodes"].items():
         assert parent[idx[node]] == info["component"], node
-    ys = [v for a in j["accessors"] if "max" in a and len(a["max"]) == 3 for v in (a["min"][1], a["max"][1])]
-    assert min(ys) >= -1e-6 and abs(max(ys) - 70.8) < 0.01  # inches, BL 0..semi-span (canard_span 141.6 / 2) before the root Z-up→Y-up rotation
+    # the canard's meshes only: the fuselage (chapters 4-6) shares the file and spans both sides of B.L. 0
+    under = lambda i: j["nodes"][i]["name"].startswith("canard.") or (i in parent and under(idx[parent[i]]))  # noqa: E731
+    acc = {prim["attributes"]["POSITION"] for i, n in enumerate(j["nodes"]) if "mesh" in n and under(i)
+           for prim in j["meshes"][n["mesh"]]["primitives"]}
+    ys = [v for k in acc for a in [j["accessors"][k]] for v in (a["min"][1], a["max"][1])]
+    assert ys and min(ys) >= -1e-6 and abs(max(ys) - 70.8) < 0.01  # inches, BL 0..semi-span (canard_span 141.6 / 2) before the root Z-up→Y-up rotation
+
+
+# ---- fuselage box (chapters 4-6) in the lab export (Block 2 M2.2 Task 5) ----
+import math  # noqa: E402
+import re  # noqa: E402
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(scope="module")
+def fuse_export(tmp_path_factory):
+    out = tmp_path_factory.mktemp("fuse") / "longez.glb"
+    export_main(["--out", str(out)])
+    return out
+
+
+def _parents(j):
+    return {c: j["nodes"][i]["name"] for i, n in enumerate(j["nodes"]) for c in n.get("children", ())}
+
+
+def test_fuselage_parts_and_plies_are_glb_nodes_nested_like_the_canard(fuse_export):
+    from core.fuselage_book import build_fuselage
+    from core.fuselage_plies import plies
+
+    j = _glb_json(fuse_export)
+    names = [n["name"] for n in j["nodes"]]
+    idx = {n: i for i, n in enumerate(names)}
+    parent = _parents(j)
+    parts = build_fuselage()
+    for part in parts:
+        assert f"fuselage.{part}" in idx, part  # one node per part
+    pl = plies()
+    with_plies = {p.part for p in pl}
+    for p in pl:
+        assert parent[idx[p.node]] == f"fuselage.{p.part}", p.node  # a child of its part's sub-assembly
+    for part in parts:
+        kids = [names[c] for c in j["nodes"][idx[f"fuselage.{part}"]].get("children", ())]
+        if part in with_plies:
+            assert sorted(k for k in kids if re.search(r"\.p\d+$", k)) == sorted(p.node for p in pl if p.part == part)
+
+
+def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fuse_export):
+    from core import fuselage_plies as fp
+    from core.fuselage_book import build_fuselage
+
+    lj = json.loads((fuse_export.parent / "layup.json").read_text())
+    assert {"ops", "semi_span", "nodes"} <= set(lj)  # the canard's keys are untouched
+    assert not any(k.startswith("fuselage.") for k in lj["nodes"])
+    fz = lj["fuselage"]
+    g = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    pl = fp.plies(g)
+    assert set(fz["nodes"]) == {p.node for p in pl}
+    for p in pl:
+        n = fz["nodes"][p.node]
+        assert (n["op"], n["cloth"], n["orientation_deg"], n["fidelity"], n["lower_bound"], n["part"]) == (
+            p.op, p.cloth, p.orientation_deg, p.fidelity, p.lower_bound, p.part)
+        assert n["fs_min"] <= n["fs_max"]
+    # every chapter 4-6 material row is either laid (as many plies as it says, on every target) or excluded with its reason
+    excluded = {(e["op"], e["where"]) for e in fz["excluded"]}
+    for op_id, op in g.ops.items():
+        if op.chapter not in (4, 5, 6):
+            continue
+        for m in op.materials:
+            key = (op_id, m["where"])
+            laid = [n for n in fz["nodes"].values() if (n["op"], n["where"]) == key]
+            if key in excluded:
+                assert not laid, key
+            else:
+                assert len(laid) == int(m["plies"]) * len(fp.SCOPE[key].targets), key
+    # within an op the lay order runs 1..n with no gaps, in the order the plies are laid
+    for op_id in fz["ops"]:
+        orders = sorted(n["op_order"] for n in fz["nodes"].values() if n["op"] == op_id)
+        assert orders == list(range(1, len(orders) + 1)), op_id
+    parts = build_fuselage()
+    assert set(fz["parts"]) == set(parts)
+    for name, part in parts.items():
+        e = fz["parts"][name]
+        assert e["node"] == f"fuselage.{name}" and e["fidelity"] == part.fidelity
+        assert e["component"] in {c.id for c in g.components.values()}, name
+        # a fitted shape is never labelled as book, and a book part never claims to be fitted
+        assert ("fitted shape" in e["label"]) == (part.fidelity == "representational"), (name, e["label"])
+    for n in fz["nodes"].values():
+        assert n["fidelity"] == fz["parts"][n["part"]]["fidelity"]  # a ply on a fitted part is fitted too
+    for name, e in fz["parts"].items():  # every bulkhead's forward face points forward (the lab lays it flat on it)
+        assert (e["fwd_normal"] is not None) == (name in ("front_seat_bkhd", "rear_seat_bkhd", "f22", "f28", "panel", "firewall")), name
+        assert e["fwd_normal"] is None or e["fwd_normal"][0] <= -0.5, (name, e["fwd_normal"])
+
+
+def test_fuselage_ply_shells_sit_on_their_region_and_stack_outward(fuse_export):
+    from guide.fuselage_export import PLY_T, ply_shells
+
+    shells = ply_shells()
+    fz = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"]
+    for node, n in fz["nodes"].items():
+        bb = shells[node].val().BoundingBox()
+        assert bb.xmin == pytest.approx(n["fs_min"], abs=1e-4) and bb.xmax == pytest.approx(n["fs_max"], abs=1e-4)
+    # the second UND on the front seat bulkhead's front face lies one ply further forward than the first
+    a = shells["fuselage.front_seat_bkhd.p1"].val().BoundingBox()
+    b = shells["fuselage.front_seat_bkhd.p2"].val().BoundingBox()
+    assert a.xmin - b.xmin >= 0.5 * PLY_T - 1e-9  # the front face's normal is at least half along -x (the region rule)
+
+
+def test_ledger_json_is_written_beside_layup_json_and_says_the_cg_is_not_computed(fuse_export):
+    from core.ledger import fuselage_ledger_json
+
+    lj = json.loads((fuse_export.parent / "ledger.json").read_text())
+    assert lj == json.loads(json.dumps(fuselage_ledger_json()))
+    assert lj["cg"]["arm_in"] is None and lj["cg"]["weight_lb"] == 0  # no part is fully sourced yet
+
