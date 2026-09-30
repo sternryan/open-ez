@@ -17,32 +17,25 @@ from functools import lru_cache
 import cadquery as cq
 
 from core import fuselage_plies as fp
-from core.fuselage_book import FusePart, build_fuselage, half_width, plan_bend_points
+from core.fuselage_book import (
+    FusePart,
+    build_fuselage,
+    half_width,
+    part_name,
+    plan_bend_points,
+)
 
 CHAPTERS = (4, 5, 6)
 BULKHEADS = ("front_seat_bkhd", "rear_seat_bkhd", "f22", "f28", "panel", "firewall")
 PLY_T = 0.06  # in, VISUAL: thick enough to read in the section cut; not the cured thickness
 
-# Plain names for the lab's labels. A representational part gets " (fitted shape)" from part_label(), never here.
-_NAMES = {
-    "side_left": "Left side",
-    "side_right": "Right side",
-    "front_seat_bkhd": "Front seat bulkhead",
-    "rear_seat_bkhd": "Rear seat bulkhead",
-    "top_longeron_left": "Left top longeron",
-    "top_longeron_right": "Right top longeron",
-    "f22": "F22 bulkhead",
-    "f28": "F28 bulkhead",
-    "panel": "Instrument panel",
-    "firewall": "Firewall",
-    "bottom": "Bottom foam",
-}
 # The graph's component for a part (guide/graph/components.yaml). Both top longerons belong to one component.
 _COMPONENT = {"top_longeron_left": "fuselage.longerons", "top_longeron_right": "fuselage.longerons"}
 
 
 def part_label(name: str, part: FusePart) -> str:
-    base = _NAMES.get(name, name.replace("_", " ").capitalize())
+    """The lab's label: the plain name (core.fuselage_book.PART_NAMES), plus " (fitted shape)" for a representational part."""
+    base = part_name(name)
     return base + " (fitted shape)" if part.fidelity == "representational" else base
 
 

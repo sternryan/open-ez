@@ -83,6 +83,20 @@ export function initUI(h: UIHandlers, store: Store) {
   window.addEventListener('resize', () => { fit(); if (!pop.hidden) placePop() })
   setOpen(!narrow.matches)
 
+  // The fuselage's CG and legend rows fold into one line behind a disclosure (closed by default, so the dock leaves the box clear); the
+  // choice is remembered like the other view settings, and a storage that throws only means it is not remembered.
+  const DETAILS_KEY = 'longez.fuseDetails'
+  const setDetails = (open: boolean, save: boolean) => {
+    $('fuse-rows').dataset.open = String(open)
+    $('fuse-more').setAttribute('aria-expanded', String(open))
+    if (save) try { window.localStorage.setItem(DETAILS_KEY, open ? '1' : '0') } catch { /* per-viewer convenience only */ }
+    fit()
+  }
+  let detailsOpen = false
+  try { detailsOpen = window.localStorage.getItem(DETAILS_KEY) === '1' } catch { detailsOpen = false }
+  setDetails(detailsOpen, false)
+  $('fuse-more').addEventListener('click', () => setDetails($('fuse-rows').dataset.open !== 'true', true))
+
   $('subject')?.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-subject]') as HTMLElement | null
     if (b) h.onSubject?.(b.dataset.subject as Subject)
@@ -220,6 +234,7 @@ export function initUI(h: UIHandlers, store: Store) {
     },
     /** the fuselage rows of the readout: the CG from the mass ledger (null hides the row) and the stripes legend */
     setCg(cg: { value: string; sub: string | null } | null) {
+      $('fuse-rows').hidden = cg === null
       $('t-cg').hidden = cg === null
       $('t-legend').hidden = cg === null
       if (!cg) return

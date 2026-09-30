@@ -50,11 +50,13 @@ def _core(part: str, mats: dict) -> tuple[str | None, float | None, str | None]:
     """(material, density lb/ft^3 or None, reason if density is missing)."""
     ent = mats.get("part_core", {}).get(part)
     if ent is None:
-        return None, None, _NYC + f"core material of {part} not sourced"
+        from .fuselage_book import part_name  # lazy: fuselage_book pulls in CadQuery
+
+        return None, None, _NYC + f"core material of {part_name(part)} not sourced"
     mat = ent["material"]
     dens = mats.get("foam_lb_ft3", {}).get(mat)
     if dens is None:
-        return mat, None, _NYC + f"density of {mat} not sourced"
+        return mat, None, _NYC + f"density of {mat.replace('_', ' ')} not sourced"
     return mat, float(dens["value"]), None
 
 

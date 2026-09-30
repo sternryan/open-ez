@@ -202,3 +202,19 @@ def test_ledger_json_is_serialisable_and_carries_not_yet_computed_strings():
     assert out["cg_lower_bound"]["arm_in"] is not None
     assert any("not yet computed" in str(v) for v in out["cg"]["excluded"].values())
     assert out["parts"][0]["core_mass_lb"] is not None
+
+
+def test_ledger_reasons_name_parts_and_materials_in_plain_words_never_internal_ids():
+    """The lab shows these strings; a builder reads "Left top longeron", not `top_longeron_left` (M2.2 Task 7)."""
+    import re
+
+    out = ledger_mod.fuselage_ledger_json()
+    reasons = [v for c in (out["cg"], out["cg_lower_bound"]) for v in c["excluded"].values()]
+    reasons += [r[k] for r in out["parts"] for k in ("core_mass_reason", "glass_mass_reason", "total_mass_reason") if r[k]]
+    assert reasons
+    ids = set(build_fuselage())
+    for s in reasons:
+        assert "_" not in s, s
+        assert not any(re.search(rf"\b{re.escape(p)}\b", s) for p in ids), s
+    assert "not yet computed: core material of Left top longeron not sourced" in reasons
+    assert "not yet computed: density of birch plywood not sourced" in reasons

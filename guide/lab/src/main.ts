@@ -23,8 +23,8 @@ import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
-import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, removedByStationCut, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
-import { STATION } from './scene/fuselageStation'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, removedByStationCut, crossedByStationCut, labelPriority, jigPose, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
+import { STATION, fsToX } from './scene/fuselageStation'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS } from './director'
 import './style.css'
 
@@ -92,7 +92,7 @@ interface LabHook {
   /** place the camera (world metres); the orbit target is `target` */
   setCamera(pos: number[], target: number[]): void
   /** the part labels: what each shows right now */
-  labels(): { id: string; text: string; opacity: number; x: number; y: number }[]
+  labels(): { id: string; text: string; opacity: number; x: number; y: number; collapsed?: boolean; hidden?: boolean }[]
   /** the load paths: visible = its parts exist in the build; drawn = visible and the toggle is on; worldPoints in metres, every segment's points in order, after the canard's pose; clipped = a point is on the removed side of the section plane */
   paths(): { id: string; kind: string; visible: boolean; drawn: boolean; color: number[]; worldPoints: number[][]; clipped: boolean }[]
   /** world metres -> canvas CSS pixels [x, y] with the camera as it is now */
@@ -105,6 +105,8 @@ interface LabHook {
   fuseShots(): Record<string, CamState>; cg(): { value: string; sub: string | null }
   /** the box's frame (inches: x = FS, y = W.L. - 17.4, z = -B.L.) -> world metres, as the jig holds it now */
   fuseToWorld(p: number[]): number[]
+  /** the same with the box at rest in `pose` (no turn under way), and whether the box is turning over now */
+  fuseRestToWorld(p: number[], pose: string): number[]; fuseTurning(): boolean
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
@@ -128,6 +130,7 @@ const hook: LabHook = {
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
+  fuseRestToWorld: (p) => p, fuseTurning: () => false,
 }
 if (TEST) window.__lab = hook
 
@@ -518,6 +521,7 @@ async function boot() {
     }
     applyPose(0, 0)
     stepPose = (dt) => {
+      if (bay?.stepTurn(dt)) pipeline.shadowDirty = true // the fuselage box turning over (its own clock, sim time)
       if (flipT >= 1) return
       flipT = Math.min(1, flipT + dt / FLIP_SECONDS)
       const e = easeInOut(flipT)
@@ -895,18 +899,34 @@ async function boot() {
     }
     // the fuselage's part labels: every part the selected op works on, and every fitted (representational) part in view, so a fitted
     // shape is never on screen without its "fitted shape" label. The label text comes from the export, which derives it from fidelity.
-    const flabels = new Labels(document.getElementById('labels') as HTMLElement, camera)
+    // They collide by priority (logic/declutter.ts): the selected op's parts win, then the parts the station cut passes through, then
+    // fitted shapes; a label with no room collapses to its dot, and none may sit under a card. The canard's labels keep their nudge.
+    // and none may run off the screen's edges (a pill is centred on its anchor, so near an edge it would be cut off)
+    const cardRects = () => {
+      const W = window.innerWidth, H = window.innerHeight, far = 1e5
+      return ['controls', 'dock', 'opbar', 'viewpop'].map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e && !e.hidden)
+        .map((e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom } }).filter((r) => r.r > r.l && r.b > r.t)
+        .concat([{ l: -far, t: -far, r: 0, b: far }, { l: W, t: -far, r: far, b: far }, { l: -far, t: -far, r: far, b: 0 }, { l: -far, t: H, r: far, b: far }])
+    }
+    const flabels = new Labels(document.getElementById('labels') as HTMLElement, camera, { obstacles: cardRects })
     const fwp = new THREE.Vector3(), fbox = new THREE.Box3()
     if (bay) {
       const byPart = new Map<string, typeof bay.meshes[number]>()
       for (const m of bay.meshes) if (!m.row) byPart.set(m.part, m)
+      // where along the part (0 = its forward end) the label sits: the long parts are spread out so their pills do not stack at mid-box
+      const along = (part: string) => (part.startsWith('side_') ? 0.72 : part.startsWith('top_longeron') ? 0.3 : part === 'bottom' ? 0.42 : 0.5)
       for (const [part, m] of byPart) {
         const row = bay.data.parts[part]
+        const inJig = () => bay.shown(m.name) === m.jig
+        const cutHere = () => fsecOn && inJig() && crossedByStationCut(row, fsecFs)
+        const op = () => (selected ? graph.ops.find((o) => o.id === selected) ?? null : null)
         const at = () => {
           const mesh = bay.shown(m.name)
           if (!mesh) return null
           fbox.setFromObject(mesh)
-          return fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)
+          let x = fbox.min.x + (fbox.max.x - fbox.min.x) * along(part)
+          if (fsecOn && inJig()) x = Math.max(x, fsToX(fsecFs) + 0.5 * INCH) // on the kept side of the cut, never over the gap
+          return fwp.set(x, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)
         }
         flabels.add({
           id: m.name, text: row.label, color: bay.labelColor(m), cls: m.hatch ? 'fitted' : '',
@@ -915,10 +935,12 @@ async function boot() {
             if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return 0
             const st = bstate.get(m.name)
             if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return 0
-            if (fsecOn && bay.shown(m.name) === m.jig && removedByStationCut(row, fsecFs)) return 0 // the cut took this part away: its label must not hover over the gap
-            const op = selected ? graph.ops.find((o) => o.id === selected) : null
-            return !op || m.hatch || op.components.includes(m.cid) ? 1 : 0
+            if (fsecOn && inJig() && removedByStationCut(row, fsecFs)) return 0 // the cut took this part away: its label must not hover over the gap
+            const o = op()
+            return !o || m.hatch || o.components.includes(m.cid) || cutHere() ? 1 : 0
           },
+          priority: () => labelPriority({ inOp: !!op()?.components.includes(m.cid), cut: cutHere(), fitted: m.hatch }),
+          tie: () => row.fs_max - row.fs_min, // equal priority: the more specific (shorter) part keeps its words
         })
       }
     }
@@ -934,6 +956,8 @@ async function boot() {
       selected = id
       lastSel[subject] = id
       ui.setSelected(id)
+      // the fuselage box turns over (animated, as the canard's turnover) when the step crosses the bottom bond, either way
+      if (bay && subject === 'fuselage') bay.setPose(jigPose(id, graph.order), fly)
       openOp()
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
@@ -1093,6 +1117,8 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
+    hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p === 'inverted' ? 'inverted' : 'upright')).toArray() : q)
+    hook.fuseTurning = () => !!bay?.turning
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected

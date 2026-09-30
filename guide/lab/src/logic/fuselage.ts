@@ -88,6 +88,43 @@ export function jigPose(opId: string | null, order: string[]): JigPose {
   return t >= 0 && order.indexOf(opId) >= t ? 'upright' : 'inverted'
 }
 
+/** How long the box takes to turn over (seconds of sim time), as the canard's turnover (main.ts FLIP_SECONDS). */
+export const FLIP_SECONDS = 1.0
+/** the turn starts this long after the step is picked (seconds of sim time), so the camera, flying in from the layup table, sees it */
+export const FLIP_DELAY = 0.6
+/** extra lift at mid-turn (inches), so the turn reads as picked up and set down rather than rolled over the blocks */
+export const FLIP_CLEARANCE = 1.5
+const poseAngle = (p: JigPose) => (p === 'inverted' ? Math.PI : 0)
+const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+/**
+ * The box mid-turn, `k` (0..1) of the way from `from` to `to`: its roll about its long axis (FS, the jig frame's X) through the box's
+ * middle, and how high that axis is above the block tops (inches). `half` is half the box's height (h) and width (w). At rest the axis
+ * is h above the blocks (the box sits on them); mid-turn it rises just enough that no corner of the section goes below the block tops,
+ * plus a small arc. Eased like the canard's turnover. Pure: the same k gives the same pose, so a recorded film repeats exactly.
+ */
+export function turnPose(from: JigPose, to: JigPose, k: number, half: { h: number; w: number }): { angle: number; lift: number } {
+  const t = Math.min(1, Math.max(0, k))
+  const e = ease(t)
+  const a0 = poseAngle(from), a1 = poseAngle(to)
+  const angle = t >= 1 ? a1 : t <= 0 ? a0 : a0 + (a1 - a0) * e
+  const s = Math.abs(Math.sin(angle)), c = Math.abs(Math.cos(angle))
+  const lift = t <= 0 || t >= 1 ? half.h : half.h * c + half.w * s + FLIP_CLEARANCE * Math.sin(Math.PI * e)
+  return { angle, lift }
+}
+
+/**
+ * How much to soften the amber stripes on a fitted part's surface, 0 (full) to 1 (softest), from its largest face area (in^2). Small
+ * parts (the bulkheads, up to about 300 in^2) keep the full stripes; a large plate (the 24 x 96 in bottom) gets thinner, lighter ones so it does not shout. Cut caps always
+ * draw the full stripes (core/composite.ts).
+ */
+export const HATCH_SOFT_AREA: [number, number] = [300, 1500]
+export function hatchSoftness(areaIn2: number): number {
+  const [a, b] = HATCH_SOFT_AREA
+  if (!(areaIn2 > a)) return 0
+  if (areaIn2 >= b) return 1
+  return Math.log(areaIn2 / a) / Math.log(b / a)
+}
+
 /** Which face of a flat bulkhead is up on the table: the face the latest glassing op (up to `opId`) worked on; 'fwd' before any. */
 export function upFace(part: string, opId: string | null, order: string[], nodes: Record<string, FusePlyRow>): 'fwd' | 'aft' {
   const at = opId ? order.indexOf(opId) : order.length
@@ -123,6 +160,16 @@ export const FS_EPS = 1e-3
 
 /** True when the station cut at `fs` removes the whole part: its FS extent lies forward of the plane. A part the plane passes through stays. */
 export const removedByStationCut = (row: { fs_max: number }, fs: number): boolean => row.fs_max < fs - FS_EPS
+/** True when the plane at `fs` passes through the part (its cut face is what the section shows). */
+export const crossedByStationCut = (row: { fs_min: number; fs_max: number }, fs: number): boolean => row.fs_min - FS_EPS <= fs && fs <= row.fs_max + FS_EPS
+
+/**
+ * A fuselage label's priority when labels collide on screen (logic/declutter.ts): the selected op's parts win, then the parts the
+ * station cut passes through (the face being looked at), then fitted shapes (their label is how the fidelity is read), then the rest.
+ */
+export function labelPriority(p: { inOp: boolean; cut: boolean; fitted: boolean }): number {
+  return p.inOp ? 3 : p.cut ? 2 : p.fitted ? 1 : 0
+}
 
 export interface StationLayer { node: string; part: string; cloth: string }
 /** The plies cut at `fs` (fs_min <= fs <= fs_max), in lay order; `alive` limits them to the ones built so far. */
@@ -169,8 +216,8 @@ export function cgRow(ledger: LedgerLite | null): { value: string; sub: string |
   const total = cg.included.length + ex.length
   const counts = new Map<string, number>()
   // the reason without its detail in brackets ("glass rows not fully placed (1 excluded row(s))" counts as "glass rows not fully placed")
-  // and one reason for a left and right pair ("core material of top_longeron_left" and "_right" are one reason, twice)
-  for (const r of ex) { const k = r.replace(/^not yet computed:\s*/, '').replace(/\s*\(.*\)\s*$/, '').replace(/_(left|right)\b/g, ''); counts.set(k, (counts.get(k) ?? 0) + 1) }
+  // and one reason for a left and right pair ("core material of Left top longeron" and "Right top longeron" are one reason, twice)
+  for (const r of ex) { const k = r.replace(/^not yet computed:\s*/, '').replace(/\s*\(.*\)\s*$/, '').replace(/\b(Left|Right) (\w)/g, (_m, _s, c: string) => c.toLowerCase()); counts.set(k, (counts.get(k) ?? 0) + 1) }
   const ranked = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
   const listed = ranked.slice(0, 2).map(([k, n]) => `${k} (${n})`).join('; ') + (ranked.length > 2 ? `; ${ranked.length - 2} more` : '')
   const why = `${ex.length} of ${total} parts have no sourced mass${listed ? `: ${listed}` : ''}`
