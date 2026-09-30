@@ -26,11 +26,11 @@ const GLSL_GHOST_COLOR = /* glsl */ `{ float gl = dot(diffuseColor.rgb, vec3(0.2
 
 const GLSL_COMPOSITE_PARS = /* glsl */ GLSL_GHOST_PARS + `
 uniform float uWet;
-uniform vec3 uPly;       // x: model Z of the ply's root end, y: 1 / span length (per inch), z: unused
+uniform vec3 uPly;       // x: model Z of the ply's root end, y: 1 / span length (per inch), z: ply thickness (in)
 uniform vec2 uLay;       // x: unrolled fraction of the span (from the root), y: wet-out front, as a fraction of the span
 uniform float uWeb;      // 1 when the ply lies in the model Y-Z plane (shear web), 0 when it lies in X-Z (skins, caps)
 uniform vec2 uAng;       // cos, sin of the first tow direction, measured from the span axis in the ply's plane
-uniform vec4 uWv;        // x: weave period or foam cells per inch, y: relief in inches, z: UND stitch spacing (in)
+uniform vec4 uWv;        // x: weave period or foam cells per inch, y: relief in inches, z: UND stitch spacing (in), w: ply order in its op
 vec3 h33(vec3 p) {
   p = fract(p * vec3(0.1031, 0.1030, 0.0973));
   p += dot(p, p.yxz + 33.33);
@@ -55,6 +55,7 @@ float towProfile(float f) { return pow(sin(3.14159265 * clamp(f, 0.0, 1.0)), 0.9
 
 // Surface: relief (surfH is divided by the pixel footprint so the slope is physical), plus shade and roughness for the later hooks.
 const GLSL_COMPOSITE_SURFACE = /* glsl */ `
+if (cutCap && uGhost > 0.5) discard;   // future work drawn as a ghost is not cut open: no cap
 float cmpShade = 1.0, cmpRough = 0.0;
 float cmpWetK = 1.0, cmpEdge = 0.0;   // wetness ahead of / at the wet-out front (1 = behind the front, or nothing is being laid)
 #if defined(COMP_UND) || defined(COMP_BID)
@@ -180,8 +181,18 @@ const glassHooks = (kind: 'COMP_UND' | 'COMP_BID'): SurfHooks => ({
   color: GLSL_GLASS_COLOR,
   lights: GLSL_GLASS_LIGHTS,
   rough: 'roughnessFactor = clamp(roughnessFactor + cmpRough - cmpWet * 0.12 + (1.0 - cmpWetK) * 0.38, 0.05, 1.0);',
-  // a laminate edge: pale fibre bundles (dots) in a darker resin matrix
-  capColor: `if (cutCap) { float dots = 1.0 - smoothstep(0.12, 0.4, capW.x); diffuseColor.rgb = uCapColor * mix(1.0, 0.7 + 0.5 * dots + (capW.z - 0.5) * 0.15, capFade); }`,
+  // a laminate edge: pale fibre bundles (dots) in a darker resin matrix. Each ply is a closed solid, so a ply's cap ends where its own
+  // back face is reached: the distance the ray still has to travel inside the ply, measured across it, tells where in the thickness
+  // this pixel sits. The last tenth of it (against the neighbouring ply) is drawn as a thin darker resin line, and every other ply is
+  // a shade lighter, so the stack reads as separate layers even when neighbours are the same cloth.
+  capColor: `if (cutCap) {
+    float dots = 1.0 - smoothstep(0.12, 0.4, capW.x);
+    diffuseColor.rgb = uCapColor * mix(1.0, 0.8 + 0.5 * dots + (capW.z - 0.5) * 0.15, capFade);
+    vec3 cgn = normalize(cross(dFdx(vObj), dFdy(vObj)));
+    float chd = length(vObj - cutHit) * abs(dot(normalize(vObj - vCutObjCam), cgn));
+    float cline = 1.0 - smoothstep(0.0, uPly.z * 0.16, chd);
+    diffuseColor.rgb *= mix(1.0, 0.52, cline * step(chd, uPly.z * 1.3)) * (mod(uWv.w, 2.0) > 0.5 ? 0.9 : 1.0);
+  }`,
   capRough: 'if (cutCap) roughnessFactor = clamp(0.5 + (capW.z - 0.5) * 0.12, 0.05, 1.0);',
   bump: true,
 })
@@ -189,11 +200,11 @@ const glassHooks = (kind: 'COMP_UND' | 'COMP_BID'): SurfHooks => ({
 /** Representational colours (see the header). */
 export const COLORS = {
   foam: 0xd6d0c0,
-  foamCap: 0xeee8d8,
+  foamCap: 0xf6f0de,
   und: 0xa88f52,
-  undCap: 0x9a8047,
+  undCap: 0xb39651,
   bid: 0x6f8f79,
-  bidCap: 0x62806c,
+  bidCap: 0x6f9f86,
   flox: 0x8c6a44,
   micro: 0xdccca4,
 }
@@ -250,7 +261,7 @@ export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web:
       clearcoat: 0.12, clearcoatRoughness: 0.45,
       hooks: {
         ...glassHooks(und ? 'COMP_UND' : 'COMP_BID'),
-        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), 0) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, 0) } },
+        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), und ? 0.009 : 0.013) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, spec.ply?.order ?? 0) } },
       },
     })
   } else {
@@ -301,7 +312,7 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
 export function partMaterial(cut: CutState | null): THREE.MeshStandardMaterial {
   const m = surf({
     name: 'part', color: 0xe6dfcf, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: 0xe6dfcf,
-    hooks: { pars: GLSL_GHOST_PARS, color: GLSL_GHOST_COLOR, uniforms: { uGhost: { value: 0 } } },
+    hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, uniforms: { uGhost: { value: 0 } } },
   })
   return m
 }

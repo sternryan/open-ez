@@ -1,5 +1,5 @@
 // Adapted from AirsupHQ/airsup-lab src/core/materials.ts (MIT); see NOTICE.
-// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines, including one after lights_physical_fragment) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged.
+// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines, including one after lights_physical_fragment) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged. The cap pass gets a polygon offset so a cap wins over the coincident face of the neighbouring layer.
 import * as THREE from 'three'
 import { CutState, CUT_PROJ, NO_CUT, GLSL_CUT_FRAG, GLSL_CUT_FRAG_PARS, GLSL_CUT_VERT, GLSL_CUT_VERT_PARS } from './cut'
 import { GLSL_NOISE, NOISE3D } from './noise'
@@ -129,6 +129,7 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     // front faces always draw single sided with early depth rejection; the cut
     // faces come from a separate back face pass that discards everything else
     m.side = capPass ? THREE.BackSide : THREE.FrontSide
+    if (capPass) { m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2 } // nested solids: a cap wins over the coincident face of the layer it lies against
     m.userData.caps = capPass
     m.clippingPlanes = cut.planes
     m.clipIntersection = cut.intersect

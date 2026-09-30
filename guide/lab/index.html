@@ -6,7 +6,7 @@
   <title>Long-EZ build lab</title>
 </head>
 <body>
-  <div id="app"><canvas id="gl" tabindex="0" aria-label="3D view of the canard in the workshop"></canvas></div>
+  <div id="app"><canvas id="gl" tabindex="0" aria-label="3D view of the canard in the workshop"></canvas><div id="labels" aria-hidden="true"></div></div>
 
   <aside id="controls" class="card" aria-label="View controls">
     <div class="group">
@@ -31,8 +31,29 @@
       <span class="label">Build</span>
       <label class="check"><input type="checkbox" id="ghost"> Future work</label>
     </div>
-    <!-- later tasks add section and paths controls here -->
+    <div class="group" id="section" hidden>
+      <span class="label">Section</span>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="section-on"> Cut at</label>
+        <input type="range" id="section-bl" min="0" max="70" step="0.5" value="35" aria-label="Section station in buttock line inches" aria-describedby="section-station">
+        <span id="section-station" class="mono"></span>
+      </div>
+    </div>
+    <div class="group">
+      <span class="label">Labels</span>
+      <label class="check"><input type="checkbox" id="labels-on" checked> Part names</label>
+    </div>
+    <!-- later tasks add paths controls here -->
   </aside>
+
+  <div id="dock">
+  <section id="readout" class="card" aria-label="Readout" aria-live="polite">
+    <div class="tile" data-k="station"><span class="label">Station</span><b id="ro-station" class="mono"></b></div>
+    <div class="tile" data-k="plies" id="t-plies" hidden><span class="label">Plies</span><b id="ro-plies" class="mono"></b></div>
+    <div class="tile wide" data-k="layers"><span class="label">Layers here</span><b id="ro-layers"></b></div>
+    <div class="tile" data-k="cloth"><span class="label">Cloth so far</span><b id="ro-cloth" class="mono"></b></div>
+    <div class="tile" data-k="mass"><span class="label">Mass</span><b id="ro-mass">not yet computed</b></div>
+  </section>
 
   <section id="step" class="card" aria-live="polite" data-open="true">
     <button type="button" id="step-head" aria-expanded="true" aria-controls="step-body">
@@ -46,6 +67,7 @@
       <ul id="checklist"></ul>
     </div>
   </section>
+  </div>
 
   <nav id="opbar" aria-label="Build steps">
     <button type="button" id="bar-home" class="icon" aria-label="Home view" title="Home view">
