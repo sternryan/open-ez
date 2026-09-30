@@ -14,13 +14,19 @@ const $ = s => document.querySelector(s);
 let storage; try { storage = window.localStorage; } catch { storage = null; }
 const store = makeStore(storage ?? { getItem() { return null; }, setItem() {} });
 let graph, cfg;
+// Where graph.json, config.json, models/ and renders/ live: "./" beside this page, "../" when served from /classic/ (build_site sets the meta).
+const DATA = document.querySelector('meta[name="data-base"]')?.content || "./";
 try {
   [graph, cfg] = await Promise.all([
-    fetch("graph.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-    fetch("config.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })]);
+    fetch(DATA + "graph.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+    fetch(DATA + "config.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })]);
 } catch {
   const li = document.createElement("li"); li.textContent = "Could not load graph.json"; $("#ops").append(li);
   throw new Error("graph load failed");
+}
+if (graph.cutaway && DATA !== "./") {
+  const at = c => ({ ...c, src: DATA + c.src });
+  graph.cutaway = { ...graph.cutaway, ops: Object.fromEntries(Object.entries(graph.cutaway.ops).map(([k, c]) => [k, at(c)])), heroes: graph.cutaway.heroes.map(at) };
 }
 let view = readView(storage ?? { getItem() { return null; } });
 const byId = new Map(graph.ops.map(o => [o.id, o]));
@@ -106,7 +112,7 @@ function bake(o, flip) {
   if (nor) out.setAttribute("normal", new THREE.BufferAttribute(N, 3)); else out.computeVertexNormals();
   return out;
 }
-new GLTFLoader().load(cfg.model, gltf => {
+new GLTFLoader().load(DATA + cfg.model, gltf => {
   gltf.scene.updateMatrixWorld(true);
   const groups = new Map();
   gltf.scene.traverse(o => {

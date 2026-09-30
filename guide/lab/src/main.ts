@@ -19,7 +19,7 @@ import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
 import { TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
-import { Director, canardTour, TOUR_BUILD_RATE } from './director'
+import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './director'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import './style.css'
@@ -375,11 +375,13 @@ async function boot() {
   canardRoot.add(root)
   hook.meshNames = () => merged.map((m) => m.node ?? m.cid)
   try {
+    // The data (graph.json, config.json, models/) sits at the site root: beside this page when the lab is served at /.
+    const DATA = document.querySelector<HTMLMetaElement>('meta[name="data-base"]')?.content || './'
     const [graph, cfg] = await Promise.all([
-      fetch('../graph.json').then((r) => { if (!r.ok) throw new Error(`graph.json ${r.status}`); return r.json() as Promise<Graph> }),
-      fetch('../config.json').then((r) => { if (!r.ok) throw new Error(`config.json ${r.status}`); return r.json() as Promise<Cfg> }),
+      fetch(DATA + 'graph.json').then((r) => { if (!r.ok) throw new Error(`graph.json ${r.status}`); return r.json() as Promise<Graph> }),
+      fetch(DATA + 'config.json').then((r) => { if (!r.ok) throw new Error(`config.json ${r.status}`); return r.json() as Promise<Cfg> }),
     ])
-    const gltf = await new GLTFLoader().loadAsync('../' + cfg.model)
+    const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
     const parts = mergeModel(gltf.scene, graph)
     // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
     // The plane lives in the model frame (`root`), so it follows the flip. As in the 2.1 viewer, the kept side of a CutState is local
@@ -788,13 +790,16 @@ async function boot() {
     const stopTour = () => {
       if (!director.active) return
       director.stop()
+      stopPlay() // the film pressed Play for the person: stopping the film leaves the plies where they are, not still laying
       endTour()
     }
     director.onEnd = endTour
-    const startTour = () => {
+    const startTour = (chapter?: number) => {
+      const ch = chapter ?? tourChapter(graph as never, variant, selected)
+      if (ch === undefined) return // nothing to build in this variant
       stopPlay()
       before = { secOn, secBl }
-      director.load(canardTour(graph as never, variant))
+      director.load(chapterTour(graph as never, variant, ch))
       director.start(simT)
       tourRate = TOUR_BUILD_RATE
       ui.setTouring(true)
@@ -930,10 +935,10 @@ async function boot() {
     hook.ready = true
     if (REC) {
       ;(window as unknown as Record<string, unknown>).__rec = {
-        /** begin the film and return its length in seconds; only the canard chapter exists */
+        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30 */
         start(name: string) {
           if (name !== 'canard') throw new Error(`no film called ${name}`)
-          startTour()
+          startTour(CHAPTER)
           return director.duration
         },
         /** advance the sim clock by dt seconds; draw=false skips the render (the clock and the DOM still move) */

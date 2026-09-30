@@ -102,12 +102,33 @@ def test_no_layup_means_null(gdir, tmp_path):
     assert json.loads((tmp_path / "site2" / "graph.json").read_text())["layup"] is None
 
 
-def test_site_ships_the_lab(gdir, tmp_path):
+def test_site_root_is_the_lab_and_the_classic_viewer_sits_under_classic(gdir, tmp_path):
     out = tmp_path / "site"
     build(gdir, out, models=None, scan_base=None, docs=None)
-    assert (out / "lab" / "index.html").is_file()
-    assert list((out / "lab" / "assets").glob("*.js"))
-    assert not (out / "lab" / ".stamp").exists()  # the build stamp is bookkeeping, not site content
+    root = (out / "index.html").read_text()
+    assert 'id="gl"' in root and 'id="opbar"' in root and "Long-EZ build lab" in root  # the lab, not the classic viewer
+    assert 'id="ops"' not in root
+    assert list((out / "assets").glob("*.js"))
+    assert not (out / ".stamp").exists()  # the build stamp is bookkeeping, not site content
+    assert not (out / "lab").exists()  # the /lab/ copy is gone: one engine, served at /
+    classic = (out / "classic" / "index.html").read_text()
+    assert 'id="ops"' in classic and 'name="data-base" content="../"' in classic
+    assert (out / "classic" / "js" / "app.js").is_file() and (out / "classic" / "vendor").is_dir() and not (out / "classic" / "tests").exists()
+    assert 'name="data-base" content="./"' in root  # the lab reads the data beside itself
+    for shared in ("graph.json", "config.json", "models"):  # one copy of the data, at the site root
+        assert (out / shared).exists() and not (out / "classic" / shared).exists()
+
+
+def test_classic_and_lab_docs_links_and_renders_still_resolve(tmp_path):
+    e = make_export(tmp_path / "e"); r = make_renders(tmp_path / "r", e)
+    docs = tmp_path / "docs"; (docs / "specs").mkdir(parents=True); (docs / "plans").mkdir()
+    (docs / "specs" / "2026-01-01-build-guide-design.md").write_text("# hello\n")
+    build(REPO_GRAPH, tmp_path / "site", models=e / "longez.glb", scan_base=None, docs=docs, renders=r)
+    out = tmp_path / "site"
+    assert (out / "docs" / "index.html").is_file() and (out / "renders" / "hero-bl40.png").is_file()
+    page = (out / "docs" / "2026-01-01-build-guide-design.html").read_text()
+    href = page.split("href='")[1].split("'")[0]
+    assert (out / "docs" / href).resolve().is_file()  # the docs page still finds its stylesheet
 
 
 def test_lab_build_fails_loudly_without_npm(gdir, tmp_path, monkeypatch):

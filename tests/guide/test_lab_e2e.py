@@ -1,18 +1,63 @@
-"""Lab engine: the page at /lab/ loads the canard, fills the viewport, and its op bar drives the step card and the camera."""
+"""Lab engine: the page at / loads the canard, fills the viewport, and its op bar drives the step card and the camera."""
+import contextlib
 import functools
 import json
 import http.server
 import io
 import threading
 import time
+import types
 
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright as _real_sync_playwright
 
 from guide.build_site import build
 from tests.guide.render_fixture import ROOT
+from tests.guide.test_schema import gdir  # noqa: F401
 
 GL = ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
+
+# One chromium for the whole module (launching one per test was most of the suite's wall time). Each test still gets its own
+# context and page: `sync_playwright()` below hands a test a per-test view of the shared browser, and closing that view closes
+# only the contexts the test opened. A test that needs a different launch can still call _real_sync_playwright().
+_SHARED = {}
+
+
+class _View:
+    def __init__(self, browser):
+        self._b, self._ctxs = browser, []
+
+    def new_context(self, **kw):
+        c = self._b.new_context(**kw)
+        self._ctxs.append(c)
+        return c
+
+    def new_page(self, **kw):
+        return self.new_context(**kw).new_page()
+
+    @property
+    def contexts(self):
+        return list(self._ctxs)
+
+    def close(self):
+        for c in self._ctxs:
+            c.close()
+        self._ctxs.clear()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _one_browser():
+    pw = _real_sync_playwright().start()
+    _SHARED["b"] = pw.chromium.launch(args=GL)
+    yield
+    _SHARED.pop("b").close()
+    pw.stop()
+
+
+@contextlib.contextmanager
+def sync_playwright():
+    """Stands in for playwright's: `p.chromium.launch(args=GL)` returns a view of the module's one browser."""
+    yield types.SimpleNamespace(chromium=types.SimpleNamespace(launch=lambda args=None, **kw: _View(_SHARED["b"])))
 
 
 @pytest.fixture(scope="module")
@@ -32,7 +77,7 @@ def serve(root):
     return s, f"http://127.0.0.1:{s.server_address[1]}/"
 
 
-def test_lab_renders_the_canard_and_old_viewer_still_loads(rsite):
+def test_lab_renders_the_canard_and_the_classic_viewer_still_loads(rsite):
     from PIL import Image, ImageStat
     s, url = serve(rsite)
     try:
@@ -41,7 +86,7 @@ def test_lab_renders_the_canard_and_old_viewer_still_loads(rsite):
             pg = b.new_page(viewport={"width": 960, "height": 600})
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "lab/?test=1&q=low")
+            pg.goto(url + "?test=1&q=low")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             names = pg.evaluate("window.__lab.meshNames()")
             assert "canard.core" in names
@@ -51,7 +96,7 @@ def test_lab_renders_the_canard_and_old_viewer_still_loads(rsite):
             var = ImageStat.Stat(img).var[0]
             assert var > 50, f"canvas looks flat (variance {var:.1f})"
             assert not errors, errors
-            pg.goto(url)
+            pg.goto(url + "classic/")
             pg.wait_for_selector("#ops li[data-op]")
             b.close()
     finally:
@@ -66,7 +111,7 @@ def _open(p, url, w, h, init=None, query="", q="low"):
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(url + "lab/?test=1" + (f"&q={q}" if q else "") + query)
+    pg.goto(url + "?test=1" + (f"&q={q}" if q else "") + query)
     pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
     return b, pg, errors
 
@@ -679,7 +724,7 @@ def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_s
             pg2 = ctx.new_page()
             errs2 = []
             pg2.on("pageerror", lambda e: errs2.append(str(e)))
-            pg2.goto(url + "lab/?test=1&q=low&op=r30.top-skin")
+            pg2.goto(url + "?test=1&q=low&op=r30.top-skin")
             pg2.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             assert pg2.is_checked("#paths-on") and len(_drawn(pg2)) == 3
             _display(pg2)
@@ -817,7 +862,7 @@ def _open_rec(p, url, w=960, h=600, query=""):
     pg = b.new_page(viewport={"width": w, "height": h})
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(url + "lab/?rec=1&q=low&test=1" + query)
+    pg.goto(url + "?rec=1&q=low&test=1" + query)
     pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
     return b, pg, errors
 
@@ -839,20 +884,31 @@ def test_rec_film_visits_every_op_in_order_and_ends(rsite):
             assert 55 <= dur <= 95, dur  # the film is about a minute and a half
             assert pg.evaluate("__lab.touring()") is True
             seen, idx, plays, cuts, active, frames = [], [], set(), [], True, 0
+            shots = {op: pg.evaluate(f"__lab.shot('{op}') || __lab.shot('home')") for op in want}
+            dist = lambda a, c: sum((x - y) ** 2 for x, y in zip(a, c)) ** 0.5  # noqa: E731
+            best = {op: [9e9, 9e9] for op in want}  # the closest the camera's target / distance came to the op's shot while it was selected
+            top_lay, scrub_max = {}, {}
+            snap_js = """(() => { const L = __lab, c = L.cut(); return [L.selected(), L.tourIndex(), L.playing(), c.enabled, c.bl, L.lay(),
+                +document.getElementById('scrub').max, L.camera()] })()"""
             while active and frames < 60 * 100 * 2:
                 r = pg.evaluate("window.__rec.frame(1 / 60, false)")
                 active = r["active"]
                 frames += 1
-                sel, i = pg.evaluate("[__lab.selected(), __lab.tourIndex()]")
+                sel, i, playing, cut_on, cut_bl, lay, smax, cam = pg.evaluate(snap_js)
                 if sel and (not seen or seen[-1] != sel):
                     seen.append(sel)
                 if not idx or idx[-1] != i:
                     idx.append(i)
-                if pg.evaluate("__lab.playing()"):
+                if playing:
                     plays.add(sel)
-                c = pg.evaluate("__lab.cut()")
-                if c["enabled"] and sel in span and (not cuts or cuts[-1][:2] != [sel, c["bl"]]):
-                    cuts.append([sel, c["bl"]])
+                if cut_on and sel in span and (not cuts or cuts[-1][:2] != [sel, cut_bl]):
+                    cuts.append([sel, cut_bl])
+                if sel in best:
+                    sh = shots[sel]
+                    best[sel][0] = min(best[sel][0], dist(cam["target"], sh["target"]))
+                    best[sel][1] = min(best[sel][1], abs(dist(cam["pos"], cam["target"]) - dist(sh["pos"], sh["target"])))
+                    top_lay[sel] = max(top_lay.get(sel, 0), lay)
+                    scrub_max[sel] = smax
             assert not active and pg.evaluate("__lab.touring()") is False
             assert abs(frames / 60 - dur) < 1.0, (frames, dur)
             assert seen == want, seen
@@ -863,6 +919,14 @@ def test_rec_film_visits_every_op_in_order_and_ends(rsite):
             assert all(0 <= bl <= span[op] for op, bl in cuts), cuts
             assert pg.evaluate("__lab.selected()") is None  # the film ends on the finished canard
             assert pg.evaluate("__lab.cut().enabled") is False  # ... and the person's own section setting is back
+            # 2.1 parity: the camera eases to each op's shot within its step (the 2.1 bar was the authored target within 0.05 in; the
+            # lab's units are metres, so 0.01 m = 0.4 in is the tighter bar), and the scrubber reaches the top ply before the tour advances
+            assert all(b[0] < 0.01 and b[1] < 0.01 for b in best.values()), best
+            nply = {}
+            for n in layup.values():
+                nply[n["op"]] = nply.get(n["op"], 0) + 1
+            for op in with_plies:
+                assert scrub_max[op] == nply[op] and top_lay[op] == nply[op], (op, top_lay[op], scrub_max[op], nply[op])
             assert not errors, errors
             b.close()
     finally:
@@ -919,6 +983,8 @@ def test_tour_button_runs_the_tour_and_every_user_action_stops_it(rsite):
             stops("scrubber", lambda: pg.evaluate("(() => { const s = document.getElementById('scrub'); s.value = '1'; s.dispatchEvent(new Event('input', { bubbles: true })) })()"), keeps_op=False)
             assert pg.evaluate("__lab.lay()") == 1
             stops("play", lambda: pg.click("#play"), keeps_op=False)
+            assert pg.get_attribute("#play", "aria-pressed") == "true"  # Play itself runs, unfought: it restarted from ply 1 under the person's press
+            assert pg.evaluate("__lab.playing()") is True and pg.evaluate("__lab.lay()") == 1
             assert not errors, errors
             b.close()
     finally:
@@ -958,10 +1024,10 @@ def test_tour_leaves_paths_labels_and_storage_as_the_person_set_them(rsite):
             pg = b.new_page(viewport={"width": 960, "height": 600})
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url)  # same origin: seed the person's stored settings, then count every setItem from the lab's first line
+            pg.goto(url + "config.json")  # same origin: seed the person's stored settings, then count every setItem from the lab's first line
             pg.evaluate("() => { localStorage.setItem('longez.paths', '0'); localStorage.setItem('longez.labels', '0') }")
             pg.add_init_script("window.__setItems = 0; const o = Storage.prototype.setItem; Storage.prototype.setItem = function () { window.__setItems++; return o.apply(this, arguments) }")
-            pg.goto(url + "lab/?rec=1&q=low&test=1")
+            pg.goto(url + "?rec=1&q=low&test=1")
             pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
             assert not pg.is_checked("#paths-on") and not pg.is_checked("#labels-on")
             pg.click("#tour")
@@ -1109,7 +1175,7 @@ def test_forced_tier_freeze_and_rec_turn_automatic_step_down_off(rsite):
             # ?rec=1 is a forced high tier, and off
             b = p.chromium.launch(args=GL)
             pg = b.new_page(viewport={"width": 500, "height": 360})
-            pg.goto(url + "lab/?rec=1&test=1")
+            pg.goto(url + "?rec=1&test=1")
             pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
             assert pg.evaluate("window.__lab.tier()") == "high" and pg.evaluate("window.__lab.auto()") is False
             b.close()
@@ -1179,7 +1245,7 @@ def _rect(pg, sel):
 
 
 @pytest.mark.parametrize("w,h", [(1400, 860), (1180, 820), (390, 844)])
-def test_the_cards_leave_the_canard_clear_and_touch_targets_are_40px(rsite, w, h):
+def test_the_cards_leave_the_canard_clear_and_touch_targets_are_44px(rsite, w, h):
     s, url = serve(rsite)
     try:
         with sync_playwright() as p:
@@ -1189,7 +1255,7 @@ def test_the_cards_leave_the_canard_clear_and_touch_targets_are_40px(rsite, w, h
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
             for op in (None, "r30.top-skin"):
-                pg.goto(url + "lab/?test=1&q=low" + (f"&op={op}" if op else ""))
+                pg.goto(url + "?test=1&q=low" + (f"&op={op}" if op else ""))
                 pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
                 if op:
                     pg.evaluate("window.__lab.setLay(Number(document.getElementById('scrub').max))")
@@ -1211,12 +1277,567 @@ def test_the_cards_leave_the_canard_clear_and_touch_targets_are_40px(rsite, w, h
                     ov = max(0, min(box[2], c[2]) - max(box[0], c[0])) * max(0, min(box[3], c[3]) - max(box[1], c[1]))
                     assert ov < 0.10 * area, (w, op, sel, round(ov / area, 3), box, c)
             if w < 1400:
-                # every control in the cards is a 40 px target on a touch screen, the popover's too
+                # every control in the cards is a 44 px target on a touch screen, the popover's too (the 2.1 bar)
                 pg.click("#more")
                 small = pg.evaluate("""() => [...document.querySelectorAll(['#controls button', '#controls input[type=range]', '#controls label.check',
                     '#viewpop button', '#viewpop label.check', '#opbar button', '#step-head'].join(','))].filter((e) => e.offsetParent)
-                    .map((e) => [e.id || e.textContent.trim().slice(0, 24), e.getBoundingClientRect().height]).filter((x) => x[1] < 39.5)""")
+                    .map((e) => [e.id || e.textContent.trim().slice(0, 24), e.getBoundingClientRect().height]).filter((x) => x[1] < 43.5)""")
                 assert small == [], small
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ======================================================================================================================
+# Parity with the milestone 2.1 behaviour tests (they lived in test_viewer_e2e.py and now run against the lab at /).
+# The mapping from each 2.1 test to its lab counterpart is in the Task 8 report; the names below say what they port.
+# ======================================================================================================================
+def _scrub(pg, v):
+    pg.eval_on_selector("#scrub", "(e, v) => { e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); e.dispatchEvent(new Event('change', {bubbles: true})); }", str(v))
+
+
+def _web(pg):
+    return {k: v for k, v in pg.evaluate("window.__lab.state()").items() if k.startswith("canard.shear_web.")}
+
+
+def _ply_names(state):
+    import re
+    return {n for n in state if re.search(r"\.p\d+$", n)}
+
+
+def test_scrubber_selects_web_plies_and_core_built(rsite):  # 2.1: test_scrubber_selects_web_plies_and_core_built
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            pg.click('#opbar button[data-op="r30.shear-web"]')
+            assert pg.is_visible("#scrub") and pg.get_attribute("#scrub", "max") == "6" and pg.input_value("#scrub") == "6"
+            assert pg.evaluate("window.__lab.state()['canard.core']") == "built"
+            web = _web(pg)
+            assert len(web) == 6 and set(web.values()) == {"current"}
+            _scrub(pg, 1)
+            web = _web(pg)
+            assert list(web.values()).count("current") == 1 and list(web.values()).count("hidden") == 5
+            assert pg.evaluate("window.__lab.lay()") == 1 and pg.inner_text("#scrublabel") == "Ply 1 of 6"
+            st = pg.evaluate("window.__lab.state()")
+            assert st["canard.core"] == "built"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_earlier_op_leaves_no_later_ply_visible(rsite):  # 2.1: test_earlier_op_leaves_no_later_ply_visible (Review Focus 1)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            pg.click('#opbar button[data-op="r30.bottom-skin"]')
+            assert any(k.startswith("canard.skin_bottom") and v in ("built", "current") for k, v in pg.evaluate("window.__lab.state()").items())
+            for early in ("r30.shear-web", "r30.templates-cores"):
+                pg.click('#opbar button[data-op="r30.bottom-skin"]')
+                pg.click(f'#opbar button[data-op="{early}"]')
+                assert {v for k, v in pg.evaluate("window.__lab.state()").items() if k.startswith("canard.skin_bottom")} == {"hidden"}, early
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ghost_toggle_through_the_popover_and_memory(rsite):  # 2.1: test_ghost_toggle_and_memory (the control, not the hook)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            pg.click('#opbar button[data-op="r30.shear-web"]')
+            _scrub(pg, 2)
+            assert list(_web(pg).values()).count("hidden") == 4
+            _display(pg)
+            assert not pg.is_checked("#ghost")
+            st = pg.evaluate("window.__lab.state()")
+            future = {n for n, v in st.items() if v == "hidden" and n in _ply_names(st)}
+            solid = {n for n, v in st.items() if n in _ply_names(st) and v in ("built", "current")}
+            assert len(future) >= 4 and len([n for n in future if n.startswith("canard.shear_web.")]) == 4
+            pg.check("#ghost")
+            st = pg.evaluate("window.__lab.state()")
+            ghosts = {n for n, v in st.items() if v == "ghost"}
+            assert ghosts == future  # exactly the future plies show, faintly
+            assert {n for n, v in st.items() if n in _ply_names(st) and v in ("built", "current")} == solid  # the built/current ones are untouched
+            assert len([n for n in ghosts if n.startswith("canard.shear_web.")]) == 4
+            assert pg.evaluate("window.__lab.state()['canard.core']") == "built"  # a built mesh is never ghosted
+            pg.uncheck("#ghost")
+            st = pg.evaluate("window.__lab.state()")
+            assert not [n for n, v in st.items() if v == "ghost"] and {n for n, v in st.items() if v == "hidden" and n in _ply_names(st)} == future
+            pg.check("#ghost")
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            _display(pg)
+            assert pg.is_checked("#ghost")
+            assert {n for n, v in pg.evaluate("window.__lab.state()").items() if v == "ghost"}  # and it is in force, not just ticked
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_play_button_steps_the_scrubber_in_real_time_and_a_second_press_stops(rsite):  # 2.1: test_play_steps_scrubber_and_second_press_stops
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820)
+            pg.click('#opbar button[data-op="r30.shear-web"]')
+            pg.click("#play")
+            assert pg.input_value("#scrub") == "1" and pg.get_attribute("#play", "aria-pressed") == "true"
+            pg.wait_for_function("document.querySelector('#scrub').value === '2'", timeout=15000)  # it steps by itself, in real time
+            pg.click("#play")
+            assert pg.get_attribute("#play", "aria-pressed") == "false"
+            pg.wait_for_timeout(1500)
+            assert pg.input_value("#scrub") == "2" and pg.evaluate("window.__lab.playing()") is False  # a second press holds it
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_scrubber_hidden_without_plies_and_hooks_need_the_test_flag(rsite):  # 2.1: test_scrubber_hidden_without_plies_and_hooks_need_test_flag
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820)
+            pg.click('#opbar button[data-op="r30.templates-cores"]')
+            assert pg.is_hidden("#scrubwrap") and pg.is_hidden("#scrub") and pg.is_hidden("#play")
+            pg.goto(url)  # no ?test=1
+            pg.wait_for_selector("#opbar button[data-op]")
+            assert pg.evaluate("typeof window.__lab") == "undefined" and pg.evaluate("typeof window.__rec") == "undefined"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _overlap(a, c):
+    return not (a[2] <= c[0] or c[2] <= a[0] or a[3] <= c[1] or c[3] <= a[1])
+
+
+@pytest.mark.parametrize("w,h", [(1180, 820), (390, 844)])
+def test_build_controls_clear_of_other_controls(rsite, w, h):  # 2.1: test_build_controls_clear_of_other_controls
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": w, "height": h}, has_touch=True)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&op=r30.shear-web")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.click("#more")  # the popover open: the build row must still be clear of it, and of the cards below
+            bar = _rect(pg, "#scrubwrap")
+            assert pg.is_visible("#scrub") and bar[0] >= 0 and bar[2] <= w and bar[1] >= 0 and bar[3] <= h, bar
+            for other in ("#viewpop", "#dock", "#opbar", "#variant", "#home", "#tour", "#more"):
+                if pg.is_visible(other):
+                    assert not _overlap(bar, _rect(pg, other)), (other, bar, _rect(pg, other))
+            ctl = _rect(pg, "#controls")
+            assert ctl[0] <= bar[0] and bar[2] <= ctl[2] and ctl[1] <= bar[1] and bar[3] <= ctl[3]  # it lives inside the control card
+            assert pg.evaluate("document.querySelector('#play').getBoundingClientRect().height") >= 44  # the 2.1 touch target
+            assert pg.evaluate("document.documentElement.scrollWidth") <= w
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_variant_change_keeps_the_build_state_rules(rsite):  # 2.1: test_variant_change_keeps_isolate_rule, the part that exists in the lab (no isolate)
+    """Every ply op is roncz-only in the real graph, so widen r30.shear-web to both variants to reach the still-visible path."""
+    widened = {}
+
+    def widen(route):
+        g = route.fetch().json()
+        for o in g["ops"]:
+            if o["id"] == "r30.shear-web":
+                o["variants"] = ["both"]
+        widened.update(g)
+        route.fulfill(json=g)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 1180, "height": 820})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.route("**/graph.json", widen)
+            pg.goto(url + "?test=1&q=low&freeze=1")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.click('#opbar button[data-op="r30.shear-web"]')
+            _scrub(pg, 2)
+            before = pg.evaluate("window.__lab.state()")
+            hidden = {n for n, v in before.items() if v == "hidden"}
+            assert "canard.shear_web.p3" in hidden and hidden
+            pg.click('#variant button[data-variant="gu"]')
+            assert pg.evaluate("window.__lab.selected()") == "r30.shear-web"  # still in the bar: the selection stays
+            st = pg.evaluate("window.__lab.state()")
+            want, _ = _expected_state(widened, "gu", "r30.shear-web", pg.evaluate("window.__lab.lay()"), False)
+            assert {k: want[k] for k in st} == st  # the same rules, recomputed for the new variant
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", [(390, 844)])
+def test_phone_model_stays_visible_and_scrubber_reachable(rsite, w, h):  # 2.1: test_phone_model_stays_visible_and_scrubber_reachable
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": w, "height": h}, has_touch=True)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&op=r30.shear-web")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.is_visible("#scrubwrap") and pg.is_visible("#dock")
+            assert pg.evaluate("document.documentElement.scrollWidth") <= w
+            top, bottom = _rect(pg, "#controls")[3], min(_rect(pg, "#dock")[1], _rect(pg, "#opbar")[1])
+            assert bottom - top >= 300, (top, bottom)  # >= 300 px of the canvas is free between the cards
+            r = _rect(pg, "#scrub")
+            assert r[0] >= 0 and r[2] <= w and r[1] >= 0 and r[3] <= h, r
+            hit = pg.evaluate("(() => { const r = document.querySelector('#scrub').getBoundingClientRect(); return document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2).id })()")
+            assert hit == "scrub"
+            pg.click("#scrub")
+            assert pg.evaluate("document.documentElement.scrollWidth") <= w
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _box_js(bl):
+    """The cut face at B.L. `bl` in viewport CSS px: the core's model-frame box at Z = -bl, through toWorld and project."""
+    return f"""(() => {{
+        const L = window.__lab, bx = L.plyBox('canard.core'), z = -{bl}
+        let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9
+        for (const x of [bx.min[0], bx.max[0]]) for (const y of [bx.min[1], bx.max[1]]) {{
+            const q = L.project(L.toWorld([x, y, z])); x0 = Math.min(x0, q[0]); y0 = Math.min(y0, q[1]); x1 = Math.max(x1, q[0]); y1 = Math.max(y1, q[1])
+        }}
+        return {{ x0, y0, x1, y1 }}
+    }})()"""
+
+
+def _changed(a, c, tol=24):
+    """Pixels that differ by more than `tol` (summed RGB) between two same-size crops."""
+    pa, pc = list(a.getdata()), list(c.getdata())
+    return sum(1 for u, v in zip(pa, pc) if sum(abs(i - j) for i, j in zip(u[:3], v[:3])) > tol)
+
+
+def _cap_pixels_case(pg, w, dpr):
+    from PIL import Image
+    pg.evaluate("window.__lab.freeze(true)")
+    pg.evaluate("window.__lab.select('r30.top-skin')")
+    pg.evaluate("window.__lab.advance(3)")
+    assert pg.evaluate("window.devicePixelRatio") == dpr
+    pg.evaluate("window.__lab.setSection(true, 40)")
+    pg.evaluate("window.__lab.advance(3)")  # the cut-edge glow has settled
+    r = pg.evaluate(_box_js(40))
+    c = pg.eval_on_selector("#gl", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width, h: r.height} }")
+    assert r["x1"] - r["x0"] > (20 if w < 500 else 100) and r["y1"] - r["y0"] > 4, r  # the projected cut face has area
+    assert -1 <= r["x0"] and r["x1"] <= c["w"] + 1 and -1 <= r["y0"] and r["y1"] <= c["h"] + 1, (r, c)
+    clip = {"x": c["x"] + max(0, r["x0"]), "y": c["y"] + max(0, r["y0"]), "width": min(c["w"], r["x1"]) - max(0, r["x0"]), "height": min(c["h"], r["y1"]) - max(0, r["y0"])}
+    import io
+    on = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+    assert on.width >= dpr * clip["width"] - 2, (on.size, clip)  # screenshot pixels are dpr x CSS pixels
+    pg.evaluate("window.__lab.setSection(false, 40)")
+    pg.evaluate("window.__lab.advance(3)")
+    off = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+    n, total = _changed(on, off), on.width * on.height
+    print("cap pixels changed", n, "of", total, "clip", clip)
+    # with the cut on, the cut face shows the layers (foam, plies) in place of the skin the camera otherwise sees there
+    assert n > 0.15 * total, (n, total)
+    # and the face is not one flat colour: a foam core and several plies show as distinct tones
+    colours = {(px[0] // 16, px[1] // 16, px[2] // 16) for px in on.getdata()}
+    assert len(colours) >= 6, len(colours)
+
+
+def test_section_cap_pixels_at_the_cut_face(rsite):  # 2.1: test_section_cap_pixels_at_the_cut_face
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _cap_pixels_case(pg, 1180, 1)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_section_at_dpr2_projection_and_cap_pixels(rsite):  # 2.1: test_section_at_dpr2_projection_and_cap_pixels
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&freeze=1")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            _cap_pixels_case(pg, 390, 2)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_section_control_hidden_without_layup(tmp_path, gdir):  # 2.1: test_section_control_hidden_without_layup
+    import cadquery as cq
+    from guide.export_glb import export_components
+    glb = export_components({"canard.core": cq.Workplane().box(10, 2, 1)}, tmp_path / "m.glb")  # a model with no layup.json beside it
+    out = tmp_path / "site"
+    build(gdir, out, models=glb, scan_base=None, docs=None)
+    s, url = serve(out)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, q="low")
+            assert pg.is_hidden("#section") and pg.is_hidden("#scrubwrap")
+            assert pg.evaluate("window.__lab.cut().enabled") is False
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_phone_section_readout_one_line_and_controls_reachable(rsite):  # 2.1: test_phone_section_readout_one_line_and_controls_reachable
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": 390, "height": 844}, has_touch=True)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&freeze=1&op=r30.top-skin")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.evaluate("window.__lab.setLay(Number(document.getElementById('scrub').max))")  # all plies
+            pg.evaluate("window.__lab.setSection(true, 5)")  # a station every layer reaches: the longest readout this op can produce
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            m = pg.evaluate("""(() => { const e = document.querySelector('#ro-layers'), cs = getComputedStyle(e);
+                return {scrollWidth: e.scrollWidth, clientWidth: e.clientWidth, textOverflow: cs.textOverflow, whiteSpace: cs.whiteSpace,
+                        height: e.getBoundingClientRect().height, lineHeight: parseFloat(cs.lineHeight), title: e.title, text: e.textContent} })()""")
+            assert m["scrollWidth"] > m["clientWidth"], m  # truly truncated, not merely short
+            assert m["textOverflow"] == "ellipsis" and m["whiteSpace"] == "nowrap", m
+            assert m["height"] <= m["lineHeight"] * 1.3, m  # one line
+            assert m["title"] == m["text"] and pg.inner_text("#ro-station") == "B.L. 5", m  # the full text stays reachable
+            pg.evaluate("window.__lab.setSection(true, 40)")
+            for sel in ("#scrub", "#section-bl", "#tour"):
+                r = _rect(pg, sel)
+                assert r[0] >= 0 and r[2] <= 390 and r[1] >= 0 and r[3] <= 844, (sel, r)
+                hit = pg.evaluate("""(s) => { const r = document.querySelector(s).getBoundingClientRect();
+                    const e = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2); return !!e && (e.id === s.slice(1) || !!e.closest(s)) }""", sel)
+                assert hit, sel
+            pg.click("#tour")
+            assert pg.get_attribute("#tour", "aria-pressed") == "true"
+            pg.click("#tour")
+            assert pg.get_attribute("#tour", "aria-pressed") == "false"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_frame_time_at_dpr2_is_reported_not_asserted(rsite):  # 2.1: test_frame_time_at_dpr2_is_reported_not_asserted
+    # INFORMATION ONLY for the owner's iPad walk-through note: the same drag at device_scale_factor=2. The one budget is the 33 ms
+    # test above; this run only has to complete and move the cut.
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": 1180, "height": 820}, device_scale_factor=2)
+            ctx.add_init_script(FRAMES_JS)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&realframes=1&op=r30.top-skin")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.click("#section-on")
+            pg.eval_on_selector("#section-bl", "(e) => { e.value = 0; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+            pg.wait_for_timeout(500)
+            pg.evaluate("window.__frames.start()")
+            seen = pg.evaluate(DRAG_JS, 2000)
+            d = sorted(pg.evaluate("window.__frames.stop()"))
+            print("DPR2 median frame ms", d[len(d) // 2], "n", len(d))
+            assert len(d) >= 3 and seen[-1] == pg.evaluate(EFFECTIVE_MAX_JS)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", [(1180, 820), (390, 844)])
+def test_tour_button_is_touch_sized_and_clear_of_other_controls(rsite, w, h):  # 2.1: test_tour_button_is_touch_sized_and_clear_of_other_controls
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": w, "height": h}, has_touch=True)
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&op=r30.top-skin")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            t = _rect(pg, "#tour")
+            assert pg.is_visible("#tour") and t[3] - t[1] >= 44  # the 2.1 touch target
+            assert t[0] >= 0 and t[2] <= w and t[1] >= 0 and t[3] <= h
+            assert pg.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            pg.click("#more")
+            for other in ("#variant", "#home", "#more", "#scrubwrap", "#section", "#viewpop", "#dock", "#opbar"):
+                if pg.is_visible(other):
+                    assert not _overlap(t, _rect(pg, other)), (other, t, _rect(pg, other))
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _tour_adv(pg, seconds, dt=0.05):
+    for _ in range(round(seconds / dt)):
+        pg.evaluate(f"window.__rec.frame({dt}, false)")
+
+
+@pytest.mark.parametrize("how", ["escape", "second_press"])
+def test_stopping_the_tour_leaves_no_animation(rsite, how):  # 2.1: test_stopping_the_tour_leaves_no_animation
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.click("#tour")
+            for _ in range(400):
+                _tour_adv(pg, 0.25)
+                if pg.evaluate("__lab.selected()") == "r30.shear-web" and pg.evaluate("__lab.playing()") and pg.evaluate("__lab.lay()") >= 2:
+                    break
+            assert pg.evaluate("__lab.selected()") == "r30.shear-web" and pg.evaluate("__lab.playing()")
+            _tour_adv(pg, 0.3)  # mid-flight, mid-lay
+            if how == "escape":
+                pg.keyboard.press("Escape")
+            else:
+                pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is False
+            snap_js = """(() => { const c = __lab.camera(), r = (x) => Math.round(x * 1e6) / 1e6
+                return [c.pos.map(r), c.target.map(r), __lab.lay(), __lab.selected(), __lab.playing(), __lab.cut().bl, __lab.cut().enabled] })()"""
+            snap = pg.evaluate(snap_js)
+            assert snap[4] is False  # the Play the film pressed stops with it
+            _tour_adv(pg, 4.0)
+            assert pg.evaluate(snap_js) == snap, how  # nothing keeps moving: camera, plies, selection, cut
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_tour_leaves_the_section_cut_as_the_user_set_it(rsite):  # 2.1: test_tour_leaves_the_section_cut_and_paths_as_the_user_set_them (the cut half; paths are covered above)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.click('#opbar button[data-op="r30.templates-cores"]')
+            pg.click("#section-on")
+            pg.eval_on_selector("#section-bl", "(e) => { e.value = 40; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+            assert pg.evaluate("__lab.cut()").get("bl") == 40
+            pg.click("#tour")
+            moved = False
+            for _ in range(400):  # the tour cuts at its own stations
+                _tour_adv(pg, 0.25)
+                c = pg.evaluate("__lab.cut()")
+                if c["enabled"] and c["bl"] != 40:
+                    moved = True
+                    break
+            assert moved, "the tour never moved the cut"
+            pg.keyboard.press("Escape")
+            c = pg.evaluate("__lab.cut()")
+            assert c["enabled"] is True and c["bl"] == 40  # the person's own cut is back
+            assert pg.is_checked("#section-on") and pg.input_value("#section-bl") == "40"
+            assert "B.L. 40" in pg.inner_text("#ro-station")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _tour_seen(pg, n_ops):
+    """Advance the film and collect the ops it selects, in order, until it has shown n_ops of them (or ends)."""
+    seen = []
+    for _ in range(4000):
+        _tour_adv(pg, 0.25)
+        sel = pg.evaluate("__lab.selected()")
+        if sel and (not seen or seen[-1] != sel):
+            seen.append(sel)
+        if len(seen) >= n_ops or not pg.evaluate("__lab.touring()"):
+            break
+    return seen
+
+
+def _chapter_ops(g, variant, chapter):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
+            and byid[i]["chapter"] == chapter and not byid[i]["stub"]]
+
+
+def test_tour_with_nothing_selected_tours_the_variants_first_chapter(rsite):  # 2.1: test_tour_with_nothing_selected_tours_the_variants_first_chapter
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.evaluate("__lab.select(null)")
+            assert pg.is_visible("#tour") and pg.evaluate("__lab.selected()") is None
+            pg.click("#tour")
+            assert _tour_seen(pg, 1)[0] == "r30.templates-cores" == _chapter_ops(g, "roncz", 30)[0]
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is False
+            pg.click('#variant button[data-variant="gu"]')
+            pg.evaluate("__lab.select(null)")
+            pg.click("#tour")
+            seen = _tour_seen(pg, 2)
+            assert seen[0] == "c10.templates-cores" and "c12.align-canard" not in seen  # the first chapter only, not the next one
+            pg.click("#tour")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_tour_follows_the_selected_ops_chapter(rsite):  # 2.1: test_tour_follows_the_selected_ops_chapter
+    g = _graph(rsite)
+    want = _chapter_ops(g, "gu", 12)
+    assert want == ["c12.alignment-pins", "c12.align-canard"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.click('#variant button[data-variant="gu"]')
+            pg.click('#opbar button[data-op="c12.align-canard"]')
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is True and pg.evaluate("__lab.tourIndex()") == 0
+            assert _tour_seen(pg, len(want)) == want  # chapter 12's own ops, in order
+            pg.click("#tour")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_tour_from_a_stub_only_chapter_falls_back_to_the_first_real_chapter(rsite):  # 2.1: test_tour_from_a_stub_only_chapter_falls_back_to_the_first_real_chapter
+    g = _graph(rsite)
+    want = _chapter_ops(g, "roncz", 30)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.evaluate("__lab.select('c03.layup-skills')")
+            assert pg.evaluate("__lab.selected()") == "c03.layup-skills"
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is True
+            assert _tour_seen(pg, 1)[0] == want[0]  # the first real chapter's film
+            pg.click("#tour")
             assert not errors, errors
             b.close()
     finally:
