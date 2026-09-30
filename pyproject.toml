@@ -8,3 +8,8 @@ requires-python = ">=3.11"
 
 # Dependencies live in requirements.txt, requirements-dev.txt and requirements-guide-dev.txt.
 # There is no [build-system]: the repo is run from a checkout, not installed as a package.
+
+[tool.pytest.ini_options]
+markers = [
+    "local_render: needs the laptop's (or the Mac test node's) GPU-like rendering: frame-time budgets, pixel counts and byte-exact frames that software GL on Linux (SwiftShader Subzero) or a parallel-loaded node cannot judge. scripts/remote_test.sh deselects them by default.",
+]

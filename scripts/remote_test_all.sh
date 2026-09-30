@@ -5,7 +5,7 @@
 #        OPEN_EZ_TEST_N_LINUX (xdist workers on the Linux node, default 16)
 #        OPEN_EZ_TEST_N_MAC   (xdist workers on the Mac node, default 4: it also runs always-on services)
 # Shards: Linux = everything not `local_render`, minus tests/guide/test_lab_e2e.py (software-GL browser).
-#         Mac   = tests/guide/test_lab_e2e.py, then every `local_render` test (Mac rendering matches the
+#         Mac   = tests/guide/test_lab_e2e.py (not local_render), then every `local_render` test (Mac rendering matches the
 #                 laptop, so pixel/frame tests mean something there). If the `local_render` marker isn't
 #                 registered in the repo yet, the second Mac pass is skipped with a note.
 # Exits non-zero if any shard failed. Per-host logs: $LOGDIR (default: a mktemp dir, printed at the end).
@@ -22,10 +22,9 @@ for f in pyproject.toml pytest.ini setup.cfg tox.ini conftest.py tests/conftest.
   [ -f "$ROOT/$f" ] && grep -q local_render "$ROOT/$f" && MARKER_REGISTERED=1
 done
 
-# remote_test.sh forwards args through ssh unquoted, so the multi-word -m expression carries its own quotes.
 linux_shard() {
   OPEN_EZ_TEST_HOST="$LINUX" OPEN_EZ_TEST_N="${OPEN_EZ_TEST_N_LINUX:-16}" \
-    bash "$RT" -m "'not local_render'" --ignore=tests/guide/test_lab_e2e.py "$@"
+    bash "$RT" -m "not local_render" --ignore=tests/guide/test_lab_e2e.py "$@"
 }
 
 mac_shard() {
@@ -33,7 +32,7 @@ mac_shard() {
   local rc=0
   bash "$RT" tests/guide/test_lab_e2e.py "$@" || rc=$?
   if [ "$MARKER_REGISTERED" = 1 ]; then
-    bash "$RT" -m local_render --deselect tests/guide/test_lab_e2e.py "$@"
+    bash "$RT" -m local_render "$@"   # the first pass left these out: remote_test.sh defaults to not local_render
     local rc2=$?
     [ "$rc2" = 5 ] && rc2=0   # no local_render tests collected
     [ "$rc" = 0 ] && rc=$rc2
