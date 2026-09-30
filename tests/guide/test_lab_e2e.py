@@ -780,3 +780,222 @@ def test_the_section_cut_clips_load_paths_and_the_flows_are_drawn_in_their_own_c
             b.close()
     finally:
         s.shutdown()
+
+
+# ---------------------------------------------------------------- the tour and the film (Task 6)
+
+def _tour_ops(g, variant="roncz"):
+    """The ops the tour visits: chapter 30, non-stub, in graph order (the same rule as guide/viewer/js/tour.js)."""
+    byid = {o["id"]: o for o in g["ops"]}
+    return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
+            and byid[i]["chapter"] == 30 and not byid[i]["stub"]]
+
+
+def _open_rec(p, url, w=960, h=600, query=""):
+    b = p.chromium.launch(args=GL)
+    pg = b.new_page(viewport={"width": w, "height": h})
+    errors = []
+    pg.on("pageerror", lambda e: errors.append(str(e)))
+    pg.goto(url + "lab/?rec=1&q=low&test=1" + query)
+    pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
+    return b, pg, errors
+
+
+def test_rec_film_visits_every_op_in_order_and_ends(rsite):
+    g = _graph(rsite)
+    want = _tour_ops(g)
+    layup = g["layup"]["nodes"]
+    span = {}
+    for n in layup.values():
+        span[n["op"]] = max(span.get(n["op"], 0), n["bl_max"] if n["bl_max"] is not None else g["layup"]["semi_span"])
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url, query="&clean=1")
+            assert pg.evaluate("document.body.classList.contains('rec')") and pg.evaluate("document.body.classList.contains('clean')")
+            assert not pg.is_visible("#controls") and not pg.is_visible("#opbar")  # ?clean=1: the canvas and the cards only
+            dur = pg.evaluate("window.__rec.start('canard')")
+            assert 55 <= dur <= 95, dur  # the film is about a minute and a half
+            assert pg.evaluate("__lab.touring()") is True
+            seen, idx, plays, cuts, active, frames = [], [], set(), [], True, 0
+            while active and frames < 60 * 100 * 2:
+                r = pg.evaluate("window.__rec.frame(1 / 60, false)")
+                active = r["active"]
+                frames += 1
+                sel, i = pg.evaluate("[__lab.selected(), __lab.tourIndex()]")
+                if sel and (not seen or seen[-1] != sel):
+                    seen.append(sel)
+                if not idx or idx[-1] != i:
+                    idx.append(i)
+                if pg.evaluate("__lab.playing()"):
+                    plays.add(sel)
+                c = pg.evaluate("__lab.cut()")
+                if c["enabled"] and sel in span and (not cuts or cuts[-1][:2] != [sel, c["bl"]]):
+                    cuts.append([sel, c["bl"]])
+            assert not active and pg.evaluate("__lab.touring()") is False
+            assert abs(frames / 60 - dur) < 1.0, (frames, dur)
+            assert seen == want, seen
+            assert idx == list(range(len(want))), idx  # the segment index only moves forward, one op at a time
+            with_plies = {o for o in want if o in span}
+            assert plays == with_plies, plays  # Play is pressed for exactly the ops that have plies
+            assert {c[0] for c in cuts} == with_plies  # ... and each of them is cut open once, inside its own layup
+            assert all(0 <= bl <= span[op] for op, bl in cuts), cuts
+            assert pg.evaluate("__lab.selected()") is None  # the film ends on the finished canard
+            assert pg.evaluate("__lab.cut().enabled") is False  # ... and the person's own section setting is back
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _adv(pg, seconds, dt=0.05):
+    """advance the sim clock without drawing (recorder mode owns the clock: nothing moves between calls)"""
+    for _ in range(round(seconds / dt)):
+        pg.evaluate(f"window.__rec.frame({dt}, false)")
+
+
+def _tour_to_first_ply_op(pg, g):
+    pg.click("#tour")
+    assert pg.evaluate("__lab.touring()") is True
+    assert pg.evaluate("__lab.tourIndex()") == 0
+    for _ in range(400):
+        _adv(pg, 0.25)
+        if pg.evaluate("__lab.selected()") == "r30.shear-web" and pg.evaluate("__lab.playing()"):
+            return
+    raise AssertionError("the tour never pressed Play on the shear web")
+
+
+def test_tour_button_runs_the_tour_and_every_user_action_stops_it(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            assert pg.get_attribute("#tour", "aria-pressed") == "false" and pg.text_content("#tour") == "Tour"
+            _tour_to_first_ply_op(pg, g)
+            assert pg.get_attribute("#tour", "aria-pressed") == "true" and pg.text_content("#tour") == "Stop tour"
+            assert pg.evaluate("__lab.tourIndex()") == _tour_ops(g).index("r30.shear-web")  # the segment follows the op it is showing
+            assert pg.evaluate("__lab.lay()") >= 1
+
+            def stops(label, act, keeps_op=True):
+                _tour_to_first_ply_op(pg, g) if not pg.evaluate("__lab.touring()") else None
+                sel, lay, ci = pg.evaluate("[__lab.selected(), __lab.lay(), __lab.tourIndex()]")
+                act()
+                assert pg.evaluate("__lab.touring()") is False, label
+                assert pg.get_attribute("#tour", "aria-pressed") == "false" and pg.text_content("#tour") == "Tour", label
+                _adv(pg, 0.3)
+                if keeps_op:
+                    assert pg.evaluate("__lab.selected()") == sel, label  # it stays where it was
+                return sel
+
+            stops("escape", lambda: pg.keyboard.press("Escape"))
+            stops("second press", lambda: pg.click("#tour"))
+            other = "r30.top-skin"
+            stops("op chip", lambda: pg.click(f'#chips button[data-op="{other}"]'), keeps_op=False)
+            assert pg.evaluate("__lab.selected()") == other  # the click still did its job
+            stops("variant", lambda: pg.click('#variant button[data-variant="gu"]'), keeps_op=False)
+            pg.click('#variant button[data-variant="roncz"]')
+            stops("scrubber", lambda: pg.evaluate("(() => { const s = document.getElementById('scrub'); s.value = '1'; s.dispatchEvent(new Event('input', { bubbles: true })) })()"), keeps_op=False)
+            assert pg.evaluate("__lab.lay()") == 1
+            stops("play", lambda: pg.click("#play"), keeps_op=False)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_tour_can_be_run_twice_and_leaves_no_cut_or_cursor_behind(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            for _ in range(2):
+                pg.click("#tour")
+                for _ in range(400):
+                    _adv(pg, 0.25)
+                    if pg.evaluate("__lab.cut().enabled"):
+                        break
+                assert pg.evaluate("__lab.cut().enabled") is True  # the tour opened the section
+                pg.click("#tour")  # stop with the cut open: the state stays where it was
+                assert pg.evaluate("__lab.touring()") is False and pg.evaluate("__lab.cut().enabled") is False  # the cut goes back to what the person had
+                assert pg.evaluate("document.getElementById('cursor').style.opacity") == "0"
+                pg.click("#section-on")  # the person's own control still works after the tour
+                assert pg.evaluate("__lab.cut().enabled") is True
+                pg.click("#section-on")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_tour_leaves_paths_labels_and_storage_as_the_person_set_them(rsite):
+    """2.1's rule: a tour may change what is shown while it runs, but it never writes storage, and when it stops the toggles are as they were."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 960, "height": 600})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url)  # same origin: seed the person's stored settings, then count every setItem from the lab's first line
+            pg.evaluate("() => { localStorage.setItem('longez.paths', '0'); localStorage.setItem('longez.labels', '0') }")
+            pg.add_init_script("window.__setItems = 0; const o = Storage.prototype.setItem; Storage.prototype.setItem = function () { window.__setItems++; return o.apply(this, arguments) }")
+            pg.goto(url + "lab/?rec=1&q=low&test=1")
+            pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
+            assert not pg.is_checked("#paths-on") and not pg.is_checked("#labels-on")
+            pg.click("#tour")
+            shown = False
+            for _ in range(400):
+                _adv(pg, 0.25)
+                if pg.evaluate("__lab.paths().some(p => p.drawn)") and pg.evaluate("__lab.labels().some(l => l.opacity > 0)"):
+                    shown = True
+                    break
+            assert shown, "the tour should show paths and part names while it runs"
+            pg.keyboard.press("Escape")
+            _adv(pg, 2.0)  # the part names fade out in sim time
+            assert pg.evaluate("__lab.touring()") is False
+            assert not pg.is_checked("#paths-on") and not pg.is_checked("#labels-on")
+            assert pg.evaluate("[localStorage.getItem('longez.paths'), localStorage.getItem('longez.labels')]") == ["0", "0"]
+            assert pg.evaluate("__lab.paths().every(p => !p.drawn)") and pg.evaluate("__lab.labels().every(l => l.opacity === 0)")
+            assert pg.evaluate("window.__setItems") == 0  # the tour never wrote storage
+            assert pg.evaluate("__lab.cut().enabled") is False
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_recorder_frames_are_reproducible(rsite):
+    """Two independent pages render frames 0, 120 and 240 of the film. The frame is a function of the sim clock only (grain, flows, glow,
+    cursor and cards all take sim time; nothing reads the wall clock or Math.random), so the PNGs must match. On the software renderer
+    used here they are compared byte for byte; if a GPU or driver ever makes that impossible the fallback bar is a 1% pixel difference."""
+    from PIL import Image, ImageChops
+    s, url = serve(rsite)
+    runs = []
+    try:
+        with sync_playwright() as p:
+            for _ in range(2):
+                b, pg, errors = _open_rec(p, url)
+                pg.evaluate("window.__rec.start('canard')")
+                shots = {}
+                for i in range(241):
+                    if i in (0, 120, 240):
+                        pg.evaluate("window.__rec.frame(1 / 60, true)")
+                        shots[i] = pg.screenshot()
+                    else:
+                        pg.evaluate("window.__rec.frame(1 / 60, false)")
+                assert not errors, errors
+                runs.append(shots)
+                b.close()
+    finally:
+        s.shutdown()
+    for i in (0, 120, 240):
+        a, c = runs[0][i], runs[1][i]
+        if a == c:
+            continue
+        ia, ic = Image.open(io.BytesIO(a)).convert("RGB"), Image.open(io.BytesIO(c)).convert("RGB")
+        diff = ImageChops.difference(ia, ic).convert("L").point(lambda v: 255 if v > 0 else 0)
+        frac = sum(diff.histogram()[255:]) / (ia.width * ia.height)
+        assert frac <= 0.01, f"frame {i} differs in {frac:.2%} of pixels"
+    # and the frames are not the same picture: the clock really moves the film
+    assert runs[0][0] != runs[0][240]

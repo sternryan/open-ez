@@ -5,6 +5,7 @@ type Store = { get(id: string): Set<number>; toggle(id: string, i: number): void
 export interface UIHandlers {
   onVariant(v: Variant): void
   onHome(): void
+  onTour(): void
   onSelect(opId: string): void
   onGhost(on: boolean): void
   onScrub(n: number): void
@@ -57,6 +58,7 @@ export function initUI(h: UIHandlers, store: Store) {
     if (b) h.onVariant(b.dataset.variant as Variant)
   })
   $('home').addEventListener('click', () => h.onHome())
+  $('tour').addEventListener('click', () => h.onTour())
   $('bar-home').addEventListener('click', () => h.onHome())
   $('ghost').addEventListener('change', (e) => h.onGhost((e.target as HTMLInputElement).checked))
   $('scrub').addEventListener('input', (e) => h.onScrub(+(e.target as HTMLInputElement).value)) // user input only: setting .value fires no event
@@ -131,6 +133,10 @@ export function initUI(h: UIHandlers, store: Store) {
       secOn.checked = on
       secBl.value = String(bl)
       $('section-station').textContent = fmtBl(bl)
+    },
+    setTouring(on: boolean) {
+      $('tour').setAttribute('aria-pressed', String(on))
+      $('tour').textContent = on ? 'Stop tour' : 'Tour'
     },
     setPaths(on: boolean) { ($('paths-on') as HTMLInputElement).checked = on },
     setLabels(on: boolean) { ($('labels-on') as HTMLInputElement).checked = on },
