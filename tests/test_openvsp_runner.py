@@ -13,10 +13,8 @@ from core.analysis import OpenVSPRunner  # noqa: E402
 
 @pytest.fixture()
 def runner(tmp_path):
-    # Use repository cache directory to mirror CI behavior
-    cache_dir = Path("data/validation")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    return OpenVSPRunner(cache_dir=cache_dir)
+    # Write the cache to a throwaway dir so the suite never rewrites tracked files.
+    return OpenVSPRunner(cache_dir=tmp_path / "validation")
 
 
 def test_trim_and_clmax_cached(runner):
