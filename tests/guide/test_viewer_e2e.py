@@ -1068,6 +1068,20 @@ def test_section_controls_are_touchable_and_inside(rsite, width):
     s.shutdown()
 
 
+def test_section_cut_clips_load_paths_with_the_structure_plane(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.top-skin")
+        assert pg.is_checked("#paths") and _vis_paths(pg)
+        assert pg.evaluate("window.__pathClip()") == [False] * 3  # section off: unclipped
+        _sec(pg, 10)
+        assert pg.evaluate("window.__pathClip()") == [True] * 3  # same plane object as the structure
+        _sec(pg, 10, on=False)
+        assert pg.evaluate("window.__pathClip()") == [False] * 3
+        b.close()
+    s.shutdown()
+
+
 # ---- Block 2 M2.1 Task 4: load paths (real export via rsite)
 def _vis_paths(pg):
     return sorted(p["id"] for p in pg.evaluate("window.__paths()") if p["visible"])
