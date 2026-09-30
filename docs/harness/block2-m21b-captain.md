@@ -290,3 +290,25 @@ Done at the lead's direction, after the Task 8 commit.
     --- remote_test_all: linux=0 mac=0, wall 201s
     ```
   - Locally: `.venv/bin/python -m pytest -q -p no:cacheprovider -m local_render` gave `5 passed, 685 deselected, 8 warnings in 42.50s`.
+
+## Follow-up 2: WebGL context loss
+- The lead's follow-up items 1–3 (quoting, the marker, WebKit) had already landed in 61ab071 when the
+  message arrived; see the section above. The "classic viewer frame budget" test no longer exists: it
+  moved to the lab in Task 8, where it is marked.
+- Crew: sonnet. On `webglcontextlost` the lab calls preventDefault, stops drawing and the auto step-down,
+  and shows a centred "3D paused" card with a Reload button that returns to the same op (`?op=`); the
+  other cards stay usable. On restore it rebuilds the PMREM environment, shadow map, 3D noise texture,
+  materials and pipeline targets, hides the card only after a frame has drawn, and (auto on) drops one
+  tier, remembered for the session in sessionStorage.
+- E2e (both engines; WebKit headless exposes WEBGL_lose_context, so nothing skipped): overlay + restore
+  brings frames back; Reload returns to the same op; restore drops one tier and a reload keeps it.
+- Capture `ctx-lost-ipad.png` (GPU path, 1180×820): a calm card in the lab's card style over the dark
+  canvas, controls and op bar still visible around it.
+- **Remote lanes down.** `remote_test_all.sh` hung with no output until the tool killed it at 30 min;
+  both test nodes then timed out on ssh port 22 (the laptop's tailnet still lists them). Gate run
+  locally instead, all unpiped, foreground:
+  - lab e2e WebKit: `64 passed, 64 deselected, 6 warnings in 77.71s`
+  - lab e2e Chromium: `64 passed, 64 deselected, 6 warnings in 235.77s`
+  - everything else: `557 passed, 2 skipped, 9 xfailed, 11 warnings in 118.19s`
+  - `-m local_render`: `5 passed, 697 deselected, 8 warnings in 44.96s`
+  - lab typecheck clean, lab node tests 87/87.
