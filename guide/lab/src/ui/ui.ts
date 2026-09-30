@@ -11,6 +11,7 @@ export interface UIHandlers {
   onPlay(): void
   onSection(on: boolean, bl: number): void
   onLabels(on: boolean): void
+  onPaths(on: boolean): void
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -65,6 +66,7 @@ export function initUI(h: UIHandlers, store: Store) {
   secOn.addEventListener('change', secChange)
   secBl.addEventListener('input', secChange)
   $('labels-on').addEventListener('change', (e) => h.onLabels((e.target as HTMLInputElement).checked))
+  $('paths-on').addEventListener('change', (e) => h.onPaths((e.target as HTMLInputElement).checked))
   chips.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-op]') as HTMLElement | null
     if (b) h.onSelect(b.dataset.op!)
@@ -130,6 +132,7 @@ export function initUI(h: UIHandlers, store: Store) {
       secBl.value = String(bl)
       $('section-station').textContent = fmtBl(bl)
     },
+    setPaths(on: boolean) { ($('paths-on') as HTMLInputElement).checked = on },
     setLabels(on: boolean) { ($('labels-on') as HTMLInputElement).checked = on },
     /** the stat tiles: plain text only; `plies` is null when the op has none */
     setReadout(r: { station: string; layers: string; plies: string | null; cloth: string }) {
