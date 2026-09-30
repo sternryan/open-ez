@@ -6,22 +6,7 @@
     "datum_note": "All fuselage stations (FS) in this file use the published datum, F.S. 0.0 (om-1980:p25). Code stations use the published datum directly (datum_offset_in = 0).",
     "audit": "2026-09-29 Block 1; see docs/block1-source-notes.md"
   },
-  "sources": {
-    "roncz-wt": {
-      "title": "Roncz R1145MS Canard Airfoil Wind Tunnel Report",
-      "author": "John R. Roncz",
-      "year": 1984,
-      "type": "measured",
-      "notes": "Wind tunnel test results for the R1145MS airfoil developed to replace the dangerous GU25-5(11)8. Data collected at Purdue low-speed tunnel. Critical safety reference — the R1145MS prevents pitch-down moments from rain-induced contamination that caused fatal accidents with the original airfoil."
-    },
-    "eppler-report": {
-      "title": "Eppler 1230 Airfoil Data — UIUC Airfoil Database",
-      "author": "Richard Eppler; UIUC Applied Aerodynamics Group",
-      "year": 1990,
-      "type": "measured",
-      "notes": "Profile coordinates and wind tunnel characteristics for Eppler 1230. Long-EZ main wing uses a modified version with trailing-edge reflex for pitch stability. UIUC database entry compiled from Eppler's published reports."
-    }
-  },
+  "sources": {},
   "aircraft_specs": {
     "wing_span_in": {
       "value": 313.2,
@@ -191,77 +176,105 @@
   "airfoil_data": {
     "roncz_r1145ms": {
       "description": "Roncz R1145MS — Long-EZ canard replacement airfoil (SAFETY CRITICAL)",
-      "source_id": "roncz-wt",
       "reynolds_number": 3000000,
-      "facility": "Purdue University Low-Speed Wind Tunnel",
       "cl_max": {
         "value": 1.35,
         "units": "dimensionless",
-        "source_id": "roncz-wt",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "roncz-wt",
+          "facility": "Purdue University Low-Speed Wind Tunnel",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Maximum lift coefficient at design Reynolds number. The R1145MS maintains CLmax even with rain-induced surface roughness — key design requirement over GU25-5(11)8."
       },
       "cm_zero": {
         "value": -0.05,
         "units": "dimensionless",
-        "source_id": "roncz-wt",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "roncz-wt",
+          "facility": "Purdue University Low-Speed Wind Tunnel",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Zero-lift pitching moment coefficient. Negative value indicates nose-down tendency at zero lift. Canard configuration uses this for stability — canard must carry positive load."
       },
       "alpha_zero_lift_deg": {
         "value": -3.0,
         "units": "degrees",
-        "source_id": "roncz-wt",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "roncz-wt",
+          "facility": "Purdue University Low-Speed Wind Tunnel",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Zero-lift angle of attack. Matches config.aero_limits.canard_alpha_0L = -3.0."
       },
       "cd_min": {
         "value": 0.006,
         "units": "dimensionless",
-        "source_id": "roncz-wt",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "roncz-wt",
+          "facility": "Purdue University Low-Speed Wind Tunnel",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Minimum profile drag coefficient at design Re. Used for section drag polar construction."
       }
     },
     "eppler_1230": {
       "description": "Eppler 1230 (Modified) — Long-EZ main wing airfoil with trailing-edge reflex",
-      "source_id": "eppler-report",
       "reynolds_number": 3000000,
-      "facility": "Stuttgart Wind Tunnel / UIUC database compilation",
       "cl_max": {
         "value": 1.45,
         "units": "dimensionless",
-        "source_id": "eppler-report",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "eppler-report",
+          "facility": "Stuttgart Wind Tunnel / UIUC database compilation",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "CLmax for base Eppler 1230. Long-EZ modification adds trailing-edge reflex (2.5%) which slightly reduces CLmax but improves pitch stability. config.aero_limits.wing_clmax = 1.45."
       },
       "cm_zero": {
         "value": -0.02,
         "units": "dimensionless",
-        "source_id": "eppler-report",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "eppler-report",
+          "facility": "Stuttgart Wind Tunnel / UIUC database compilation",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Zero-lift pitching moment. The reflex modification in the Long-EZ version reduces nose-down tendency, contributing to longitudinal trim without requiring large canard download."
       },
       "alpha_zero_lift_deg": {
         "value": -2.0,
         "units": "degrees",
-        "source_id": "eppler-report",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "eppler-report",
+          "facility": "Stuttgart Wind Tunnel / UIUC database compilation",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Zero-lift angle of attack for base Eppler 1230. Matches config.aero_limits.wing_alpha_0L = -2.0."
       },
       "cd_min": {
         "value": 0.0055,
         "units": "dimensionless",
-        "source_id": "eppler-report",
-        "reynolds_number": 3000000,
-        "confidence": "measured",
+        "status": "unverified",
+        "was_cited": {
+          "source_id": "eppler-report",
+          "facility": "Stuttgart Wind Tunnel / UIUC database compilation",
+          "reynolds_number": 3000000
+        },
+        "why": "not found in the CP text, cobelu, plans OCR, or the public web (UIUC holds coordinates only); see docs/block1-source-notes.md",
         "notes": "Minimum profile drag coefficient. Lower than R1145MS due to wing operating at lower lift coefficient in cruise."
       }
     }

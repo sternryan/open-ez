@@ -372,31 +372,30 @@ def test_regression_max_gross_weight():
 # ---------------------------------------------------------------------------
 
 
-def test_regression_canard_clmax():
-    """REGRESSION LOCK: Canard CLmax locked to Phase 5 calibrated value.
+def test_regression_canard_clmax_external_truth():
+    """External truth: the Canard CLmax reference (airfoil_data.roncz_r1145ms.cl_max) is unverified, so the metric is NOT GRADED.
 
-    External truth: must be within 0.05 of Roncz R1145MS wind tunnel value 1.35.
-    Direct config read — tests that config.aero_limits.canard_clmax is not changed.
-
-    Traces: accuracy_report.json canard_clmax.computed -> reference_data.json
-            airfoil_data.roncz_r1145ms.cl_max.value (Purdue wind tunnel, 1984).
+    truth_airfoil() excludes the entry and the accuracy report grades the metric NOT GRADED.
     """
+    from core.reference import truth_airfoil
+
     ref_data = _load_ref_data()
-    ref_clmax = ref_data["airfoil_data"]["roncz_r1145ms"]["cl_max"]["value"]  # 1.35
-    ref_tolerance = 0.05  # from accuracy_report tolerance_abs
-
-    computed_clmax = config.aero_limits.canard_clmax
-
-    # External truth check (also serves as drift lock — tolerance is already tight)
-    delta = abs(computed_clmax - ref_clmax)
-    assert delta <= ref_tolerance, (
-        f"REGRESSION: Canard CLmax external truth check FAILED. "
-        f"config.aero_limits.canard_clmax = {computed_clmax:.3f}, "
-        f"Roncz R1145MS wind tunnel = {ref_clmax:.3f}, "
-        f"delta = {delta:.4f} exceeds {ref_tolerance:.2f} tolerance. "
-        f"Safety-critical: canard CLmax controls stall characteristics. "
-        f"Source: Roncz R1145MS wind tunnel report, Purdue 1984."
+    assert ref_data["airfoil_data"]["roncz_r1145ms"]["cl_max"]["status"] == "unverified"
+    assert "cl_max" not in truth_airfoil(ref_data)["roncz_r1145ms"]
+    metric = next(
+        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "canard_clmax"
     )
+    assert metric["grade"] == "NOT GRADED"
+    assert metric["reason"] == "reference unverified"
+
+
+def test_regression_canard_clmax():
+    """REGRESSION LOCK: Canard CLmax locked to the Phase 5 calibrated config value (drift lock only).
+
+    Direct config read; needs no reference. The external-truth half is
+    test_regression_canard_clmax_external_truth (reference unverified, NOT GRADED).
+    """
+    computed_clmax = config.aero_limits.canard_clmax
 
     # Drift detection: exact match to Phase 5 locked value (config value, should not change)
     assert computed_clmax == LOCKED_CANARD_CLMAX, (
@@ -408,30 +407,30 @@ def test_regression_canard_clmax():
     )
 
 
-def test_regression_wing_clmax():
-    """REGRESSION LOCK: Wing CLmax locked to Phase 5 calibrated value.
+def test_regression_wing_clmax_external_truth():
+    """External truth: the Wing CLmax reference (airfoil_data.eppler_1230.cl_max) is unverified, so the metric is NOT GRADED.
 
-    External truth: must be within 0.05 of Eppler 1230 wind tunnel value 1.45.
-    Direct config read — tests that config.aero_limits.wing_clmax is not changed.
-
-    Traces: accuracy_report.json wing_clmax.computed -> reference_data.json
-            airfoil_data.eppler_1230.cl_max.value (Stuttgart/UIUC database).
+    truth_airfoil() excludes the entry and the accuracy report grades the metric NOT GRADED.
     """
+    from core.reference import truth_airfoil
+
     ref_data = _load_ref_data()
-    ref_clmax = ref_data["airfoil_data"]["eppler_1230"]["cl_max"]["value"]  # 1.45
-    ref_tolerance = 0.05  # from accuracy_report tolerance_abs
-
-    computed_clmax = config.aero_limits.wing_clmax
-
-    # External truth check
-    delta = abs(computed_clmax - ref_clmax)
-    assert delta <= ref_tolerance, (
-        f"REGRESSION: Wing CLmax external truth check FAILED. "
-        f"config.aero_limits.wing_clmax = {computed_clmax:.3f}, "
-        f"Eppler 1230 wind tunnel = {ref_clmax:.3f}, "
-        f"delta = {delta:.4f} exceeds {ref_tolerance:.2f} tolerance. "
-        f"Source: Eppler 1230 UIUC database, Stuttgart/Eppler reports."
+    assert ref_data["airfoil_data"]["eppler_1230"]["cl_max"]["status"] == "unverified"
+    assert "cl_max" not in truth_airfoil(ref_data)["eppler_1230"]
+    metric = next(
+        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "wing_clmax"
     )
+    assert metric["grade"] == "NOT GRADED"
+    assert metric["reason"] == "reference unverified"
+
+
+def test_regression_wing_clmax():
+    """REGRESSION LOCK: Wing CLmax locked to the Phase 5 calibrated config value (drift lock only).
+
+    Direct config read; needs no reference. The external-truth half is
+    test_regression_wing_clmax_external_truth (reference unverified, NOT GRADED).
+    """
+    computed_clmax = config.aero_limits.wing_clmax
 
     # Drift detection: exact match to Phase 5 locked value
     assert computed_clmax == LOCKED_WING_CLMAX, (
@@ -442,30 +441,30 @@ def test_regression_wing_clmax():
     )
 
 
-def test_regression_canard_alpha_0l():
-    """REGRESSION LOCK: Canard zero-lift angle of attack locked to Phase 5 calibrated value.
+def test_regression_canard_alpha_0l_external_truth():
+    """External truth: the Canard alpha_0L reference (airfoil_data.roncz_r1145ms.alpha_zero_lift_deg) is unverified, so the metric is NOT GRADED.
 
-    External truth: must be within 0.5 deg of Roncz R1145MS wind tunnel value -3.0 deg.
-    Direct config read — tests that config.aero_limits.canard_alpha_0L is not changed.
-
-    Traces: accuracy_report.json canard_alpha_0l_deg.computed -> reference_data.json
-            airfoil_data.roncz_r1145ms.alpha_zero_lift_deg.value (Purdue wind tunnel, 1984).
+    truth_airfoil() excludes the entry and the accuracy report grades the metric NOT GRADED.
     """
+    from core.reference import truth_airfoil
+
     ref_data = _load_ref_data()
-    ref_alpha = ref_data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["value"]  # -3.0
-    ref_tolerance = 0.5  # degrees, from accuracy_report tolerance_abs
-
-    computed_alpha = config.aero_limits.canard_alpha_0L
-
-    # External truth check
-    delta = abs(computed_alpha - ref_alpha)
-    assert delta <= ref_tolerance, (
-        f"REGRESSION: Canard alpha_0L external truth check FAILED. "
-        f"config.aero_limits.canard_alpha_0L = {computed_alpha:.2f} deg, "
-        f"Roncz R1145MS wind tunnel = {ref_alpha:.2f} deg, "
-        f"delta = {delta:.3f} deg exceeds {ref_tolerance:.1f} deg tolerance. "
-        f"Source: Roncz R1145MS wind tunnel report, Purdue 1984."
+    assert ref_data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert "alpha_zero_lift_deg" not in truth_airfoil(ref_data)["roncz_r1145ms"]
+    metric = next(
+        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "canard_alpha_0l_deg"
     )
+    assert metric["grade"] == "NOT GRADED"
+    assert metric["reason"] == "reference unverified"
+
+
+def test_regression_canard_alpha_0l():
+    """REGRESSION LOCK: Canard alpha_0L locked to the Phase 5 calibrated config value (drift lock only).
+
+    Direct config read; needs no reference. The external-truth half is
+    test_regression_canard_alpha_0l_external_truth (reference unverified, NOT GRADED).
+    """
+    computed_alpha = config.aero_limits.canard_alpha_0L
 
     # Drift detection: exact match to Phase 5 locked value
     assert computed_alpha == LOCKED_CANARD_ALPHA_0L_DEG, (
@@ -476,30 +475,30 @@ def test_regression_canard_alpha_0l():
     )
 
 
-def test_regression_wing_alpha_0l():
-    """REGRESSION LOCK: Wing zero-lift angle of attack locked to Phase 5 calibrated value.
+def test_regression_wing_alpha_0l_external_truth():
+    """External truth: the Wing alpha_0L reference (airfoil_data.eppler_1230.alpha_zero_lift_deg) is unverified, so the metric is NOT GRADED.
 
-    External truth: must be within 0.5 deg of Eppler 1230 wind tunnel value -2.0 deg.
-    Direct config read — tests that config.aero_limits.wing_alpha_0L is not changed.
-
-    Traces: accuracy_report.json wing_alpha_0l_deg.computed -> reference_data.json
-            airfoil_data.eppler_1230.alpha_zero_lift_deg.value (Stuttgart/UIUC database).
+    truth_airfoil() excludes the entry and the accuracy report grades the metric NOT GRADED.
     """
+    from core.reference import truth_airfoil
+
     ref_data = _load_ref_data()
-    ref_alpha = ref_data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["value"]  # -2.0
-    ref_tolerance = 0.5  # degrees, from accuracy_report tolerance_abs
-
-    computed_alpha = config.aero_limits.wing_alpha_0L
-
-    # External truth check
-    delta = abs(computed_alpha - ref_alpha)
-    assert delta <= ref_tolerance, (
-        f"REGRESSION: Wing alpha_0L external truth check FAILED. "
-        f"config.aero_limits.wing_alpha_0L = {computed_alpha:.2f} deg, "
-        f"Eppler 1230 wind tunnel = {ref_alpha:.2f} deg, "
-        f"delta = {delta:.3f} deg exceeds {ref_tolerance:.1f} deg tolerance. "
-        f"Source: Eppler 1230 UIUC database, Stuttgart/Eppler reports."
+    assert ref_data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert "alpha_zero_lift_deg" not in truth_airfoil(ref_data)["eppler_1230"]
+    metric = next(
+        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "wing_alpha_0l_deg"
     )
+    assert metric["grade"] == "NOT GRADED"
+    assert metric["reason"] == "reference unverified"
+
+
+def test_regression_wing_alpha_0l():
+    """REGRESSION LOCK: Wing alpha_0L locked to the Phase 5 calibrated config value (drift lock only).
+
+    Direct config read; needs no reference. The external-truth half is
+    test_regression_wing_alpha_0l_external_truth (reference unverified, NOT GRADED).
+    """
+    computed_alpha = config.aero_limits.wing_alpha_0L
 
     # Drift detection: exact match to Phase 5 locked value
     assert computed_alpha == LOCKED_WING_ALPHA_0L_DEG, (
@@ -601,7 +600,7 @@ def test_regression_values_match_accuracy_report():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 20; 5 PASS of 9 locked; CG fwd +2.12 in, max gross +100 lb, NP/stall NOT GRADED")
+@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 20 and 39-42; 2 PASS of 9 locked (CG aft, max gross); CG fwd +2.12 in FAIL; NP, stall and the 4 airfoil metrics NOT GRADED")
 def test_regression_locked_metrics_all_pass():
     """External truth: every locked metric grades PASS in accuracy_report.json (9 PASS metrics)."""
     report = _load_accuracy_report()

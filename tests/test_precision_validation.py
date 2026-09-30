@@ -123,92 +123,56 @@ def test_cg_aft_limit_precision():
 
 
 # ---------------------------------------------------------------------------
-# VAL-02: Airfoil config vs. wind tunnel reference data — should PASS
+# VAL-02: Airfoil references are unverified — metrics are NOT GRADED
 # ---------------------------------------------------------------------------
 
 
-def test_roncz_clmax_matches_wind_tunnel():
-    """VAL-02: config.aero_limits.canard_clmax must be within 0.05 of wind tunnel 1.35.
+def test_roncz_clmax_reference_is_unverified_not_graded():
+    """VAL-02: the Roncz R1145MS CLmax reference (roncz_r1145ms.cl_max) is unverified, so the metric is NOT GRADED.
 
-    The Roncz R1145MS wind tunnel report (Purdue, 1984) measured CLmax = 1.35 at
-    Re = 3,000,000. config.aero_limits.canard_clmax was set from this data — expected PASS.
+    truth_airfoil() excludes the entry; nothing is compared against the old value.
     """
+    from core.reference import truth_airfoil
+
     data = _load_ref_data()
-    ref_clmax = data["airfoil_data"]["roncz_r1145ms"]["cl_max"]["value"]
-    tolerance = 0.05
-
-    computed_clmax = config.aero_limits.canard_clmax
-    delta = abs(computed_clmax - ref_clmax)
-
-    assert delta <= tolerance, (
-        f"Roncz R1145MS CLmax mismatch: "
-        f"config = {computed_clmax:.3f}, wind tunnel = {ref_clmax:.3f}, "
-        f"delta = {delta:.4f} exceeds {tolerance:.2f} tolerance. "
-        f"config.aero_limits.canard_clmax must match Roncz wind tunnel data."
-    )
+    assert data["airfoil_data"]["roncz_r1145ms"]["cl_max"]["status"] == "unverified"
+    assert "cl_max" not in truth_airfoil(data)["roncz_r1145ms"]
 
 
-def test_roncz_alpha_0l_matches_wind_tunnel():
-    """VAL-02: config.aero_limits.canard_alpha_0L must be within 0.5 deg of wind tunnel -3.0.
+def test_roncz_alpha_0l_reference_is_unverified_not_graded():
+    """VAL-02: the Roncz R1145MS alpha_0L reference (roncz_r1145ms.alpha_zero_lift_deg) is unverified, so the metric is NOT GRADED.
 
-    The Roncz R1145MS wind tunnel data gives alpha_zero_lift = -3.0 deg.
-    config.aero_limits.canard_alpha_0L was set from this data — expected PASS.
+    truth_airfoil() excludes the entry; nothing is compared against the old value.
     """
+    from core.reference import truth_airfoil
+
     data = _load_ref_data()
-    ref_alpha_0l = data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["value"]
-    tolerance = 0.5  # degrees
-
-    computed_alpha_0l = config.aero_limits.canard_alpha_0L
-    delta = abs(computed_alpha_0l - ref_alpha_0l)
-
-    assert delta <= tolerance, (
-        f"Roncz R1145MS alpha_0L mismatch: "
-        f"config = {computed_alpha_0l:.2f} deg, wind tunnel = {ref_alpha_0l:.2f} deg, "
-        f"delta = {delta:.3f} deg exceeds {tolerance:.1f} deg tolerance. "
-        f"config.aero_limits.canard_alpha_0L must match Roncz wind tunnel data."
-    )
+    assert data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert "alpha_zero_lift_deg" not in truth_airfoil(data)["roncz_r1145ms"]
 
 
-def test_eppler_clmax_matches_wind_tunnel():
-    """VAL-02: config.aero_limits.wing_clmax must be within 0.05 of wind tunnel 1.45.
+def test_eppler_clmax_reference_is_unverified_not_graded():
+    """VAL-02: the Eppler 1230 CLmax reference (eppler_1230.cl_max) is unverified, so the metric is NOT GRADED.
 
-    The Eppler 1230 wind tunnel / UIUC database gives CLmax = 1.45.
-    config.aero_limits.wing_clmax was set from this data — expected PASS.
+    truth_airfoil() excludes the entry; nothing is compared against the old value.
     """
+    from core.reference import truth_airfoil
+
     data = _load_ref_data()
-    ref_clmax = data["airfoil_data"]["eppler_1230"]["cl_max"]["value"]
-    tolerance = 0.05
-
-    computed_clmax = config.aero_limits.wing_clmax
-    delta = abs(computed_clmax - ref_clmax)
-
-    assert delta <= tolerance, (
-        f"Eppler 1230 CLmax mismatch: "
-        f"config = {computed_clmax:.3f}, wind tunnel = {ref_clmax:.3f}, "
-        f"delta = {delta:.4f} exceeds {tolerance:.2f} tolerance. "
-        f"config.aero_limits.wing_clmax must match Eppler 1230 wind tunnel data."
-    )
+    assert data["airfoil_data"]["eppler_1230"]["cl_max"]["status"] == "unverified"
+    assert "cl_max" not in truth_airfoil(data)["eppler_1230"]
 
 
-def test_eppler_alpha_0l_matches_wind_tunnel():
-    """VAL-02: config.aero_limits.wing_alpha_0L must be within 0.5 deg of wind tunnel -2.0.
+def test_eppler_alpha_0l_reference_is_unverified_not_graded():
+    """VAL-02: the Eppler 1230 alpha_0L reference (eppler_1230.alpha_zero_lift_deg) is unverified, so the metric is NOT GRADED.
 
-    The Eppler 1230 wind tunnel data gives alpha_zero_lift = -2.0 deg.
-    config.aero_limits.wing_alpha_0L was set from this data — expected PASS.
+    truth_airfoil() excludes the entry; nothing is compared against the old value.
     """
+    from core.reference import truth_airfoil
+
     data = _load_ref_data()
-    ref_alpha_0l = data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["value"]
-    tolerance = 0.5  # degrees
-
-    computed_alpha_0l = config.aero_limits.wing_alpha_0L
-    delta = abs(computed_alpha_0l - ref_alpha_0l)
-
-    assert delta <= tolerance, (
-        f"Eppler 1230 alpha_0L mismatch: "
-        f"config = {computed_alpha_0l:.2f} deg, wind tunnel = {ref_alpha_0l:.2f} deg, "
-        f"delta = {delta:.3f} deg exceeds {tolerance:.1f} deg tolerance. "
-        f"config.aero_limits.wing_alpha_0L must match Eppler 1230 wind tunnel data."
-    )
+    assert data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert "alpha_zero_lift_deg" not in truth_airfoil(data)["eppler_1230"]
 
 
 def test_airfoil_cm_zero_in_reference_data():
@@ -216,10 +180,10 @@ def test_airfoil_cm_zero_in_reference_data():
 
     This is a schema integrity check — the config does not implement section Cm0
     (no config.aero_limits.canard_cm0 or wing_cm0 field). The reference data
-    must carry the wind tunnel Cm0 values so Phase 5+ can use them for
-    pitching moment validation.
+    keeps the Cm0 entries for history. They are unverified (Block 1 follow-up: no wind
+    tunnel source found), so nothing may use them as truth.
 
-    Expected values from wind tunnel data:
+    Values kept for history (unverified):
       - roncz_r1145ms.cm_zero = -0.05 (Purdue tunnel, 1984)
       - eppler_1230.cm_zero = -0.02 (Stuttgart / UIUC database)
     """
