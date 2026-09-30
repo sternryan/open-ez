@@ -23,9 +23,9 @@ import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
-import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, removedByStationCut, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
 import { STATION } from './scene/fuselageStation'
-import { fuselageTour } from './director'
+import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS } from './director'
 import './style.css'
 
 const INCH = 0.0254
@@ -571,11 +571,12 @@ async function boot() {
     }
     // the fuselage's shots: one per chapter 4-6 op, aimed where its parts are for that op (src/fuseShots.ts), and its own home view
     const fuseOpIds = graph.order.filter((id) => FUSE_CHAPTERS.has(graph.ops.find((o) => o.id === id)?.chapter ?? -1))
-    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome'] : [])
+    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut'] : [])
     if (bay) {
       Object.assign(rig.shots, bay.shots(fuseOpIds, LAB_FOV))
       const hb = bay.homeBox()
       // aimed a little toward the nose end: the dock covers the frame's left third
+      rig.shots.fcut = bay.cutShot(FUSE_CUT_FS, LAB_FOV)
       rig.shots.fhome = fitShot(hb, hb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(-0.22, -0.05, 0)), new THREE.Vector3(-0.22, 0.6, 0.77).normalize(), 30, 1.6, 0.62)
     }
     const snap = (name: string): CamState | null => {
@@ -914,6 +915,7 @@ async function boot() {
             if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return 0
             const st = bstate.get(m.name)
             if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return 0
+            if (fsecOn && bay.shown(m.name) === m.jig && removedByStationCut(row, fsecFs)) return 0 // the cut took this part away: its label must not hover over the gap
             const op = selected ? graph.ops.find((o) => o.id === selected) : null
             return !op || m.hatch || op.components.includes(m.cid) ? 1 : 0
           },
@@ -976,6 +978,7 @@ async function boot() {
       act(name) {
         if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
         else if (name === 'finish') { stopPlay(); select(null, true) }
+        else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : 'fcut', true)
         else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : 'fhome', true)
       },
       orbit(k, deg, first) {
@@ -1010,7 +1013,7 @@ async function boot() {
       if (subject === 'fuselage' && bay) {
         stopPlay()
         before = { secOn: fsecOn, secBl: fsecFs }
-        director.load(fuselageTour(graph as never, variant, (id) => bay.opCount(id)))
+        director.load(fuselageTour(graph as never, variant, (id) => bay.opCount(id), chapter ? [chapter] : fuselageTourChapters(graph as never, variant, selected)))
         director.start(simT)
         tourRate = TOUR_BUILD_RATE
         ui.setTouring(true)
@@ -1204,10 +1207,11 @@ async function boot() {
     hook.ready = true
     if (REC) {
       ;(window as unknown as Record<string, unknown>).__rec = {
-        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30 */
+        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6` the fuselage's chapter 6 */
         start(name: string) {
-          if (name !== 'canard') throw new Error(`no film called ${name}`)
-          startTour(CHAPTER)
+          if (name !== 'canard' && name !== 'fuselage6') throw new Error(`no film called ${name}`)
+          if (name === 'fuselage6') { setSubject('fuselage', false, false); startTour(6) } // the box's own subject (never saved), its chapter 6 tour
+          else startTour(CHAPTER)
           return director.duration
         },
         /** advance the sim clock by dt seconds; draw=false skips the render (the clock and the DOM still move) */

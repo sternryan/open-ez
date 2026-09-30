@@ -2,6 +2,7 @@
 // Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
 import { barOps, visibleOps } from './logic/graph'
+import { fuseBarOps } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -292,32 +293,66 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
   return s
 }
 
+/** Our names for the fuselage chapters' title cards. */
+const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly' }
+const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
+/** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
+export const FUSE_CUT_FS = 72
+/** the section slider's first stop, so the drag starts away from the cut and sweeps across the box (the page's own default is FS 70) */
+const FUSE_SWEEP_FS = 110
+
+/** Which chapters the fuselage Tour button plays: the selected op's chapter when it is a chapter 4-6 op, else all of 4-6. */
+export function fuselageTourChapters(graph: GraphLite, variant: string, selectedId: string | null): number[] {
+  const cur = fuseBarOps(graph, variant).find((o) => o.id === selectedId)
+  return cur ? [cur.chapter] : [4, 5, 6]
+}
+
 /**
- * The fuselage film: every chapter 4-6 op in graph order (the box, from the bulkheads to the taped bottom). The same grammar as a
- * canard chapter (click the chip, Play what has plies) without the section steps; `plies` counts an op's fuselage plies.
+ * The fuselage film: the chapter 4-6 ops asked for, in graph order. The same grammar as a canard chapter (click the chip, Play what
+ * has plies); a title card at each chapter change. A chapter 6 tour ends with the station cut at FS 72 (the cursor drags the real
+ * slider), then the close orbit and the end card; the longer ch4-6 tour has no section steps. `plies` counts an op's fuselage plies.
  * The page's `closeup` action flies to the fuselage's own home view.
  */
 export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: string) => number, chapters = [4, 5, 6]): Step[] {
-  const ops = chapters.flatMap((ch) => tourSteps(graph, variant, ch))
+  const chs = chapters.filter((ch) => tourSteps(graph, variant, ch).length)
+  const single = chs.length === 1
+  const cut = single && chs[0] === 6
   const s: Step[] = []
   s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
-  s.push({ t: 0, card: { title: 'Fuselage box', sub: `Chapters ${chapters[0]}–${chapters[chapters.length - 1]}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
+  s.push({ t: 0, card: single ? { title: chapterCard(chs[0]) } : { title: 'Fuselage box', sub: `Chapters ${chapters[0]}\u2013${chapters[chapters.length - 1]}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
   s.push({ t: 2.6, cursor: 'show' })
   let t = 3.0
-  ops.forEach((o, i) => {
-    const chip = `#chips button[data-op="${o.op}"]`
-    s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i })
-    const n = plies(o.op)
-    if (!n) { t += 0.6 + 1.7; return }
-    t += 0.6 + 1.9
-    s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
-    t += 0.5 + playSeconds(n)
+  let i = 0
+  chs.forEach((ch, ci) => {
+    if (ci) { // a chapter change: its own title card
+      s.push({ t, card: { title: chapterCard(ch) }, dur: 0.4 }, { t: t + 1.6, card: null, dur: 0.5 })
+      t += 2.3
+    }
+    for (const o of tourSteps(graph, variant, ch)) {
+      const chip = `#chips button[data-op="${o.op}"]`
+      s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i++ })
+      const n = plies(o.op)
+      if (!n) { t += 0.6 + 1.7; continue }
+      t += 0.6 + 1.9
+      s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
+      t += 0.5 + playSeconds(n)
+    }
   })
   s.push({ t, act: 'finish' })
+  if (cut) { // the station cut through the front seat bulkhead, the cursor on the real slider
+    s.push({ t: t + 0.2, move: SEC_ON, dur: 0.4 }, { t: t + 0.7, click: SEC_ON })
+    s.push({ t: t + 0.8, act: 'cutclose' }) // the camera flies in to the face the cut will leave
+    s.push({ t: t + 0.9, drag: SEC_BL, from: 70, to: FUSE_SWEEP_FS, dur: 1.0 })
+    s.push({ t: t + 2.0, drag: SEC_BL, from: FUSE_SWEEP_FS, to: FUSE_CUT_FS, dur: 1.2 })
+    t += 2.0 // hold on the cut
+  }
   s.push({ t: t + 1.9, cursor: 'hide' })
-  s.push({ t: t + 2.0, act: 'closeup' })
-  s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })
-  s.push({ t: t + 13.4, card: { title: 'Fuselage box', sub: 'Build rehearsal' }, dur: 1.0 })
+  if (cut) s.push({ t: t + 2.8, orbit: { dur: 10.4, deg: -40 } }) // turn about the cut face itself
+  else {
+    s.push({ t: t + 2.0, act: 'closeup' })
+    s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })
+  }
+  s.push({ t: t + 13.4, card: single ? { title: `Fuselage, chapter ${chs[0]}`, sub: 'Build rehearsal' } : { title: 'Fuselage box', sub: 'Build rehearsal' }, dur: 1.0 })
   s.push({ t: t + 16.2, act: 'noop' })
   return s
 }

@@ -2110,3 +2110,40 @@ def test_fuselage_station_cut_opens_the_front_seat_bulkhead_and_lists_its_layers
             b.close()
     finally:
         s.shutdown()
+
+
+def test_fuselage_tour_button_follows_the_selected_chapter_and_the_ch6_film_ends_on_the_station_cut(rsite):
+    g = _graph(rsite)
+    ch = lambda n: [o for o in _fuse_ops(g) if o.startswith(f"f0{n}.")]  # noqa: E731
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.click('#subject button[data-subject="fuselage"]')
+            pg.evaluate("__lab.select('%s')" % ch(5)[2])
+            pg.click("#tour")  # a chapter 5 op selected: the chapter 5 tour
+            assert _tour_seen(pg, len(ch(5))) == ch(5)
+            pg.click("#tour")
+            pg.evaluate("__lab.select(null)")
+            pg.click("#tour")  # nothing selected: all of chapters 4-6
+            assert _tour_seen(pg, len(_fuse_ops(g))) == _fuse_ops(g) and len(_fuse_ops(g)) >= 31
+            pg.click("#tour")
+            b.close()
+            # the recorder's chapter 6 film: the ch6 ops in order, then the cut on inside the front seat bulkhead (FS 63.55-81.75)
+            b, pg, errors = _open_rec(p, url, query="&clean=1")
+            dur = pg.evaluate("window.__rec.start('fuselage6')")
+            assert pg.evaluate("__lab.subject()") == "fuselage" and dur > 30
+            seen, active = [], True
+            while active:
+                active = pg.evaluate("window.__rec.frame(1 / 30, false)")["active"]
+                sel = pg.evaluate("__lab.selected()")
+                if sel and (not seen or seen[-1] != sel):
+                    seen.append(sel)
+                if active:
+                    c = pg.evaluate("__lab.cut()")  # the cut as of the last frame the film was running (the end of the tour puts the person's own cut back)
+            assert seen == ch(6)
+            assert c["enabled"] is True and 63.55 <= c["bl"] <= 81.75, c
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
