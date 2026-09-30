@@ -4,7 +4,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { GLANCE, plyRows, isolateLabel, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
-import { visibleSet } from "./build.js";
+import { visibleSet, pathVisible } from "./build.js";
 import { layersAt, summarize, fmtBl } from "./section.js";
 import { makeCut, capColors } from "./cut.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
@@ -45,7 +45,45 @@ function resize() {
   renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(r.height, 1); camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(canvas);
-renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
+// Load paths: points ship in the frame of the CadQuery solids (X chord, Y = B.L., Z up), so they hang under a group carrying the glb root's
+// -90 deg X rotation (guide/loadpaths.py); the meshes above have that rotation baked in. Each polyline is a thin tube (WebGL lines are
+// always 1 px) with NormalBlending in a saturated colour (additive blending washes to white on the light page), a stripe texture whose
+// offset runs in the render loop for the flow, and depthTest off so paths inside the skin stay visible. Not clipped by the section cut.
+const PATHS_KEY = "longez.paths", KIND_COLOR = { bending: 0xf28c00, shear: 0x1478ff, lift: 0x14a84b };
+const TUBE_R = 0.25, STRIPE = 4; // inches: tube radius; stripe period along the line
+const pathsGroup = new THREE.Group(); pathsGroup.rotation.x = -Math.PI / 2; scene.add(pathsGroup);
+const flowTex = [], paths = [];
+let pathsOn = true; try { pathsOn = storage?.getItem(PATHS_KEY) !== "0"; } catch { /* per-viewer convenience only */ }
+$("#paths").checked = pathsOn;
+function stripes() { // bright band fading to a darker one: multiplies the saturated colour, so the mean stays saturated
+  const c = document.createElement("canvas"); c.width = 64; c.height = 1; const g = c.getContext("2d");
+  const grad = g.createLinearGradient(0, 0, 64, 0); grad.addColorStop(0, "#fff"); grad.addColorStop(0.45, "#fff"); grad.addColorStop(0.8, "#8a8a8a"); grad.addColorStop(1, "#fff");
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 1);
+  const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; flowTex.push(t); return t;
+}
+for (const kind of Object.keys(KIND_COLOR)) {
+  const hex = KIND_COLOR[kind];
+  KIND_COLOR[kind] = { hex, mat: new THREE.MeshBasicMaterial({ color: hex, map: stripes(), depthTest: false, depthWrite: false }) };
+}
+for (const p of graph.loadpaths ?? []) {
+  const group = new THREE.Group(); group.visible = false; group.name = p.id;
+  const k = KIND_COLOR[p.kind];
+  for (const seg of k ? p.segments : []) {
+    const pts = seg.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+    const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, "centripetal"), Math.max(2, pts.length * 6), TUBE_R, 6, false);
+    const uv = geo.attributes.uv; let len = 0; for (let i = 1; i < pts.length; i++) len += pts[i].distanceTo(pts[i - 1]);
+    for (let i = 0; i < uv.count; i++) uv.setX(i, uv.getX(i) * len / STRIPE); // stripes keep one physical period on any segment length
+    const tube = new THREE.Mesh(geo, k.mat); tube.renderOrder = 10; tube.userData.pts = pts;
+    group.add(tube);
+  }
+  pathsGroup.add(group); paths.push({ ...p, group });
+}
+let lastT = performance.now();
+renderer.setAnimationLoop(() => {
+  const t = performance.now(), dt = (t - lastT) / 1000; lastT = t;
+  if (pathsGroup.visible) for (const t of flowTex) t.offset.x -= dt * 0.6; // flow; no per-frame allocation
+  controls.update(); renderer.render(scene, camera);
+});
 
 // The export has one mesh per face (~1,800). They are static, so bake each mesh's world transform and merge everything that shares
 // a ply node (or, for parts without plies, a component) into ONE mesh: ~25 draw calls, and the section cut adds two per solid.
@@ -85,7 +123,8 @@ new GLTFLoader().load(cfg.model, gltf => {
     m.name = g.node ?? g.cid; scene.add(m);
     meshes.set(m, g.cid); if (g.node) plyNode.set(m, g.node);
   }
-  const box = new THREE.Box3().setFromObject(scene), c = box.getCenter(new THREE.Vector3());
+  const box = new THREE.Box3(); for (const m of meshes.keys()) box.expandByObject(m); // meshes only: the load-path lines must not change the framing
+  const c = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3()).length();
   controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(size * 1.0, size * 0.8, size * 1.3));
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
@@ -123,7 +162,7 @@ function buildState() {
 function applyBuild() {
   if (isolated) return;
   const st = buildState();
-  if (!st) { applyVariantVisibility(); return; }
+  if (!st) { applyVariantVisibility(); syncPaths(); return; }
   for (const [m, cid] of meshes) {
     const s = st.get(plyNode.get(m) ?? cid), mat = m.material, ghost = s === "ghost";
     m.visible = s !== "hidden";
@@ -132,8 +171,25 @@ function applyBuild() {
     mat.transparent = ghost; mat.opacity = ghost ? 0.2 : 1; mat.depthWrite = !ghost;
     mat.needsUpdate = true; // transparent toggles the OPAQUE shader define; without this nothing ghosts on screen
   }
-  cut?.sync(); refreshReadout();
+  cut?.sync(); refreshReadout(); syncPaths();
 }
+// Load paths follow the build: recomputed from the build state on every change. No build state (no op, stub, model not loaded) draws none.
+function syncPaths() {
+  const st = pathsOn ? buildState() : null, legend = $("#pathlegend"), keys = [];
+  for (const p of paths) {
+    p.group.visible = !!st && pathVisible(p, st);
+    if (p.group.visible) {
+      const k = document.createElement("span"), sw = document.createElement("i");
+      sw.style.background = `#${KIND_COLOR[p.kind]?.hex.toString(16).padStart(6, "0")}`; k.append(sw, p.label); keys.push(k);
+    }
+  }
+  pathsGroup.visible = paths.some(p => p.group.visible);
+  legend.replaceChildren(...keys);
+}
+$("#paths").onchange = e => {
+  pathsOn = e.target.checked; try { storage?.setItem(PATHS_KEY, pathsOn ? "1" : "0"); } catch { /* per-viewer convenience only */ }
+  syncPaths();
+};
 // Section: the cut applies to whatever the build state leaves visible; cut.sync() re-derives the caps whenever that changes.
 // The readout is what the plane cuts: the plies on screen at full strength (built or current; ghosted future work and isolate-dimmed plies
 // are not built layers) that exist at this station, plus any other solid the plane opens (the foam core). It re-derives on every change of what is visible.
@@ -276,7 +332,7 @@ function isolate(node) {
   const cid = $("#plydock").dataset.cid;
   $("#isotext").textContent = isolateLabel(graph, cid, node); $("#isobar").hidden = false;
   $("#viewport").classList.add("isolating");
-  zoomToPly(node); cut?.sync(); refreshReadout();
+  zoomToPly(node); cut?.sync(); refreshReadout(); syncPaths();
   for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", String(b.dataset.node === node));
 }
 function showAll() {
@@ -386,6 +442,13 @@ $("#variant").onchange = () => {
 if (TEST) {
   window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
   window.__cut = () => cut?.info() ?? {};
+  window.__paths = () => paths.map(p => ({ id: p.id, visible: pathsGroup.visible && p.group.visible }));
+  // World-space points of a path (through the group rotation), and the world box of a component's meshes: the frame check.
+  window.__pathWorld = id => { const p = paths.find(x => x.id === id);
+    pathsGroup.updateMatrixWorld(true);
+    return p.group.children.map(t => t.userData.pts.map(q => q.clone().applyMatrix4(t.matrixWorld).toArray()));
+  };
+  window.__partBox = cid => { const b = new THREE.Box3(); for (const [m, c] of meshes) if (c === cid) b.expandByObject(m); return { min: b.min.toArray(), max: b.max.toArray() }; };
   // Face the cut squarely from the root side and return the cut face (core section) as a canvas-pixel rect, so a test can probe it.
   window.__cutView = () => {
     const bl = +$("#section-bl").value, box = new THREE.Box3();

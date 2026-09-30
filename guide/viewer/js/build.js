@@ -29,3 +29,12 @@ export function visibleSet(graph, variant, opId, layIndex, meshes) {
   }
   return out;
 }
+
+// A part exists once ANY of its meshes is built or current (plies lie over one op: the first laid ply means the part exists).
+// A component's meshes are named by the component id, or by its ply nodes (`<cid>.p<n>`). A part with no mesh in `state` does not exist.
+// `state` is what visibleSet returns (a Map of mesh name -> state) or the same as a plain object.
+export function pathVisible(path, state) {
+  const get = state instanceof Map ? [...state] : Object.entries(state ?? {});
+  const exists = cid => get.some(([name, s]) => (name === cid || (name.startsWith(cid + ".p") && /^\d+$/.test(name.slice(cid.length + 2)))) && (s === "built" || s === "current"));
+  return path.parts.length > 0 && path.parts.every(exists);
+}

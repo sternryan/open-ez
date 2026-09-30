@@ -1,7 +1,7 @@
 // guide/viewer/tests/build.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { firstOp, visibleSet } from "../js/build.js";
+import { firstOp, visibleSet, pathVisible } from "../js/build.js";
 
 const G = {
   order: ["r30.cores", "r30.shear-web", "r30.bottom-skin"],
@@ -90,4 +90,37 @@ test("an owned component mesh outside the variant is hidden, not thrown", () => 
 
 test("a component mesh is current at its own op with layIndex 0", () => {
   assert.equal(st("r30.cores", 0)["canard.core"], "current");
+});
+
+test("pathVisible: every part built or current draws the path", () => {
+  const path = { parts: ["canard.core", "canard.shear_web"] };
+  assert.equal(pathVisible(path, st("r30.shear-web", 1)), true);   // core built, web current (ply 1 of 2)
+  assert.equal(pathVisible(path, visibleSet(G, "roncz", "r30.shear-web", 2, M)), true);
+});
+
+test("pathVisible: a part is present once ANY of its plies is laid", () => {
+  const web = { parts: ["canard.shear_web"] };
+  assert.equal(st("r30.shear-web", 1)["canard.shear_web.p2"], "hidden");
+  assert.equal(pathVisible(web, st("r30.shear-web", 1)), true);
+  assert.equal(pathVisible(web, st("r30.shear-web", 0)), false);  // no ply laid yet: every web ply is hidden, none current
+});
+
+test("pathVisible: a hidden or ghost part hides the path", () => {
+  const p = { parts: ["canard.shear_web", "canard.skin_bottom"] };
+  assert.equal(pathVisible(p, st("r30.shear-web", 2)), false);    // skin still hidden
+  const g = { ...G, __ghost: true };
+  assert.equal(pathVisible(p, st("r30.shear-web", 2, g)), false); // skin ghosted, still not built
+  assert.equal(pathVisible(p, st("r30.bottom-skin", 1)), true);
+  assert.equal(pathVisible({ parts: ["canard.core"] }, st("r30.cores", 0)), true);
+});
+
+test("pathVisible: earlier op hides again; a part with no meshes in state is absent; a plain Map works", () => {
+  const p = { parts: ["canard.core", "canard.skin_bottom"] };
+  assert.equal(pathVisible(p, st("r30.bottom-skin", 1)), true);
+  assert.equal(pathVisible(p, st("r30.shear-web", 2)), false);
+  assert.equal(pathVisible({ parts: ["canard.spar_cap_top"] }, st("r30.bottom-skin", 1)), false);  // no such mesh in M
+  assert.equal(pathVisible({ parts: ["canard.skin"] }, { "canard.skin_bottom.p1": "built" }), false); // prefix of another id is not a match
+  assert.equal(pathVisible({ parts: ["canard.skin"] }, { "canard.skin.pfoo": "built" }), false);    // ply suffix must be .p<digits>
+  assert.equal(pathVisible({ parts: ["canard.core"] }, new Map([["canard.core", "built"]])), true);
+  assert.equal(pathVisible({ parts: [] }, st("r30.bottom-skin", 1)), false);
 });

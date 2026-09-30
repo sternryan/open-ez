@@ -1,0 +1,14 @@
+# Qualitative load paths for the canard (no magnitudes until Block 3).
+paths:
+  - id: lift-into-caps
+    label: Lift from the skins into the spar caps
+    kind: lift
+    parts: [canard.skin_top, canard.skin_bottom, canard.spar_cap_top, canard.spar_cap_bottom]
+  - id: cap-bending
+    label: Bending carried along the spar caps to the root
+    kind: bending
+    parts: [canard.spar_cap_top, canard.spar_cap_bottom]
+  - id: web-shear
+    label: Shear carried by the shear web
+    kind: shear
+    parts: [canard.shear_web]

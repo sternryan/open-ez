@@ -251,8 +251,10 @@ add e2e tests.
 `tests/guide/test_loadpaths.py`; modify `guide/build_site.py` and `guide/schema.py`, `app.js`.
 
 **Interfaces:**
-- `guide.loadpaths.polylines(graph) -> dict[path_id, {"label": str, "kind": "bending"|"shear"|"lift", "parts": [cid…], "points": [[x,y,z]…]}]`,
-  in glb model coordinates.
+- `guide.loadpaths.polylines(graph) -> dict[path_id, {"label": str, "kind": "bending"|"shear"|"lift", "parts": [cid…], "segments": [[[x,y,z]…]…]}]`,
+  in the frame of the CadQuery solids from `layup_geometry.build_layup` (inches; X chord, Y = B.L., Z up). The viewer parents the lines under a
+  group carrying the glb root's -90 deg X rotation. `segments` is a list of polylines (not one `points` list): two spar caps and four lift
+  stations cannot share one polyline without a line through air.
 
 - [ ] **Step 1: Author** `guide/graph/loadpaths.yaml` in the owner's words:
 
