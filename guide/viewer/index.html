@@ -33,11 +33,13 @@
       <div id="dockstack">
         <div id="buildbar" hidden>
           <label class="opt"><input type="checkbox" id="ghost"> Show future work</label>
+          <label class="opt"><input type="checkbox" id="paths"> Load paths</label>
           <span id="scrubwrap" hidden>
             <button type="button" id="play" aria-pressed="false">Play</button>
             <input type="range" id="scrub" min="1" max="1" value="1" step="1" aria-label="Ply">
             <output id="scrublabel" for="scrub" aria-live="polite"></output>
           </span>
+          <p id="pathlegend" aria-live="polite"></p>
         </div>
         <div id="section" hidden>
           <label class="opt"><input type="checkbox" id="section-on"> Section cut</label>

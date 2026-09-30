@@ -543,6 +543,7 @@ def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
         # This test measures ghosting in the region above the dock; the section bar only takes room from it.
         # test_phone_model_stays_visible_and_scrubber_reachable is the guard for the canvas size with the section bar present.
         pg.add_style_tag(content="#section{display:none!important}")
+        pg.evaluate("document.querySelector('#paths').click()")  # coloured load-path tubes are dark pixels too; this test measures the ply ghosting
         pg.click('#parts .chip[data-cid="canard.shear_web"]')
         pg.wait_for_timeout(500)
         c = pg.eval_on_selector("#c", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width, h: r.height}; }")
@@ -1063,5 +1064,118 @@ def test_section_controls_are_touchable_and_inside(rsite, width):
             assert pg.locator(sel).bounding_box()["height"] >= 44, sel
         assert _inside(pg, "#section") and _inside(pg, "#section-readout")
         assert pg.evaluate("document.documentElement.scrollWidth") <= width
+        b.close()
+    s.shutdown()
+
+
+# ---- Block 2 M2.1 Task 4: load paths (real export via rsite)
+def _vis_paths(pg):
+    return sorted(p["id"] for p in pg.evaluate("window.__paths()") if p["visible"])
+
+
+def test_load_paths_follow_the_build(rsite):  # Review Focus 4
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.shear-web")
+        assert pg.evaluate("window.__paths()") == [{"id": "lift-into-caps", "visible": False}, {"id": "cap-bending", "visible": False}, {"id": "web-shear", "visible": True}]
+        assert _vis_paths(pg) == ["web-shear"]
+        assert "Shear carried by the shear web" in pg.inner_text("#pathlegend")
+        pg.click('#ops li[data-op="r30.bottom-spar-cap"]')
+        assert _vis_paths(pg) == ["web-shear"]  # only the bottom cap exists: neither cap path has both parts
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert _vis_paths(pg) == ["cap-bending", "lift-into-caps", "web-shear"]
+        assert "Bending carried along the spar caps to the root" in pg.inner_text("#pathlegend")
+        pg.click('#ops li[data-op="r30.shear-web"]')  # stepping back hides what does not exist yet
+        assert _vis_paths(pg) == ["web-shear"]
+        assert pg.inner_text("#pathlegend").count("\n") == 0 and "Lift" not in pg.inner_text("#pathlegend")
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        assert _vis_paths(pg) == []
+        b.close()
+    s.shutdown()
+
+
+def test_load_paths_toggle_and_memory(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.top-skin")
+        assert pg.is_checked("#paths") and len(_vis_paths(pg)) == 3
+        pg.uncheck("#paths")
+        assert _vis_paths(pg) == [] and pg.inner_text("#pathlegend") == ""
+        pg.click('#ops li[data-op="r30.shear-web"]'); pg.click('#ops li[data-op="r30.top-skin"]')
+        assert _vis_paths(pg) == []  # stays off across steps
+        pg.reload(); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz"); pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=15000)
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert not pg.is_checked("#paths") and _vis_paths(pg) == []  # remembered
+        pg.check("#paths")
+        assert len(_vis_paths(pg)) == 3
+        b.close()
+    s.shutdown()
+
+
+def test_load_paths_toggle_works_when_localstorage_throws(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=GL)
+        pg = b.new_page(viewport={"width": 1180, "height": 900})
+        pg.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})")
+        pg.goto(url + "?test=1"); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz"); pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=15000)
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert pg.is_checked("#paths") and len(_vis_paths(pg)) == 3
+        pg.uncheck("#paths")
+        assert _vis_paths(pg) == []
+        b.close()
+    s.shutdown()
+
+
+def test_load_path_points_lie_on_their_parts_in_world_space(rsite):  # the frame/parenting check: X chord, Y up, BL b at Z = -b
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.top-skin")
+        graph = json.loads((rsite / "graph.json").read_text())
+        for lp in graph["loadpaths"]:
+            boxes = [pg.evaluate("(c) => window.__partBox(c)", c) for c in lp["parts"]]
+            world = pg.evaluate("(id) => window.__pathWorld(id)", lp["id"])
+            assert len(world) == len(lp["segments"]) and world
+            for seg in world:
+                for pt in seg:
+                    assert any(all(bx["min"][i] - 0.5 <= pt[i] <= bx["max"][i] + 0.5 for i in range(3)) for bx in boxes), (lp["id"], pt, boxes)
+        web = pg.evaluate("window.__pathWorld('web-shear')")[0]
+        assert web[0][2] == pytest.approx(0, abs=1e-3) and web[-1][2] == pytest.approx(-54, abs=1e-3)  # B.L. runs along -Z
+        assert 0 < web[0][1] < 1  # height is Y
+        b.close()
+    s.shutdown()
+
+
+def _kind_pixels(pg):
+    """Pixel counts near each kind's saturated colour (bending amber, shear blue, lift green) in the canvas. The model is grey and the page cream."""
+    from PIL import Image
+    import io
+    im = Image.open(io.BytesIO(pg.locator("#c").screenshot())).convert("RGB")
+    fits = {"bending": lambda r, g, b: r > 180 and 90 < g < 200 and b < 70,
+            "shear": lambda r, g, b: b > 180 and r < 70 and 90 < g < 170,
+            "lift": lambda r, g, b: g > 120 and r < 70 and b < 130 and g - r > 90}
+    out = dict.fromkeys(fits, 0)
+    for r, g, b in im.get_flattened_data() if hasattr(im, "get_flattened_data") else im.getdata():
+        for k, f in fits.items():
+            out[k] += f(r, g, b)
+    return out
+
+
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_load_paths_are_drawn_in_their_own_colours(rsite, scheme):  # thin near-white lines were the defect: additive blending on a light page
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.top-skin")
+        pg.emulate_media(color_scheme=scheme); pg.wait_for_timeout(500)
+        on = _kind_pixels(pg)
+        assert all(n > 150 for n in on.values()), on
+        pg.uncheck("#paths"); pg.wait_for_timeout(300)
+        off = _kind_pixels(pg)
+        assert all(n < 10 for n in off.values()), off
+        pg.click('#ops li[data-op="r30.shear-web"]'); pg.check("#paths"); pg.wait_for_timeout(300)
+        web = _kind_pixels(pg)
+        assert web["shear"] > 150 and web["bending"] < 10 and web["lift"] < 10, web  # only the paths whose parts exist draw
         b.close()
     s.shutdown()

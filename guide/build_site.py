@@ -68,6 +68,19 @@ def _layup(models: Path | None) -> dict | None:
     return json.loads(lj.read_text()) if lj and lj.is_file() else None
 
 
+def _loadpaths(g, models: Path | None) -> list[dict]:
+    """Paths always ship; their geometry only when there is a model (it is computed from the layup solids, not the glb)."""
+    if not g.loadpaths:
+        return []
+    if models:
+        from guide import loadpaths  # CadQuery: imported only when there is geometry to compute
+        poly = loadpaths.polylines(g)
+    else:
+        poly = {}
+    return [{"id": lp.id, "label": lp.label, "kind": lp.kind, "parts": list(lp.parts),
+             "segments": poly[lp.id]["segments"] if lp.id in poly else []} for lp in g.loadpaths]
+
+
 def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
     if not all((models.parent / f).is_file() for f in ("layup.json", "shots.json")):
         raise SchemaError("--renders needs layup.json and shots.json next to --models (run guide.export_glb)")
@@ -107,6 +120,7 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         "annotations": [dataclasses.asdict(a) for a in g.annotations if a.confirmed],
         "plies": _plies(models),
         "layup": _layup(models),
+        "loadpaths": _loadpaths(g, models),
         "cutaway": None,
     }
     if renders:

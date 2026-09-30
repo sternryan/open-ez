@@ -10,7 +10,8 @@ VARIANTS = {"gu", "roncz", "both"}
 FIDELITY = {"no-geometry", "unvalidated", "plans-checked", "a-sheet-verified"}
 STATUS = {"verified", "unresolved", "conflict"}
 KIND = {"official", "community"}
-RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml"}
+RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml", "loadpaths.yaml"}
+LOADPATH_KINDS = {"bending", "shear", "lift"}
 
 
 OP_KEYS = {"id", "chapter", "title", "summary", "variants", "requires", "components", "geometry_visible", "materials",
@@ -19,6 +20,8 @@ CHANGE_KEYS = {"cp", "lpc", "class", "status", "kind", "note", "annotation_pp"}
 MATERIAL_KEYS = {"cloth", "plies", "where"}
 ANNOTATION_KEYS = {"scan_pp", "cp", "lpc", "class", "text", "confirmed"}
 COMPONENT_KEYS = {"id", "label", "fidelity"}
+LOADPATH_FILE_KEYS = {"paths"}
+LOADPATH_KEYS = {"id", "label", "kind", "parts"}
 
 
 class SchemaError(ValueError):
@@ -95,12 +98,21 @@ class Annotation:
     confirmed: bool
 
 
+@dataclass(frozen=True)
+class LoadPath:
+    id: str
+    label: str
+    kind: str
+    parts: tuple[str, ...]
+
+
 @dataclass
 class Graph:
     ops: dict[str, Operation] = field(default_factory=dict)
     components: dict[str, Component] = field(default_factory=dict)
     annotations: list[Annotation] = field(default_factory=list)
     pages: dict[int, str] = field(default_factory=dict)
+    loadpaths: list[LoadPath] = field(default_factory=list)
 
 
 def _read(path: Path):
@@ -194,6 +206,22 @@ def load_graph(graph_dir: Path) -> Graph:
                                                 _bool(a, "confirmed", False, where)))
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"{where}: {e}") from e
+    lp = graph_dir / "loadpaths.yaml"
+    if lp.exists():
+        lp_data = _read(lp)
+        _extra(lp_data, LOADPATH_FILE_KEYS, "loadpaths.yaml")
+        if not isinstance(lp_data.get("paths"), list):
+            raise SchemaError("loadpaths.yaml: paths must be a list")
+        for idx, d in enumerate(lp_data["paths"]):
+            where = f"loadpaths.yaml entry {idx}"
+            _extra(d, LOADPATH_KEYS, where)
+            parts = d.get("parts")
+            if not isinstance(parts, list):
+                raise SchemaError(f"{where}: parts must be a list")
+            try:
+                g.loadpaths.append(LoadPath(d["id"], d.get("label", ""), d["kind"], tuple(parts)))
+            except (KeyError, TypeError, ValueError, AttributeError) as e:
+                raise SchemaError(f"{where}: {e}") from e
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue
@@ -273,6 +301,20 @@ def validate(g: Graph) -> list[str]:
     for a in g.annotations:
         if a.confirmed and (a.cp, a.lpc) not in linked:
             errs.append(f"annotation scan_pp {a.scan_pp} CP {a.cp} LPC {a.lpc} not linked to any op")
+    seen_paths: set[str] = set()
+    for lp in g.loadpaths:
+        if lp.id in seen_paths:
+            errs.append(f"load path {lp.id}: duplicate id")
+        seen_paths.add(lp.id)
+        if not lp.label.strip():
+            errs.append(f"load path {lp.id}: label required")
+        if lp.kind not in LOADPATH_KINDS:
+            errs.append(f"load path {lp.id}: bad kind {lp.kind}")
+        if not lp.parts:
+            errs.append(f"load path {lp.id}: at least one part required")
+        for cid in lp.parts:
+            if cid not in g.components:
+                errs.append(f"load path {lp.id}: unknown component {cid}")
     errs.extend(_cycle(g))
     return errs
 
@@ -301,4 +343,5 @@ def authored_texts(g: Graph) -> list[tuple[str, str]]:
             out.append((f"{op.id}.summary", op.summary))
         out += [(f"{op.id}.completion[{i}]", t) for i, t in enumerate(op.completion)]
         out += [(f"{op.id}.changes[{i}].note", c.note) for i, c in enumerate(op.changes) if c.note]
+    out += [(f"loadpath.{lp.id}.label", lp.label) for lp in g.loadpaths if lp.label]
     return out
