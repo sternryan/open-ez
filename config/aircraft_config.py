@@ -645,7 +645,7 @@ class FlightConditionParams:
     design_altitude_ft: float = 8000.0  # Primary design altitude
     v_ne_ktas: float = 200.0  # Never-exceed speed (KTAS)
     approach_speed_ktas: float = 60.0  # Estimated approach speed for stall check
-    gross_weight_lb: float = 1425.0  # Typical Long-EZ gross weight
+    gross_weight_lb: float = 1325.0  # om-1980:p4 normal max takeoff gross; 1425 is the takeoff-only band (data/mass_ledger.yaml envelope, om-1980:p28)
 
     # === PILOT / PAYLOAD RANGES (for CG envelope) ===
     pilot_weight_min_lb: float = 150.0

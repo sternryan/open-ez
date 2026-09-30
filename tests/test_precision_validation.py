@@ -278,7 +278,6 @@ def test_stall_speed_reference_is_unverified_not_graded():
     assert 30.0 < v_ktas < 100.0, f"computed stall speed {v_ktas:.1f} KTAS is not physical"
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 22; gap +100 lb (1425.0 vs 1325)")
 def test_gross_weight_matches_published():
     """VAL-04: config.flight_condition.gross_weight_lb must equal the manual 1325 lb max takeoff gross exactly.
 

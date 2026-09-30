@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T00:31:01.860840+00:00",
+    "generated": "2026-09-30T00:35:39.261413+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -29,7 +29,7 @@
         "vlm": null,
         "delta": null,
         "bound_in": 1.0,
-        "reason": "OpenVSP python module not installed; vspaero_native_polars.json holds no neutral point; vspaero_native_polars.json (2026-03-13T11:19:43.890146+00:00) has no geometry marker matching the current wing/canard spans, so it predates the current geometry"
+        "reason": "OpenVSP python module not installed; vspaero_native_polars.json holds no neutral point; vspaero_native_polars.json (2026-03-13T11:19:43.890146+00:00) has no geometry marker matching the current wing/canard spans, wing root BL and wing panel span, so it predates the current geometry"
       }
     },
     "geometry_basis": "book (planform correction 2026-09-29); NP is a check, not a fit; see docs/geometry-correction-ledger.md",
@@ -37,9 +37,9 @@
   },
   "summary": {
     "total": 12,
-    "pass": 5,
+    "pass": 6,
     "marginal": 0,
-    "fail": 4,
+    "fail": 3,
     "ungraded": 0,
     "not_graded": 3
   },
@@ -86,8 +86,8 @@
     },
     {
       "metric_id": "static_margin_pct",
-      "description": "Longitudinal static margin (% MAC)",
-      "computed": 6.5373,
+      "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
+      "computed": 7.4208,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -96,12 +96,13 @@
       "grade": "NOT GRADED",
       "reason": "reference unverified",
       "source": "reference_data.json:aircraft_specs.static_margin_pct",
+      "notes": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28): (NP - 103.0) / MAC x 100, from stability_at_aft_limit(); identical to metadata.checks.stability.static_margin_pct. Reference (12.0) unverified, not graded.",
       "units": "percent MAC"
     },
     {
       "metric_id": "stall_speed_ktas",
       "description": "Canard stall speed at gross weight (first-principles, manual reference areas)",
-      "computed": 57.3507,
+      "computed": 55.3018,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -116,13 +117,13 @@
     {
       "metric_id": "max_gross_weight_lb",
       "description": "Maximum gross weight (hard limit)",
-      "computed": 1425.0,
+      "computed": 1325.0,
       "reference": 1325,
       "tolerance_abs": 0.0,
       "tolerance_pct": null,
-      "error_abs": 100.0,
-      "error_pct": 7.54717,
-      "grade": "FAIL",
+      "error_abs": 0.0,
+      "error_pct": 0.0,
+      "grade": "PASS",
       "source": "reference_data.json:aircraft_specs.max_gross_weight_lb",
       "units": "pounds"
     },
