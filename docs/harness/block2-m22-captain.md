@@ -167,3 +167,24 @@ p43 6-5, p44 6-6.
   fresh export and site build on the Metal GPU path (first render 257 s).
 - Gate: linux 649 passed, 3 skipped, 8 xfailed; mac 132 + 5 passed; local_render 5 passed; lab 105/105,
   typecheck clean; viewer 50/50; guide.check OK.
+
+## Polish round (lead's request, after Task 6)
+- **Book order (6190e5c), captain inline.** `topo_order` breaks ties within a chapter by the chapter
+  file's list order instead of the op id. Chapter 4 now reads front seat, rear seat, panel/F22/F28,
+  firewall. A snapshot of the canard chapters' 23-op order, taken before the change, is asserted equal
+  after it; the test fails with the old tie-break.
+- **Visual polish (7aee109), opus crew** (visual judgement): priority/collision label placement for the
+  fuselage only; the CG and legend rows fold behind one remembered line (closed by default, openable on
+  phones); stripes thin on large fitted faces (cut faces and bulkheads keep full stripes); the CG detail
+  names parts in words (fixed at the ledger's reason strings); a 1 s eased flip at the bottom-bond op,
+  reversible, on sim time; an in-page e2e drives the label-hiding rule under the station cut.
+  Canard frames against HEAD built in a scratch worktree: home and top-skin-with-cut both max diff 0.
+  Lab e2e 71/71 on each engine (3 new, each fails on HEAD's build).
+- Captain's look (scratchpad `t7/`): the fuselage home now has nine non-overlapping labels and the nose
+  is clear of the dock; the cut close-up has four labels; mid-flip reads (box lifted, bottom face-on);
+  phone shows the opened CG reasons and legend. Still true: at the home view F28's label is dropped by
+  the collision rule (the part stays striped); the bottom's inside face in the cut close-up is still
+  boldly striped; one phone label collapses to a bare dot.
+- The chapter 6 film was not re-rendered after the flip; re-render at deploy.
+- Gate: linux 651 passed, 3 skipped, 8 xfailed; mac 138 + 5 passed; local_render 5 passed; lab 116/116,
+  typecheck clean; viewer 50/50; guide.check OK.
