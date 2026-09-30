@@ -260,12 +260,11 @@ class TestLiftCurveSlopeSanity:
         geo = engine.geo
 
         ar = geo.wing_aspect_ratio
-        taper = geo.wing_tip_chord / geo.wing_root_chord
 
-        # Anderson eq. 5.69 with sweep correction
+        # Anderson eq. 5.69 with sweep correction; half-chord sweep per Raymer sec. 7
         tan_sweep_le = math.tan(math.radians(geo.wing_sweep_le))
         tan_sweep_half = tan_sweep_le - (
-            2 * geo.wing_root_chord * (1 - taper) / (2 * geo.wing_panel_span * (1 + taper))
+            (geo.wing_centerline_chord - geo.wing_tip_chord) / geo.wing_span
         )
         a = 2 * math.pi * ar / (2 + math.sqrt(4 + ar**2 * (1 + tan_sweep_half**2)))
 

@@ -14,8 +14,8 @@ where:
     beta^2 = 1 - M^2 (approximately 1.0 for low-speed)
 
 The code in core/analysis.py applies this sweep-corrected formula,
-converting LE sweep to half-chord sweep via:
-    tan(sweep_c/2) = tan(sweep_LE) - 2*c_r*(1-lambda) / (b*(1+lambda))
+converting LE sweep to half-chord sweep via (Raymer sec. 7; ledger C1):
+    tan(sweep_c/2) = tan(sweep_LE) - (c_r - c_t) / b
 """
 
 import sys
@@ -81,7 +81,8 @@ class TestLiftCurveSlopeWing:
     # Long-EZ wing parameters from config
     AR_WING = config.geometry.wing_aspect_ratio  # reference-trapezoid AR (ledger row 44)
     SWEEP_LE_DEG = config.geometry.wing_sweep_le
-    TAPER_RATIO = config.geometry.wing_tip_chord / config.geometry.wing_root_chord
+    # taper of the SAME trapezoid as AR_WING (gross, centreline chord; ledger C1)
+    TAPER_RATIO = config.geometry.wing_tip_chord / config.geometry.wing_centerline_chord
 
     @property
     def sweep_half_chord_deg(self) -> float:
@@ -89,7 +90,7 @@ class TestLiftCurveSlopeWing:
             self.SWEEP_LE_DEG, self.AR_WING, self.TAPER_RATIO
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 36 and 47; a = 4.827/rad vs ceiling 4.6")
+    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 36, 47 and 49; a = 4.780/rad vs ceiling 4.6")
     def test_anderson_reference_value(self):
         """Verify the Anderson formula gives expected ~4.2/rad for Long-EZ wing."""
         a = _anderson_lift_slope(self.AR_WING, self.sweep_half_chord_deg)
@@ -117,11 +118,11 @@ class TestLiftCurveSlopeWing:
 
         ar_wing = geo.wing_aspect_ratio
 
-        # Replicate what the engine ACTUALLY computes (with sweep correction)
-        taper = geo.wing_tip_chord / geo.wing_root_chord
+        # Replicate what the engine computes: half-chord line of the reference trapezoid
+        taper = geo.wing_tip_chord / geo.wing_centerline_chord
         tan_sweep_le = math.tan(math.radians(geo.wing_sweep_le))
         tan_sweep_half = tan_sweep_le - (
-            2 * geo.wing_root_chord * (1 - taper) / (2 * geo.wing_panel_span * (1 + taper))
+            (geo.wing_centerline_chord - geo.wing_tip_chord) / geo.wing_span
         )
         a_engine_actual = (
             2
@@ -176,10 +177,7 @@ class TestLiftCurveSlopeCanard:
         taper_canard = geo.canard_tip_chord / geo.canard_root_chord
         tan_sweep_le_c = math.tan(math.radians(geo.canard_sweep_le))
         tan_sweep_half_c = tan_sweep_le_c - (
-            2
-            * geo.canard_root_chord
-            * (1 - taper_canard)
-            / (geo.canard_span * (1 + taper_canard))
+            (geo.canard_root_chord - geo.canard_tip_chord) / geo.canard_span
         )
         a_engine = (
             2

@@ -101,7 +101,7 @@ All five items are done and committed (not pushed): `774204c` (items 1 and 4), `
 4. **Fuselage length.** `fuselage_length` is now a property, fs_tail − fs_nose = 175.3. Both VSP builders use it, and the `conflict` flag against 201.4 is kept (row 35).
 5. **One static margin.** The report's `static_margin_pct` metric and the stability check now use the same function at the ledger aft limit FS 103, and a test asserts they are equal. The model-CG margin exported by `core/analysis.py` is renamed `margin_at_model_cg_pct`. The two-method currency marker now also requires wing_root_bl and the panel span to match.
 
-**Updated check results**
+**Updated check results** (as of `570ca1b`; superseded by the 2026-09-29 two-method follow-up below)
 - NP 105.94 (was 112.56), NOT GRADED.
 - Stability at the aft limit FS 103: PASS, MAC 39.59, margin 7.42 % MAC (was 24.34).
 - Wing area 64.71 sq ft against 81.99: FAIL, gap −17.28.
@@ -113,5 +113,32 @@ All five items are done and committed (not pushed): `774204c` (items 1 and 4), `
 **Still worth knowing**
 - The stall computation uses an unverified CLmax, so the stall metric stays NOT GRADED.
 - Pre-existing unit mix in `vsp_integration`: Sref is in sq ft while bref and cref are in inches.
-- Pre-existing oddities left alone: the flutter `b` term is a heuristic semi-span, and the half-chord-sweep formula carries an extra 2/(1+λ) factor compared with the textbook form.
+- Pre-existing oddities left alone: the flutter `b` term is a heuristic semi-span, and the half-chord-sweep formula carries an extra 2/(1+λ) factor compared with the textbook form (the sweep factor is fixed in the follow-up below).
 - The glb, cutaway and wing geometry changed again. Re-export before you deploy.
+
+## Follow-up (2026-09-29): reference wing and the two-method NP
+
+`af5841d` made the wing reference area the gross trapezoid to the centreline and got the VSPAERO
+NP leg running; the next commit reconciled the two NP methods. Detail and the before/after table:
+the "Two-method NP reconciliation" section and rows 43 to 53 of `docs/geometry-correction-ledger.md`.
+
+- **One configuration for both methods:** the reference trapezoid (panel LE/TE extended to BL 0,
+  81.70 sq ft, AR 8.34, MAC 40.30) plus the canard. No strakes, fuselage or winglets in either;
+  the config has no sourced strake outline a VLM could be given.
+- **Changes, each justified in the ledger before it was run:** C1 half-chord sweep
+  tan L_LE - (c_r - c_t)/b (Raymer sec. 7; red-first hand-computed test); C2 wing AC at the quarter
+  chord of the reference MAC, VLM wing from BL 0; C3 canard downwash on the wing, the aft surface
+  (Raymer eq. 16.9), not on the canard.
+- **NP analytic:** 108.50 → 108.41 (C1) → 116.19 (C2) → **106.50** (C3), NOT GRADED.
+- **NP VLM:** 111.13 (panels only) → **112.36** (reference trapezoid, OpenVSP 3.48.2).
+- **Two-method NP: FAIL, +5.86 in** against 1.0, left failing as a strict xfail (row 53). Each
+  surface alone agrees (wing AC 127.41 vs 128.28, canard AC 21.96 vs 21.77, slopes within 1.5%);
+  the gap is the analytic interference model, the far-field canard downwash (0.306) applied to
+  the whole wing, where the VLM's net effect is about 0.05. The canard waterline was not touched.
+- **Stability at FS 103:** PASS, static margin 8.69 % MAC on the 40.30 MAC (was 7.42 on 39.59).
+- **Wing area 81.70 against 81.99:** PASS (-0.29).
+- **CG limits** 99.57 / 103.42 against 97 / 103: fwd FAIL (+2.57), aft PASS (+0.42). Both are NP
+  minus the retired MAC fractions, so they inherit the unconfirmed NP.
+- **Report:** 12 metrics, 3 PASS (CG aft, max gross, wing area), 2 FAIL (CG fwd, empty weight),
+  7 NOT GRADED.
+- **Suite** (assembly test deselected): 501 passed, 2 skipped, 6 xfailed.

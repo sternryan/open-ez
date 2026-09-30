@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts.generate_accuracy_report import stability_at_aft_limit, two_method_np
 
 
@@ -63,7 +65,8 @@ def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
     _vlm_fixture(tmp_path, 110.0, good)
     val, reason = current_vlm_np(tmp_path, good)
     assert val == 110.0 and reason == ""
-    for key in ("wing_root_bl", "wing_panel_span_in"):
+    # the last two keys: a run of the exposed panels only (pre ledger C2) is stale
+    for key in ("wing_root_bl", "wing_panel_span_in", "wing_centerline_chord_in", "vlm_wing_inboard_bl"):
         _vlm_fixture(tmp_path, 110.0, {k: v for k, v in good.items() if k != key})
         val, reason = current_vlm_np(tmp_path, good)
         assert val is None and "predates" in reason
@@ -102,3 +105,10 @@ def test_two_method_current_vlm_file_grades_by_the_1in_bound(tmp_path):
     _vlm_fixture(tmp_path, 110.0, current)
     r = two_method_check(tmp_path, config.geometry, 108.0)
     assert r["status"] == "fail" and abs(r["delta"] - 2.0) < 1e-9
+
+
+@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md row 53; analytic 106.50 vs VLM 112.36, delta +5.86 in against the 1.0 in bound")
+def test_committed_report_two_method_np_agrees():
+    """External check: the committed report's analytic and VLM NPs agree within the 1.0 in bound."""
+    tm = json.loads(REPORT.read_text())["metadata"]["checks"]["two_method_np"]
+    assert tm["status"] == "pass", f"two-method NP {tm['status']}: delta {tm.get('delta')} in"
