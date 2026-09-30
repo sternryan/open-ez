@@ -115,3 +115,16 @@ def test_cavity_cutters_overshoot_the_surface():  # coplanar tool faces broke th
             plain, pad = _spar_cap(pf, p).BoundingBox(), _spar_cap(pf, p, CUT_PAD).BoundingBox()
             out = pad.zmax - plain.zmax if p.component == "canard.spar_cap_top" else plain.zmin - pad.zmin
             assert out > CUT_PAD / 2, p.node
+
+
+@pytest.mark.parametrize("side", ["top", "bottom"])
+def test_surface_survives_a_one_ulp_tie_at_the_leading_edge(side):
+    # The airfoil loop starts and ends on the LE point. On Linux the closing point came out 1 ULP below
+    # the first, so a bare argmin picked the LAST point and the surface slice was empty.
+    import dataclasses
+    import numpy as np
+    pf = Planform.from_generator(CanardGenerator())
+    xn = pf.xn.copy()
+    xn[-1] = np.nextafter(xn[0], -np.inf)
+    nudged = dataclasses.replace(pf, xn=xn)
+    assert np.allclose(nudged.surface(10.0, side), pf.surface(10.0, side), atol=1e-9)

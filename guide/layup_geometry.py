@@ -56,7 +56,10 @@ class Planform:
     def surface(self, bl: float, side: str) -> np.ndarray:
         o = self.outline(bl)
         # The airfoil file is a closed loop that starts at the LE; split at LE and TE (wrapping).
-        i_le, i_te = int(np.argmin(self.xn)), int(np.argmax(self.xn))
+        # The loop's first and last points are both the LE; take the FIRST of any tie (a bare argmin picks
+        # whichever is 1 ULP lower, which differs by platform).
+        i_le = int(np.flatnonzero(self.xn <= self.xn.min() + 1e-9)[0])
+        i_te = int(np.argmax(self.xn))
         a = o[i_le : i_te + 1]
         b = np.vstack([o[i_te:], o[: i_le + 1]])[::-1]
         top, bottom = (a, b) if a[:, 1].mean() > b[:, 1].mean() else (b, a)
