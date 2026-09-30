@@ -257,49 +257,57 @@ def two_method_np(analytic: float, vlm: float | None, bound_in: float) -> dict:
             "vlm": vlm, "delta": delta, "bound_in": bound_in}
 
 
-def current_vlm_np(
-    data_dir: Path,
-    wing_span_in: float,
-    canard_span_in: float,
-    wing_root_bl: float,
-    wing_panel_span_in: float,
-) -> tuple[float | None, str]:
+VLM_NP_FILE = "vspaero_np.json"  # written by `python3.13 scripts/vspaero_np.py`
+
+
+def current_vlm_np(data_dir: Path, marker: dict[str, float]) -> tuple[float | None, str]:
     """Return (VLM NP in published FS, reason). None means no CURRENT run.
 
-    Conservative: the polars file must carry an explicit ``neutral_point_fs`` AND a
-    ``geometry`` block whose wing/canard spans, wing root BL and wing panel span match the current config geometry.
+    Conservative: vspaero_np.json must carry an explicit ``np_fs`` AND a ``geometry`` block in
+    which every key of ``marker`` (scripts.vspaero_np.geometry_marker of the live config: spans,
+    wing root BL, panel span, chords, sweeps, incidences, stations) matches to 0.05.
     """
-    path = data_dir / "vspaero_native_polars.json"
+    path = data_dir / VLM_NP_FILE
     try:
-        polars = json.loads(path.read_text(encoding="utf-8"))
+        run = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None, "vspaero_native_polars.json missing or unreadable"
-    try:
-        import openvsp  # noqa: F401
-        have_vsp = True
-    except ImportError:
-        have_vsp = False
-    why = []
-    if not have_vsp:
-        why.append("OpenVSP python module not installed")
-    np_val = polars.get("neutral_point_fs")
-    geom = polars.get("geometry") or {}
-    ok_geom = (
-        abs(float(geom.get("wing_span_in", -1)) - wing_span_in) < 0.05
-        and abs(float(geom.get("canard_span_in", -1)) - canard_span_in) < 0.05
-        and abs(float(geom.get("wing_root_bl", -1)) - wing_root_bl) < 0.05
-        and abs(float(geom.get("wing_panel_span_in", -1)) - wing_panel_span_in) < 0.05
+        return None, f"{VLM_NP_FILE} missing or unreadable (run: python3.13 scripts/vspaero_np.py)"
+    np_val = run.get("np_fs")
+    geom = run.get("geometry") or {}
+    stale = sorted(
+        k for k, v in marker.items()
+        if not isinstance(geom.get(k), (int, float)) or abs(float(geom[k]) - v) >= 0.05
     )
+    why = []
     if not isinstance(np_val, (int, float)):
-        why.append("vspaero_native_polars.json holds no neutral point")
-    if not ok_geom:
+        why.append(f"{VLM_NP_FILE} holds no neutral point")
+    if stale:
         why.append(
-            f"vspaero_native_polars.json ({polars.get('timestamp', 'no timestamp')}) has no "
-            "geometry marker matching the current wing/canard spans, wing root BL and wing panel span, so it predates the current geometry"
+            f"{VLM_NP_FILE} ({run.get('timestamp', 'no timestamp')}) geometry does not match the "
+            f"current config ({', '.join(stale)}), so it predates the current geometry"
         )
-    if isinstance(np_val, (int, float)) and ok_geom:
-        return float(np_val), ""
-    return None, "; ".join(why)
+    if why:
+        return None, "; ".join(why)
+    return float(np_val), ""
+
+
+def two_method_check(data_dir: Path, geo: object, analytic: float) -> dict:
+    """two_method_np() fed by vspaero_np.json when its geometry block is current."""
+    from scripts.vspaero_np import geometry_marker
+
+    vlm, reason = current_vlm_np(data_dir, geometry_marker(geo))
+    two = two_method_np(analytic, vlm, TWO_METHOD_NP_BOUND_IN)
+    if two["status"] == "not run":
+        two["reason"] = reason or "no current VLM run"
+    else:
+        run = json.loads((data_dir / VLM_NP_FILE).read_text(encoding="utf-8"))
+        two["vlm_source"] = {
+            "file": f"data/validation/{VLM_NP_FILE}",
+            "vsp_version": run.get("vsp_version"),
+            "timestamp": run.get("timestamp"),
+            "method": run.get("method"),
+        }
+    return two
 
 
 def compute_checks(engine: object, config_module: object, data_dir: Path) -> dict:
@@ -311,15 +319,9 @@ def compute_checks(engine: object, config_module: object, data_dir: Path) -> dic
     # MAC: PhysicsEngine.calculate_mac() in core/analysis.py (the MAC used for static margin).
     mac_in, _ = engine.calculate_mac()  # type: ignore[attr-defined]
     aft_fs = float(load_ledger()["envelope"]["aft_fs"])
-    vlm, reason = current_vlm_np(
-        data_dir, geo.wing_span, geo.canard_span, geo.wing_root_bl, geo.wing_panel_span
-    )
-    two = two_method_np(np_fs, vlm, TWO_METHOD_NP_BOUND_IN)
-    if two["status"] == "not run":
-        two["reason"] = reason or "no current VLM run"
     return {
         "stability": {**stability_at_aft_limit(np_fs, aft_fs, mac_in), "mac_in": mac_in},
-        "two_method_np": two,
+        "two_method_np": two_method_check(data_dir, geo, np_fs),
     }
 
 
@@ -513,7 +515,7 @@ def collect_metrics(
     # -------------------------------------------------------------------------
 
     # --- Wing Area ---
-    # Model's own trapezoid: 2 panels, each root BL (wing_root_bl) to tip BL (wing_span/2).
+    # Reference area: gross trapezoid, LE/TE extended to the centreline (BL 0 to tip, both sides).
     computed_wing_area_sqft = geo.wing_area_sqft
     metrics.append(
         {
@@ -524,8 +526,9 @@ def collect_metrics(
             "units": "square feet",
             "convention_note": (
                 "Reference is the manual's wing area, which excludes the canard "
-                "(om-1980:p3; total 94.8 sq ft). Model area is the trapezoid over both "
-                "panels from wing_root_bl to wing_span/2 and excludes the centre section."
+                "(om-1980:p3; total 94.8 sq ft). Model area is the gross reference trapezoid: "
+                "the straight panel taper (plans-1980:p126) extended to BL 0, both sides, tip to "
+                f"tip. Exposed panels alone (wing_root_bl to tip): {geo.wing_exposed_area_sqft:.2f} sq ft."
             ),
         }
     )
@@ -652,7 +655,8 @@ def main() -> None:
     if tm["status"] == "not run":
         print(f"CHECK two-method NP: NOT RUN ({tm['reason']})")
     else:
-        print(f"CHECK two-method NP: {tm['status'].upper()} (delta {tm['delta']:.3f} in, bound {tm['bound_in']} in)")
+        print(f"CHECK two-method NP: {tm['status'].upper()} (analytic FS {tm['analytic']:.2f}, VLM FS {tm['vlm']:.2f}, "
+              f"delta {tm['delta']:.3f} in, bound {tm['bound_in']} in)")
     print()
 
     # Print metric table

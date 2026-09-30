@@ -50,16 +50,55 @@ def test_static_margin_metric_is_the_check_number():  # one static margin
     assert metric["grade"] == "NOT GRADED"
 
 
-def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
-    from scripts.generate_accuracy_report import current_vlm_np
+def _vlm_fixture(tmp_path, np_fs, geometry):
+    (tmp_path / "vspaero_np.json").write_text(json.dumps({"np_fs": np_fs, "geometry": geometry, "timestamp": "t0"}))
 
-    good = {"wing_span_in": 300.0, "canard_span_in": 140.0, "wing_root_bl": 23.3, "wing_panel_span_in": 126.7}
-    (tmp_path / "vspaero_native_polars.json").write_text(json.dumps({"neutral_point_fs": 110.0, "geometry": good}))
-    args = (300.0, 140.0, 23.3, 126.7)
-    _, reason = current_vlm_np(tmp_path, *args)
-    assert "predates" not in reason
+
+def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
+    from config.aircraft_config import config
+    from scripts.generate_accuracy_report import current_vlm_np
+    from scripts.vspaero_np import geometry_marker
+
+    good = geometry_marker(config.geometry)
+    _vlm_fixture(tmp_path, 110.0, good)
+    val, reason = current_vlm_np(tmp_path, good)
+    assert val == 110.0 and reason == ""
     for key in ("wing_root_bl", "wing_panel_span_in"):
-        stale = {k: v for k, v in good.items() if k != key}
-        (tmp_path / "vspaero_native_polars.json").write_text(json.dumps({"neutral_point_fs": 110.0, "geometry": stale}))
-        val, reason = current_vlm_np(tmp_path, *args)
+        _vlm_fixture(tmp_path, 110.0, {k: v for k, v in good.items() if k != key})
+        val, reason = current_vlm_np(tmp_path, good)
         assert val is None and "predates" in reason
+
+
+def test_two_method_reads_vspaero_np_json_stale_geometry_is_not_run(tmp_path):
+    from config.aircraft_config import config
+    from scripts.generate_accuracy_report import two_method_check
+    from scripts.vspaero_np import geometry_marker
+
+    stale = {**geometry_marker(config.geometry)}
+    stale["wing_span_in"] += 3.6  # the retired 316.8 span
+    _vlm_fixture(tmp_path, 108.0, stale)
+    r = two_method_check(tmp_path, config.geometry, 108.0)
+    assert r["status"] == "not run" and r["vlm"] is None
+    assert "predates" in r["reason"] and "wing_span_in" in r["reason"]
+
+
+def test_two_method_missing_vlm_file_is_not_run(tmp_path):
+    from config.aircraft_config import config
+    from scripts.generate_accuracy_report import two_method_check
+
+    r = two_method_check(tmp_path, config.geometry, 108.0)
+    assert r["status"] == "not run" and "vspaero_np.json" in r["reason"]
+
+
+def test_two_method_current_vlm_file_grades_by_the_1in_bound(tmp_path):
+    from config.aircraft_config import config
+    from scripts.generate_accuracy_report import two_method_check
+    from scripts.vspaero_np import geometry_marker
+
+    current = geometry_marker(config.geometry)
+    _vlm_fixture(tmp_path, 108.5, current)
+    r = two_method_check(tmp_path, config.geometry, 108.0)
+    assert r["status"] == "pass" and r["vlm"] == 108.5
+    _vlm_fixture(tmp_path, 110.0, current)
+    r = two_method_check(tmp_path, config.geometry, 108.0)
+    assert r["status"] == "fail" and abs(r["delta"] - 2.0) < 1e-9

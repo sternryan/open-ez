@@ -48,7 +48,6 @@ class TestGeometryAgainstPublishedPlans:
             f"Wing span {span_in:.1f} in deviates >1% from published 313.2 in"
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 30; model wing_area 64.71 sq ft vs bound floor 80.0 (gap -15.29 sq ft)")
     def test_wing_area_within_published_range(self):
         """Wing area (full-span trapezoidal planform) should be in the 90-130 sq ft range.
 
@@ -287,10 +286,9 @@ class TestLiftCurveSlopeSanity:
     def test_wing_ar_consistent_with_published(self):
         """Wing AR from config geometry should match config property."""
         geo = config.geometry
-        # exposed panels, BL wing_root_bl to wing_tip_bl: same planform for span and area
-        panel = geo.wing_span / 2 - geo.wing_root_bl
+        # gross reference trapezoid, tip to tip: same planform for span and area
         area = geo.wing_area
-        ar_computed = ((2 * panel / 12) ** 2) / area
+        ar_computed = ((geo.wing_span / 12) ** 2) / area
 
         assert abs(ar_computed - geo.wing_aspect_ratio) < 0.01, (
             "wing_aspect_ratio property inconsistent with span/area"

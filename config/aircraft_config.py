@@ -219,8 +219,14 @@ class GeometricParams:
         return self.fs_tail - self.fs_nose
 
     @property
-    def wing_area_sqft(self) -> float:
-        """Model wing planform area in sq ft: both panels, trapezoid from root BL to tip BL.
+    def wing_centerline_chord(self) -> float:
+        """Wing chord at BL 0: the straight root-to-tip taper extended to the centreline."""
+        slope = (self.wing_root_chord - self.wing_tip_chord) / self.wing_panel_span
+        return self.wing_root_chord + self.wing_root_bl * slope
+
+    @property
+    def wing_exposed_area_sqft(self) -> float:
+        """Exposed wing panel area in sq ft: both panels, trapezoid from root BL to tip BL.
 
         Excludes the centre section between the two root BLs (strakes/fuselage).
         """
@@ -228,8 +234,19 @@ class GeometricParams:
         return 2 * self.wing_panel_span * avg_chord / 144  # sq in to sq ft
 
     @property
+    def wing_area_sqft(self) -> float:
+        """Wing REFERENCE area in sq ft: gross trapezoid, LE/TE extended to the centreline.
+
+        Both halves, BL 0 (wing_centerline_chord) to the tip BL (wing_tip_chord). This is the
+        standard reference-area convention; it matches the manual's 81.99 sq ft (om-1980:p3)
+        to 0.4%. The exposed panels alone are wing_exposed_area_sqft.
+        """
+        avg_chord = (self.wing_centerline_chord + self.wing_tip_chord) / 2
+        return self.wing_span * avg_chord / 144  # sq in to sq ft
+
+    @property
     def wing_area(self) -> float:
-        """Wing planform area in square feet (alias of wing_area_sqft)."""
+        """Wing reference area in square feet (alias of wing_area_sqft)."""
         return self.wing_area_sqft
 
     @property
@@ -240,14 +257,12 @@ class GeometricParams:
 
     @property
     def wing_aspect_ratio(self) -> float:
-        """Aspect ratio of the model's lifting wing (the two exposed panels).
+        """Aspect ratio of the reference wing: span^2 / reference area.
 
-        Span and area come from the SAME planform: the two panels BL wing_root_bl to
-        wing_tip_bl. The centre section is excluded from both (wing_area_sqft excludes it),
-        so AR = (2 * wing_panel_span)^2 / area. Using the full tip-to-tip span_full^2 with
-        the panel-only area mixes two planforms and overstates AR (~10.5 vs ~7.6).
+        Span and area come from the SAME planform, the gross trapezoid tip to tip
+        (wing_area_sqft extends the panels to the centreline).
         """
-        span_ft = 2 * self.wing_panel_span / 12
+        span_ft = self.wing_span / 12
         return (span_ft**2) / self.wing_area_sqft
 
     @property
@@ -325,6 +340,8 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "fuselage_length": _p("conflict", note="fs_tail - fs_nose (175.3); fs_tail unsourced; manual overall length 201.4 (om-1980:p3) includes more than the fuselage; conflict kept"),
     "wing_le_anchor": _p("cp-corrected", "cp-text:p25 LPC 7 wing root LE 113.9", "high",
                          "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
+    "wing_centerline_chord": _p("derived", "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157", "medium",
+                                "straight taper extended to BL 0: wing_root_chord + wing_root_bl*(wing_root_chord - wing_tip_chord)/wing_panel_span = 55.11; sets the reference area span*(c0 + ct)/2 = 81.68 sq ft, cross-check om-1980:p3 wing area 81.99 (0.4%)"),
     "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment; plans p126 TE meets cowl at B.L. 23 F.S. 148.4; not a root chord station"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }

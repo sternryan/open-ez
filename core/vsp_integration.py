@@ -294,10 +294,10 @@ class VSPIntegration:
         # Wing mean aerodynamic chord (average of root and tip for trapezoidal wing)
         wing_mac = (geom.wing_root_chord + geom.wing_tip_chord) / 2.0
         vsp.SetDoubleAnalysisInput("VSPAEROSweep", "Sref", [geom.wing_area])
-        # Sref/bref/cref describe ONE planform: the two exposed panels (root BL to tip BL),
-        # so bref = 2 * wing_panel_span, matching Sref = wing_area. Units as passed:
-        # Sref = sq ft (wing_area), bref = inches, cref = inches (pre-existing mixed units).
-        vsp.SetDoubleAnalysisInput("VSPAEROSweep", "bref", [2 * geom.wing_panel_span])
+        # Sref/bref/cref describe ONE planform: the gross reference trapezoid (tip to tip,
+        # extended to the centreline), so bref = wing_span, matching Sref = wing_area. Units as
+        # passed: Sref = sq ft (wing_area), bref = inches, cref = inches (pre-existing mixed units).
+        vsp.SetDoubleAnalysisInput("VSPAEROSweep", "bref", [geom.wing_span])
         vsp.SetDoubleAnalysisInput("VSPAEROSweep", "cref", [wing_mac])
 
         # 3. Execute — VSPAERO runs as a subprocess; results go to disk (.polar file)
