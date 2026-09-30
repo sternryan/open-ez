@@ -20,7 +20,18 @@
       <span class="label">View</span>
       <button type="button" id="home" class="btn">Home view</button>
     </div>
-    <!-- later tasks add ghost, section, paths and play controls here -->
+    <div class="group" id="scrubwrap" hidden>
+      <span class="label" id="scrublabel">Ply 0 of 0</span>
+      <div class="row">
+        <button type="button" id="play" class="btn" aria-pressed="false">Play</button>
+        <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Plies laid so far" aria-describedby="scrublabel">
+      </div>
+    </div>
+    <div class="group">
+      <span class="label">Build</span>
+      <label class="check"><input type="checkbox" id="ghost"> Future work</label>
+    </div>
+    <!-- later tasks add section and paths controls here -->
   </aside>
 
   <section id="step" class="card" aria-live="polite" data-open="true">

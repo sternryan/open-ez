@@ -8,11 +8,14 @@ export interface Op {
   variants: string[]
   completion?: string[]
   stub?: boolean
+  components: string[]
 }
 export interface GraphLite {
   ops: Op[]
   order: string[]
   tours?: Record<string, { target: [number, number, number]; position: [number, number, number] }>
+  /** view state, not graph data: show future work as ghosts (2.1 keeps it on the graph object too) */
+  __ghost?: boolean
 }
 export type Variant = 'roncz' | 'gu'
 

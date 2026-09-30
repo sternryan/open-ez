@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { orientation, TURNOVER_OP } from '../src/logic/pose'
 import type { GraphLite, Op } from '../src/logic/graph'
 
-const op = (id: string, variants: string[]): Op => ({ id, chapter: 30, title: id, summary: '', variants })
+const op = (id: string, variants: string[]): Op => ({ id, chapter: 30, title: id, summary: '', variants, components: [] })
 const g: GraphLite = {
   ops: [op('r30.a', ['roncz']), op('r30.bottom-skin', ['roncz']), op(TURNOVER_OP, ['roncz']), op('r30.top-skin', ['roncz']), op('c10.x', ['gu'])],
   order: ['c10.x', 'r30.a', 'r30.bottom-skin', TURNOVER_OP, 'r30.top-skin'],

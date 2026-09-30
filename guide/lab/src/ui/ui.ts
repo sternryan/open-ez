@@ -5,6 +5,9 @@ export interface UIHandlers {
   onVariant(v: Variant): void
   onHome(): void
   onSelect(opId: string): void
+  onGhost(on: boolean): void
+  onScrub(n: number): void
+  onPlay(): void
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -51,6 +54,9 @@ export function initUI(h: UIHandlers, store: Store) {
   })
   $('home').addEventListener('click', () => h.onHome())
   $('bar-home').addEventListener('click', () => h.onHome())
+  $('ghost').addEventListener('change', (e) => h.onGhost((e.target as HTMLInputElement).checked))
+  $('scrub').addEventListener('input', (e) => h.onScrub(+(e.target as HTMLInputElement).value)) // user input only: setting .value fires no event
+  $('play').addEventListener('click', () => h.onPlay())
   chips.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-op]') as HTMLElement | null
     if (b) h.onSelect(b.dataset.op!)
@@ -95,6 +101,19 @@ export function initUI(h: UIHandlers, store: Store) {
   }
 
   return {
+    setGhost(on: boolean) { ($('ghost') as HTMLInputElement).checked = on },
+    /** the scrubber and Play are shown only for an op with plies */
+    setBuild(lay: number, count: number) {
+      $('scrubwrap').hidden = count === 0
+      const s = $('scrub') as HTMLInputElement
+      s.max = String(count)
+      s.value = String(lay)
+      $('scrublabel').textContent = `Ply ${lay} of ${count}`
+    },
+    setPlaying(on: boolean) {
+      $('play').setAttribute('aria-pressed', String(on))
+      $('play').textContent = on ? 'Stop' : 'Play'
+    },
     setVariant(v: Variant) {
       for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))
     },

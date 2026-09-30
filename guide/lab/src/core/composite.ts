@@ -20,8 +20,14 @@ import type { MaterialSpec } from '../logic/materials'
  * (the clear coat is kept above zero when cured so the program stays the same).
  */
 
-const GLSL_COMPOSITE_PARS = /* glsl */ `
+// Future work drawn as a ghost: the material is transparent (JS side); this desaturates it.
+const GLSL_GHOST_PARS = /* glsl */ `uniform float uGhost;`
+const GLSL_GHOST_COLOR = /* glsl */ `{ float gl = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(gl), 0.75 * uGhost); }`
+
+const GLSL_COMPOSITE_PARS = /* glsl */ GLSL_GHOST_PARS + `
 uniform float uWet;
+uniform vec3 uPly;       // x: model Z of the ply's root end, y: 1 / span length (per inch), z: unused
+uniform vec2 uLay;       // x: unrolled fraction of the span (from the root), y: wet-out front, as a fraction of the span
 uniform float uWeb;      // 1 when the ply lies in the model Y-Z plane (shear web), 0 when it lies in X-Z (skins, caps)
 uniform vec2 uAng;       // cos, sin of the first tow direction, measured from the span axis in the ply's plane
 uniform vec4 uWv;        // x: weave period or foam cells per inch, y: relief in inches, z: UND stitch spacing (in)
@@ -50,6 +56,23 @@ float towProfile(float f) { return pow(sin(3.14159265 * clamp(f, 0.0, 1.0)), 0.9
 // Surface: relief (surfH is divided by the pixel footprint so the slope is physical), plus shade and roughness for the later hooks.
 const GLSL_COMPOSITE_SURFACE = /* glsl */ `
 float cmpShade = 1.0, cmpRough = 0.0;
+float cmpWetK = 1.0, cmpEdge = 0.0;   // wetness ahead of / at the wet-out front (1 = behind the front, or nothing is being laid)
+#if defined(COMP_UND) || defined(COMP_BID)
+{
+  // Position along the span, 0 at the root end and 1 at the tip. A cut face is measured where the plane opens the ply.
+  float sp = (uPly.x - (cutCap ? cutHit.z : vObj.z)) * uPly.y;
+  if (uLay.x < 1.0 && sp > uLay.x) discard;   // not unrolled yet
+  if (uLay.y < 1.0) {
+    // The wet-out front is a soft band about 1.1 in wide, so the front moves from fully dry (uLay.y = 0) to fully wet (1).
+    float bw = 0.55 * uPly.y;
+    float fr = uLay.y * (1.0 + 2.0 * bw) - bw;
+    cmpWetK = 1.0 - smoothstep(fr - bw, fr + bw, sp);
+    float ed = (sp - fr) / bw;
+    cmpEdge = exp(-ed * ed) * step(0.001, uLay.y);
+  }
+}
+#endif
+float cmpWet = uWet * cmpWetK;
 float cmpFp = max(max(length(dFdx(vObj)), length(dFdy(vObj))), 1e-5);
 float cmpOn = cutCap ? 0.0 : 1.0;
 vec3 capW = vec3(0.5, 0.5, 0.5);
@@ -75,7 +98,7 @@ float capFade = 1.0;
   float P = uWv.x;
   float cyc = max(fwidth(A), fwidth(B)) / P;
   float fade = (1.0 - smoothstep(0.2, 0.5, cyc)) * cmpOn;
-  float soften = 1.0 - 0.6 * uWet;           // flooded with resin: the weave relaxes
+  float soften = 1.0 - 0.6 * cmpWet;           // flooded with resin: the weave relaxes
   #if defined(COMP_UND)
   {
     float ci = floor(B / P), cf = fract(B / P);
@@ -122,16 +145,28 @@ float capFade = 1.0;
 #endif
 `
 
+// Dry cloth is bright white, matte, with the weave still showing through cmpShade; resin behind the front turns it the wet colour.
 const GLSL_GLASS_COLOR = /* glsl */ `
 diffuseColor.rgb *= cmpShade;
-diffuseColor.rgb = mix(diffuseColor.rgb, pow(max(diffuseColor.rgb, vec3(0.0)), vec3(1.15)) * 0.8, uWet);
+// wet resin: darker and less saturated (the cloth goes translucent), with epoxy's faint amber cast
+vec3 cmpWc = mix(vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), diffuseColor.rgb, 0.55) * vec3(0.8, 0.77, 0.66);
+diffuseColor.rgb = mix(diffuseColor.rgb, cmpWc, cmpWet);
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.89, 0.89, 0.86) * (0.5 + 0.5 * cmpShade), (1.0 - cmpWetK) * 0.94);
+` + GLSL_GHOST_COLOR
+
+// Behind the front the resin is glossy, and the leading edge, where the squeegee pushes resin ahead of it, is glossier still. Dry cloth has no gloss.
+const GLSL_GLASS_LIGHTS = /* glsl */ `
+#ifdef USE_CLEARCOAT
+material.clearcoat = clamp(material.clearcoat * cmpWetK + cmpEdge * 0.55 * uWet, 0.0, 1.0);
+material.clearcoatRoughness = mix(material.clearcoatRoughness, 0.12, cmpEdge);
+#endif
 `
 
 const HOOKS_FOAM: SurfHooks = {
   defs: ['COMP_FOAM'],
   pars: GLSL_COMPOSITE_PARS,
   surface: GLSL_COMPOSITE_SURFACE,
-  color: 'diffuseColor.rgb *= cmpShade;',
+  color: 'diffuseColor.rgb *= cmpShade;\n' + GLSL_GHOST_COLOR,
   rough: 'roughnessFactor = clamp(roughnessFactor + cmpRough, 0.05, 1.0);',
   // cut face: the same cell function on the cut point, so the section shows the cells
   capColor: `if (cutCap) { float wall = 1.0 - smoothstep(0.0, 0.2, capW.y - capW.x); diffuseColor.rgb = uCapColor * (1.0 - 0.34 * wall + (capW.z - 0.5) * 0.18); }`,
@@ -143,7 +178,8 @@ const glassHooks = (kind: 'COMP_UND' | 'COMP_BID'): SurfHooks => ({
   pars: GLSL_COMPOSITE_PARS,
   surface: GLSL_COMPOSITE_SURFACE,
   color: GLSL_GLASS_COLOR,
-  rough: 'roughnessFactor = clamp(roughnessFactor + cmpRough - uWet * 0.12, 0.05, 1.0);',
+  lights: GLSL_GLASS_LIGHTS,
+  rough: 'roughnessFactor = clamp(roughnessFactor + cmpRough - cmpWet * 0.12 + (1.0 - cmpWetK) * 0.38, 0.05, 1.0);',
   // a laminate edge: pale fibre bundles (dots) in a darker resin matrix
   capColor: `if (cutCap) { float dots = 1.0 - smoothstep(0.12, 0.4, capW.x); diffuseColor.rgb = uCapColor * mix(1.0, 0.7 + 0.5 * dots + (capW.z - 0.5) * 0.15, capFade); }`,
   capRough: 'if (cutCap) roughnessFactor = clamp(0.5 + (capW.z - 0.5) * 0.12, 0.05, 1.0);',
@@ -184,16 +220,24 @@ export function plyPlane(geo: THREE.BufferGeometry): 0 | 1 {
   return sx > sy ? 1 : 0
 }
 
+/** A ply runs along the model Z axis: it starts at its root end (the larger Z, B.L. 0 side) and ends at its tip. Model inches. */
+export interface PlySpan { rootZ: number; len: number }
+export function plySpan(geo: THREE.BufferGeometry): PlySpan {
+  geo.computeBoundingBox()
+  const b = geo.boundingBox!
+  return { rootZ: b.max.z, len: b.max.z - b.min.z }
+}
+
 export interface CompositeInfo { kind: MaterialSpec['kind']; angles: number[]; wet: number }
 
 /** One material per mesh. `web` says the ply lies in the model Y-Z plane (use plyPlane on its geometry). */
-export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web: 0 | 1 = 0): THREE.MeshStandardMaterial {
+export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web: 0 | 1 = 0, span: PlySpan = { rootZ: 0, len: 1 }): THREE.MeshStandardMaterial {
   const common = { metalness: 0, cut, detail: 0 }
   let m: THREE.MeshStandardMaterial
   if (spec.kind === 'foam') {
     m = surf({
       ...common, name: 'foam', color: COLORS.foam, roughness: 0.86, capColor: COLORS.foamCap, capRoughness: 0.88, capMetalness: 0,
-      hooks: { ...HOOKS_FOAM, uniforms: { uWet: { value: 0 }, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
+      hooks: { ...HOOKS_FOAM, uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
     })
   } else if (spec.kind === 'und' || spec.kind === 'bid') {
     const und = spec.kind === 'und'
@@ -206,7 +250,7 @@ export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web:
       clearcoat: 0.12, clearcoatRoughness: 0.45,
       hooks: {
         ...glassHooks(und ? 'COMP_UND' : 'COMP_BID'),
-        uniforms: { uWet: { value: 0 }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, 0) } },
+        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), 0) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, 0) } },
       },
     })
   } else {
@@ -230,6 +274,36 @@ export function setWet(m: THREE.Material, w: number) {
   p.roughness = 0.42 - 0.17 * v
   const back = m.userData.back as THREE.Material | undefined
   if (back) back.userData.u.uWet.value = v
+}
+
+/** How far along its lay-down a ply is: `unroll` and `front` are fractions of the span, `cure` is 0 wet to 1 cured, `ghost` draws it as future work. */
+export interface PlyLook { unroll: number; front: number; cure: number; ghost: boolean }
+
+/** Uniform and material values only: cheap every frame. The one thing that recompiles is the transparent flag, and only when it flips. */
+export function setPlyLook(m: THREE.Material, look: PlyLook) {
+  const u = m.userData.u as Record<string, { value: unknown }> | undefined
+  if (!u) return
+  setWet(m, 1 - look.cure)
+  const set = (mat: THREE.Material) => {
+    const uu = mat.userData.u as Record<string, { value: unknown }>
+    ;(uu.uGhost as { value: number }).value = look.ghost ? 1 : 0
+    if (uu.uLay) (uu.uLay.value as THREE.Vector2).set(look.unroll, look.front)
+    if (mat.transparent !== look.ghost) { mat.transparent = look.ghost; mat.needsUpdate = true }
+    mat.opacity = look.ghost ? 0.2 : 1
+    mat.depthWrite = !look.ghost
+  }
+  set(m)
+  const back = m.userData.back as THREE.Material | undefined
+  if (back) set(back)
+}
+
+/** A matte non-composite part (no plies). Same ghost handling as the composites. */
+export function partMaterial(cut: CutState | null): THREE.MeshStandardMaterial {
+  const m = surf({
+    name: 'part', color: 0xe6dfcf, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: 0xe6dfcf,
+    hooks: { pars: GLSL_GHOST_PARS, color: GLSL_GHOST_COLOR, uniforms: { uGhost: { value: 0 } } },
+  })
+  return m
 }
 
 /** Paste materials for later work (bonding cores, filling dings). Nothing in the scene uses them yet. */

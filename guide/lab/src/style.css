@@ -29,6 +29,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn { border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
 .btn:hover, .seg button:not([aria-pressed="true"]):hover { background: rgba(238, 233, 225, 0.12); }
 
+#controls .row { display: flex; gap: 8px; align-items: center; }
+#scrub { width: 180px; accent-color: var(--accent); min-height: 32px; }
+.check { display: inline-flex; gap: 8px; align-items: center; min-height: 32px; cursor: pointer; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+#play[aria-pressed="true"] { background: var(--ink); color: #15120f; font-weight: 600; }
+
 /* step card, bottom left */
 #step { left: var(--pad); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 62px); width: min(360px, calc(100vw - 28px)); max-height: 40vh; display: flex; flex-direction: column; overflow: hidden; }
 #step-head { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 12px 14px 8px; cursor: default; }
@@ -70,6 +76,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   #controls { left: var(--pad); right: max(14px, env(safe-area-inset-right)); padding: 8px 10px; gap: 8px 14px; justify-content: space-between; }
   #controls .label { display: none; }
   .seg button, .btn { padding: 5px 12px; min-height: 34px; }
+  #scrub { width: 120px; }
   #step { width: auto; right: max(14px, env(safe-area-inset-right)); max-height: 38vh; }
   #step-head { cursor: pointer; padding: 10px 12px; align-items: center; }
   #step-head .chev { display: block; width: 8px; height: 8px; border-right: 2px solid var(--ink-dim); border-bottom: 2px solid var(--ink-dim); transform: rotate(45deg); transition: transform 0.15s; grid-row: 2; grid-column: 2; }

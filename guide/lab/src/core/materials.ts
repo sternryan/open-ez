@@ -1,5 +1,5 @@
 // Adapted from AirsupHQ/airsup-lab src/core/materials.ts (MIT); see NOTICE.
-// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged.
+// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines, including one after lights_physical_fragment) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged.
 import * as THREE from 'three'
 import { CutState, CUT_PROJ, NO_CUT, GLSL_CUT_FRAG, GLSL_CUT_FRAG_PARS, GLSL_CUT_VERT, GLSL_CUT_VERT_PARS } from './cut'
 import { GLSL_NOISE, NOISE3D } from './noise'
@@ -62,6 +62,8 @@ export interface SurfHooks {
   capColor?: string
   rough?: string
   capRough?: string
+  /** runs right after the physical material is set up (clearcoat and friends live in `material`) */
+  lights?: string
   uniforms?: Record<string, { value: unknown }>
   /** the hooks add height, so switch the bump on */
   bump?: boolean
@@ -283,6 +285,7 @@ if (uCutGlow > 0.0) {
 #endif
 `,
     )
+    if (hk.lights) f = f.replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>\n${hk.lights}`)
     shader.fragmentShader = f
   }
   m.customProgramCacheKey = () => 'surf|' + defStr + (hk.pars ? hk.pars.length : '') + (capPass ? 'caps' : '')
