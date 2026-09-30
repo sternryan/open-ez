@@ -195,6 +195,60 @@ step is a partial-span downwash model with a textbook source (e.g. DATCOM 4.4.1 
 horseshoe-vortex average over the wing span) chosen before it is run, and the book W.L. conflict
 resolved; neither is done here.
 
+### C4, partial-span canard downwash on the wing (method fixed before running)
+
+Written before the method was implemented or the comparison run. One method, one run; the result
+is recorded whatever it is, and the method is not revised to chase the VLM.
+
+**Method: the canard's trailing system as a single horseshoe vortex, its induced downwash on the
+wing by Biot-Savart, averaged over the wing span by strip theory.** Sources: the horseshoe-vortex
+model of a lifting surface and its downwash field (McCormick, Aerodynamics, Aeronautics and Flight
+Mechanics, the downwash-at-the-tail estimate, with the vortex span b' = (pi/4) b for an elliptic
+loading; Anderson, Fundamentals of Aerodynamics, sec. 5, the horseshoe vortex and b' for the
+elliptic wing); the straight-segment Biot-Savart law (Katz and Plotkin, Low-Speed Aerodynamics,
+sec. 2 and 10; Anderson sec. 5). Reason for this choice over the alternatives: DATCOM 4.4.1 and
+Raymer's canard treatment give a downwash gradient at one point (the tail's MAC or plane of
+symmetry) for an aft surface much smaller than the forward one; here the aft surface is 2.2x the
+canard's span, and the quantity that matters is the average over a wing whose outboard 55% lies
+outside the canard's tip vortices, where the flow is upwash. The horseshoe estimate is the
+textbook model that gives that sign change explicitly and is the same singularity model the VLM
+discretises, so it replaces the far-field constant without borrowing anything from the VLM run.
+
+Equations (x aft, y starboard, z up; canard bound vortex on the canard quarter-chord line):
+- Vortex semi-span s = b'/2 = (pi/8) b_c. Circulation from the canard lift L_c = rho V Gamma b',
+  so Gamma / V = C_Lc S_c / (2 b').
+- Semi-infinite trailing leg from (0, +-s, 0) to x = +inf, at a point (x, y, z), with
+  d_y = y -+ s, r^2 = d_y^2 + z^2: w_z = +-(Gamma / (4 pi r^2)) d_y (1 + x / sqrt(x^2 + r^2))
+  (+ for the starboard leg, which runs aft; - for the port leg).
+- Bound segment from (0, -s, 0) to (0, +s, 0): with rho^2 = x^2 + z^2,
+  w_z = -(Gamma x / (4 pi rho^2)) [(y + s)/sqrt((y + s)^2 + rho^2) - (y - s)/sqrt((y - s)^2 + rho^2)].
+- Local downwash angle eps(y) = -w_z(y) / V, so d eps/d alpha (y) = a_c S_c / (2 b') * (-w_z/Gamma)(y).
+  Far downstream on the centreline this is a_c S_c / (pi b'^2), the horseshoe's centreline value.
+- Strip theory on the wing: the lift lost to the canard's wash is a_w (1/S_w) integral c(y) eps(y) dy,
+  so the wing factor is 1 - d eps/d alpha_avg with the chord-weighted average
+  d eps/d alpha_avg = integral_{-b_w/2}^{b_w/2} c(y) (d eps/d alpha)(y) dy / integral c(y) dy.
+  Each strip is evaluated at its own quarter-chord station (x(y) = wing quarter-chord FS at |y| minus
+  the canard quarter-chord FS) and at z = the canard height above the wing plane
+  (`canard_vertical_offset_in`, the flagged 1.5 in, not touched). c(y) and x(y) are the reference
+  trapezoid's (ledger C2), both halves, BL 0 to the tip. Trailing legs straight aft in the canard
+  plane (fixed wake), no rollup, no vortex core.
+- The NP formula is otherwise unchanged (C3): NP = [a_w S_w (1 - d eps/d alpha_avg) x_w +
+  a_c S_c x_c] / [a_w S_w (1 - d eps/d alpha_avg) + a_c S_c]. The previous far-field factor
+  2 a_c / (pi A_c) / (1 + (2h/b_c)^2) is retired from the NP.
+
+Kept approximations, stated up front: (ii) the wing's upwash at the canard is still omitted (it
+moves the NP forward, the VLM includes it); the trailing-leg singularity at the canard tip
+stations is regularised only by z = 1.5 in, so the upwash just outboard of each tip is peaked; the
+horseshoe is a single-vortex model of an elliptic spanload, not the rectangular canard's actual
+loading.
+
+Prediction procedure: implement the average red-first against a hand-computed single horseshoe
+(closed-form spanwise average of the trailing legs far downstream over an aft span wider than the
+vortex), then regenerate the accuracy report (the VLM is not re-run); record d eps/d alpha_avg, analytic NP before (106.50) and after, the VLM NP (112.36, the
+committed run, unchanged: the VLM geometry does not change), the gap, and the check status against
+the unchanged 1.0 in bound. If within 1.0 in, row 53's strict xfail comes off; if not, it stays and
+the residual is diagnosed, with no second method.
+
 ## NP gap
 
 Superseded by Block 1 (2026-09-29): 108.0 is unverified; NP 112.56 is reported, not graded; CG references are 97/103 from om-1980:p28; see docs/block1-report.md.
