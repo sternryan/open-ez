@@ -66,7 +66,7 @@ def _render_docs(docs: Path, out: Path) -> None:
         body = markdown.markdown(md.read_text(), extensions=["tables", "fenced_code"])
         (out / f"{md.stem}.html").write_text(
             f"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
-            f"<title>{html.escape(md.stem)}</title><link rel=stylesheet href='../css/app.css'>"
+            f"<title>{html.escape(md.stem)}</title><link rel=stylesheet href='../classic/css/app.css'>"
             f"<main style='display:block;max-width:860px;margin:auto;padding:16px;height:auto'>{body}</main>")
         items.append(f"<li><a href='{md.stem}.html'>{html.escape(md.stem)}</a></li>")
     (out / "index.html").write_text("<!doctype html><meta charset=utf-8><title>docs</title><ul>" + "".join(items) + "</ul>")
@@ -146,8 +146,14 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         raise SchemaError("; ".join(errs))
     if out.exists():
         shutil.rmtree(out)
-    shutil.copytree(VIEWER, out, ignore=shutil.ignore_patterns("tests"))
-    shutil.copytree(build_lab(), out / "lab", ignore=shutil.ignore_patterns(".stamp"))
+    # The lab is the site: its index.html + assets sit at the root beside graph.json, config.json, models/ and docs/.
+    # The milestone 2.1 viewer moves to /classic/ for one milestone and reads that shared data from "../".
+    shutil.copytree(build_lab(), out, ignore=shutil.ignore_patterns(".stamp"))
+    shutil.copytree(VIEWER, out / "classic", ignore=shutil.ignore_patterns("tests"))
+    ci = out / "classic" / "index.html"
+    html_in = ci.read_text()
+    assert '<meta charset="utf-8">' in html_in, "classic/index.html lost its charset meta; the data-base tag has nowhere to go"
+    ci.write_text(html_in.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  <meta name="data-base" content="../">', 1))
     payload = {
         "ops": [_op_json(g.ops[i]) for i in topo_order(g)],
         "order": topo_order(g),

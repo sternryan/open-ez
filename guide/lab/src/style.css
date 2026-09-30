@@ -18,10 +18,10 @@
   --left: max(var(--gap), env(safe-area-inset-left));
   --right: max(var(--gap), env(safe-area-inset-right));
   --bottom: max(12px, env(safe-area-inset-bottom));
-  --hit: 34px; /* control height; 40 on touch screens */
+  --hit: 34px; /* control height; 44 on touch screens */
   --bar: 48px;
 }
-@media (pointer: coarse) { :root { --hit: 40px; --bar: 52px; } }
+@media (pointer: coarse) { :root { --hit: 44px; --bar: 56px; } }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 13px/1.4 var(--sans); overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
 #app { position: fixed; inset: 0; }

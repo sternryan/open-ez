@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { canardTour, cutStation, layupSpan, playSeconds, type Step, type TourGraph } from '../src/director'
+import { chapterTour, tourChapter, cutStation, layupSpan, playSeconds, type Step, type TourGraph } from '../src/director'
 import { tourSteps } from '../src/logic/tour'
 
 const op = (id: string, chapter: number, variants: string[], stub = false) => ({ id, chapter, title: id, summary: '', variants, stub, components: [] as string[] })
@@ -26,7 +26,7 @@ const G: TourGraph = {
 const clicks = (s: Step[], pre: string) => s.filter((x) => 'click' in x && x.click.startsWith(pre)) as { t: number; click: string }[]
 
 test('one segment per non-stub op of the chapter, in order', () => {
-  const s = canardTour(G, 'roncz')
+  const s = chapterTour(G, 'roncz', 30)
   const want = tourSteps(G, 'roncz', 30).map((x) => x.op)
   assert.deepEqual(want, ['r30.cores', 'r30.shear-web', 'r30.jig', 'r30.bcap', 'r30.bskin', 'r30.tskin'])
   assert.deepEqual(clicks(s, '#chips').map((c) => c.click.match(/data-op="([^"]+)"/)![1]), want)
@@ -36,7 +36,7 @@ test('one segment per non-stub op of the chapter, in order', () => {
 })
 
 test('step times are non-decreasing once ordered, and every step falls inside the film', () => {
-  const s = canardTour(G, 'roncz')
+  const s = chapterTour(G, 'roncz', 30)
   assert.equal(s[0].t, 0)
   for (const x of s) assert.ok(Number.isFinite(x.t) && x.t >= 0)
   const ts = s.map((x) => x.t)
@@ -46,7 +46,7 @@ test('step times are non-decreasing once ordered, and every step falls inside th
 })
 
 test('an op with plies presses Play and waits out the build; an op without plies does not', () => {
-  const s = canardTour(G, 'roncz')
+  const s = chapterTour(G, 'roncz', 30)
   const plays = clicks(s, '#play')
   assert.equal(plays.length, 4) // web, cap, both skins
   const web = clicks(s, '#chips').find((c) => c.click.includes('r30.shear-web'))!
@@ -58,7 +58,7 @@ test('an op with plies presses Play and waits out the build; an op without plies
 })
 
 test('the cut opens and closes once per op with plies, at a station inside that op', () => {
-  const s = canardTour(G, 'roncz')
+  const s = chapterTour(G, 'roncz', 30)
   const toggles = clicks(s, '#section-on')
   const drags = s.filter((x) => 'drag' in x) as { t: number; from: number; to: number }[]
   // 4 ops with plies: on, off each; then on for the finale
@@ -81,7 +81,7 @@ test('a station never leaves a short layup', () => {
 })
 
 test('it starts from home, ends on a slow orbit with the cut on, then the closing card', () => {
-  const s = canardTour(G, 'roncz')
+  const s = chapterTour(G, 'roncz', 30)
   assert.deepEqual(s.find((x) => 'act' in x), { t: 0, act: 'reset' })
   const orbit = s.find((x) => 'orbit' in x) as { t: number; orbit: { dur: number; deg: number } }
   assert.ok(orbit.orbit.dur >= 8 && orbit.orbit.deg <= 120)
@@ -93,13 +93,41 @@ test('it starts from home, ends on a slow orbit with the cut on, then the closin
 })
 
 test('a graph without a layup still tours (no cut steps); a variant with no ops gives just the frame', () => {
-  const s = canardTour({ ...G, layup: null }, 'roncz')
+  const s = chapterTour({ ...G, layup: null }, 'roncz', 30)
   assert.equal(clicks(s, '#section-on').length, 0)
   assert.ok(s.some((x) => 'orbit' in x))
-  const e = canardTour(G, 'gu')
+  const e = chapterTour(G, 'gu', 30)
   assert.equal(clicks(e, '#chips').length, 0)
 })
 
 test('it is a pure function of graph and variant', () => {
-  assert.deepEqual(canardTour(G, 'roncz'), canardTour(G, 'roncz'))
+  assert.deepEqual(chapterTour(G, 'roncz', 30), chapterTour(G, 'roncz', 30))
+})
+
+// a GU chapter: two ops with no plies and no lab shots, a stub-only chapter before it
+const GU: TourGraph = {
+  order: ['c03.skills', 'c10.cores', 'c12.pins', 'c12.align'],
+  ops: [op('c03.skills', 3, ['both'], true), op('c10.cores', 10, ['gu']), op('c12.pins', 12, ['gu']), op('c12.align', 12, ['gu'])],
+}
+
+test('a chapter without plies dwells on each op and never touches Play or the cut; the cards name the chapter', () => {
+  const s = chapterTour(GU, 'gu', 12)
+  assert.deepEqual(clicks(s, '#chips').map((c) => c.click), ['#chips button[data-op="c12.pins"]', '#chips button[data-op="c12.align"]'])
+  assert.equal(clicks(s, '#play').length + clicks(s, '#section-on').length, 0)
+  const cards = s.filter((x) => 'card' in x && x.card) as { card: { title: string; sub?: string } }[]
+  assert.deepEqual(cards.map((c) => [c.card.title, c.card.sub]), [['GU canard', 'Chapter 12'], ['Canard, chapter 12', 'Build rehearsal']])
+  assert.ok(s.some((x) => 'orbit' in x))
+})
+
+test('the ch30 film is the same whichever way it is asked for', () => {
+  assert.deepEqual(chapterTour(G, 'roncz', 30).filter((x) => 'card' in x && x.card).map((x) => (x as { card: { sub?: string } }).card.sub), ['Chapter 30', 'Build rehearsal'])
+})
+
+test('tourChapter: the selected op\'s chapter, else the first real chapter, also from a stub-only chapter', () => {
+  assert.equal(tourChapter(GU, 'gu', 'c12.align'), 12)
+  assert.equal(tourChapter(GU, 'gu', null), 10)
+  assert.equal(tourChapter(GU, 'gu', 'c03.skills'), 10) // stub only: nothing to build there
+  assert.equal(tourChapter(G, 'roncz', 'c10.x'), 30) // an op this variant does not show
+  assert.equal(tourChapter(G, 'gu', null), 10)
+  assert.equal(tourChapter({ ops: [], order: [] }, 'gu', null), undefined)
 })

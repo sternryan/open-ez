@@ -1,6 +1,7 @@
 // Adapted from AirsupHQ/airsup-lab src/director.ts (MIT); see NOTICE.
-// Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure canardTour builder.
+// Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
+import { visibleOps } from './logic/graph'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -201,7 +202,7 @@ export class Director {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// The canard chapter film. Pure: the same graph and variant give the same steps. The page supplies the actions:
+// A chapter film. Pure: the same graph and variant give the same steps. The page supplies the actions:
 //   reset   home view, nothing selected, section off; part names and load paths forced on for the tour only (a tour-scoped override, never storage)
 //   finish  nothing selected (every op built), home view, canard upright
 //   closeup fly to the close shot of the cut face
@@ -209,6 +210,7 @@ export class Director {
 
 /** The build clock runs this much faster than a person would watch it while a tour plays, so the whole film stays near 80 s. */
 export const TOUR_BUILD_RATE = 2.5
+/** the chapter the recorder's `canard` film shows (the Roncz canard build) */
 export const CHAPTER = 30
 
 interface LayupLite { semi_span?: number; nodes?: Record<string, { op: string; bl_max: number | null }> }
@@ -238,8 +240,17 @@ const SEC_ON = '#section-on', SEC_BL = '#section-bl'
 /** where the film ends its cut */
 const END_BL = 20
 
-export function canardTour(graph: TourGraph, variant: string): Step[] {
-  const ops = tourSteps(graph, variant, CHAPTER)
+/** The chapter a tour plays, as 2.1 chose it: the selected op's chapter; nothing selected (or an op this variant does not show) tours the variant's
+ * first real chapter; a stub-only chapter falls back to that too. Undefined when the variant has nothing to build. */
+export function tourChapter(graph: GraphLite, variant: string, selectedId: string | null): number | undefined {
+  const vis = visibleOps(graph, variant)
+  const cur = vis.find((o) => o.id === selectedId)
+  if (cur && tourSteps(graph, variant, cur.chapter).length) return cur.chapter
+  return vis.find((o) => !o.stub)?.chapter
+}
+
+export function chapterTour(graph: TourGraph, variant: string, chapter: number): Step[] {
+  const ops = tourSteps(graph, variant, chapter)
   const nPlies = (id: string) => Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).length
   const hasCut = !!graph.layup?.nodes
   const semi = graph.layup?.semi_span ?? 70
@@ -247,7 +258,7 @@ export function canardTour(graph: TourGraph, variant: string): Step[] {
   const s: Step[] = []
   const name = variant === 'gu' ? 'GU' : 'Roncz'
   s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
-  s.push({ t: 0, card: { title: `${name} canard`, sub: `Chapter ${CHAPTER}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
+  s.push({ t: 0, card: { title: `${name} canard`, sub: `Chapter ${chapter}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
   s.push({ t: 2.6, cursor: 'show' })
   let t = 3.0
   ops.forEach((o, i) => {
@@ -276,7 +287,7 @@ export function canardTour(graph: TourGraph, variant: string): Step[] {
   s.push({ t: t + 1.9, cursor: 'hide' })
   s.push({ t: t + 2.0, act: 'closeup' }) // a 1.8 s flight to the close shot
   s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })
-  s.push({ t: t + 13.4, card: { title: `Canard, chapter ${CHAPTER}`, sub: 'Build rehearsal' }, dur: 1.0 })
+  s.push({ t: t + 13.4, card: { title: `Canard, chapter ${chapter}`, sub: 'Build rehearsal' }, dur: 1.0 })
   s.push({ t: t + 16.2, act: 'noop' })
   return s
 }
