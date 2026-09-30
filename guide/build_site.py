@@ -137,7 +137,10 @@ def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
 
 
 def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None, docs: Path | None,
-          renders: Path | None = None) -> None:
+          renders: Path | None = None, public: bool = False) -> None:
+    """public=True: a site safe for a public host. No scan base, no plans figure/page references, no classic viewer, no docs."""
+    if public:
+        scan_base, docs = None, None
     if renders and not models:
         raise SchemaError("--renders needs --models (the renders are checked against its layup.json/shots.json)")
     g = load_graph(graph_dir)
@@ -149,11 +152,12 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
     # The lab is the site: its index.html + assets sit at the root beside graph.json, config.json, models/ and docs/.
     # The milestone 2.1 viewer moves to /classic/ for one milestone and reads that shared data from "../".
     shutil.copytree(build_lab(), out, ignore=shutil.ignore_patterns(".stamp"))
-    shutil.copytree(VIEWER, out / "classic", ignore=shutil.ignore_patterns("tests"))
-    ci = out / "classic" / "index.html"
-    html_in = ci.read_text()
-    assert '<meta charset="utf-8">' in html_in, "classic/index.html lost its charset meta; the data-base tag has nowhere to go"
-    ci.write_text(html_in.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  <meta name="data-base" content="../">', 1))
+    if not public:  # the classic viewer links plans figures and scans (graph.js), so it is not part of a public build
+        shutil.copytree(VIEWER, out / "classic", ignore=shutil.ignore_patterns("tests"))
+        ci = out / "classic" / "index.html"
+        html_in = ci.read_text()
+        assert '<meta charset="utf-8">' in html_in, "classic/index.html lost its charset meta; the data-base tag has nowhere to go"
+        ci.write_text(html_in.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  <meta name="data-base" content="../">', 1))
     payload = {
         "ops": [_op_json(g.ops[i]) for i in topo_order(g)],
         "order": topo_order(g),
@@ -166,6 +170,10 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         "tours": g.tours,
         "cutaway": None,
     }
+    if public:
+        for o in payload["ops"]:
+            o["sources"] = [{k: v for k, v in s.items() if k in ("doc", "page")} for s in o["sources"] if s["doc"] != "cobelu"]
+        payload["pages"], payload["annotations"] = {}, []
     if renders:
         payload["cutaway"] = _cutaway(g, models, renders, out)
     (out / "graph.json").write_text(json.dumps(payload, indent=1))
@@ -184,9 +192,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", type=Path, default=None)
     ap.add_argument("--scan-base", default=None)
     ap.add_argument("--renders", type=Path, default=None)
+    ap.add_argument("--public", action="store_true", help="public-safe build: no plans figures/scans/annotations, no classic viewer or docs")
     ap.add_argument("--docs", type=Path, default=Path("docs/superpowers"))
     a = ap.parse_args(argv)
-    build(a.graph, a.out, a.models, a.scan_base, a.docs, renders=a.renders)
+    build(a.graph, a.out, a.models, a.scan_base, a.docs, renders=a.renders, public=a.public)
     print(f"built {a.out}")
     return 0
 
