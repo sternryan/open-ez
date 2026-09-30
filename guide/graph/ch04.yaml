@@ -61,7 +61,7 @@
   components: [fuselage.rear_seat_bkhd]
   geometry_visible: true
   materials:
-    - {cloth: BID, plies: 2, where: "8 in circle where the foam was removed, 45 degrees"}
+    - {cloth: BID, plies: 2, where: "back face and into the 8 in circle where the foam was removed, 45 degrees"}
   sources:
     - {doc: scan-1980, scan_pp: 34}
   completion:

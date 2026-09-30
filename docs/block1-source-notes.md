@@ -474,3 +474,34 @@ The research read 20.6 as the height and left the top width blank. On the page i
 | CP48 | cp-text:p48 LPC 128 | gear-tab slip inspection, not an operation |
 
 CP35 LPC 110 check: the parsed CP35 LPC 110 is an Owner's Manual p22 engine-out note (windmill start dive), unrelated to the fuselage. A search of all parsed LPCs for 103 in with 45 or longeron found only CP30 LPC 82, which itself says the BID ply is at 45 deg and may be several pieces. The "not an extra ply" clarification was not found, so the 45-degree fact is cited to CP30 LPC 82 and no CP35 LPC is claimed. The CP34 to CP48 rows and the research rows other than this one were not re-checked here beyond the captain's log.
+
+### Fuselage materials (M2.2 Task 4)
+
+Inputs for the fuselage mass rows (`data/mass_ledger.yaml` `materials:`). Pages were fetched and read on
+2026-09-30; fetched documents are not stored here.
+
+| quantity | value | citation | note |
+|---|---|---|---|
+| Cloth names | BID is RA5277, UND is RA5177 | plans-1980:p13 (captain) | |
+| BID areal weight | 8.8 oz per sq yd, 38 in wide | wicks-ra5277:p1 | the product is named RA5277, so no style-number link is needed |
+| UND areal weight | 7.02 oz per sq yd, 38 in wide | wicks-ra5177:p1 | same |
+| Resin-to-cloth weight | about 0.5 for an excellent layup | plans-1980:p21 | read on the page image (the OCR garbled the fraction); a best-case target, so glass masses are a floor |
+| R45 foam density | 3 lb per cubic foot | cp-text:p34 | CP34 foam-substitutes table; the same table names Klegecel as the original PVC foam |
+| R250 foam density | 16 lb per cubic foot | cp-text:p34 | same table |
+| Panel, F22, F28 material | type 250 PV foam, 5 mm | plans-1980:p34 | page image read; also says the aft-face fibre orientation is not critical |
+| Cured ply thickness | about 0.012 (5277), 0.009 (5177) | cp-text:p14 | read in the CP text; not used in any mass (kept for the later thickness work) |
+
+Found and not used, or rejected:
+
+| item | why not |
+|---|---|
+| Aircraft Spruce Rutan cloth page (8.8 and 7.0 oz, parts 01-00642 and 01-00641, data sheets labelled 7725 and 7715) | never names RA5277 or RA5177, so equating the styles would be an unanchored claim; it agrees with the Wicks numbers to within 0.02 oz, kept here as a cross-check only |
+| Style 7725 and 7715 weights from search summaries (8.5 oz for 7725) | secondary text without a fetched datasheet; conflicts with 8.8 |
+| BGF technical data book (PDF) | fetch returned an unreadable encoding; nothing read |
+| Canard Zone "Rutan fiberglass specs" thread | fetch returned 403; nothing read |
+| CP13 bill of materials (cloth 38 in wide) | it lists a VariEze kit, not the Long-EZ, so the width comes from the Wicks pages instead |
+| Mixing ratio of resin to hardener (cp text, plans ch. 3) | a cure ratio, not a glass-to-resin ratio |
+| Birch plywood and spruce densities | no fetched source yet; firewall and longeron core masses stay "not yet computed" |
+
+Rows of chapters 4 to 6 that stay out of the ply model, and why, live in `core/fuselage_plies.py` (`EXCLUDED`):
+no tape width on the ch. 6 bond tapes, undimensioned doubler, pad and strip extents, and the gear-pad outline.
