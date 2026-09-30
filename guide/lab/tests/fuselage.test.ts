@@ -159,3 +159,14 @@ test('every chapter 4-6 op in the graph has an authored lab shot, and no shot is
     assert.ok(v.dist > 20 && v.dist < 200 && v.el >= 20 && v.el <= 75, id)
   }
 })
+
+test('the station cut hides the label of a part wholly forward of the plane and keeps one it passes through', async () => {
+  const { removedByStationCut } = await import('../src/logic/fuselage')
+  const rows: Record<string, { fs_min: number; fs_max: number }> = {
+    f22: { fs_min: 22, fs_max: 22.2 }, f28: { fs_min: 27.65, fs_max: 27.85 }, panel: { fs_min: 39.75, fs_max: 39.95 },
+    front_seat_bkhd: { fs_min: 63.0151, fs_max: 82.2849 }, side_left: { fs_min: 22, fs_max: 125 }, top_longeron_left: { fs_min: 22, fs_max: 125.5 },
+  }
+  const hidden = Object.keys(rows).filter((k) => removedByStationCut(rows[k], 72))
+  assert.deepEqual(hidden, ['f22', 'f28', 'panel'])
+  assert.deepEqual(Object.keys(rows).filter((k) => removedByStationCut(rows[k], 22)), [], 'with the plane at the nose nothing is wholly forward')
+})

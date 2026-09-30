@@ -8,7 +8,7 @@ import {
   placement, jigPose, upFace, planHalfWidth, stationAmount, STATION_CUT, FS_EPS, TRIAL_FIT,
   type FuseLayup, type FusePlyRow, type Placement, type JigPose,
 } from './logic/fuselage'
-import { buildFuselageStation, STATION, INCH, blockTopY } from './scene/fuselageStation'
+import { buildFuselageStation, STATION, INCH, blockTopY, fsToX } from './scene/fuselageStation'
 import { fuseView, viewOffset } from './fuseShots'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
@@ -329,6 +329,17 @@ export class FuselageBay {
       out[id] = { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
     }
     return out
+  }
+
+  /** the close shot of the station cut at `fs`: forward of the plane, a little above, looking aft at the face (world metres; the finished box, right side up) */
+  cutShot(fs: number, fov: number): Shot {
+    const bx = new THREE.Box3()
+    for (const m of this.meshes) if (!m.ply && this.placeOf(m, null) === 'jig') bx.union(this.worldBoxAt(m, null))
+    const target = bx.isEmpty() ? new THREE.Vector3(STATION.jig.x, blockTopY() + 0.25, STATION.jig.z) : bx.getCenter(new THREE.Vector3())
+    target.x = fsToX(fs)
+    const off = viewOffset({ focus: 'box', dist: 58, el: 24, az: 72 })
+    const pos = target.clone().add(new THREE.Vector3(off[0], off[1], off[2]).multiplyScalar(INCH))
+    return { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
   }
 
   /** a part exists by this op (its component's first op is at or before it) */

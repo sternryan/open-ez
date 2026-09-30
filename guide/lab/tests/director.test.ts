@@ -141,3 +141,57 @@ test('the fuselage tour clicks every chapter 4-6 op in graph order, Plays only o
   assert.deepEqual(clicks, ['#chips button[data-op="f04.a"]', '#chips button[data-op="f05.a"]', '#play', '#chips button[data-op="f06.a"]'])
   assert.ok(!steps.some((s) => 'drag' in s))
 })
+
+// shaped like chapters 4-6: bond ops listed in the book's order, a stub, a no-ply op
+const fop = (id: string, chapter: number, stub = false) => ({ id, chapter, title: id, summary: '', variants: ['both'], stub, components: [] as string[] })
+const FG: TourGraph = {
+  order: ['f04.a', 'f04.b', 'f05.a', 'f05.s', 'f06.trial-fit', 'f06.bond-front-seat', 'f06.bond-panel', 'f06.bond-f22', 'f06.bond-rear-seat', 'f06.bond-firewall', 'f06.tape'],
+  ops: [fop('f04.a', 4), fop('f04.b', 4), fop('f05.a', 5), fop('f05.s', 5, true), fop('f06.trial-fit', 6), fop('f06.bond-front-seat', 6), fop('f06.bond-panel', 6),
+    fop('f06.bond-f22', 6), fop('f06.bond-rear-seat', 6), fop('f06.bond-firewall', 6), fop('f06.tape', 6)],
+}
+const fplies = (id: string) => (['f06.bond-front-seat', 'f06.bond-f22', 'f06.tape', 'f04.a'].includes(id) ? 3 : 0)
+const opsOf = (s: Step[]) => clicks(s, '#chips').map((c) => c.click.match(/data-op="([^"]+)"/)![1])
+
+test('the chapter 6 fuselage tour: ch6 ops in graph order, Play only with plies, title card, cut inside the front seat bulkhead, orbit, end card', async () => {
+  const { fuselageTour, FUSE_CUT_FS } = await import('../src/director')
+  const s = fuselageTour(FG, 'roncz', fplies, [6])
+  assert.deepEqual(opsOf(s), ['f06.trial-fit', 'f06.bond-front-seat', 'f06.bond-panel', 'f06.bond-f22', 'f06.bond-rear-seat', 'f06.bond-firewall', 'f06.tape'])
+  const plays = clicks(s, '#play')
+  assert.equal(plays.length, 3)
+  for (const p of plays) { // each Play follows the chip of an op that has plies
+    const chip = clicks(s, '#chips').filter((c) => c.t < p.t).pop()!
+    assert.ok(fplies(chip.click.match(/data-op="([^"]+)"/)![1]) > 0)
+  }
+  const cards = s.filter((x) => 'card' in x && x.card) as { t: number; card: { title: string } }[]
+  assert.equal(cards[0].card.title, 'Chapter 6 — Fuselage assembly')
+  assert.equal(cards.at(-1)!.card.title, 'Fuselage, chapter 6')
+  const on = clicks(s, '#section-on')
+  assert.equal(on.length, 1, 'the cut is turned on and left on')
+  const drags = s.filter((x) => 'drag' in x) as { t: number; to: number }[]
+  const last = drags.at(-1)!
+  assert.equal(last.to, FUSE_CUT_FS)
+  assert.ok(last.to > 63.55 && last.to < 81.75, 'inside the front seat bulkhead FS range')
+  assert.ok(on[0].t < last.t)
+  const orbit = s.find((x) => 'orbit' in x) as { t: number }
+  assert.ok(last.t < orbit.t && orbit.t < cards.at(-1)!.t, 'cut, then the close orbit, then the end card')
+  const ts = s.map((x) => x.t)
+  assert.deepEqual(ts, ts.slice().sort((a, b) => a - b))
+})
+
+test('the ch4-6 fuselage tour visits every op in order, a card at each chapter change, and no section steps', async () => {
+  const { fuselageTour } = await import('../src/director')
+  const s = fuselageTour(FG, 'roncz', fplies)
+  assert.deepEqual(opsOf(s), ['f04.a', 'f04.b', 'f05.a', 'f06.trial-fit', 'f06.bond-front-seat', 'f06.bond-panel', 'f06.bond-f22', 'f06.bond-rear-seat', 'f06.bond-firewall', 'f06.tape'])
+  const titles = s.filter((x) => 'card' in x && x.card).map((x) => (x as { card: { title: string } }).card.title)
+  assert.deepEqual(titles, ['Fuselage box', 'Chapter 5 — Fuselage sides', 'Chapter 6 — Fuselage assembly', 'Fuselage box'])
+  assert.equal(clicks(s, '#section-on').length, 0)
+  assert.ok(!s.some((x) => 'drag' in x))
+})
+
+test('the fuselage Tour button: the selected ch4-6 op\'s chapter, else all of 4-6', async () => {
+  const { fuselageTourChapters } = await import('../src/director')
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.a'), [5])
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f06.bond-panel'), [6])
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', null), [4, 5, 6])
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.s'), [4, 5, 6]) // a stub has no stop
+})

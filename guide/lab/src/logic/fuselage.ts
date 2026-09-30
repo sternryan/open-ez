@@ -121,6 +121,9 @@ export const fmtFs = (fs: number): string => `FS ${Math.round(fs * 10) / 10}`
 /** tolerance on a ply's FS extent, as the canard's EPS on B.L. */
 export const FS_EPS = 1e-3
 
+/** True when the station cut at `fs` removes the whole part: its FS extent lies forward of the plane. A part the plane passes through stays. */
+export const removedByStationCut = (row: { fs_max: number }, fs: number): boolean => row.fs_max < fs - FS_EPS
+
 export interface StationLayer { node: string; part: string; cloth: string }
 /** The plies cut at `fs` (fs_min <= fs <= fs_max), in lay order; `alive` limits them to the ones built so far. */
 export function stationLayers(nodes: Record<string, FusePlyRow>, fs: number, alive?: Set<string>): StationLayer[] {
