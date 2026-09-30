@@ -127,6 +127,51 @@ class GeometricParams:
     wing_root_bl: float = 23.3  # wing root butt line
     wing_le_anchor: Tuple[float, float] = (113.9, 58.0)  # (FS, BL): wing LE at the strake junction, CP25 LPC 7
 
+    # === FUSELAGE BOOK GEOMETRY (chapters 4-6) ===
+    # FS = side x + 22: side length 103 (plans-1980:p36) ends at fs_firewall 125 (plans-1980:p101).
+    fs_f22: float = 22.0  # derived: 125 - 103
+    fs_f28: float = 27.65  # derived: side x 5.65
+    fs_panel: float = 39.75  # derived: side x 17.75
+    fs_front_seat_bkhd_bottom: float = 63.55  # derived: side x 41.55
+    fs_front_seat_bkhd_top: float = 81.75  # derived: side x 59.75
+    fs_rear_seat_bkhd_bottom: float = 107.0  # derived: side x 103 - 18.0
+    fs_rear_seat_bkhd_top: float = 118.5  # derived: side x 59.75 + 36.75 = 96.5
+    side_panel_length: float = 103.0  # book plans-1980:p36
+    side_panel_top_wl: float = 23.0  # book plans-1980:p36
+    side_panel_thickness: float = 0.8
+    # (x from front, depth down from the top edge)
+    side_panel_heights: Tuple[Tuple[float, float], ...] = (
+        (0, 19.8), (10, 20.3), (20, 20.5), (30, 20.5), (40, 20.5), (50, 20.5),
+        (60, 20.5), (70, 20.4), (80, 19.8), (90, 18.4), (100, 16.6), (103, 16.0),
+    )
+    side_spar_cutout: Tuple[float, float] = (6.5, 8.5)  # (width at aft end, depth from top)
+    side_sight_gauge: Tuple[float, float, float, float, float] = (82.0, 9.15, 2.5, 1.0, 0.2)
+    side_dish: Tuple[float, float, float, float] = (24.75, 7.0, 8.0, 0.5)  # (x, down, dia, depth)
+    front_seat_bkhd_length: float = 28.3
+    front_seat_bkhd_width: float = 23.0
+    front_seat_bkhd_thickness: float = 0.8
+    front_seat_bkhd_taper: float = 0.7
+    front_seat_bkhd_notch_top: Tuple[float, float] = (0.7, 1.5)
+    front_seat_bkhd_notch_bottom: Tuple[float, float] = (0.7, 0.7)
+    rear_seat_bkhd_bottom_width: float = 20.6
+    rear_seat_bkhd_top_width: float = 18.7
+    rear_seat_bkhd_length: float = 16.1  # slant height
+    rear_seat_bkhd_thickness: float = 0.8
+    rear_seat_bkhd_side_taper: float = 0.95
+    rear_seat_bkhd_bevel_top_deg: float = 45.0
+    rear_seat_bkhd_bevel_bottom_deg: float = 35.0
+    rear_seat_bkhd_notch: Tuple[float, float] = (0.7, 1.4)
+    rear_seat_bkhd_access_dia: float = 7.0
+    rear_seat_bkhd_foam_circle_dia: float = 8.0
+    # (FS, inner width between the sides)
+    fuselage_inner_width_stations: Tuple[Tuple[float, float], ...] = (
+        (63.55, 23.0), (81.75, 23.0), (107.0, 20.6), (118.5, 18.7),
+    )
+    fuselage_inner_width_fwd: float = 23.0  # unsourced: forward of the front seat bulkhead
+    bottom_foam_thickness: float = 1.6
+    bottom_trim_outboard: float = 0.7
+    bottom_aft_trim: float = 0.25
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -341,6 +386,75 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "wing_centerline_chord": _p("derived", "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157", "medium",
                                 "straight taper extended to BL 0: wing_root_chord + wing_root_bl*(wing_root_chord - wing_tip_chord)/wing_panel_span = 55.11; sets the reference area span*(c0 + ct)/2 = 81.68 sq ft, cross-check om-1980:p3 wing area 81.99 (0.4%)"),
     "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment; plans p126 TE meets cowl at B.L. 23 F.S. 148.4; not a root chord station"),
+    "fs_f22": _p("derived", "plans-1980:p36 side x 0 is F22", "medium",
+        "fs_firewall 125 (p101) minus side length 103 (p36); matches the bulkhead name"),
+    "fs_f28": _p("derived", "plans-1980:p36 F28 at side x 5.65", "medium",
+        "p41 gives 5.9 from F22's forward face (0.25 difference, F22 thickness/flange)"),
+    "fs_panel": _p("derived", "plans-1980:p36 panel at side x 17.75", "medium",
+        "conflict: om-1980:p34 panel reference FS 40 (0.25 in)"),
+    "fs_front_seat_bkhd_bottom": _p("derived", "plans-1980:p36 front seat bulkhead bottom at side x 41.55", "medium",
+        "22 + 41.55"),
+    "fs_front_seat_bkhd_top": _p("derived", "plans-1980:p36 front seat bulkhead top at side x 59.75", "medium",
+        "22 + 59.75"),
+    "fs_rear_seat_bkhd_bottom": _p("derived", "plans-1980:p36 rear seat bulkhead bottom 18.0 from aft end", "medium",
+        "22 + (103 - 18.0) = 107.0"),
+    "fs_rear_seat_bkhd_top": _p("derived", "plans-1980:p36 rear seat bulkhead top at side x 59.75 + 36.75", "medium",
+        "22 + 96.5 = 118.5; this is the spar forward face (plans-1980:p88); the top meets the spar cutout's lower forward corner (p38, p39)"),
+    "side_panel_length": _p("book", "plans-1980:p36 overall side length 103", "high",
+        "overall side length"),
+    "side_panel_top_wl": _p("book", "plans-1980:p36 top edge at W.L. 23", "high",
+        "top edge straight, both top corners square"),
+    "side_panel_thickness": _p("book", "plans-1980:p36 side foam 0.8 thick", "high",
+        "side foam thickness"),
+    "side_panel_heights": _p("book", "plans-1980:p36 depth table at x 0..100 and 103", "high",
+        "depth below the top edge at side x; spacing per cp-text:p25 LPC 5 (10 in, aft dimension 3 in)"),
+    "side_spar_cutout": _p("book", "plans-1980:p38 spar cutout 6.5 by 8.5", "high",
+        "width at the aft end, depth from the top"),
+    "side_sight_gauge": _p("book", "plans-1980:p36 sight gauge 82 from front, 9.15 down", "high",
+        "x from front, extent down from top, half-width each way, flat width, foam left"),
+    "side_dish": _p("conflict", "plans-1980:p36 dish 8 in dia at panel line + 7, 7 down", "medium",
+        "text p36/p37 says 0.5 deep, section C-C shows 0.3; centre x = panel 17.75 + 7; right side only"),
+    "front_seat_bkhd_length": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "front_seat_bkhd_width": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "front_seat_bkhd_thickness": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "front_seat_bkhd_taper": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "front_seat_bkhd_notch_top": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "front_seat_bkhd_notch_bottom": _p("book", "plans-1980:p33 front seat bulkhead dimensions", "high",
+        "28.3 x 23 x 0.8; 0.7 taper both ends; corner notches top 0.7 x 1.5, bottom 0.7 x 0.7"),
+    "rear_seat_bkhd_bottom_width": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "medium",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_top_width": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "medium",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_length": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "medium",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length; slant from (x 85, side bottom) to (x 96.5, 8.5 down) computes 15.6 vs printed 16.1"),
+    "rear_seat_bkhd_thickness": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_side_taper": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length; taper on both sides per cp-text:p29 clarification"),
+    "rear_seat_bkhd_bevel_top_deg": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_bevel_bottom_deg": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_notch": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_access_dia": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "rear_seat_bkhd_foam_circle_dia": _p("book", "plans-1980:p34 rear seat bulkhead dimensions", "high",
+        "rear seat bulkhead; captain reading: 20.6 bottom width, 18.7 top width, 16.1 slant length"),
+    "fuselage_inner_width_stations": _p("derived", "plans-1980:p33 width 23; plans-1980:p34 widths 20.6/18.7", "medium",
+        "inner width between the sides at FS, from the seat bulkhead widths at their stations; aft of 118.5 extrapolate the last segment"),
+    "fuselage_inner_width_fwd": _p("unsourced", note="forward of the front seat bulkhead the width is not printed; held at 23; p40 top sketch narrows, undimensioned (not measured)"),
+    "bottom_foam_thickness": _p("book", "plans-1980:p42 bottom block", "high",
+        "bottom foam block thickness"),
+    "bottom_trim_outboard": _p("book", "plans-1980:p42 bottom block", "high",
+        "trim outboard of the side marks"),
+    "bottom_aft_trim": _p("book", "plans-1980:p42 bottom block", "high",
+        "trim aft of the rear seat mark"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 

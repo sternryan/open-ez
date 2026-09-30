@@ -401,3 +401,76 @@ URLs actually read:
 | https://m-selig.ae.illinois.edu/ads/aircraft.html | lists Long-EZ airfoils |
 | http://cozybuilders.org/mail_list/topics97/airfoils.txt | 1997 post: no R1145MS data at UIUC |
 | http://airfoiltools.com/airfoil/details?airfoil=e1230-il | XFOIL predictions only, Re up to 1M |
+
+## Fuselage chapters 4–6 (Block 2 M2.2)
+
+Page numbers are plans-1980 scan pages (printed footers 4-1 = p33 through 6-6 = p44). Values were read on the page images by the captain. Paraphrases are in our own words, 10 words or fewer.
+
+### Geometry table
+
+| value | citation | what the page says (≤10 words, own words) | caveat |
+|---|---|---|---|
+| side_panel_length 103 | plans-1980:p36 | overall side length, front to aft | none |
+| side_panel_top_wl 23.0 | plans-1980:p36 | top edge is straight and square-cornered | none |
+| side_panel_thickness 0.8 | plans-1980:p36 | side foam thickness | none |
+| side_panel_heights, 12 points | plans-1980:p36 | depth below top edge, every 10 in | spacing 10 then 3 per cp-text:p25 LPC 5; the 18.4 confirmed at 300 dpi |
+| side_spar_cutout (6.5, 8.5) | plans-1980:p38 | notch at the aft end for the spar | width at aft end, depth from top |
+| side_sight_gauge (82, 9.15, 2.5, 1.0, 0.2) | plans-1980:p36 | fuel sight gauge groove position and section | 21 from the aft end as well |
+| side_dish (24.75, 7, 8, 0.5) | plans-1980:p36 | shallow round dish, right side only | conflict: text says 0.5 deep, section C-C shows 0.3 |
+| front seat bulkhead 28.3 x 23 x 0.8 | plans-1980:p33 | outline sizes of the front seat bulkhead | none |
+| front bulkhead taper 0.7, notches 0.7 x 1.5 top, 0.7 x 0.7 bottom | plans-1980:p33 | taper at both ends, four corner notches | none |
+| rear seat bulkhead widths 20.6 bottom, 18.7 top | plans-1980:p34 | perspective block edge labels; section B-B shows slopes | captain's reading, corrects the research (below) |
+| rear seat bulkhead length 16.1 (slant) | plans-1980:p34 | edge A-A runs along; bevels 35 bottom, 45 top | slant computes 15.6 from p36 coordinates (x 85 to x 96.5) |
+| rear seat side taper 0.95, notch 0.7 x 1.4, access 7, foam circle 8 | plans-1980:p34 | side taper, corner notches, round holes | taper on both sides per cp-text:p29 clarification (a note, not the source) |
+| bottom foam 1.6, trim 0.7 outboard, 0.25 aft | plans-1980:p42 | bottom block thickness and trim allowances | contour on p44 is "none critical", not modelled |
+| fuselage_inner_width_stations | plans-1980:p33, plans-1980:p34 | seat bulkhead widths 23, 20.6, 18.7 | derived: widths at their stations; extrapolated aft of 118.5 |
+| fuselage_inner_width_fwd 23 | not stated | forward of front seat width not printed | unsourced; p40 top sketch narrows, undimensioned, not measured |
+
+### Derived stations
+
+FS = side x + 22. The side length 103 (plans-1980:p36) ends at fs_firewall 125 (plans-1980:p101), so F22 is at 125 - 103 = 22.
+
+| station | arithmetic | caveat |
+|---|---|---|
+| fs_f22 22.0 | 125 - 103 | matches the bulkhead name |
+| fs_f28 27.65 | 22 + 5.65 (plans-1980:p36) | p41 gives 5.9 from F22's forward face; 0.25 difference |
+| fs_panel 39.75 | 22 + 17.75 | conflict: om-1980:p34 panel reference FS 40 (0.25 in) |
+| fs_front_seat_bkhd_bottom 63.55 | 22 + 41.55 | research rounded to 63.6; printed coordinates used |
+| fs_front_seat_bkhd_top 81.75 | 22 + 59.75 | none |
+| fs_rear_seat_bkhd_bottom 107.0 | 22 + (103 - 18.0) = 22 + 85 | none |
+| fs_rear_seat_bkhd_top 118.5 | 22 + (59.75 + 36.75) = 22 + 96.5 | spar forward face (plans-1980:p88) |
+
+fs_pilot_seat 59.0 and fs_rear_seat 103.0 stay as they are: they are occupant CG arms (om-1980:p25), not bulkhead stations. The 59.75 and 103 printed on p36 are side-foam coordinates.
+
+### Rear seat bulkhead correction (captain)
+
+The research read 20.6 as the height and left the top width blank. On the page image, 20.6 labels the edge that section B-B runs along (a width), 16.1 labels the edge that section A-A runs along (the slant height), and 18.7 labels the edge the TOP arrow points at. So bottom width 20.6, top width 18.7, slant length 16.1. Pages p38 and p39 put its top at the spar cutout's lower forward corner, 8.5 below the side top, so the top station is 118.5 (the spar forward face), not at the top edge. The sides therefore converge aft: 23 at the front seat, 20.6 at FS 107, 18.7 at FS 118.5.
+
+### Canard Pusher changes
+
+| issue | citation | change (own words) |
+|---|---|---|
+| CP25 | cp-text:p25 LPC 5 | p5-1 spacing 10 in, aft dimension 3 in |
+| CP25 | cp-text:p25 LPC 17 | "both sides" on p4-2: left and right, forward face |
+| CP25 | cp-text:p25 LPC 19 | A4 extrusions refer to Chapter 14 |
+| CP25 | cp-text:p25 LPC 20 | gear pad stops at W.L. 12.35 |
+| CP25 | cp-text:p25 LPC 25 | aluminium firewall allowed; Fiberfrax deferred; silicone, not epoxy |
+| CP26 | cp-text:p26 LPC 34 | LMGA belongs to chapter 5 |
+| CP27 | cp-text:p27 LPC 42 (OPT) | alternate BID and UND plies on F22 sides |
+| CP27 | cp-text:p27 LPC 43 | canopy aft frame at FS 117 |
+| CP27 | cp-text:p27 LPC 46 (OPT) | F28 longeron notch 0.25 in lower |
+| CP27 | cp-text:p27 LPC 47 | left rudder pulley bracket up 0.6 in |
+| CP27 | cp-text:p27 LPC 48 | firewall top made taller (A4) |
+| CP27 | cp-text:p27 builder hint | A5 aft shape differs about 0.2 in from p5-1 |
+| CP28 | cp-text:p28 LPC 58 | A5 gear pad is 15 plies |
+| CP29 | cp-text:p29 LPC 67 | AN363-624 nuts on the AN6-80A bolts |
+| CP29 | cp-text:p29 LPC 68 | slurry is used on R45 |
+| CP29 | cp-text:p29 LPC 70 | side UND is plus/minus 30 deg, not 45 |
+| CP29 | cp-text:p29 clarification | rear bulkhead 0.95 taper applies to both sides |
+| CP30 | cp-text:p30 LPC 82 | p5-2 BID ply runs full 103 in, at 45 deg, pieces allowed |
+| CP31 | cp-text:p31 builder hint | slurry all foam |
+| CP34 | cp-text:p34 LPC 105 | 1 BID at 45 deg over F28 doublers, 0.4 in lap |
+| CP35 | not found in the parsed CP text | research row "LPC 110: the LPC 82 ply is 45 deg to the longeron, not an extra ply" |
+| CP48 | cp-text:p48 LPC 128 | gear-tab slip inspection, not an operation |
+
+CP35 LPC 110 check: the parsed CP35 LPC 110 is an Owner's Manual p22 engine-out note (windmill start dive), unrelated to the fuselage. A search of all parsed LPCs for 103 in with 45 or longeron found only CP30 LPC 82, which itself says the BID ply is at 45 deg and may be several pieces. The "not an extra ply" clarification was not found, so the 45-degree fact is cited to CP30 LPC 82 and no CP35 LPC is claimed. The CP34 to CP48 rows and the research rows other than this one were not re-checked here beyond the captain's log.

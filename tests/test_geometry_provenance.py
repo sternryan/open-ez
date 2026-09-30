@@ -16,7 +16,7 @@ from config.aircraft_config import (
     config,
 )
 
-PATTERN = re.compile(r"^(fs_|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$)")
+PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$)")
 
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
