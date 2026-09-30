@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 # Environments
+.venv
 .venv/
 env/
 venv/
@@ -23,8 +24,10 @@ output/VSP/
 *.vsp
 vspaero.out
 
-# Generated output (keep output/validation/ for reference data)
+# Generated output: everything under output/ is a build artifact, none of it is tracked
 output/
+# Regenerable cache written by core.openvsp_runner.OpenVSPRunner
+data/validation/openvsp_validation.json
 
 # Logs and Debugging
 logs/

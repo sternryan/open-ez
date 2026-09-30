@@ -1,0 +1,10 @@
+[project]
+name = "open-ez"
+version = "0.1.0"
+description = "A Long-EZ modelled as code: CadQuery geometry, an in-browser build rehearsal, and physics checks traced to the book."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+
+# Dependencies live in requirements.txt, requirements-dev.txt and requirements-guide-dev.txt.
+# There is no [build-system]: the repo is run from a checkout, not installed as a package.
