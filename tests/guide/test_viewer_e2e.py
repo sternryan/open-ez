@@ -534,6 +534,7 @@ def _dark_pixels(pg, clip):
     return sum(1 for v in im.getdata() if v < 200)
 
 
+@pytest.mark.local_render
 @pytest.mark.parametrize("width", [1180])  # 820 measured 3907 -> 2538 (layout leaves too little model in the clip): not a stable >50% drop
 def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
     """Pixel-level: material.transparent flips need needsUpdate or nothing ghosts after the first frame."""

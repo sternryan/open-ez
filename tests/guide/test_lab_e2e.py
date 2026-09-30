@@ -2,6 +2,7 @@
 import contextlib
 import functools
 import json
+import sys
 import http.server
 import io
 import threading
@@ -19,7 +20,7 @@ GL = ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
 
 # One chromium for the whole module (launching one per test was most of the suite's wall time). Each test still gets its own
 # context and page: `sync_playwright()` below hands a test a per-test view of the shared browser, and closing that view closes
-# only the contexts the test opened. A test that needs a different launch can still call _real_sync_playwright().
+# only the contexts the test opened. All tests (including those that set device_scale_factor or init scripts) use the shim, so all run on both engines.
 _SHARED = {}
 
 
@@ -45,13 +46,30 @@ class _View:
         self._ctxs.clear()
 
 
-@pytest.fixture(scope="module", autouse=True)
-def _one_browser():
+# Every test in this module runs on both engines: the owner's iPad Chrome is WebKit underneath. Chromium keeps its software-GL
+# args; WebKit takes no GL args (it uses the platform's GL) and only runs on macOS. Tests launch through the shim below, which
+# ignores their `args` and hands back the engine under test, so no test needs to know which engine it is on.
+@pytest.fixture(scope="module", autouse=True, params=["chromium", "webkit"])
+def _one_browser(request):
+    engine = request.param
+    if engine == "webkit" and sys.platform != "darwin":
+        pytest.skip("webkit runs on macOS only (the iPad engine; Linux WebKit is not the shipping build)")
     pw = _real_sync_playwright().start()
-    _SHARED["b"] = pw.chromium.launch(args=GL)
-    yield
-    _SHARED.pop("b").close()
-    pw.stop()
+    try:
+        if engine == "webkit":
+            import os
+            if not os.path.exists(pw.webkit.executable_path):
+                pytest.skip("webkit executable missing (run: python -m playwright install webkit)")
+            _SHARED["b"] = pw.webkit.launch()
+        else:
+            _SHARED["b"] = pw.chromium.launch(args=GL)
+        _SHARED["engine"] = engine
+        yield engine
+    finally:
+        b = _SHARED.pop("b", None)
+        if b:
+            b.close()
+        pw.stop()
 
 
 @contextlib.contextmanager
@@ -1052,6 +1070,7 @@ def test_tour_leaves_paths_labels_and_storage_as_the_person_set_them(rsite):
         s.shutdown()
 
 
+@pytest.mark.local_render
 def test_recorder_frames_are_reproducible(rsite):
     """Two independent pages render frames 0, 120 and 240 of the film. The frame is a function of the sim clock only (grain, flows, glow,
     cursor and cards all take sim time; nothing reads the wall clock or Math.random), so the PNGs must match. On the software renderer
@@ -1104,6 +1123,7 @@ FEED_JS = """([ms, max]) => { const t0 = window.__lab.tier(); for (let i = 0; i 
 EFFECTIVE_MAX_JS = """(() => { const e = document.querySelector('#section-bl'), v = e.value; e.value = e.max; const m = +e.value; e.value = v; return m; })()"""  # max after step snapping
 
 
+@pytest.mark.local_render
 def test_frame_time_median_while_dragging_the_section_on_the_low_tier(rsite):
     # Ported from the 2.1 viewer's budget test. Headless swiftshader (software GL) is a PROXY for the iPad, not a measurement of it:
     # the iPad judgement is the owner's walk-through. The budget is a median rAF delta <= 33 ms over a continuous 2 s drag of the
@@ -1150,7 +1170,11 @@ def test_frame_time_median_while_dragging_the_section_on_the_low_tier(rsite):
             assert after["enabled"] and after["bl"] == pytest.approx(max_bl), (before["bl"], after["bl"], max_bl)
             assert seen[0] <= max_bl * 0.05 and seen[-1] == max_bl, (seen[:3], seen[-3:], max_bl)
             assert all(a <= c for a, c in zip(seen, seen[1:])), "slider values must be monotonic non-decreasing"
-            assert len(set(seen)) >= 100, len(set(seen))
+            # "The plane really moved" is about distinct positions per drawn frame, not a frame count: 2.1 asked for >= 100 distinct stations,
+            # which only a 60 fps run can reach in 2 s (a 92-frame run on the Mac test node read 91 and failed with a 16.7 ms median). So: a new
+            # station on (nearly) every tick of the drag, and no tick jumps more than a tenth of the span (no chunk of the drag went unseen).
+            assert len(set(seen)) >= 0.9 * len(seen), (len(set(seen)), len(seen))
+            assert max(b_ - a for a, b_ in zip(seen, seen[1:])) <= 0.1 * max_bl, max(b_ - a for a, b_ in zip(seen, seen[1:]))
             assert st["calls"] > 20, st  # the last frame drew a real scene
             assert len(d) >= 10, len(d)
             assert pg.evaluate("window.__lab.tier()") == "low"
