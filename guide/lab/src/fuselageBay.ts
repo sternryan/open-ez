@@ -5,7 +5,7 @@ import type { MaterialSpec } from './logic/materials'
 import { plyPhase, partPhase, type Phase } from './logic/anim'
 import type { BuildState, MeshInfo } from './logic/build'
 import {
-  placement, jigPose, upFace, planHalfWidth, stationAmount, STATION_CUT, FS_EPS, TRIAL_FIT,
+  placement, jigPose, upFace, planHalfWidth, stationAmount, turnPose, hatchSoftness, STATION_CUT, FS_EPS, TRIAL_FIT, FLIP_SECONDS, FLIP_DELAY,
   type FuseLayup, type FusePlyRow, type Placement, type JigPose,
 } from './logic/fuselage'
 import { buildFuselageStation, STATION, INCH, blockTopY, fsToX } from './scene/fuselageStation'
@@ -68,6 +68,11 @@ export class FuselageBay {
   private spots = new Map<string, number>()
   private jigM: Record<JigPose, THREE.Matrix4>
   private firstIdx = new Map<string, number>()
+  /** the turn over (logic/fuselage.ts turnPose): from, and progress 0..1 in sim time; 1 = at rest in `pose` */
+  private turnFrom: JigPose = 'upright'
+  private turnK = 1
+  private half = { h: 0, w: 0 }
+  private yMid = 0
 
   constructor(parts: { cid: string; node: string | null; geo: THREE.BufferGeometry; name: string }[], readonly data: FuseLayup, graph: GraphLite) {
     this.group.name = 'fuselage'
@@ -89,6 +94,9 @@ export class FuselageBay {
       if (!part) throw new Error(`fuselage mesh ${p.name} is not in layup.json`)
       const prow = data.parts[part]
       const hatch = prow.fidelity === 'representational'
+      // the stripes thin out on a large surface (its two largest extents, in^2); small parts and cut faces keep the full stripes
+      const e = p.geo.boundingBox!.getSize(new THREE.Vector3()).toArray().sort((a, b) => b - a)
+      const hatchSoft = hatch ? hatchSoftness(e[0] * e[1]) : 0
       const carrier = part.startsWith('top_longeron_') ? part.replace('top_longeron_', 'side_') : part
       const flat = carrier.startsWith('side_') ? this.flatten(p.geo, isRight(carrier)) : p.geo.clone()
       flat.computeBoundingBox()
@@ -98,16 +106,16 @@ export class FuselageBay {
         const cloth = row.cloth === 'UND' ? 'UND' : 'BID'
         spec = { kind: cloth === 'UND' ? 'und' : 'bid', angles: cloth === 'UND' ? [deg] : [deg, deg - 90], ply: { node: p.name, order: row.stack, cloth } }
         const fj = plyFrame(p.geo), ft = plyFrame(flat)
-        jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch })
-        tableMat = compositeMaterial(spec, null, ft.web, ft.span, { axis: ft.axis, hatch })
+        jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch, hatchSoft })
+        tableMat = compositeMaterial(spec, null, ft.web, ft.span, { axis: ft.axis, hatch, hatchSoft })
       } else if (WOOD[part] !== undefined) {
         spec = { kind: 'part', angles: [] }
-        jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, name: part })
-        tableMat = partMaterial(null, { color: WOOD[part], hatch, name: part })
+        jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, hatchSoft, name: part })
+        tableMat = partMaterial(null, { color: WOOD[part], hatch, hatchSoft, name: part })
       } else {
         spec = { kind: 'foam', angles: [] }
-        jigMat = compositeMaterial(spec, this.cut, 0, undefined, { hatch })
-        tableMat = compositeMaterial(spec, null, 0, undefined, { hatch })
+        jigMat = compositeMaterial(spec, this.cut, 0, undefined, { hatch, hatchSoft })
+        tableMat = compositeMaterial(spec, null, 0, undefined, { hatch, hatchSoft })
       }
       const jig = new THREE.Mesh(p.geo, jigMat)
       jig.name = p.name
@@ -120,6 +128,7 @@ export class FuselageBay {
       const bb = p.geo.boundingBox!
       this.yTop = Math.max(this.yTop, bb.max.y)
       this.yBottom = Math.min(this.yBottom, bb.min.y)
+      if (!row) this.half.w = Math.max(this.half.w, Math.abs(bb.min.z), Math.abs(bb.max.z))
       const ply = row ? { op: row.op, order: row.op_order } : null
       this.meshes.push({ name: p.name, part, cid: row ? row.component : prow.component, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
@@ -133,6 +142,8 @@ export class FuselageBay {
       upright: new THREE.Matrix4().makeTranslation(J.x, B, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
         .multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yBottom, 0)),
     }
+    this.half.h = (this.yTop - this.yBottom) / 2
+    this.yMid = (this.yTop + this.yBottom) / 2
     this.setPose('upright')
     this.pack()
   }
@@ -150,9 +161,46 @@ export class FuselageBay {
     return g
   }
 
-  setPose(p: JigPose) {
+  /** Put the box in pose `p`: at once, or (`animate`) turning over about its long axis from where it is now, in sim time (stepTurn). */
+  setPose(p: JigPose, animate = false) {
+    if (animate && p !== this.pose) {
+      if (this.turnK <= 0) { this.pose = p; this.turnK = 1; this.applyMatrix(this.jigM[p]); return } // asked back before it started: it never left
+      // a turn already under way reverses from where it has got to; a fresh one waits for the camera to come round first
+      this.turnK = this.turnK < 1 ? 1 - this.turnK : -FLIP_DELAY / FLIP_SECONDS
+      this.turnFrom = this.pose
+      this.pose = p
+      this.applyTurn()
+      return
+    }
     this.pose = p
-    this.jigFrame.matrix.copy(this.jigM[p])
+    this.turnK = 1
+    this.applyMatrix(this.jigM[p])
+  }
+
+  /** the turn is under way (or about to start) */
+  get turning(): boolean { return this.turnK < 1 }
+
+  /** advance the turn by dt seconds of sim time; true when the box moved (the caller redraws the shadow map) */
+  stepTurn(dt: number): boolean {
+    if (this.turnK >= 1) return false
+    this.turnK = Math.min(1, this.turnK + dt / FLIP_SECONDS)
+    this.applyTurn()
+    return true
+  }
+
+  /** the jig frame's matrix for pose `p` at rest (world metres from the box's inches) */
+  restMatrix(p: JigPose): THREE.Matrix4 { return this.jigM[p] }
+
+  private applyTurn() {
+    if (this.turnK >= 1) { this.applyMatrix(this.jigM[this.pose]); return }
+    const { angle, lift } = turnPose(this.turnFrom, this.pose, Math.max(0, this.turnK), this.half)
+    const J = STATION.jig
+    this.applyMatrix(new THREE.Matrix4().makeTranslation(J.x, blockTopY() + lift * INCH, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeRotationX(angle)).multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yMid, 0)))
+  }
+
+  private applyMatrix(m: THREE.Matrix4) {
+    this.jigFrame.matrix.copy(m)
     this.jigFrame.matrixWorldNeedsUpdate = true
     this.jigFrame.updateMatrixWorld(true)
     this.cut.update()

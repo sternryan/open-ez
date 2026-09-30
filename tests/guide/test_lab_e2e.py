@@ -2147,3 +2147,104 @@ def test_fuselage_tour_button_follows_the_selected_chapter_and_the_ch6_film_ends
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.2 Task 7 polish: the dock's CG and legend rows fold away, the box turns over in sim time, the cut hides the labels it removes.
+# ======================================================================================================================
+def test_fuselage_dock_folds_the_cg_and_legend_rows_clear_of_the_box_and_remembers_it(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f06.bottom-tape")
+            pg.evaluate("window.__lab.select(null)")
+            pg.evaluate("window.__lab.advance(3)")
+            # closed by default: one line, the legend still says what the stripes mean, the CG's reasons fold away
+            assert pg.get_attribute("#fuse-more", "aria-expanded") == "false"
+            assert pg.is_visible("#t-cg") and pg.is_visible("#t-legend") and pg.is_hidden("#ro-cg-sub")
+            assert "fitted shape" in pg.inner_text("#t-legend")
+            # the box's forward end (FS 22) is not under the dock at the home view
+            dock = _rect(pg, "#dock")
+            bx = pg.evaluate("window.__lab.plyBox('fuselage.side_left')")
+            for y in (bx["min"][1], bx["max"][1]):
+                for z in (-12, 12):
+                    x, yy = pg.evaluate(f"window.__lab.project(window.__lab.fuseToWorld([22, {y}, {z}]))")
+                    assert not (dock[0] <= x <= dock[2] and dock[1] <= yy <= dock[3]), (x, yy, dock)
+            pg.click("#fuse-more")
+            assert pg.get_attribute("#fuse-more", "aria-expanded") == "true" and pg.is_visible("#ro-cg-sub")
+            assert "lower bound" in pg.inner_text("#ro-cg-sub")
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.get_attribute("#fuse-more", "aria-expanded") == "true" and pg.is_visible("#ro-cg-sub")  # remembered
+            assert not errors, errors
+            b.close()
+            # a phone: the rows are there (closed), one tap opens them; storage that throws only means it is not remembered
+            throwing = "Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } })"
+            b, pg, errors = _open(p, url, 390, 844, init=throwing, query="&freeze=1&op=f06.bottom-tape")
+            assert pg.is_visible("#t-cg") and pg.is_visible("#fuse-more") and pg.is_hidden("#ro-cg-sub")
+            r = _rect(pg, "#fuse-more")
+            assert r[0] >= 0 and r[2] <= 390 and r[3] <= 844
+            pg.click("#fuse-more")
+            assert pg.is_visible("#ro-cg-sub") and pg.is_visible("#t-legend")
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_fuselage_box_turns_over_in_sim_time_at_the_bottom_bond_and_back(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f06.bottom-glass")
+            pg.evaluate("window.__lab.advance(3)")
+            q = [70, 5, 9]  # a point of the box, off its turning axis
+            inv, up = (pg.evaluate(f"window.__lab.fuseRestToWorld({q}, '{k}')") for k in ("inverted", "upright"))
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q})") == pytest.approx(inv, abs=1e-6)
+            pg.evaluate("window.__lab.select('f06.bottom-bond')")
+            assert pg.evaluate("window.__lab.jigPose()") == "upright" and pg.evaluate("window.__lab.fuseTurning()")
+            pg.evaluate("window.__lab.advance(1.1)")  # partway round: only step() moves it
+            mid = pg.evaluate(f"window.__lab.fuseToWorld({q})")
+            far = lambda a, c: max(abs(u - v) for u, v in zip(a, c)) > 0.02  # metres
+            assert far(mid, inv) and far(mid, up), (mid, inv, up)
+            pg.evaluate("window.__lab.advance(2)")
+            assert not pg.evaluate("window.__lab.fuseTurning()")
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q})") == pytest.approx(up, abs=1e-6)  # settles exactly upright
+            pg.evaluate("window.__lab.select('f06.bottom-glass')")  # stepping back turns it back over
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "inverted"
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q})") == pytest.approx(inv, abs=1e-6)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_station_cut_hides_the_labels_of_parts_it_removes_and_labels_the_face_it_opens(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f06.rear-seat-tape")  # every bulkhead is in by now
+            pg.evaluate("(() => { const s = window.__lab.fuseShots().fhome; window.__lab.setCamera(s.pos, s.target) })()")
+            pg.evaluate("window.__lab.advance(3)")
+            ahead = ("fuselage.f22", "fuselage.f28", "fuselage.panel")  # wholly forward of FS 72
+            shown = lambda lab: lab["opacity"] > 0.5 and not lab.get("hidden")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert all(labs[k]["opacity"] > 0.5 for k in ahead), [labs[k] for k in ahead]  # fitted shapes: labelled whatever the op
+            pg.evaluate("window.__lab.setSection(true, 72)")
+            pg.evaluate("window.__lab.advance(3)")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert all(labs[k]["opacity"] < 0.05 for k in ahead), [labs[k] for k in ahead]
+            fs = labs["fuselage.front_seat_bkhd"]
+            assert shown(fs) and not fs["collapsed"] and fs["text"] == "Front seat bulkhead", fs
+            pg.evaluate("window.__lab.setSection(false, 72)")
+            pg.evaluate("window.__lab.advance(3)")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert all(labs[k]["opacity"] > 0.5 for k in ahead), [labs[k] for k in ahead]
+            for k in ahead:  # a fitted part's label keeps its words whenever it is shown in full
+                assert "fitted shape" in labs[k]["text"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

@@ -23,6 +23,8 @@ import type { MaterialSpec } from '../logic/materials'
 /**
  * The "unverified" treatment: a part whose shape is REPRESENTATIONAL (fitted, not from a printed outline) carries amber diagonal
  * stripes on its surface and on its cut face, 1.6 in apart in the model frame. uHatch = 0 (every canard part) skips it entirely.
+ * uHatch = 1 + soft: soft (0..1, logic/fuselage.ts hatchSoftness) thins the stripes on a large surface (a stripe is 48% of the period at
+ * 0, 20% at 1) without changing their colour, so the legend swatch still matches; a cut face always gets the full stripes.
  */
 const GLSL_HATCH = /* glsl */ `
 if (uHatch > 0.5) {
@@ -30,7 +32,8 @@ if (uHatch > 0.5) {
   float hs = (hp.x + hp.y - hp.z) / 1.6;
   float tri = abs(fract(hs) - 0.5) * 2.0;
   float aa = clamp(fwidth(hs) * 2.0, 1e-4, 0.5);
-  float stripe = smoothstep(0.52 - aa, 0.52 + aa, tri);
+  float hedge = mix(0.52, 0.8, cutCap ? 0.0 : clamp(uHatch - 1.0, 0.0, 1.0));
+  float stripe = smoothstep(hedge - aa, hedge + aa, tri);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.80, 0.40, 0.08), 0.7 * stripe * (1.0 - 0.6 * aa * 2.0));
 }`
 export const HATCH_COLOR = 0xcc6614
@@ -309,14 +312,15 @@ export function plyFrame(geo: THREE.BufferGeometry): PlyFrame {
   return { web, axis, span: { rootZ: u === 0 ? -bb.min.x : -bb.min.y, len: ext[u] } }
 }
 
-/** Options the fuselage uses; the canard passes none, and gets exactly its old material. */
-export interface CompositeOpts { axis?: THREE.Vector3; hatch?: boolean }
+/** Options the fuselage uses; the canard passes none, and gets exactly its old material. `hatchSoft` (0..1) thins the stripes on a large surface. */
+export interface CompositeOpts { axis?: THREE.Vector3; hatch?: boolean; hatchSoft?: number }
+const hatchValue = (hatch?: boolean, soft = 0) => (hatch ? 1 + THREE.MathUtils.clamp(soft, 0, 1) : 0)
 
 export interface CompositeInfo { kind: MaterialSpec['kind']; angles: number[]; wet: number }
 
 /** One material per mesh. `web` says the ply lies in the model Y-Z plane (use plyPlane on its geometry). */
 export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web: 0 | 1 | 2 = 0, span: PlySpan = { rootZ: 0, len: 1 }, opts: CompositeOpts = {}): THREE.MeshStandardMaterial {
-  const hatch = { value: opts.hatch ? 1 : 0 }
+  const hatch = { value: hatchValue(opts.hatch, opts.hatchSoft) }
   const axis = { value: (opts.axis ?? new THREE.Vector3(0, 0, 1)).clone() }
   const common = { metalness: 0, cut, detail: 0 }
   let m: THREE.MeshStandardMaterial
@@ -385,11 +389,11 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
 }
 
 /** A matte non-composite part (no plies). Same ghost handling as the composites. */
-export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; name?: string } = {}): THREE.MeshStandardMaterial {
+export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; hatchSoft?: number; name?: string } = {}): THREE.MeshStandardMaterial {
   const color = opts.color ?? 0xe6dfcf // the canard passes nothing: its old pale part colour
   const m = surf({
     name: opts.name ?? 'part', color, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: color,
-    hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, capColor: GLSL_FOLLOW, uniforms: { uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: { value: opts.hatch ? 1 : 0 } } },
+    hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, capColor: GLSL_FOLLOW, uniforms: { uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: { value: hatchValue(opts.hatch, opts.hatchSoft) } } },
   })
   m.userData.hatch = !!opts.hatch
   return m

@@ -1,6 +1,8 @@
 // Adapted from AirsupHQ/airsup-lab src/ui/labels.ts (MIT); see NOTICE.
-// Changes: label text is set with textContent (no innerHTML); each label may carry a leader-dot colour; a stats() readout for tests.
+// Changes: label text is set with textContent (no innerHTML); each label may carry a leader-dot colour; a stats() readout for tests;
+// an opt-in priority rule (logic/declutter.ts) in place of the vertical nudge, where a label that finds no room collapses to its dot.
 import * as THREE from 'three'
+import { declutter, type Rect } from '../logic/declutter'
 
 export interface LabelDef {
   id: string
@@ -13,7 +15,13 @@ export interface LabelDef {
   at: () => THREE.Vector3 | null
   /** 0..1 visibility wanted right now */
   vis: () => number
+  /** with the priority rule on: higher wins a collision; `tie` breaks equal priority (lower wins) */
+  priority?: () => number
+  tie?: () => number
 }
+
+/** The priority rule: labels collide in priority order and a loser collapses to its dot; `obstacles` are screen rects (the UI cards). */
+export interface DeclutterOpts { obstacles: () => Rect[] }
 
 interface Live extends LabelDef {
   el: HTMLDivElement
@@ -24,6 +32,10 @@ interface Live extends LabelDef {
   y: number
   yAdj: number
   on: boolean
+  dot: boolean
+  /** the priority rule only: the pill's width has been measured on screen (not the 120 px stand-in) */
+  sized: boolean
+  target: number
 }
 
 /**
@@ -34,7 +46,7 @@ interface Live extends LabelDef {
 export class Labels {
   private items: Live[] = []
   private v = new THREE.Vector3()
-  constructor(private root: HTMLElement, private camera: THREE.PerspectiveCamera) {}
+  constructor(private root: HTMLElement, private camera: THREE.PerspectiveCamera, private rule: DeclutterOpts | null = null) {}
 
   add(d: LabelDef) {
     const el = document.createElement('div')
@@ -50,7 +62,7 @@ export class Labels {
       el.appendChild(subEl)
     }
     this.root.appendChild(el)
-    this.items.push({ ...d, el, subEl, op: 0, w: 0, x: 0, y: 0, yAdj: 0, on: false })
+    this.items.push({ ...d, el, subEl, op: 0, w: 0, x: 0, y: 0, yAdj: 0, on: false, dot: false, sized: false, target: 0 })
   }
 
   update(w: number, h: number, dt: number) {
@@ -72,20 +84,37 @@ export class Labels {
           it.y = y
         }
       }
+      it.target = target
       it.op += (target - it.op) * k
       if (it.op < 0.01 && target === 0) it.op = 0
       if (it.op > 0) {
         if (it.subEl && it.sub) {
           const s = typeof it.sub === 'function' ? it.sub() : it.sub
-          if (it.subEl.textContent !== s) { it.subEl.textContent = s; it.w = 0 }
+          if (it.subEl.textContent !== s) { it.subEl.textContent = s; it.w = 0; it.sized = false }
         }
-        if (!it.w) it.w = it.el.offsetWidth || 120
+        if (!it.w || (this.rule && !it.sized && it.on)) {
+          // measure the full pill (a collapsed one is only its dot); a pill not yet on screen measures 0, so the rule measures again once it is
+          if (it.dot) it.el.classList.remove('dot')
+          const w = it.el.offsetWidth
+          it.w = w || 120
+          it.sized = w > 0
+          if (it.dot) it.el.classList.add('dot')
+        }
         live.push(it)
       }
     }
-    // relax overlaps: push pairs apart vertically
     for (const it of live) it.yAdj = it.y
-    for (let iter = 0; iter < 6; iter++) {
+    if (this.rule && live.length) {
+      // the priority rule: winners keep their place (or take the slot just above or below), losers collapse to their dot
+      const placed = declutter(live.map((it) => ({ x: it.x, y: it.y, w: it.w, h: 22, priority: it.target > 0 ? it.priority?.() ?? 0 : -1, tie: it.tie?.() ?? 0 })), this.rule.obstacles())
+      live.forEach((it, i) => {
+        it.yAdj = it.y + placed[i].dy
+        if (placed[i].collapsed !== it.dot) { it.dot = placed[i].collapsed; it.el.classList.toggle('dot', it.dot) }
+        if (placed[i].hidden !== it.el.classList.contains('gone')) it.el.classList.toggle('gone', placed[i].hidden)
+      })
+    }
+    // relax overlaps: push pairs apart vertically
+    for (let iter = 0; iter < (this.rule ? 0 : 6); iter++) {
       let moved = false
       for (let i = 0; i < live.length; i++)
         for (let j = i + 1; j < live.length; j++) {
@@ -112,7 +141,7 @@ export class Labels {
   }
 
   /** What is on screen now, for tests and captures. */
-  stats(): { id: string; text: string; opacity: number; x: number; y: number }[] {
-    return this.items.map((i) => ({ id: i.id, text: i.text, opacity: i.op, x: i.x, y: i.yAdj }))
+  stats(): { id: string; text: string; opacity: number; x: number; y: number; collapsed?: boolean; hidden?: boolean }[] {
+    return this.items.map((i) => (this.rule ? { id: i.id, text: i.text, opacity: i.op, x: i.x, y: i.yAdj, collapsed: i.dot, hidden: i.el.classList.contains('gone') } : { id: i.id, text: i.text, opacity: i.op, x: i.x, y: i.yAdj }))
   }
 }

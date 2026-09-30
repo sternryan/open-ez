@@ -62,6 +62,27 @@ _SHEET_NOTE = (
 
 FIDELITIES = frozenset({"book", "derived", "representational"})
 
+# Plain names for people (the lab's labels, the ledger's reasons). Never show a part's internal name instead.
+PART_NAMES = {
+    "side_left": "Left side",
+    "side_right": "Right side",
+    "front_seat_bkhd": "Front seat bulkhead",
+    "rear_seat_bkhd": "Rear seat bulkhead",
+    "top_longeron_left": "Left top longeron",
+    "top_longeron_right": "Right top longeron",
+    "f22": "F22 bulkhead",
+    "f28": "F28 bulkhead",
+    "panel": "Instrument panel",
+    "firewall": "Firewall",
+    "bottom": "Bottom foam",
+}
+
+
+def part_name(name: str) -> str:
+    """A part's plain name ("Left top longeron" for `top_longeron_left`)."""
+    return PART_NAMES.get(name, name.replace("_", " ").capitalize())
+
+
 _P36, _P37, _P38 = "plans-1980:p36", "plans-1980:p37", "plans-1980:p38"
 _P33, _P34 = "plans-1980:p33", "plans-1980:p34"
 

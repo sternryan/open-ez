@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { barOps, type GraphLite, type Op } from '../src/logic/graph'
 import {
   fuseBarOps, parseSubject, placement, jigPose, upFace, planHalfWidth, stationLayers, stationSummary, fmtFs, stationAmount,
-  STATION_CUT, cgRow, INSTALL, FUSE_CHAPTERS, type FusePlyRow, type FusePartRow, type LedgerLite,
+  STATION_CUT, cgRow, INSTALL, FUSE_CHAPTERS, turnPose, FLIP_SECONDS, hatchSoftness, labelPriority, crossedByStationCut,
+  type FusePlyRow, type FusePartRow, type LedgerLite,
 } from '../src/logic/fuselage'
 import { FUSE_VIEWS, fuseView } from '../src/fuseShots'
 
@@ -169,4 +170,69 @@ test('the station cut hides the label of a part wholly forward of the plane and 
   const hidden = Object.keys(rows).filter((k) => removedByStationCut(rows[k], 72))
   assert.deepEqual(hidden, ['f22', 'f28', 'panel'])
   assert.deepEqual(Object.keys(rows).filter((k) => removedByStationCut(rows[k], 22)), [], 'with the plane at the nose nothing is wholly forward')
+})
+
+test('the CG detail names parts by their labels and folds a left and right pair into one reason', () => {
+  const L: LedgerLite = {
+    cg: {
+      weight_lb: 0, arm_in: null, included: [], excluded: {
+        top_longeron_left: 'not yet computed: core material of Left top longeron not sourced',
+        top_longeron_right: 'not yet computed: core material of Right top longeron not sourced',
+        firewall: 'not yet computed: density of birch plywood not sourced',
+      },
+    },
+    cg_lower_bound: { weight_lb: 0, arm_in: null, included: [], excluded: {} },
+  }
+  const sub = cgRow(L).sub!
+  assert.ok(sub.includes('core material of top longeron not sourced (2)'), sub)
+  assert.ok(!/_/.test(sub), sub)
+})
+
+test('the box turns right side up about its long axis: from inverted to upright, eased, lifted clear of the blocks', () => {
+  const half = { h: 11.5, w: 12 }
+  assert.ok(FLIP_SECONDS >= 0.8 && FLIP_SECONDS <= 1.3)
+  const a = turnPose('inverted', 'upright', 0, half), z = turnPose('inverted', 'upright', 1, half)
+  assert.equal(a.angle, Math.PI)
+  assert.equal(z.angle, 0)
+  assert.equal(a.lift, half.h) // at rest the axis is half the box's height above the block tops
+  assert.equal(z.lift, half.h)
+  // eased: slow at both ends
+  const early = turnPose('inverted', 'upright', 0.1, half).angle
+  assert.ok(Math.PI - early < 0.1 * Math.PI, 'eases out of rest')
+  // every corner of the section stays above the block tops the whole way round
+  for (let k = 0; k <= 1.0001; k += 0.02) {
+    const p = turnPose('inverted', 'upright', k, half)
+    for (const [y, zz] of [[half.h, half.w], [half.h, -half.w], [-half.h, half.w], [-half.h, -half.w]]) {
+      const yy = y * Math.cos(p.angle) - zz * Math.sin(p.angle)
+      assert.ok(p.lift + yy >= -1e-9, `corner below the blocks at k=${k}`)
+    }
+  }
+  const mid = turnPose('inverted', 'upright', 0.5, half)
+  assert.ok(mid.angle > 0.2 && mid.angle < Math.PI - 0.2 && mid.lift > half.h, 'mid-turn is between the ends and lifted')
+  // stepping back turns it the other way, through the same path
+  const back = turnPose('upright', 'inverted', 0.5, half)
+  assert.ok(Math.abs(back.angle - mid.angle) < 1e-9 && Math.abs(back.lift - mid.lift) < 1e-9)
+  assert.equal(turnPose('upright', 'inverted', 1, half).angle, Math.PI)
+  // the same k gives the same pose (the film is reproducible)
+  assert.deepEqual(turnPose('inverted', 'upright', 0.37, half), turnPose('inverted', 'upright', 0.37, half))
+})
+
+test('stripes soften on large faces and stay full on small parts', () => {
+  assert.equal(hatchSoftness(20), 0)
+  assert.equal(hatchSoftness(92), 0) // F28
+  assert.equal(hatchSoftness(300), 0) // the firewall: a bulkhead keeps the full stripes
+  assert.ok(hatchSoftness(471) < 0.35) // the panel and F22 barely change
+  assert.ok(hatchSoftness(500) > 0 && hatchSoftness(500) < 1)
+  assert.equal(hatchSoftness(2300), 1) // the 24 x 96 bottom
+  assert.ok(hatchSoftness(800) > hatchSoftness(400))
+})
+
+test('label priority: the selected op parts, then the parts the station cut passes through, then fitted shapes', () => {
+  const p = (inOp: boolean, cut: boolean, fitted: boolean) => labelPriority({ inOp, cut, fitted })
+  assert.ok(p(true, false, false) > p(false, true, true))
+  assert.ok(p(false, true, false) > p(false, false, true))
+  assert.ok(p(false, false, true) > p(false, false, false))
+  assert.equal(crossedByStationCut({ fs_min: 63.0151, fs_max: 82.2849 }, 72), true)
+  assert.equal(crossedByStationCut({ fs_min: 22, fs_max: 22.2 }, 72), false)
+  assert.equal(crossedByStationCut({ fs_min: 85, fs_max: 118 }, 72), false)
 })
