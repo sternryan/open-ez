@@ -18,6 +18,11 @@ test('barOps drops reference chapters and stubs', () => {
   assert.deepEqual(barOps(g, 'gu').map((o) => o.id), ['c10.a'])
 })
 
+test('barOps leaves out the fuselage chapters', () => {
+  const f: GraphLite = { ops: [op('f04.a', 4, ['both']), op('f05.a', 5, ['both']), op('f06.a', 6, ['both']), ...g.ops], order: ['f04.a', 'f05.a', 'f06.a', ...g.order] }
+  assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b'])
+})
+
 test('makeStore toggles, and survives storage that throws', () => {
   const mem = new Map<string, string>()
   const ok = makeStore({ getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => { mem.set(k, v) } })

@@ -1,0 +1,210 @@
+# Chapter 6 — fuselage assembly (plans pp. 6-1 to 6-6). The bonding order is encoded as a requires chain:
+# front seat -> instrument panel -> F22 -> rear seat -> firewall (plans p. 6-2 text).
+- id: f06.trial-fit
+  chapter: 6
+  title: Trial fit of sides and bulkheads
+  summary: Dry-fit both sides with the firewall, front seat bulkhead, F22 and rear seat bulkhead, keeping the firewall square to the top longeron. Mark the locating holes in each bulkhead.
+  variants: [both]
+  requires: [f04.front-seat-bkhd-back, f04.rear-seat-bkhd-hole, f04.panel-f22-f28-fwd, f04.firewall-fwd, f05.gear-extrusions]
+  components: [fuselage.side_left, fuselage.side_right, fuselage.front_seat_bkhd, fuselage.rear_seat_bkhd, fuselage.f22, fuselage.firewall]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 39}
+  completion:
+    - Firewall square to the top longeron with nothing forced
+    - Locating holes drilled in the front seat bulkhead, F22 and rear seat bulkhead
+    - Both sides match in length and bulkhead stations
+- id: f06.jig-check
+  chapter: 6
+  title: Jig blocks and squareness check
+  summary: Level two jig blocks on the bench and stand the sides upside down on them. Check the assembly is square, level and symmetric before any bulkhead is bonded.
+  variants: [both]
+  requires: [f06.trial-fit]
+  components: [fuselage.side_left, fuselage.side_right]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 39}
+    - {doc: scan-1980, scan_pp: 40}
+  completion:
+    - Blocks level in both directions
+    - Sides upright in the jig with matching stations left and right
+    - Diagonals and heights measured and recorded before bonding
+- id: f06.bond-front-seat
+  chapter: 6
+  title: Bond the front seat bulkhead
+  summary: First into the jig. After the dry run, everything comes apart, every bond face gets flox, and the parts go back in the same order. The front seat bulkhead goes in first and its corners get two 45-degree BID tapes while the flox is still wet.
+  variants: [both]
+  requires: [f06.jig-check]
+  components: [fuselage.front_seat_bkhd, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "corner tapes, front seat bulkhead, 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - Bulkhead seated on its marks with flox squeeze-out all round
+    - Corner tapes wet and smooth
+- id: f06.bond-panel
+  chapter: 6
+  title: Bond the instrument panel
+  summary: Second in the order. Flox the panel to both sides at its mark and tape the corners with two 45-degree BID plies.
+  variants: [both]
+  requires: [f06.bond-front-seat]
+  components: [fuselage.panel, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "corner tapes, instrument panel, 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - Panel square and on its station marks
+    - Corner tapes laid while the flox is wet
+- id: f06.bond-f22
+  chapter: 6
+  title: Bond F22
+  summary: Third in the order. Flox F22 into place; tape it only where the plans show tape.
+  variants: [both]
+  requires: [f06.bond-panel]
+  components: [fuselage.f22, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - F22 seated on its marks, flox squeeze-out visible
+    - Tape added only at the locations the page shows
+- id: f06.bond-rear-seat
+  chapter: 6
+  title: Bond the rear seat bulkhead
+  summary: Fourth in the order. Flox the rear seat bulkhead to both sides, with its lower edge level with the side bottoms and its top corner at the lower forward corner of the spar cutout.
+  variants: [both]
+  requires: [f06.bond-f22]
+  components: [fuselage.rear_seat_bkhd, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - Bulkhead top meets the cutout's lower forward corner
+    - Bottom edge flush with the bottom line of the sides
+    - Flox squeeze-out visible all round
+- id: f06.bond-firewall
+  chapter: 6
+  title: Bond the firewall
+  summary: Last in the order. Flox the firewall to both sides, check it is still square to the top longeron, recheck the whole jig, then leave the assembly untouched for twelve hours.
+  variants: [both]
+  requires: [f06.bond-rear-seat]
+  components: [fuselage.firewall, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - Firewall square to the top longeron after bonding
+    - All five bulkheads bonded and the jig checks still hold
+    - Left undisturbed for twelve hours
+- id: f06.f28-install
+  chapter: 6
+  title: Install F28
+  summary: Set F28 5.9 in behind F22's forward face and bond it with two small wood doublers, each covered with a single 45-degree BID ply.
+  variants: [both]
+  requires: [f06.bond-f22]
+  components: [fuselage.f28, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "over each doubler, 45 degrees, lapping about 0.4 onto F28, longeron and side"}
+  sources:
+    - {doc: scan-1980, scan_pp: 41}
+  changes:
+    - {cp: 34, lpc: 105, class: MEO, status: verified, kind: official, note: "Each small wood doubler gets one 45-degree BID ply over it, lapping onto F28, the top longeron and the side."}
+  completion:
+    - F28 5.9 from F22's forward face
+    - Two doublers bonded and covered by BID laps
+- id: f06.rear-seat-tape
+  chapter: 6
+  title: Tape the rear seat bulkhead
+  summary: After the rear seat bond has cured, add two BID plies of tape to its joints with the sides.
+  variants: [both]
+  requires: [f06.bond-rear-seat]
+  components: [fuselage.rear_seat_bkhd, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "rear seat bulkhead joint tape, 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 41}
+  completion:
+    - Flox bond cured before taping
+    - Tape laid along both joints
+- id: f06.bottom-foam-fit
+  chapter: 6
+  title: Fit the bottom foam
+  summary: Fit the thick foam bottom block against F22 and trim it a little outboard of the side marks and a hair aft of the rear seat mark. Cut the nose-gear well.
+  variants: [both]
+  requires: [f06.bond-firewall, f06.f28-install, f06.rear-seat-tape]
+  components: [fuselage.bottom]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 42}
+  completion:
+    - Block butted to F22, trimmed 0.7 outboard of the side marks and 1/4 aft of the rear seat mark
+    - Nose-gear well cut to the plans size
+- id: f06.bottom-contour
+  chapter: 6
+  title: Carve the bottom contour
+  summary: Carve the block to the printed sections. The plans say none of the carved dimensions is critical.
+  variants: [both]
+  requires: [f06.bottom-foam-fit]
+  components: [fuselage.bottom]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 43}
+    - {doc: scan-1980, scan_pp: 44}
+  completion:
+    - Sections match the printed values within reason
+    - Surface smooth, no flat spots
+- id: f06.bottom-glass
+  chapter: 6
+  title: Glass the bottom
+  summary: Lay two 45-degree BID plies over the bottom, with one more under the rear-seat entry area. Leave one inch overlaps and two inches of extra cloth at the aft end.
+  variants: [both]
+  requires: [f06.bottom-contour]
+  components: [fuselage.bottom]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "whole bottom, 45 degrees, 1 in overlaps, 2 in excess at the aft end"}
+    - {cloth: BID, plies: 1, where: "rear seat entry area, extra"}
+  sources:
+    - {doc: scan-1980, scan_pp: 43}
+  completion:
+    - Plies wet out and overlapped as drawn
+    - Aft excess left long for wrapping onto the rear seat bulkhead
+- id: f06.bottom-bond
+  chapter: 6
+  title: Bond the bottom to the fuselage
+  summary: Put flox beads on the joints, invert the structure, weight the bottom down, and wet the aft excess cloth onto the aft face of the rear seat bulkhead.
+  variants: [both]
+  requires: [f06.bottom-glass]
+  components: [fuselage.bottom, fuselage.side_left, fuselage.side_right, fuselage.rear_seat_bkhd]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 44}
+  completion:
+    - Bottom weighted evenly while the flox cures
+    - Excess cloth wet onto the rear seat bulkhead
+- id: f06.bottom-tape
+  chapter: 6
+  title: Tape the bottom corners
+  summary: Tape every inside corner where the bottom meets the sides and bulkheads, with one 45-degree BID ply two inches wide.
+  variants: [both]
+  requires: [f06.bottom-bond]
+  components: [fuselage.bottom]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "all inside corners, 2 in wide, 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 44}
+  completion:
+    - Every corner taped, none missed
+    - Fuselage box closed and ready for the next chapter

@@ -169,7 +169,7 @@
   title: Pins and fuselage fit for the Roncz canard
   summary: Make the two alignment pins for F28, then set the canard on the fuselage and lower the fuselage sides until it sits at the right incidence with room for full elevator travel.
   variants: [roncz]
-  requires: [r30.top-skin, c06.fuselage-assembled, r30.elevators]
+  requires: [r30.top-skin, f06.bottom-tape, r30.elevators]
   components: [canard.alignment_pins]
   geometry_visible: true
   sources:
