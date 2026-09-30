@@ -188,3 +188,21 @@ p43 6-5, p44 6-6.
 - The chapter 6 film was not re-rendered after the flip; re-render at deploy.
 - Gate: linux 651 passed, 3 skipped, 8 xfailed; mac 138 + 5 passed; local_render 5 passed; lab 116/116,
   typecheck clean; viewer 50/50; guide.check OK.
+
+## Fix: Blender cutaway contract (e44ec07)
+- Break: the M2.2 site glb carries the fuselage (it spans both sides of B.L. 0), so the anvil Blender
+  job's contract refused it ("scene Y extent -12.30..70.80"). Task 5 had narrowed the export test's
+  B.L. range check to canard meshes, which hid exactly this.
+- Fix (captain, inline): `guide.export_glb` also writes the cutaway's inputs, canard only, into
+  `<out>/canard/` under the contract's file names (longez.glb, layup.json, shots.json).
+  `render_cutaway.sh` and `deploy_guide.sh` key and render from there, and `build_site` checks renders
+  against it (a flat export without `canard/` is read as before). A new test pins the cutaway glb's node
+  set to the pre-M2.2 export's (22 nodes, taken from f41ac44 in a scratch worktree) and checks every mesh
+  spans B.L. 0..70.8, and that its layup.json is the site's minus the `fuselage` block.
+- The canard layup.json and shots.json come out byte-identical to the pre-M2.2 export, so the render key
+  is `4e6c85eeaa30d64414d21202633e961f0982841980666db8985c980533b188e2`, which was already in the render
+  cache. The key did not change because no canard input changed, which is the intended behaviour.
+- Ran `guide/render_cutaway.sh --wait` (lease FREE): the job imported 16 canard meshes, y = 0..70.80,
+  ended `LAYUP_CUTAWAY_OK shots=7`; fresh PNGs written to that key's cache directory (16:36 local);
+  `guide.render_key --check` against the canard export passes.
+- Gate: linux 652 passed, 3 skipped, 8 xfailed; mac 138 + 5 passed; local_render 5 passed; guide.check OK.
