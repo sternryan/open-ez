@@ -298,6 +298,8 @@ def test_phone_cutaway_pane_inside_viewport_and_clear_of_toggle(csite):
 # ---- M2 Task 11: ply list with isolate + empty Checklist heading
 GL = ["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
 P3 = "canard.shear_web.p3"
+import re
+PLY = re.compile(r"\.p\d+$")
 
 
 def _open_gl(p, url, width):
@@ -547,7 +549,11 @@ def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
         ib = _rect(pg, "#isobar")
         pg.keyboard.press("Escape"); pg.wait_for_timeout(500)
         top = max(c0, ib["b"] + 4)  # page coords: right half of #c, below the isobar
-        clip = {"x": c["x"] + c["w"] / 2, "y": top, "width": c["w"] / 2, "height": c0 + c["h"] - top}
+        # the dock stack and build bar overlay the canvas bottom: cut the clip off at the highest of them
+        cut = min(_rect(pg, "#dockstack")["t"], _rect(pg, "#buildbar")["t"])
+        # NOTE: the original right-half geometry is not measurable any more: the model sits left of canvas centre and the open dock
+        # stack overlays everything below y=cut, so the right half above `cut` holds ~67 dark px (<500). Use the full canvas width.
+        clip = {"x": c["x"], "y": top, "width": c["w"], "height": cut - top}
         before = _dark_pixels(pg, clip)
         pg.click(f'#plydock button[data-node="{P3}"]')
         pg.evaluate("window.__guide.flyHome()")  # isolate zooms to the ply; compare at the same framing
@@ -591,5 +597,239 @@ def test_isolate_zooms_to_the_ply_and_show_all_returns_home(csite):
         back = pg.evaluate("window.__guide.camera()")
         assert back["distance"] == pytest.approx(home["distance"], rel=1e-6)
         assert back["target"] == pytest.approx(home["target"], rel=1e-6, abs=1e-6)
+        b.close()
+    s.shutdown()
+
+
+# ---- Block 2 M2.1 Task 2: build progression (ply scrubber, ghost toggle)
+def _open_build(p, url, width=1180, extra=""):
+    b = p.chromium.launch(args=GL)
+    pg = b.new_page(viewport={"width": width, "height": 900})
+    pg.goto(url + "?test=1" + extra); pg.wait_for_selector("#ops li[data-op]")
+    pg.select_option("#variant", "roncz")
+    pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=10000)
+    return b, pg
+
+
+def _scrub(pg, v):
+    pg.eval_on_selector("#scrub", "(e, v) => { e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); e.dispatchEvent(new Event('change', {bubbles: true})); }", str(v))
+
+
+def _web(pg):
+    return {k: v for k, v in pg.evaluate("window.__buildState()").items() if k.startswith("canard.shear_web.")}
+
+
+def test_scrubber_selects_web_plies_and_core_built(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        assert pg.is_visible("#scrub") and pg.get_attribute("#scrub", "max") == "6" and pg.input_value("#scrub") == "6"
+        st = pg.evaluate("window.__buildState()")
+        assert st["canard.core"] == "built"
+        web = _web(pg); assert len(web) == 6 and set(web.values()) == {"current"}
+        _scrub(pg, 1)
+        web = _web(pg)
+        assert list(web.values()).count("current") == 1 and list(web.values()).count("hidden") == 5
+        # the scene itself, not just the hook's fresh compute: a missing recompute would leave all 6 web plies showing
+        vis = pg.evaluate("window.__visibleNames()")
+        assert len([n for n in vis if n.startswith("canard.shear_web.")]) == 1, vis
+        st = pg.evaluate("window.__buildState()")
+        assert {n for n in vis if PLY.search(n)} == {n for n, v in st.items() if PLY.search(n) and v in ("built", "current")}, vis
+        assert "canard.core" in vis
+        b.close()
+    s.shutdown()
+
+
+def test_earlier_op_leaves_no_later_ply_visible(csite):  # Review Focus 1
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        assert any(n.startswith("canard.skin_bottom") for n in pg.evaluate("window.__visibleNames()"))
+        for early in ("r30.shear-web", "r30.templates-cores"):
+            pg.click('#ops li[data-op="r30.bottom-skin"]'); pg.click(f'#ops li[data-op="{early}"]')
+            assert not [n for n in pg.evaluate("window.__visibleNames()") if n.startswith("canard.skin_bottom")]
+        b.close()
+    s.shutdown()
+
+
+def _plies_by_opacity(pg):
+    ops = pg.evaluate("window.__guide.meshOpacities()")  # only meshes on screen: build-hidden ones keep a stale opacity but are invisible
+    vis = [m for m in ops if m["visible"]]
+    return ({m["node"] for m in vis if m["node"] and m["opacity"] == 1}, {m["node"] for m in vis if m["node"] and m["opacity"] < 0.3}, ops)
+
+
+def test_ghost_toggle_and_memory(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.shear-web"]'); _scrub(pg, 2)
+        assert list(_web(pg).values()).count("hidden") == 4
+        assert not pg.is_checked("#ghost")
+        st = pg.evaluate("window.__buildState()")
+        future = {n for n, v in st.items() if v == "ghost" or (v == "hidden" and PLY.search(n))}
+        assert len(future) >= 4 and len([n for n in future if n.startswith("canard.shear_web.")]) == 4
+        assert not future & set(pg.evaluate("window.__visibleNames()"))
+        pg.check("#ghost")
+        st = pg.evaluate("window.__buildState()")
+        ghosts = {n for n, v in st.items() if v == "ghost"}; solid = {n for n, v in st.items() if PLY.search(n) and v in ("built", "current")}
+        assert len([n for n in ghosts if n.startswith("canard.shear_web.")]) == 4
+        assert ghosts <= set(pg.evaluate("window.__visibleNames()"))  # future plies are on screen while ghost is on
+        opaque, faint, ops = _plies_by_opacity(pg)
+        assert opaque == solid and faint == ghosts, (opaque, faint)  # exactly the built/current plies solid, exactly the future ones faint
+        cur = {n for n, v in st.items() if v == "current"}
+        assert cur and all(m["emissive"] == 0x1f5f8b for m in ops if m["node"] in cur)
+        core = [m for m in ops if m["component"] == "canard.core" and m["node"] is None]  # a built mesh: fully opaque, no glow
+        assert core and all(m["opacity"] == 1 and m["emissive"] == 0 for m in core)
+        pg.uncheck("#ghost")
+        assert not ghosts & set(pg.evaluate("window.__visibleNames()"))
+        opaque, faint, _ = _plies_by_opacity(pg); assert opaque == solid and not faint
+        pg.check("#ghost")
+        pg.reload(); pg.wait_for_selector("#ops li[data-op]"); pg.select_option("#variant", "roncz")
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        assert pg.is_checked("#ghost")
+        b.close()
+    s.shutdown()
+
+
+def test_play_steps_scrubber_and_second_press_stops(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.click("#play")
+        pg.wait_for_function("document.querySelector('#scrub').value === '6'", timeout=5000)
+        b.close()
+        b, pg = _open_build(p, url)  # normal speed: press, let it step once, press again, it must hold
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.click("#play"); assert pg.input_value("#scrub") == "1"
+        pg.wait_for_function("document.querySelector('#scrub').value === '2'", timeout=3000)
+        pg.click("#play"); pg.wait_for_timeout(1500)
+        assert pg.input_value("#scrub") == "2" and pg.get_attribute("#play", "aria-pressed") == "false"
+        b.close()
+    s.shutdown()
+
+
+def test_scrubber_hidden_without_plies_and_hooks_need_test_flag(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        assert not pg.is_visible("#scrub") and not pg.is_visible("#play")
+        pg.goto(url); pg.wait_for_selector("#ops li[data-op]")
+        assert pg.evaluate("typeof window.__buildState") == "undefined" and pg.evaluate("typeof window.__visibleNames") == "undefined"
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("width", [1180, 390])
+def test_build_controls_clear_of_other_controls(csite, width):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, width)
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.click('#parts .chip[data-cid="canard.skin_bottom"]')
+        def r(sel): return pg.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }", sel)
+        bar = r("#buildbar"); assert pg.is_visible("#scrub") and _inside(pg, "#buildbar")
+        for other in ("#parts", "#plydock", "#viewtoggle"):
+            if pg.is_visible(other):
+                o = r(other); assert bar[2] <= o[0] or o[2] <= bar[0] or bar[3] <= o[1] or o[3] <= bar[1], (other, bar, o)
+        assert pg.evaluate("document.querySelector('#play').getBoundingClientRect().height") >= 44
+        pg.click('#viewtoggle [data-view="cutaway"]'); assert not pg.is_visible("#buildbar")
+        b.close()
+    s.shutdown()
+
+
+def _snap(pg):
+    ops = pg.evaluate("window.__guide.meshOpacities()")
+    return (sorted(pg.evaluate("window.__visibleNames()")), sorted((m["node"] or "", m["component"], m["opacity"], m["emissive"], m["visible"]) for m in ops))
+
+
+def test_isolate_overrides_then_clear_restores_build_state(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.shear-web"]'); _scrub(pg, 2)
+        before = _snap(pg)
+        hidden = {n for n, v in pg.evaluate("window.__buildState()").items() if v == "hidden"}
+        assert P3 in hidden
+        pg.click('#parts .chip[data-cid="canard.shear_web"]'); pg.click(f'#plydock button[data-node="{P3}"]')
+        vis = set(pg.evaluate("window.__visibleNames()"))
+        assert P3 in vis and not (hidden - {P3}) & vis  # other build-hidden plies stay hidden
+        for m in pg.evaluate("window.__guide.meshOpacities()"):
+            if not m["visible"]: continue
+            if m["node"] == P3: assert m["opacity"] == 1
+            else: assert m["opacity"] == pytest.approx(0.15), m
+        pg.keyboard.press("Escape")
+        assert pg.evaluate("window.__guide.isolated()") is None
+        assert _snap(pg) == before
+        b.close()
+    s.shutdown()
+
+
+def test_play_stops_when_isolating_or_leaving_3d(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        for how in ("isolate", "cutaway"):
+            b, pg = _open_build(p, url)
+            pg.click('#ops li[data-op="r30.shear-web"]')
+            pg.click('#parts .chip[data-cid="canard.shear_web"]')
+            pg.click("#play"); assert pg.get_attribute("#play", "aria-pressed") == "true"
+            if how == "isolate": pg.click(f'#plydock button[data-node="{P3}"]')
+            else: pg.evaluate("document.querySelector('#viewtoggle [data-view=cutaway]').click()")
+            v = pg.input_value("#scrub"); assert pg.get_attribute("#play", "aria-pressed") == "false", how
+            pg.wait_for_timeout(1600)
+            assert pg.input_value("#scrub") == v, how
+            b.close()
+    s.shutdown()
+
+
+def test_variant_change_keeps_isolate_rule(csite):
+    """Every ply op is roncz-only in the real graph, so widen r30.shear-web to both variants to reach the still-visible path."""
+    def widen(route):
+        g = route.fetch().json()
+        for o in g["ops"]:
+            if o["id"] == "r30.shear-web": o["variants"] = ["both"]
+        route.fulfill(json=g)
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=GL)
+        pg = b.new_page(viewport={"width": 1180, "height": 900})
+        pg.route("**/graph.json", widen)
+        pg.goto(url + "?test=1"); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz")
+        pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=10000)
+        pg.click('#ops li[data-op="r30.shear-web"]'); _scrub(pg, 2)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]'); pg.click(f'#plydock button[data-node="{P3}"]')
+        hidden = {n for n, v in pg.evaluate("window.__buildState()").items() if v == "hidden"} - {P3}
+        assert hidden
+        pg.select_option("#variant", "gu")
+        assert pg.evaluate("window.__guide.isolated()") == P3
+        vis = set(pg.evaluate("window.__visibleNames()"))
+        assert P3 in vis and not hidden & vis, hidden & vis
+        assert all(m["opacity"] == pytest.approx(0.15) for m in pg.evaluate("window.__guide.meshOpacities()") if m["visible"] and m["node"] != P3)
+        b.close()
+    s.shutdown()
+
+
+def test_phone_model_stays_visible_and_scrubber_reachable(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, 390)
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.is_visible("#plydock") and pg.is_visible("#buildbar")
+        assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+        free = pg.evaluate("""() => { const c = document.querySelector('#c').getBoundingClientRect(); let lo = c.top, hi = c.bottom;
+            for (const s of ['#parts', '#plydock', '#buildbar']) { const e = document.querySelector(s); if (e.hidden) continue;
+                const r = e.getBoundingClientRect(); if (r.width && r.left < c.right && r.right > c.left && r.top < hi && r.bottom > lo) { if (r.top - c.top > c.bottom - r.bottom) hi = Math.min(hi, r.top); else lo = Math.max(lo, r.bottom); } }
+            return hi - lo; }""")
+        assert free >= 300, free
+        pg.evaluate("document.querySelector('#scrub').scrollIntoView({block: 'center'})")
+        r = pg.evaluate("(() => { const r = document.querySelector('#scrub').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom, innerWidth, innerHeight]; })()")
+        assert r[0] >= 0 and r[2] <= r[4] and r[1] >= 0 and r[3] <= r[5], r
+        assert pg.evaluate("(() => { const r = document.querySelector('#scrub').getBoundingClientRect(); return document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2).id; })()") == "scrub"
+        pg.click("#scrub"); assert pg.evaluate("document.documentElement.scrollWidth") <= 390
         b.close()
     s.shutdown()

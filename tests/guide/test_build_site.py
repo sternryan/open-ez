@@ -74,3 +74,13 @@ def test_renders_need_models(tmp_path):
 def test_legend_states_planform_source():  # Block 1: GU planform stands in until the Roncz one is sourced
     from guide.build_site import LEGEND
     assert any(e["text"] == "Canard planform: GU size from the Owner's Manual; Roncz planform unconfirmed" for e in LEGEND)
+
+
+def test_ply_rows_carry_op(tmp_path):  # build progression reads the owning op from graph.plies
+    e = make_export(tmp_path / "e")
+    build(REPO_GRAPH, tmp_path / "site", models=e / "longez.glb", scan_base=None, docs=None)
+    g = json.loads((tmp_path / "site" / "graph.json").read_text())
+    ops = {o["id"] for o in g["ops"]}
+    rows = [r for rs in g["plies"].values() for r in rs]
+    assert rows and all(r["op"] in ops for r in rows)
+    assert sum(r["op"] == "r30.shear-web" for r in g["plies"]["canard.shear_web"]) == 6

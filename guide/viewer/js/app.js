@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GLANCE, plyRows, isolateLabel, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
+import { visibleSet } from "./build.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
@@ -22,6 +23,12 @@ const byId = new Map(graph.ops.map(o => [o.id, o]));
 const meshes = new Map();
 const plyNode = new Map(); let isolated = null;
 let current = null;
+const qs = new URLSearchParams(location.search), TEST = qs.get("test") === "1", STEP_MS = qs.get("fast") === "1" ? 30 : 700;
+const GHOST_KEY = "longez.ghost";
+try { graph.__ghost = storage?.getItem(GHOST_KEY) === "1"; } catch { graph.__ghost = false; }
+$("#ghost").checked = !!graph.__ghost;
+const plyInfo = new Map(); for (const rows of Object.values(graph.plies ?? {})) for (const r of rows) plyInfo.set(r.node, { op: r.op, order: r.order });
+let layIndex = 0, timer = null;
 
 // ---- 3D
 const canvas = $("#c");
@@ -31,10 +38,10 @@ const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
 const controls = new OrbitControls(camera, canvas);
 scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 2.2));
 function resize() {
-  const r = canvas.parentElement.getBoundingClientRect();
+  const r = canvas.getBoundingClientRect(); // the canvas, not #viewport: at phone width the controls flow below it inside #viewport
   renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(r.height, 1); camera.updateProjectionMatrix();
 }
-new ResizeObserver(resize).observe(canvas.parentElement);
+new ResizeObserver(resize).observe(canvas);
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
 new GLTFLoader().load(cfg.model, gltf => {
@@ -58,13 +65,58 @@ new GLTFLoader().load(cfg.model, gltf => {
   home = { target: controls.target.clone(), position: camera.position.clone() };
   applyVariantVisibility();
   if (current && byId.has(current)) highlight(byId.get(current).components);
-  if (isolated) isolate(isolated);
+  if (isolated) isolate(isolated); else applyBuild();
 }, undefined, () => { $("#model-status").textContent = "3D unavailable — steps and sources still work"; });
 
 function applyVariantVisibility() {
   const used = componentsInVariant(graph, $("#variant").value);
   for (const [m, cid] of meshes) m.visible = used.has(cid);
 }
+// Build state: recomputed from scratch on every change, never patched (a ply must not outlive its step).
+function opPlies(id) { return Object.values(graph.plies ?? {}).flat().filter(r => r.op === id).length; }
+function buildOp() {
+  const op = current && byId.get(current);
+  return op && !op.stub && visibleOps(graph, $("#variant").value).some(o => o.id === current) ? op : null;
+}
+function buildState() {
+  const op = buildOp(); if (!op || !meshes.size) return null;
+  const seen = new Map();
+  for (const [m, cid] of meshes) {
+    const name = plyNode.get(m) ?? cid;
+    if (!seen.has(name)) seen.set(name, { name, component: cid, ply: plyInfo.get(name) ?? null });
+  }
+  return visibleSet(graph, $("#variant").value, op.id, layIndex, [...seen.values()]);
+}
+function applyBuild() {
+  if (isolated) return;
+  const st = buildState();
+  if (!st) { applyVariantVisibility(); return; }
+  for (const [m, cid] of meshes) {
+    const s = st.get(plyNode.get(m) ?? cid), mat = m.material, ghost = s === "ghost";
+    m.visible = s !== "hidden";
+    // While an op with a build state is selected, this `current` emissive wins over any chip highlight (chips only re-highlight via highlight()).
+    mat.emissive?.setHex(s === "current" ? 0x1f5f8b : 0x000000);
+    mat.transparent = ghost; mat.opacity = ghost ? 0.2 : 1; mat.depthWrite = !ghost;
+    mat.needsUpdate = true; // transparent toggles the OPAQUE shader define; without this nothing ghosts on screen
+  }
+}
+function stopPlay() { clearInterval(timer); timer = null; $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play"; }
+function setLay(n) { layIndex = n; $("#scrub").value = n; $("#scrublabel").textContent = `Ply ${n} of ${$("#scrub").max}`; applyBuild(); }
+function syncBuildbar() {
+  const on = !!buildOp() && $("#c").hidden === false, n = on ? opPlies(current) : 0;
+  $("#buildbar").hidden = !on; $("#scrubwrap").hidden = n === 0;
+}
+$("#ghost").onchange = e => {
+  graph.__ghost = e.target.checked; try { storage?.setItem(GHOST_KEY, graph.__ghost ? "1" : "0"); } catch { /* per-viewer convenience only */ }
+  applyBuild();
+};
+$("#scrub").oninput = e => { stopPlay(); setLay(+e.target.value); };
+$("#play").onclick = () => {
+  if (timer) return stopPlay();
+  const max = +$("#scrub").max; setLay(1);
+  $("#play").setAttribute("aria-pressed", "true"); $("#play").textContent = "Stop";
+  timer = setInterval(() => { if (layIndex >= max) return stopPlay(); setLay(layIndex + 1); if (layIndex >= max) stopPlay(); }, STEP_MS);
+};
 function highlight(cids) {
   for (const [m, cid] of meshes) m.material.emissive?.setHex(cids.includes(cid) ? 0x1f5f8b : 0x000000);
 }
@@ -138,6 +190,7 @@ function selectOp(id) {
   });
   syncChecklistHeading();
   highlight(op.components);
+  stopPlay(); const n = opPlies(id); $("#scrub").max = n; setLay(n);
   showAll(); applyPane();
 }
 function selectComponent(cid) {
@@ -147,15 +200,17 @@ function selectComponent(cid) {
 }
 function clearDetail() {
   for (const id of ["#op-title", "#op-summary", "#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
-  $("#plydock").hidden = true; showAll(); syncChecklistHeading();
+  $("#plydock").hidden = true; stopPlay(); showAll(); syncChecklistHeading();
   highlight([]);
   applyPane();
 }
 function syncChecklistHeading() { $("#checklist-h").hidden = $("#checklist").children.length === 0; }
 function isolate(node) {
-  isolated = node;
-  for (const [m] of meshes) {
+  stopPlay(); isolated = node; // isolate overrides the build state's look until cleared; hidden plies stay hidden except the isolated one
+  const st = buildState(); if (!st) applyVariantVisibility();
+  for (const [m, cid] of meshes) {
     const on = plyNode.get(m) === node;
+    if (st) m.visible = on || st.get(plyNode.get(m) ?? cid) !== "hidden";
     m.material.transparent = !on; m.material.opacity = on ? 1 : 0.15; m.material.depthWrite = on;
     m.material.needsUpdate = true; // transparent toggles the OPAQUE shader define; without this nothing ghosts on screen
   }
@@ -170,6 +225,7 @@ function showAll() {
   for (const [m] of meshes) {
     m.material.transparent = false; m.material.opacity = 1; m.material.depthWrite = true; m.material.needsUpdate = true;
   }
+  applyBuild();
   $("#isobar").hidden = true; $("#viewport").classList.remove("isolating");
   if (home) flyTo(home.target, home.position);
   for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", "false");
@@ -199,8 +255,8 @@ function applyPane() {
   $("#viewtoggle").hidden = !(current && current !== GLANCE && cutawayFor(graph, current));
   for (const b of document.querySelectorAll("#viewtoggle button")) b.setAttribute("aria-checked", String(b.dataset.view === view));
   $("#viewport").classList.toggle("paned", mode !== "3d");
-  $("#c").hidden = mode !== "3d"; $("#parts").hidden = mode !== "3d";
-  if (mode !== "3d") { $("#plydock").hidden = true; showAll(); }
+  $("#c").hidden = mode !== "3d"; $("#parts").hidden = mode !== "3d"; syncBuildbar();
+  if (mode !== "3d") { stopPlay(); $("#plydock").hidden = true; showAll(); }
   for (const b of document.querySelectorAll("#viewtoggle button")) b.tabIndex = b.dataset.view === view ? 0 : -1;
   $("#cutpane").hidden = mode !== "cutaway"; $("#glance").hidden = mode !== "glance";
   $("#legend").hidden = mode !== "glance"; document.querySelector("main").classList.toggle("glance", mode === "glance");
@@ -219,7 +275,7 @@ function zoom(src, alt) {
   $("#zoombody").replaceChildren(im); $("#zoom").showModal();
 }
 function selectGlance() {
-  current = GLANCE; markSelected([GLANCE]); highlight([]); showAll(); $("#plydock").hidden = true;
+  stopPlay(); current = GLANCE; markSelected([GLANCE]); highlight([]); showAll(); $("#plydock").hidden = true;
   $("#op-title").textContent = "Canard layup at a glance";
   $("#op-summary").textContent = graph.cutaway.count_note;
   for (const id of ["#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
@@ -256,11 +312,20 @@ window.__guide = { selectComponent, isolated: () => isolated,
   flyHome: () => { if (home) flyTo(home.target, home.position); },
   camera: () => ({ target: controls.target.toArray(), distance: camera.position.distanceTo(controls.target) }),
   plyBox: node => { const b = new THREE.Box3(); for (const m of meshes.keys()) if (plyNode.get(m) === node) b.expandByObject(m); return { min: b.min.toArray(), max: b.max.toArray() }; }, meshPlies: () => [...new Set(plyNode.values())],
-  meshOpacities: () => [...meshes.keys()].map(m => ({ node: plyNode.get(m) ?? null, component: meshes.get(m), opacity: m.material.opacity })), paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
+  meshOpacities: () => [...meshes.keys()].map(m => ({ node: plyNode.get(m) ?? null, component: meshes.get(m), opacity: m.material.opacity, emissive: m.material.emissive?.getHex() ?? 0, visible: m.visible })), paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
   visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
-  renderList(); applyVariantVisibility();
+  renderList(); applyVariantVisibility(); stopPlay();
   const still = current === GLANCE || current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
   if (still) markSelected([current]); else { current = null; clearDetail(); }
+  if (isolated) { // applyVariantVisibility() just un-hid build-hidden plies: redo the isolate rule, or drop it if its ply left the variant
+    const used = componentsInVariant(graph, $("#variant").value);
+    if ([...meshes].some(([m, cid]) => plyNode.get(m) === isolated && used.has(cid))) isolate(isolated); else showAll();
+  } else applyBuild();
+  syncBuildbar();
 };
+if (TEST) {
+  window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
+  window.__visibleNames = () => [...new Set([...meshes.keys()].filter(m => m.visible).map(m => plyNode.get(m) ?? meshes.get(m)))];
+}
 renderList();
