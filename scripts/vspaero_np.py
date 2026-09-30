@@ -59,9 +59,18 @@ MARKER_FIELDS = {
 }
 
 
+# The VLM wing's inboard end. 0.0 = the gross reference trapezoid from the centreline, the same
+# planform the analytic NP uses (ledger C2). A run recorded without this key (the exposed panels
+# from wing_root_bl) reads as stale.
+VLM_WING_INBOARD_BL = 0.0
+
+
 def geometry_marker(geo) -> dict[str, float]:
     """The geometry block a VLM run records and the report's currency check compares."""
-    return {key: round(float(getattr(geo, attr)), 6) for key, attr in MARKER_FIELDS.items()}
+    marker = {key: round(float(getattr(geo, attr)), 6) for key, attr in MARKER_FIELDS.items()}
+    marker["wing_centerline_chord_in"] = round(float(geo.wing_centerline_chord), 6)
+    marker["vlm_wing_inboard_bl"] = VLM_WING_INBOARD_BL
+    return marker
 
 
 def reference_values(geo) -> dict[str, float]:
@@ -104,8 +113,12 @@ def _parse_polar(path: Path) -> list[dict[str, float]]:
 
 
 def run(geo, work_dir: Path, *, x_ref: float = X_REF_FS, fixed_wake: bool = False,
-        wing_to_centerline: bool = False, with_canard: bool = True) -> dict:
-    """One sweep. The keyword options are diagnostics only; the recorded run uses the defaults."""
+        wing_to_centerline: bool = VLM_WING_INBOARD_BL == 0.0, with_canard: bool = True) -> dict:
+    """One sweep. The keyword options are diagnostics only; the recorded run uses the defaults.
+
+    Default wing: the gross reference trapezoid from BL 0 (centreline chord, LE on the LE sweep
+    line), the planform of wing_area_sqft and of the analytic NP (ledger C2).
+    """
     import openvsp as vsp
 
     ref = {**reference_values(geo), "Xref_fs": x_ref}
@@ -141,7 +154,7 @@ def run(geo, work_dir: Path, *, x_ref: float = X_REF_FS, fixed_wake: bool = Fals
         if gid is not None:
             vsp.SetSetFlag(gid, thin, True)
     vsp.Update()
-    return _solve(vsp, work_dir, thin, ref, fixed_wake)
+    return _solve(vsp, work_dir, thin, ref, fixed_wake, wing_to_centerline)
 
 
 def _canard(vsp, geo, canard, no_sym) -> None:
@@ -157,7 +170,8 @@ def _canard(vsp, geo, canard, no_sym) -> None:
     vsp.SetParmVal(canard, "Sym_Planar_Flag", "Sym", no_sym)
 
 
-def _solve(vsp, work_dir: Path, thin: int, ref: dict, fixed_wake: bool) -> dict:
+def _solve(vsp, work_dir: Path, thin: int, ref: dict, fixed_wake: bool,
+           wing_to_centerline: bool) -> dict:
     vsp3 = str(work_dir / "long_ez_np.vsp3")
     vsp.SetVSP3FileName(vsp3)
     vsp.WriteVSPFile(vsp3)
@@ -190,7 +204,8 @@ def _solve(vsp, work_dir: Path, thin: int, ref: dict, fixed_wake: bool) -> dict:
     np_fs, slope, r2 = neutral_point([r["CL"] for r in rows], [r["CMy"] for r in rows],
                                      ref["Xref_fs"], ref["cref_in"])
     return {
-        "method": "VSPAERO vortex lattice (VLM), wing panels + canard, thin surfaces, Mach 0, Y-symmetry",
+        "method": ("VSPAERO vortex lattice (VLM), gross reference wing (BL 0 to tip) + canard, "
+                   "thin surfaces, Mach 0, Y-symmetry"),
         "np_fs": round(np_fs, 4),
         "dCMy_dCL": slope,
         "fit_r_squared": r2,
@@ -199,9 +214,11 @@ def _solve(vsp, work_dir: Path, thin: int, ref: dict, fixed_wake: bool) -> dict:
                       "note": ("Sref = gross reference trapezoid (wing_area_sqft x 144), bref = wing_span, "
                                "cref = MAC of the gross trapezoid; Xref = Xcg (moment reference). "
                                "NP is independent of Sref/cref: CL and CMy share them.")},
-        "model": ("wing panels BL wing_root_bl to tip (no centre section, no strakes, no fuselage, "
-                  "no winglets); canard constant chord from BL 0; incidences as rigid Y rotations "
-                  "about each surface's root LE"),
+        "model": (("wing = gross reference trapezoid, BL 0 (wing_centerline_chord) to tip, LE and TE "
+                   "the straight panel lines extended to the centreline" if wing_to_centerline else
+                   "wing panels BL wing_root_bl to tip (diagnostic)")
+                  + "; no strakes, no fuselage, no winglets; canard constant chord from BL 0; "
+                  "incidences as rigid Y rotations about each surface's root LE"),
         "sweep": rows,
     }
 

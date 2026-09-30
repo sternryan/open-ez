@@ -84,8 +84,12 @@ class TestDownwashModel:
         assert 100.0 < np_with_downwash < 180.0
 
     def test_zero_vertical_offset_stronger_downwash(self):
-        """With h=0 (no vertical separation), downwash is strongest,
-        eta_canard is smallest, NP shifts most aft (toward wing AC)."""
+        """With h=0 (no vertical separation), the canard downwash at the wing is strongest.
+
+        The downwash acts on the aft surface, the wing (Raymer eq. 16.9; ledger C3): it cuts the
+        wing's effective lift slope, so the wing contributes less and the NP moves FORWARD
+        toward the canard AC. So np_h0 < np_h100.
+        """
         original_h = config.geometry.canard_vertical_offset_in
         try:
             # h=0: canard and wing in same plane -- maximum downwash
@@ -93,15 +97,13 @@ class TestDownwashModel:
             engine_h0 = PhysicsEngine()
             np_h0 = engine_h0.calculate_neutral_point()
 
-            # h=100: extreme separation -- downwash negligible, eta ≈ 1.0
+            # h=100: extreme separation -- downwash much weaker
             config.geometry.canard_vertical_offset_in = 100.0
             engine_h100 = PhysicsEngine()
             np_h100 = engine_h100.calculate_neutral_point()
 
-            # More downwash (h=0) -> lower eta -> canard contributes less ->
-            # NP shifts AFT toward wing AC (~150). So np_h0 > np_h100.
-            assert np_h0 > np_h100, (
-                f"NP at h=0 ({np_h0:.1f}) should be aft of NP at h=100 ({np_h100:.1f})"
+            assert np_h0 < np_h100, (
+                f"NP at h=0 ({np_h0:.1f}) should be forward of NP at h=100 ({np_h100:.1f})"
             )
         finally:
             config.geometry.canard_vertical_offset_in = original_h

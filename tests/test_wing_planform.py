@@ -59,29 +59,28 @@ def test_vsp_winglet_x_is_the_tip_leading_edge(tmp_path):
 
 
 def test_calculate_mac_uses_the_same_planform():
+    """calculate_mac is the MAC of the reference trapezoid, the planform of wing_area_sqft (ledger C2)."""
     engine = PhysicsEngine()
-    cr, ct = G.wing_root_chord, G.wing_tip_chord
-    lam = ct / cr
-    panel = G.wing_tip_bl - G.wing_root_bl
-    mac_wing = (2 / 3) * cr * (1 + lam + lam**2) / (1 + lam)
-    y_mac = (panel / 3) * (1 + 2 * lam) / (1 + lam)
-    x_le_wing = G.fs_wing_le + y_mac * math.tan(math.radians(G.wing_sweep_le))
-    s_wing_side = _trapezoid_sqin(G.wing_root_bl, G.wing_tip_bl, cr, ct)
-    # the wing's own area agrees with the config property (both exposed panels)
-    assert 2 * s_wing_side / 144 == pytest.approx(G.wing_exposed_area_sqft, abs=0.01)
+    tan_le = math.tan(math.radians(G.wing_sweep_le))
+    # centreline chord by hand: extend the panel taper from BL wing_root_bl to BL 0
+    c0 = G.wing_root_chord + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / (G.wing_tip_bl - G.wing_root_bl)
+    ct = G.wing_tip_chord
+    # the planform is the one whose area is the reference area
+    assert _trapezoid_sqin(0.0, G.wing_tip_bl, c0, ct) * 2 / 144 == pytest.approx(G.wing_area_sqft, abs=0.01)
 
-    strake = config.strakes
-    s_chord_in = strake.fs_trailing_edge - strake.fs_leading_edge
-    s_strake_side = (s_chord_in + cr) / 2 * G.wing_root_bl
-    taper_s = cr / s_chord_in
-    mac_strake = (2 / 3) * s_chord_in * (1 + taper_s + taper_s**2) / (1 + taper_s)
-    total = s_wing_side + s_strake_side
-    expect_mac = (mac_wing * s_wing_side + mac_strake * s_strake_side) / total
-    expect_le = (x_le_wing * s_wing_side + strake.fs_leading_edge * s_strake_side) / total
+    # MAC by direct integration of c(y)^2 over the semispan (no closed form reused)
+    n = 20000
+    s_half = G.wing_tip_bl
+    ys = [(k + 0.5) * s_half / n for k in range(n)]
+    chord = [c0 + (ct - c0) * y / s_half for y in ys]
+    area = sum(chord) * s_half / n
+    expect_mac = sum(c * c for c in chord) * s_half / n / area
+    y_bar = sum(c * y for c, y in zip(chord, ys)) * s_half / n / area
+    expect_le = (G.fs_wing_le - G.wing_root_bl * tan_le) + y_bar * tan_le
 
     mac, mac_le = engine.calculate_mac()
-    assert mac == pytest.approx(expect_mac, abs=1e-6)
-    assert mac_le == pytest.approx(expect_le, abs=1e-6)
+    assert mac == pytest.approx(expect_mac, abs=1e-3)
+    assert mac_le == pytest.approx(expect_le, abs=1e-3)
 
 
 def test_vsp_script_wing_runs_root_bl_to_tip_bl(tmp_path):
