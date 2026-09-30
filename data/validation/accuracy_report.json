@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T00:04:20.035131+00:00",
+    "generated": "2026-09-30T00:09:43.559403+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -13,6 +13,23 @@
           14.0
         ],
         "n_points": 19
+      }
+    },
+    "checks": {
+      "stability": {
+        "np_fs": 112.56219497303884,
+        "aft_limit_fs": 103.0,
+        "static_margin_pct": 24.3404,
+        "pass": true,
+        "mac_in": 39.28524480811359
+      },
+      "two_method_np": {
+        "status": "not run",
+        "analytic": 112.56219497303884,
+        "vlm": null,
+        "delta": null,
+        "bound_in": 1.0,
+        "reason": "OpenVSP python module not installed; vspaero_native_polars.json holds no neutral point; vspaero_native_polars.json (2026-03-13T11:19:43.890146+00:00) has no geometry marker matching the current wing/canard spans, so it predates the current geometry"
       }
     },
     "geometry_basis": "book (planform correction 2026-09-29); NP is a check, not a fit; see docs/geometry-correction-ledger.md",
