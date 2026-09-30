@@ -540,6 +540,9 @@ def test_isolate_visibly_ghosts_other_plies_on_screen(csite, width):
     s, url = serve(csite)
     with sync_playwright() as p:
         b, pg = _open_gl(p, url, width)
+        # This test measures ghosting in the region above the dock; the section bar only takes room from it.
+        # test_phone_model_stays_visible_and_scrubber_reachable is the guard for the canvas size with the section bar present.
+        pg.add_style_tag(content="#section{display:none!important}")
         pg.click('#parts .chip[data-cid="canard.shear_web"]')
         pg.wait_for_timeout(500)
         c = pg.eval_on_selector("#c", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width, h: r.height}; }")
@@ -831,5 +834,234 @@ def test_phone_model_stays_visible_and_scrubber_reachable(csite):
         assert r[0] >= 0 and r[2] <= r[4] and r[1] >= 0 and r[3] <= r[5], r
         assert pg.evaluate("(() => { const r = document.querySelector('#scrub').getBoundingClientRect(); return document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2).id; })()") == "scrub"
         pg.click("#scrub"); assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+        b.close()
+    s.shutdown()
+
+
+# ---- Block 2 M2.1 Task 3: live section cut and station readout (real export: the csite boxes are not span-shaped)
+FOAM, UND, BID = (0xdc, 0xdc, 0xd6), (0xd9, 0x96, 0x2b), (0x3a, 0x9e, 0x98)  # app.css --foam/--und/--bid
+
+
+@pytest.fixture(scope="module")
+def rsite(tmp_path_factory):
+    from guide.export_glb import main as export_main
+    tmp = tmp_path_factory.mktemp("section_site")
+    export_main(["--out", str(tmp / "e" / "longez.glb")])
+    out = tmp / "site"
+    build(ROOT / "guide" / "graph", out, models=tmp / "e" / "longez.glb", scan_base=None, docs=None)
+    return out
+
+
+def _sec_open(p, url, op="r30.top-skin", width=1180):
+    b = p.chromium.launch(args=GL)
+    pg = b.new_page(viewport={"width": width, "height": 900})
+    pg.goto(url + "?test=1"); pg.wait_for_selector("#ops li[data-op]")
+    pg.select_option("#variant", "roncz")
+    pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=15000)
+    pg.click(f'#ops li[data-op="{op}"]')
+    return b, pg
+
+
+def _sec(pg, bl, on=True):
+    if pg.is_checked("#section-on") != on:
+        pg.click("#section-on")
+    pg.eval_on_selector("#section-bl", "(e, v) => { e.value = v; e.dispatchEvent(new Event('input', {bubbles: true})); }", str(bl))
+    pg.wait_for_timeout(150)
+
+
+def _near(im, rgb, tol=6):
+    return sum(1 for px in im.getdata() if all(abs(a - b) <= tol for a, b in zip(px[:3], rgb)))
+
+
+def test_section_readout_lists_the_layers_cut_there(rsite):  # (a)
+    from guide import layup
+    s, url = serve(rsite)
+    g = json.loads((rsite / "graph.json").read_text())
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url)
+        assert pg.get_attribute("#section-bl", "max") == str(g["layup"]["semi_span"]) and pg.get_attribute("#section-bl", "min") == "0"
+        _sec(pg, 40)
+        txt = pg.inner_text("#section-readout")
+        assert "B.L. 40" in txt
+        rows = sorted((n for n in g["layup"]["nodes"].values() if n["bl_max"] is None or 40 <= n["bl_max"]),
+                      key=lambda n: (n["op_index"], n["order"]))
+        want, seen = [], []
+        for n in rows:
+            if n["component"] not in seen: seen.append(n["component"])
+        for cid in seen:
+            cl = {}
+            for n in rows:
+                if n["component"] == cid: cl[n["cloth"]] = cl.get(n["cloth"], 0) + 1
+            want.append(f'{g["components"][cid]["label"]}: ' + ", ".join(f"{v} {k}" for k, v in cl.items()))
+        assert " · ".join(want) in txt, (txt, want)
+        assert pg.get_attribute("#section-readout", "aria-live") == "polite"
+        _sec(pg, 12.5)  # the slider steps 0.5; fmtBl rounding is unit-tested
+        assert "B.L. 12.5" in pg.inner_text("#section-readout")
+        b.close()
+    s.shutdown()
+
+
+def _lab(g, cid):
+    return g["components"][cid]["label"]
+
+
+def test_section_readout_lists_only_built_layers(rsite):
+    """The plane cuts every visible layer and only those: at the shear-web op the skins and spar caps are not built yet."""
+    s, url = serve(rsite)
+    g = json.loads((rsite / "graph.json").read_text())
+    later = ["canard.skin_top", "canard.skin_bottom", "canard.spar_cap_top", "canard.spar_cap_bottom"]
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.shear-web")
+        _sec(pg, 20)
+        txt = pg.inner_text("#section-readout")
+        assert _lab(g, "canard.shear_web") in txt and _lab(g, "canard.core") in txt, txt
+        assert not [c for c in later if _lab(g, c) in txt], txt
+        pg.click("#ghost")  # future work drawn see-through is still not built: not a layer of the cut
+        assert not [c for c in later if _lab(g, c) in pg.inner_text("#section-readout")]
+        pg.click("#ghost")
+        # one ply into the web op: only ply 1 is built, so only ply 1 is listed
+        pg.eval_on_selector("#scrub", "(e) => { e.value = 1; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+        web = [n for n in g["layup"]["nodes"].values() if n["component"] == "canard.shear_web" and n["order"] <= 1 and (n["bl_max"] is None or 20 <= n["bl_max"])]
+        assert len(web) == 1
+        assert f'{_lab(g, "canard.shear_web")}: 1 {web[0]["cloth"]}' in pg.inner_text("#section-readout")
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        txt = pg.inner_text("#section-readout")
+        assert all(_lab(g, c) in txt for c in later + ["canard.shear_web", "canard.core"]), txt
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("bl", [5, 20, 30, 40, 54, 60])
+def test_cut_geometry_matches_layer_data(rsite, bl):
+    """The capped solids are exactly the plies layersAt lists (bl <= bl_max, inclusive like counts_at), plus the foam core."""
+    s, url = serve(rsite)
+    g = json.loads((rsite / "graph.json").read_text())
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url)  # r30.top-skin, scrub at max: every ply built
+        _sec(pg, bl)
+        have = set(pg.evaluate("window.__guide.meshPlies()"))
+        want = {n for n, v in g["layup"]["nodes"].items() if (v["bl_max"] is None or bl <= v["bl_max"]) and n in have}
+        capped = set(pg.evaluate("window.__cut().cappedNodes"))
+        assert capped - {"canard.core"} == want, (bl, capped ^ want)
+        assert "canard.core" in capped
+        b.close()
+    s.shutdown()
+
+
+def test_no_caps_for_hidden_or_disabled_solids(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.shear-web")
+        assert pg.evaluate("window.__cut().capsVisible") == 0  # section off
+        _sec(pg, 20)
+        c = pg.evaluate("window.__cut()")
+        assert c["capsVisible"] > 0
+        bad = [n for n in c["capNodesVisible"] if n.startswith(("canard.skin_", "canard.spar_cap_"))]
+        assert not bad and "canard.shear_web.p1" in c["capNodesVisible"], c["capNodesVisible"]
+        _sec(pg, 20, on=False)
+        assert pg.evaluate("window.__cut().capsVisible") == 0
+        _sec(pg, 20)
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert any(n.startswith("canard.skin_top") for n in pg.evaluate("window.__cut().capNodesVisible"))
+        pg.click('#ops li[data-op="r30.templates-cores"]')  # back to a core-only build: nothing else may keep a cap
+        assert pg.evaluate("window.__cut().capNodesVisible") == ["canard.core"]
+        b.close()
+    s.shutdown()
+
+
+def test_section_cap_pixels_at_the_cut_face(rsite):  # (b)
+    import io
+    from PIL import Image
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url)
+        _sec(pg, 40)
+        r = pg.evaluate("window.__cutView()")
+        pg.wait_for_timeout(700)
+        c = pg.eval_on_selector("#c", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top}; }")
+        clip = {"x": c["x"] + r["x0"], "y": c["y"] + r["y0"], "width": r["x1"] - r["x0"], "height": r["y1"] - r["y0"]}
+        assert clip["width"] > 100 and clip["height"] > 8, clip
+        on = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+        n_on = {k: _near(on, v) for k, v in {"foam": FOAM, "und": UND, "bid": BID}.items()}
+        print("CAPS on", clip, n_on)
+        assert n_on["foam"] > 100 and n_on["bid"] > 20 and n_on["und"] > 20, n_on  # foam core, BID and UND plies all reach BL 40
+        _sec(pg, 40, on=False); pg.evaluate("window.__cutView()"); pg.wait_for_timeout(700)
+        off = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+        n_off = {k: _near(off, v) for k, v in {"foam": FOAM, "und": UND, "bid": BID}.items()}
+        print("CAPS off", n_off)
+        assert n_off["foam"] < n_on["foam"] * 0.1 and n_off["bid"] < n_on["bid"] * 0.1 and n_off["und"] < n_on["und"] * 0.1, (n_on, n_off)
+        b.close()
+    s.shutdown()
+
+
+def test_section_off_restores_the_unclipped_view(rsite):  # (c)
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url)
+        assert pg.evaluate("window.__cut()")["clipped"] == 0
+        _sec(pg, 40)
+        on = pg.evaluate("window.__cut()")
+        assert on["enabled"] and on["clipped"] > 0 and on["capObjects"] > 0
+        _sec(pg, 40, on=False)
+        off = pg.evaluate("window.__cut()")
+        assert not off["enabled"] and off["clipped"] == 0 and off["capObjects"] == 0 and off["cappedNodes"] == []
+        vis = pg.evaluate("window.__visibleNames()")
+        assert "canard.core" in vis and any(n.startswith("canard.skin_top") for n in vis)
+        b.close()
+    s.shutdown()
+
+
+def test_station_maps_to_model_bl_not_mirrored(rsite):  # (d) Review Focus 3: a bl_max-30 ply is cut at BL 25 and not at BL 35
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url)
+        box = pg.evaluate("window.__guide.plyBox('canard.shear_web.p3')")
+        assert box["min"][2] == pytest.approx(-30, abs=0.01) and box["max"][2] == pytest.approx(0, abs=0.01)  # glTF: BL runs along -Z, inches
+        _sec(pg, 25)
+        c = pg.evaluate("window.__cut()")
+        assert c["axis"] == [0, 0, -1] and c["planeConstant"] == pytest.approx(-25, abs=0.01) and c["bl"] == 25
+        assert "canard.shear_web.p3" in c["cappedNodes"]
+        _sec(pg, 35)
+        c = pg.evaluate("window.__cut()")
+        assert c["planeConstant"] == pytest.approx(-35, abs=0.01) and "canard.shear_web.p3" not in c["cappedNodes"]
+        assert "canard.shear_web.p1" in c["cappedNodes"]  # bl_max 54
+        b.close()
+    s.shutdown()
+
+
+def test_caps_follow_the_build_state(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, op="r30.shear-web")
+        _sec(pg, 40)
+        n = pg.evaluate("window.__cut().cappedNodes")
+        assert "canard.core" in n and not [x for x in n if x.startswith("canard.skin_")], n  # skins are later ops: hidden, so no caps
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert [x for x in pg.evaluate("window.__cut().cappedNodes") if x.startswith("canard.skin_top")]
+        pg.click('#ops li[data-op="r30.shear-web"]')
+        assert not [x for x in pg.evaluate("window.__cut().cappedNodes") if x.startswith("canard.skin_")]
+        b.close()
+    s.shutdown()
+
+
+def test_section_control_hidden_without_layup(site):
+    s, url = serve(site)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url + "?test=1")
+        assert pg.is_hidden("#section")
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("width", [1180, 390])
+def test_section_controls_are_touchable_and_inside(rsite, width):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, width=width)
+        _sec(pg, 40)
+        for sel in ("#section .opt", "#section-bl"):
+            assert pg.locator(sel).bounding_box()["height"] >= 44, sel
+        assert _inside(pg, "#section") and _inside(pg, "#section-readout")
+        assert pg.evaluate("document.documentElement.scrollWidth") <= width
         b.close()
     s.shutdown()
