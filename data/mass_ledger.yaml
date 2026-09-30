@@ -24,3 +24,34 @@ errata:
   - {what: "light_pilot total moment", book: 115708, computed: 115706, cite: "om-1980:p26",
      note: "the p25 prose prints 115706"}
   - {what: "light_pilot CG divisor in prose", book: 11133, computed: 1113, cite: "om-1980:p25"}
+
+# Block 2 M2.2 Task 4: sourced constants for the fuselage-box mass rows (core/ledger.py fuselage_ledger).
+# Every value carries a cite; a missing value means "not yet computed", never a guess.
+materials:
+  cloth:
+    BID:
+      areal_oz_yd2: 8.8
+      cite: "wicks-ra5277:p1 distributor page for RA5277, 8.8 oz per sq yd, 38 in wide"
+    UND:
+      areal_oz_yd2: 7.02
+      cite: "wicks-ra5177:p1 distributor page for RA5177, 7.02 oz per sq yd, 38 in wide"
+  resin_to_cloth_weight:
+    value: 0.5
+    cite: "plans-1980:p21 an excellent layup has resin weight about half the cloth weight (best-case target)"
+  foam_lb_ft3:
+    R45:
+      value: 3.0
+      cite: "cp-text:p34 CP34 foam-substitutes table, type R45 at 3 lb per cubic foot"
+    R250:
+      value: 16.0
+      cite: "cp-text:p34 CP34 foam-substitutes table, type R250 at 16 lb per cubic foot"
+  part_core:
+    side_left: {material: R45, cite: "plans-1980:p36 sides cut from type 45 PV core"}
+    side_right: {material: R45, cite: "plans-1980:p36 sides cut from type 45 PV core"}
+    front_seat_bkhd: {material: R45, cite: "plans-1980:p33 0.8 thick type R45 block"}
+    rear_seat_bkhd: {material: R45, cite: "plans-1980:p34 thick blue foam, type R45 (p9 materials list)"}
+    bottom: {material: R45, cite: "plans-1980:p42 1.6 thick R45 block"}
+    f22: {material: R250, cite: "plans-1980:p34 panel, F22 and F28 from 0.2 thick dark red R250 (p9 list)"}
+    f28: {material: R250, cite: "plans-1980:p34 panel, F22 and F28 from 0.2 thick dark red R250 (p9 list)"}
+    panel: {material: R250, cite: "plans-1980:p34 panel, F22 and F28 from 0.2 thick dark red R250 (p9 list)"}
+    firewall: {material: birch_plywood, cite: "plans-1980:p35 quarter-inch birch plywood; no density source yet"}

@@ -57,3 +57,17 @@ sources:
     obtain: cozybuilders.org Canard Pusher archive (1985-04_cp-44.pdf)
     copy: ocr
     page_basis: pdf
+  wicks-ra5277:
+    title: Wicks Aircraft product page, Bidirectional Fiberglass RA5277
+    edition: web page read 2026-09-30; lists 38 in wide, 8.8 oz per sq yd, 54 x 48 threads per inch (Hexcel)
+    obtain: https://www.wicksaircraft.com/shop/bid-fiberglass-ra5277/
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo. The SKU name is the plans' cloth name, so the weight needs no style-number equivalence.
+  wicks-ra5177:
+    title: Wicks Aircraft product page, Uni Fiberglass RA5177
+    edition: web page read 2026-09-30; lists 38 in wide, 7.02 oz per sq yd, 80 x 18 threads per inch (Hexcel)
+    obtain: https://www.wicksaircraft.com/shop/uni-fiberglass-ra5177/
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo. The SKU name is the plans' cloth name, so the weight needs no style-number equivalence.
