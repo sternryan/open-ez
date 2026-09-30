@@ -93,12 +93,12 @@ def _load_ref_data() -> dict:
 # Phase 5 calibrated values — from data/validation/accuracy_report.json (2026-03-13)
 # Each traces to reference_data.json (RAF CP-29, wind tunnel data)
 # DO NOT UPDATE unless re-calibrating against external reference data
-LOCKED_NP_PUBLISHED = 106.5020       # accuracy_report neutral_point_fs.computed
-# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360); re-locked again, wing panel convention (was 112.5622); re-locked again, wing aspect ratio (was 106.6750); re-locked again, gross reference area (was 105.9382); re-locked again, two-method reconciliation C1-C3 (was 108.5007)
-LOCKED_CG_FWD_PUBLISHED = 99.5663   # accuracy_report cg_range_fwd_fs.computed
-# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798); re-locked again, wing panel convention (was 105.8012); re-locked again, wing aspect ratio (was 99.8609); re-locked again, gross reference area (was 99.1241); re-locked again, two-method reconciliation C1-C3 (was 101.6866)
-LOCKED_CG_AFT_PUBLISHED = 103.4190   # accuracy_report cg_range_aft_fs.computed
-# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659); re-locked again, wing panel convention (was 109.5569); re-locked again, wing aspect ratio (was 103.6461); re-locked again, gross reference area (was 102.9092); re-locked again, two-method reconciliation C1-C3 (was 105.4718)
+LOCKED_NP_PUBLISHED = 110.6822       # accuracy_report neutral_point_fs.computed
+# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360); re-locked again, wing panel convention (was 112.5622); re-locked again, wing aspect ratio (was 106.6750); re-locked again, gross reference area (was 105.9382); re-locked again, two-method reconciliation C1-C3 (was 108.5007); re-locked again, partial-span canard downwash C4 (was 106.5020)
+LOCKED_CG_FWD_PUBLISHED = 103.7465   # accuracy_report cg_range_fwd_fs.computed
+# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798); re-locked again, wing panel convention (was 105.8012); re-locked again, wing aspect ratio (was 99.8609); re-locked again, gross reference area (was 99.1241); re-locked again, two-method reconciliation C1-C3 (was 101.6866); re-locked again, partial-span canard downwash C4 (was 99.5663)
+LOCKED_CG_AFT_PUBLISHED = 107.5993   # accuracy_report cg_range_aft_fs.computed
+# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659); re-locked again, wing panel convention (was 109.5569); re-locked again, wing aspect ratio (was 103.6461); re-locked again, gross reference area (was 102.9092); re-locked again, two-method reconciliation C1-C3 (was 105.4718); re-locked again, partial-span canard downwash C4 (was 103.4190)
 LOCKED_STALL_KTAS = 55.3018          # accuracy_report stall_speed_ktas.computed
 # re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867; re-locked again, flight-condition gross weight 1325 lb (was 57.3507)
 
@@ -185,7 +185,7 @@ def test_regression_neutral_point_drift():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 16, 47 and 52; gap +2.57 in (99.57 vs 97.0)")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 16, 47, 52 and 54; gap +6.75 in (103.75 vs 97.0)")
 def test_regression_cg_fwd_external_truth():
     """REGRESSION LOCK: Forward CG limit (published datum) locked to Phase 5 calibrated value.
 
@@ -246,6 +246,7 @@ def test_regression_cg_fwd_drift():
     )
 
 
+@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md row 54; gap +4.60 in (107.60 vs 103.0); NP minus the retired MAC fraction, not independent evidence")
 def test_regression_cg_aft_external_truth():
     """REGRESSION LOCK: Aft CG limit (published datum) versus the published limit.
 
@@ -602,7 +603,7 @@ def test_regression_values_match_accuracy_report():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 20, 39-42, 47 and 52; 2 PASS of 9 locked (max gross, CG aft); CG fwd +2.57 in FAIL; NP, stall and the 4 airfoil metrics NOT GRADED")
+@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 20, 39-42, 47, 52 and 54; 1 PASS of 9 locked (max gross); CG fwd +6.75 in and CG aft +4.60 in FAIL; NP, stall and the 4 airfoil metrics NOT GRADED")
 def test_regression_locked_metrics_all_pass():
     """External truth: every locked metric grades PASS in accuracy_report.json (9 PASS metrics)."""
     report = _load_accuracy_report()

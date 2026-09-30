@@ -29,6 +29,8 @@ from typing import Dict, Tuple
 import json
 import math
 
+import numpy as np
+
 from config import config
 
 # ---------------------------------------------------------------------------
@@ -58,6 +60,52 @@ def half_chord_sweep_tan(tan_sweep_le: float, root_chord: float, tip_chord: floa
     previous 2 c_r (1 - lam)/(b (1 + lam)) was this times 2/(1 + lam); ledger C1.)
     """
     return tan_sweep_le - (root_chord - tip_chord) / span
+
+
+def horseshoe_wz_per_gamma(x, y, z, s):
+    """Upward velocity per unit circulation induced by a horseshoe vortex (ledger C4).
+
+    Bound segment from (0, -s, 0) to (0, +s, 0), circulation along +y (positive lift for flow
+    along +x); trailing legs from (0, +-s, 0) straight aft to x = +inf. Biot-Savart for straight
+    segments (Katz and Plotkin sec. 2 and 10; Anderson sec. 5). Negative = downwash. Works on
+    scalars or numpy arrays.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    # Trailing legs: w_z = +-(1/(4 pi r^2)) d_y (1 + x / sqrt(x^2 + r^2)).
+    w = np.zeros(np.broadcast(x, y).shape)
+    for y0, sign in ((s, 1.0), (-s, -1.0)):
+        dy = y - y0
+        r2 = dy * dy + z * z
+        w = w + sign * dy / (4 * math.pi * r2) * (1 + x / np.sqrt(x * x + r2))
+    # Bound segment: -(x / (4 pi rho^2)) [(y+s)/sqrt((y+s)^2+rho^2) - (y-s)/sqrt((y-s)^2+rho^2)].
+    rho2 = x * x + z * z
+    w = w - x / (4 * math.pi * rho2) * (
+        (y + s) / np.sqrt((y + s) ** 2 + rho2) - (y - s) / np.sqrt((y - s) ** 2 + rho2)
+    )
+    return float(w) if w.ndim == 0 else w
+
+
+def average_horseshoe_downwash_gradient(a_c, area_c, span_c, y, chord, dx, z, width=None):
+    """Chord-weighted average d eps/d alpha of a forward surface's horseshoe over an aft span.
+
+    Ledger C4 (method fixed before it was run). Vortex span b' = (pi/4) span_c (elliptic loading;
+    McCormick; Anderson sec. 5); Gamma / V = a_c alpha S_c / (2 b'); local
+    d eps/d alpha = -(Gamma/V) w_z/Gamma per unit alpha; strip-theory average weighted by chord:
+    integral c eps dy / integral c dy. y, chord and dx (aft distance from the forward surface's
+    bound vortex to each strip's quarter chord) are arrays of strip midpoints; width is each
+    strip's span (equal strips if omitted); z is the vertical separation. Lengths in one
+    consistent unit, area_c in that unit squared. At z = 0 the trailing legs are singular at
+    y = +-b'/2 and the integral is a principal value: the strips must straddle those stations
+    symmetrically (PhysicsEngine.canard_downwash_gradient_on_wing does).
+    """
+    b_prime = (math.pi / 4) * span_c
+    gamma_over_v = a_c * area_c / (2 * b_prime)
+    deps = -gamma_over_v * horseshoe_wz_per_gamma(dx, y, z, b_prime / 2)
+    weight = np.asarray(chord, dtype=float)
+    if width is not None:
+        weight = weight * np.asarray(width, dtype=float)
+    return float(np.sum(weight * deps) / np.sum(weight))
 
 
 @dataclass
@@ -183,6 +231,41 @@ class PhysicsEngine:
         x_mac_le = x_le_centerline + y_mac * tan_le
         return mac, x_mac_le
 
+    def canard_downwash_gradient_on_wing(self, a_canard: float, x_bound_canard: float,
+                                         strips_per_vortex_semispan: int = 40_000) -> float:
+        """Chord-weighted average canard d eps/d alpha over the reference wing (ledger C4).
+
+        Wing strips span the reference trapezoid (BL 0 to the tip, both halves); each is placed
+        at its own quarter chord. The canard bound vortex is at x_bound_canard (its AC, FS in).
+        Strips have one width, with edges on the vortex stations y = +-b'/2, so each trailing
+        leg is straddled symmetrically (principal value when the canard height is zero); only
+        the tip strip is narrower.
+        """
+        c0 = self.geo.wing_centerline_chord
+        ct = self.geo.wing_tip_chord
+        half = self.geo.wing_span / 2
+        tan_le = math.tan(math.radians(self.geo.wing_sweep_le))
+        x_le_centerline = self.geo.fs_wing_le - self.geo.wing_root_bl * tan_le
+        s_v = (math.pi / 8) * self.geo.canard_span  # vortex semi-span b'/2
+        step = s_v / strips_per_vortex_semispan
+        outer = s_v + step * np.arange(1, int(math.ceil((half - s_v) / step)))
+        right = np.concatenate([np.arange(0, strips_per_vortex_semispan + 1) * step, outer, [half]])
+        edges = np.concatenate([-right[:0:-1], right])
+        y = 0.5 * (edges[1:] + edges[:-1])
+        width = np.diff(edges)
+        chord = c0 + (ct - c0) * np.abs(y) / half
+        x_qc = x_le_centerline + np.abs(y) * tan_le + 0.25 * chord
+        return average_horseshoe_downwash_gradient(
+            a_c=a_canard,
+            area_c=self.geo.canard_area * 144.0,  # sq ft -> sq in
+            span_c=self.geo.canard_span,
+            y=y,
+            chord=chord,
+            dx=x_qc - x_bound_canard,
+            z=self.geo.canard_vertical_offset_in,
+            width=width,
+        )
+
     def calculate_neutral_point(self) -> float:
         """
         Calculate longitudinal Neutral Point (NP) for canard configuration.
@@ -199,7 +282,7 @@ class PhysicsEngine:
         - S = area; the wing is the gross reference trapezoid (wing_area_sqft)
         - x_ac = aerodynamic center: quarter chord of each surface's MAC (calculate_mac for
           the wing, the same planform as S_w)
-        - de/da = canard downwash derivative at the wing (ledger C3)
+        - de/da = canard downwash derivative averaged over the wing span (ledger C3, C4)
         """
         # Areas (sq ft)
         s_wing = self.geo.wing_area
@@ -270,20 +353,14 @@ class PhysicsEngine:
             )
         )
 
-        # Canard downwash on wing with vertical separation (Phillips, Ch. 9)
-        #
-        # Far-field downwash derivative:
-        #   d(epsilon)/d(alpha) = (2 / (pi * AR_c)) * a_c
-        # With vertical offset h between canard and wing plane:
-        #   d(epsilon)/d(alpha) *= 1 / (1 + (2*h / b_c)^2)
-        # The downwash acts on the aft surface (the wing): its effective slope is
-        # a_w (1 - de/da). The canard's own vortices are already in its finite-AR a_c.
-        # Kept approximations (ledger C3): far-field de/da applied over the whole wing
-        # although the canard spans ~45% of it; wing upwash at the canard omitted.
-        h = self.geo.canard_vertical_offset_in  # vertical separation
-        b_c = self.geo.canard_span  # canard span (inches)
-        vert_factor = 1.0 / (1.0 + (2.0 * h / b_c) ** 2)
-        d_eps_dalpha = (2.0 / (math.pi * ar_canard)) * a_canard * vert_factor
+        # Canard downwash on the wing, partial span (ledger C4, method fixed before it was run):
+        # the canard as one horseshoe vortex (b' = (pi/4) b_c), Biot-Savart at each wing strip's
+        # quarter chord, z = canard height above the wing plane, averaged over the whole wing span
+        # weighted by chord (strip theory). Inboard of the canard tip vortices the wing sees
+        # downwash, outboard upwash. The downwash acts on the aft surface (the wing): its
+        # effective slope is a_w (1 - de/da) (C3). Kept approximation: wing upwash at the canard
+        # is omitted.
+        d_eps_dalpha = self.canard_downwash_gradient_on_wing(a_canard, ac_canard)
         wing_downwash_factor = 1.0 - d_eps_dalpha
 
         # Calculate NP

@@ -99,6 +99,7 @@ The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out o
 | 51 | `tests/test_stability_checks.py::test_vlm_marker_requires_root_bl_and_panel_span` | dropping `wing_root_bl` or `wing_panel_span_in` makes the run stale | also dropping `wing_centerline_chord_in` or `vlm_wing_inboard_bl` makes it stale | (a) | Ledger C2, VLM side. `scripts/vspaero_np.py` records the wing from BL 0 (the reference trapezoid); the af5841d panels-only run lacks both keys and reads as stale. `data/validation/vspaero_np.json` regenerated (OpenVSP 3.48.2): NP FS 112.36, dCMy/dCL -0.2323 (r^2 0.9987), cref 40.30. |
 | 52 | `tests/test_canard_stall_and_downwash.py::TestDownwashModel::test_zero_vertical_offset_stronger_downwash`; drift locks `tests/test_regression_lock.py::test_regression_neutral_point_drift`, `test_regression_cg_fwd_drift`, `test_regression_cg_aft_drift`; `tests/test_precision_validation.py::test_cg_aft_limit_precision`, `tests/test_regression_lock.py::test_regression_cg_aft_external_truth`; xfail reason text of `test_cg_fwd_limit_precision`, `test_regression_cg_fwd_external_truth`, `test_regression_locked_metrics_all_pass` | np_h0 > np_h100 (downwash cut the canard term); locks 108.5007 / 101.6866 / 105.4718; CG aft strict xfail (+2.47 in); reasons CG fwd +4.69 in, 1 PASS of 9 locked | np_h0 < np_h100 (106.50 vs 110.49); re-locked 106.5020 / 99.5663 / 103.4190, bound 0.01 in unchanged; CG aft strict xfail removed (it XPASSed): 103.42, gap +0.42 in, bound 1.0 unchanged; CG fwd still strict xfail, gap +2.57 in (99.57 vs 97.0); 2 PASS of 9 locked (max gross, CG aft) | (c) + (a) | Ledger C3: the downwash factor acts on the wing, the aft surface (Raymer eq. 16.9), so more downwash moves the NP forward; the old test encoded the wrong-surface model. The drift locks moved with C1 to C3 (NP 116.19 to 106.50 at C3). The CG aft PASS is NP minus the retired 0.0765 MAC fraction and inherits an NP that the two-method check does not confirm: it is not evidence. Regenerated report: 12 metrics, 3 PASS (CG aft, max gross, wing area), 2 FAIL (CG fwd +2.57 in, empty weight -110 lb), 7 NOT GRADED. |
 | 53 | `tests/test_stability_checks.py::test_committed_report_two_method_np_agrees` (new) | none (the failing two-method check had no test) | committed report `two_method_np.status == "pass"`, strict xfail: analytic 106.50 vs VLM 112.36, delta +5.86 in, bound 1.0 in | (b) | The check fails after C1 to C3 and is left failing; see the reconciliation section for the diagnosis (far-field full-span downwash). The bound is unchanged. |
+| 54 | `tests/test_partial_span_downwash.py` (new, 6 tests: hand-computed near-field point, outboard upwash, far-field centreline value, spanwise average over a wider aft span, zero net over an unbounded span, h -> 0 continuity); drift locks `tests/test_regression_lock.py::test_regression_neutral_point_drift`, `test_regression_cg_fwd_drift`, `test_regression_cg_aft_drift`; `tests/test_precision_validation.py::test_cg_aft_limit_precision`, `tests/test_regression_lock.py::test_regression_cg_aft_external_truth`; xfail reason text of `test_cg_fwd_limit_precision`, `test_regression_cg_fwd_external_truth`, `test_regression_locked_metrics_all_pass`, `tests/test_stability_checks.py::test_committed_report_two_method_np_agrees` | none (new); locks 106.5020 / 99.5663 / 103.4190; CG aft plain passing (103.42, +0.42 in); reasons CG fwd +2.57 in, 2 PASS of 9, two-method +5.86 in | re-locked 110.6822 / 103.7465 / 107.5993, bound 0.01 in unchanged; CG aft strict xfail restored, 107.60 vs 103.0, gap +4.60 in, bound 1.0 unchanged; CG fwd still strict xfail, +6.75 in (103.75 vs 97.0); 1 PASS of 9 locked (max gross); two-method still strict xfail, analytic 110.68 vs VLM 112.36, +1.68 in, bound 1.0 unchanged | (a) + (b) | Ledger C4: the far-field full-span canard downwash (0.306) is replaced by a horseshoe-vortex (Biot-Savart) chord-weighted average over the wing span (0.0899), method fixed in the ledger before the run. NP 106.50 to 110.68. The CG limits are NP minus the retired MAC fractions and move with it; the CG aft PASS at row 52 was not evidence and its loss is not either. Regenerated report: 12 metrics, 2 PASS (max gross, wing area), 3 FAIL (CG fwd +6.75 in, CG aft +4.60 in, empty weight -110 lb), 7 NOT GRADED. |
 
 ## Two-method NP reconciliation (2026-09-29, follow-up)
 
@@ -248,6 +249,44 @@ vortex), then regenerate the accuracy report (the VLM is not re-run); record d e
 committed run, unchanged: the VLM geometry does not change), the gap, and the check status against
 the unchanged 1.0 in bound. If within 1.0 in, row 53's strict xfail comes off; if not, it stays and
 the residual is diagnosed, with no second method.
+
+**C4 result (one run, recorded as found).**
+
+| Step | d eps/d alpha on the wing | Analytic NP (FS) | VLM NP (FS) | Delta (VLM - analytic, in) | Two-method (bound 1.0 in) |
+|---|---|---|---|---|---|
+| before (after C3) | 0.306 (far field, whole span) | 106.50 | 112.36 | +5.86 | FAIL |
+| after C4 | 0.0899 (horseshoe, chord-weighted over the wing span) | 110.68 | 112.36 (committed run, not re-run) | +1.68 | FAIL |
+
+The check still FAILS and row 53's strict xfail stays (reason text updated; bound unchanged). Static
+margin at the manual's aft limit FS 103: (110.68 - 103.0)/40.30 = 19.06% MAC. Inside the canard's
+vortex span (BL +-55.6) the wing sees downwash (0.274 on the centreline; chord-weighted contribution
++0.245), outboard it sees upwash (contribution -0.155), net 0.0899. Strip count converged to 1e-10
+(4k, 40k, 400k strips per vortex semispan). The first implementation used equal strips across the
+whole span; at h = 0 a strip midpoint fell next to a trailing leg and the NP jumped to 116.86
+against 110.66 at h = 0.01 in. That is a quadrature defect in the same integral, not a method
+change: strips now have edges on the vortex stations so each leg is straddled symmetrically (a
+principal value at h = 0), red-first in `test_wing_average_is_continuous_as_the_canard_height_goes_to_zero`;
+the h = 1.5 result was the same to 1e-10 before and after. NP vs h: 110.66 (h 0), 110.68 (1.5),
+111.54 (100): the canard height is still not the driver.
+
+**Diagnosis of the remaining +1.68 in** (diagnostics only, none adopted; no second method was run
+against the check):
+- For the analytic NP to reach the VLM's within the 1.0 in bound, d eps/d alpha would have to be
+  at most 0.044 (0.047 is the VLM's implied net, above); C4 gives 0.0899. The kept omission (ii),
+  the wing's upwash at the canard, raises the canard's effective slope and moves the NP forward,
+  so it cannot close this gap; it widens it.
+- What C4 leaves out that points aft: the formula applies the canard's wash to the wing's lift
+  magnitude only, so the lift it removes and adds is placed at the wing AC (FS 127.41). On a swept
+  wing the lost lift is inboard (forward) and the gained lift outboard (aft): the chord-weighted
+  centroid of the wash-induced lift change, integral c eps x_qc dy / integral c eps dy, sits at
+  FS 94.45, far forward of the wing AC because the net is a small difference of a forward loss and
+  an aft gain. Placing that increment at its own centroid (the same strip integral, moment instead
+  of force) gives NP 113.42: -1.06 in past the VLM on the other side. The VLM does resolve this
+  moment. It is recorded as the leading candidate for the residual, not adopted: adopting it now
+  would be a second method chosen after seeing the first result, and it overshoots by about as
+  much as C4 undershoots, so it is not by itself the answer either.
+- Other single-vortex simplifications (b' = (pi/4) b_c for an elliptic load on a rectangular canard,
+  no rollup, no vortex core, fixed wake) are named, not quantified.
 
 ## NP gap
 
