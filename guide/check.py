@@ -16,7 +16,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="guide.check")
     ap.add_argument("--graph", default="guide/graph")
     ap.add_argument("--schema-only", action="store_true")
-    ap.add_argument("--chapters", default="10,12")
+    ap.add_argument("--chapters", default="4,5,6,10,12")
     a = ap.parse_args(argv)
 
     try:

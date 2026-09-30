@@ -156,7 +156,7 @@ def _unfold_checklist(pg):
 def _bar_ops(g, variant):
     byid = {o["id"]: o for o in g["ops"]}
     return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
-            and byid[i]["chapter"] not in (0, 3, 6) and not byid[i]["stub"]]
+            and byid[i]["chapter"] not in (0, 3, 4, 5, 6) and not byid[i]["stub"]]
 
 
 @pytest.mark.parametrize("w,h", [(1400, 860), (390, 844)])

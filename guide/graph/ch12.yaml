@@ -4,7 +4,7 @@
   title: Make and fit the alignment pins
   summary: Turn two headless AN3 bolts into round-nosed pins and drill matching holes in the F28 bulkhead and its doublers. The pins stay loose until the canard is aligned.
   variants: [gu]
-  requires: [c10.top-spar-skin, c06.fuselage-assembled]
+  requires: [c10.top-spar-skin, f06.bottom-tape]
   components: [canard.alignment_pins]
   geometry_visible: true
   sources:

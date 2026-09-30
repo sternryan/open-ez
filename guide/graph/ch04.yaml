@@ -1,0 +1,148 @@
+# Chapter 4 — fuselage bulkheads (1980 first edition, plans pp. 4-1 to 4-3). Summaries are ours; the plans pages are the authority.
+# Ops 1-4 (seat bulkheads) and 5-8 (panel, F22, F28, firewall) are independent groups; both feed the chapter 6 trial fit.
+- id: f04.front-seat-bkhd-front
+  chapter: 4
+  title: Front seat bulkhead, front face
+  summary: Cut the front seat bulkhead blank from the thick blue foam, taper one end, and cover its front face and that tapered end with two crossed unidirectional plies.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [fuselage.front_seat_bkhd]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "front face and tapered end, +/-45"}
+  sources:
+    - {doc: scan-1980, scan_pp: 33}
+  changes:
+    - {cp: 29, lpc: 68, class: MEO, status: verified, kind: official, note: "The foam note at the foot of the page should allow micro slurry on this foam, and slurry is advised on every foam in the airplane."}
+  completion:
+    - Blank measures 28.3 by 23 by 0.8 with the plan's end taper on one end
+    - Two unidirectional plies cured on the front face and over the tapered end
+    - Foam slurried before glassing
+- id: f04.front-seat-bkhd-back
+  chapter: 4
+  title: Front seat bulkhead, back face and cutouts
+  summary: Taper the other end, round the edges, and lay one 45-degree BID ply on the back that wraps around the edges. Then add the flexible corner, the longeron notches and the right-side control holes.
+  variants: [both]
+  requires: [f04.front-seat-bkhd-front]
+  components: [fuselage.front_seat_bkhd]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "back face, 45 degrees, wrapped around the rounded edges"}
+  sources:
+    - {doc: scan-1980, scan_pp: 33}
+  completion:
+    - Both ends tapered and edges rounded before the back ply goes on
+    - Back ply wraps the edges and is cured without bubbles
+    - Corner notches and control-hole openings cut to the page dimensions
+- id: f04.rear-seat-bkhd-foam
+  chapter: 4
+  title: Rear seat bulkhead foam and glass
+  summary: Cut the rear seat bulkhead from the thick blue foam as a wedge-ended piece about 20.6 wide at the bottom, 18.7 wide at the top and 16.1 long. Taper top and bottom, slope both sides, and put two crossed unidirectional plies on one face.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [fuselage.rear_seat_bkhd]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "one face, crossing at 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 34}
+  changes:
+    - {cp: 29, lpc: 68, class: MEO, status: verified, kind: official, note: "Slurry is allowed on this foam and advised on all foams, per the correction to the page 4-1 footnote."}
+  completion:
+    - Blank cut to the printed widths and slant length, side slopes and top and bottom bevels formed
+    - Side taper of 0.95 present on both sides
+    - Two unidirectional plies cured without dry spots
+- id: f04.rear-seat-bkhd-hole
+  chapter: 4
+  title: Rear seat bulkhead access hole and notches
+  summary: Scoop out the 8 in foam circle, glass it with two 45-degree BID plies, then open the 7 in access hole, cut the lower-corner notches and drill the control and rudder-conduit holes.
+  variants: [both]
+  requires: [f04.rear-seat-bkhd-foam]
+  components: [fuselage.rear_seat_bkhd]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "8 in circle where the foam was removed, 45 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 34}
+  completion:
+    - Foam circle removed cleanly and both BID plies cured
+    - 7 in access hole opened inside the glassed circle
+    - Corner notches 0.7 by 1.4 and small rudder-conduit holes cut
+- id: f04.panel-f22-f28-aft
+  chapter: 4
+  title: "Instrument panel, F22 and F28: aft faces"
+  summary: Cut the panel, F22 and F28 from the thin red foam using the full-size templates, then glass their aft faces. A foam doubler is pressed in wet and covered, with an extra ply above the leg cutouts.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [fuselage.panel, fuselage.f22, fuselage.f28]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "aft faces of panel, F22 and F28"}
+    - {cloth: BID, plies: 2, where: "over the wet doubler"}
+    - {cloth: BID, plies: 1, where: "panel, above the leg cutouts"}
+  sources:
+    - {doc: scan-1980, scan_pp: 34}
+  changes:
+    - {cp: 27, lpc: 46, class: OPT, status: verified, kind: official, note: "Optional: drop the F28 longeron notch by 0.25 so F28 sits better against the canopy."}
+  completion:
+    - Three parts cut from the template outlines, no outline dimensions invented
+    - Aft-face plies and the doubler cured in one sequence
+    - Extra ply over the leg cutouts present on the panel
+- id: f04.panel-f22-f28-fwd
+  chapter: 4
+  title: "Instrument panel, F22 and F28: forward faces"
+  summary: Glass the forward faces, with one extra ply on the upper panel, and build up the canard attach pads on the left and right of F22's forward face. The instrument holes are opened last.
+  variants: [both]
+  requires: [f04.panel-f22-f28-aft]
+  components: [fuselage.panel, fuselage.f22, fuselage.f28]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "forward faces of panel, F22 and F28"}
+    - {cloth: BID, plies: 1, where: "upper panel, forward face, extra"}
+    - {cloth: UND, plies: 5, where: "F22 canard attach pad, left and right, forward face only"}
+    - {cloth: BID, plies: 4, where: "F22 canard attach pad, left and right, forward face only"}
+  sources:
+    - {doc: scan-1980, scan_pp: 34}
+  changes:
+    - {cp: 25, lpc: 17, class: MEO, status: verified, kind: official, note: "The reinforcement the page calls for on both sides is for the left and right edges of F22's front surface alone. The foam doubler sits on the rear surface and takes no added plies.", annotation_pp: 34}
+    - {cp: 27, lpc: 42, class: OPT, status: verified, kind: official, note: "Optional: alternate the BID and UND plies on the F22 side reinforcements. Already-built parts need no rework.", annotation_pp: 34}
+  completion:
+    - Forward-face plies cured on all three parts
+    - Canard attach buildup on the left and right of F22, forward face only, plies alternated
+    - Instrument-panel holes opened only after all glass is cured
+- id: f04.firewall-aft
+  chapter: 4
+  title: "Firewall: plywood, insulation and aft glass"
+  summary: Cut the firewall from quarter-inch birch plywood, put one BID ply on its aft face, then lay in the heat insulation and stainless sheet and drill the six pulley holes.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [fuselage.firewall]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "aft face of the plywood"}
+  sources:
+    - {doc: scan-1980, scan_pp: 35}
+  changes:
+    - {cp: 25, lpc: 25, class: DES, status: verified, kind: official, note: "An aluminium firewall may replace the steel one, with the insulation fitted later after the cowling, using silicone rubber.", annotation_pp: 35}
+    - {cp: 27, lpc: 48, class: DES, status: verified, kind: official, note: "The firewall is drawn taller at the top so the cowling has enough room; the sketch is not in our parsed text."}
+    - {cp: 27, lpc: 47, class: DES, status: verified, kind: official, note: "The left rudder pulley bracket should sit 0.6 higher, to keep the cable off the aileron pushrod."}
+  completion:
+    - Plywood cut to the A4 template, aft BID ply cured
+    - Insulation and metal sheet fitted (or deferred, if aluminium is chosen)
+    - Six pulley holes drilled at the marked points
+- id: f04.firewall-fwd
+  chapter: 4
+  title: "Firewall: hardware, front glass and longeron holes"
+  summary: Countersink and bond the six AN509 screws, put one BID ply on the front, then cut the four rectangular and two small square longeron holes.
+  variants: [both]
+  requires: [f04.firewall-aft]
+  components: [fuselage.firewall]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "front face of the firewall"}
+  sources:
+    - {doc: scan-1980, scan_pp: 35}
+  completion:
+    - Six AN509-10R10 screws bonded flush
+    - Front BID ply cured
+    - Four rectangular and two 0.7 square holes cut for the longerons

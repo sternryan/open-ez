@@ -1,0 +1,149 @@
+# Chapter 5 — fuselage sides (plans pp. 5-1 to 5-3). Chain runs in order; the chapter needs chapter 4 only for bulkhead marks, not as a prerequisite.
+- id: f05.side-blank
+  chapter: 5
+  title: Side foam blank
+  summary: Butt-join the thick blue foam into a 103 by 21 blank with one edge dead straight, which becomes the top edge of both sides.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 36}
+  completion:
+    - Blank is 103 long and at least 21 high
+    - Joints butted tight and bonded flat
+    - One long edge checked straight with a straightedge
+- id: f05.side-profile
+  chapter: 5
+  title: Mark and cut the side profile
+  summary: Mark the twelve printed heights along the blank, cut the first side to that outline, then use it as the pattern for the second so the pair are mirror twins.
+  variants: [both]
+  requires: [f05.side-blank]
+  components: [fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 36}
+  changes:
+    - {cp: 25, lpc: 5, class: MEO, status: verified, kind: official, note: "Height marks are 10 apart, and the last interval is 3.", annotation_pp: 36}
+  completion:
+    - Heights marked at 0, every 10, and 103
+    - Top edge straight and square at both corners
+    - Second side cut to match the first, then flipped for the pair
+- id: f05.side-layout
+  chapter: 5
+  title: Side layout marks, dish and sight gauge
+  summary: Draw the bulkhead lines and the spar cutout on each side, cut the shallow 8 in dish in the right side only, and form the fuel sight-gauge groove. Then lay release tape over the marked areas.
+  variants: [both]
+  requires: [f05.side-profile]
+  components: [fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 36}
+    - {doc: scan-1980, scan_pp: 37}
+  completion:
+    - Bulkhead lines and the sight-gauge position transferred to both sides
+    - Dish cut on the right side only
+    - Release tape laid where the bulkheads and longerons will later be bonded
+- id: f05.inside-layup
+  chapter: 5
+  title: Inside layup and longerons in flox
+  summary: Glass the inside face of each side with two crossed unidirectional plies at 30 degrees, then flox in the top longeron, its stiffener and the two wood blocks at the aft end.
+  variants: [both]
+  requires: [f05.side-layout]
+  components: [fuselage.side_left, fuselage.side_right, fuselage.longerons]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "inside face, crossing at +/-30 degrees"}
+  sources:
+    - {doc: scan-1980, scan_pp: 37}
+  changes:
+    - {cp: 29, lpc: 70, class: MEO, status: verified, kind: official, note: "A builder hint in a prior issue said 45; the side UND is at 30, which the plans already show."}
+  completion:
+    - Crossed plies oriented at 30 degrees either way to the top edge
+    - Top longeron, stiffener and aft blocks floxed into place
+    - Longeron flush at the front and slightly proud at the rear
+- id: f05.top-longeron-glass
+  chapter: 5
+  title: Glass over the top longeron
+  summary: Lay three unidirectional plies along the short stiffener, then a single 45-degree BID ply along the whole 103 in length, which may be made from several pieces.
+  variants: [both]
+  requires: [f05.inside-layup]
+  components: [fuselage.side_left, fuselage.side_right, fuselage.longerons]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 3, where: "along the 55 in stiffener"}
+    - {cloth: BID, plies: 1, where: "full 103 in length, 45 degrees, may be pieces"}
+  sources:
+    - {doc: scan-1980, scan_pp: 37}
+  changes:
+    - {cp: 30, lpc: 82, class: "?", status: verified, kind: official, note: "The full-length BID ply is cut at 45 degrees and can be in several pieces."}
+  completion:
+    - Three unidirectional plies centered on the stiffener
+    - BID ply runs the whole side length, joints overlapped
+    - Both sides done before the next step
+- id: f05.lower-longeron
+  chapter: 5
+  title: Lower longeron and aft doubler
+  summary: Nail the triangular spruce lower longeron to the side, notching it about every 2 in toward the aft end, then add the doubler behind the LWX block and a small urethane block.
+  variants: [both]
+  requires: [f05.top-longeron-glass]
+  components: [fuselage.side_left, fuselage.side_right, fuselage.longerons]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 38}
+  completion:
+    - Longeron straight, nailed and bonded along its full length
+    - Notches cut in the aft section at the printed spacing
+    - Doubler and foam block bonded at the aft end
+- id: f05.gear-pad
+  chapter: 5
+  title: Main gear attach pad
+  summary: Build up the pad for the main gear attachment with six 45-degree BID plies over the hatched area and a fifteen-ply stack over it. Keep the stack below the printed waterline.
+  variants: [both]
+  requires: [f05.lower-longeron]
+  components: [fuselage.gear_pad, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 6, where: "hatched pad area, 45 degrees"}
+    - {cloth: BID, plies: 15, where: "gear pad stack, 45 degrees, ending at W.L. 12.35"}
+  sources:
+    - {doc: scan-1980, scan_pp: 38}
+  changes:
+    - {cp: 25, lpc: 20, class: MEO, status: verified, kind: official, note: "The fifteen-ply pad stops at W.L. 12.35; no glass above that line."}
+    - {cp: 28, lpc: 58, class: MEO, status: verified, kind: official, note: "Two places on the pad drawing show one ply; the stack should be fifteen plies of BID."}
+  completion:
+    - Six-ply base and fifteen-ply stack cured on both sides
+    - No glass of the stack above W.L. 12.35
+    - Pad positions match the dimensions from the aft end
+- id: f05.spar-cutout
+  chapter: 5
+  title: Spar cutout
+  summary: Remove the 6.5 by 8.5 block of foam and glass at the aft top corner of each side so the wing spar can pass through.
+  variants: [both]
+  requires: [f05.gear-pad]
+  components: [fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 36}
+    - {doc: scan-1980, scan_pp: 38}
+  completion:
+    - Cutout measures 6.5 wide by 8.5 deep at the marked corner
+    - Edges clean, no glass delamination at the cut
+- id: f05.gear-extrusions
+  chapter: 5
+  title: Gear tube and extrusions
+  summary: Assemble the main gear attach tube with its two extruded fittings on each side, drill the sixteen bolt holes, and fit the long bolts with their washers and nuts.
+  variants: [both]
+  requires: [f05.spar-cutout]
+  components: [fuselage.gear_extrusions, fuselage.side_left, fuselage.side_right]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 38}
+  changes:
+    - {cp: 26, lpc: 34, class: MEO, status: verified, kind: official, note: "The LMGA tube is used in chapter 5, not the chapter the parts list names."}
+    - {cp: 29, lpc: 67, class: MEO, status: verified, kind: official, note: "The nut on the long gear bolt should be the AN363 type, not the one the page prints."}
+    - {cp: 48, lpc: 128, class: "?", status: verified, kind: official, note: "An inspection note, not a build step: check that the gear tabs have not slid aft on the tube, and flox the gap if they have."}
+  completion:
+    - Tube and both extrusions fitted to each side
+    - Sixteen quarter-inch holes drilled to the marked layout
+    - Bolts, washers and AN363 nuts fitted and tight

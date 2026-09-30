@@ -1,7 +1,7 @@
 // Adapted from AirsupHQ/airsup-lab src/director.ts (MIT); see NOTICE.
 // Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
-import { visibleOps } from './logic/graph'
+import { barOps, visibleOps } from './logic/graph'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -246,7 +246,7 @@ export function tourChapter(graph: GraphLite, variant: string, selectedId: strin
   const vis = visibleOps(graph, variant)
   const cur = vis.find((o) => o.id === selectedId)
   if (cur && tourSteps(graph, variant, cur.chapter).length) return cur.chapter
-  return vis.find((o) => !o.stub)?.chapter
+  return barOps(graph, variant)[0]?.chapter
 }
 
 export function chapterTour(graph: TourGraph, variant: string, chapter: number): Step[] {

@@ -11,3 +11,16 @@
 - {id: canard.hinge_foam, label: Elevator hinge foam inserts, fidelity: no-geometry}
 - {id: canard.alignment_pins, label: Canard alignment pins (F28), fidelity: no-geometry}
 - {id: canard.rear_tabs, label: Rear alignment tabs, fidelity: no-geometry}
+# Fuselage box (chapters 4-6). Labels marked "(fitted shape)" are representational.
+- {id: fuselage.side_left, label: Left fuselage side, fidelity: plans-checked}
+- {id: fuselage.side_right, label: Right fuselage side, fidelity: plans-checked}
+- {id: fuselage.front_seat_bkhd, label: Front seat bulkhead, fidelity: plans-checked}
+- {id: fuselage.rear_seat_bkhd, label: Rear seat bulkhead, fidelity: plans-checked}
+- {id: fuselage.f22, label: F22 bulkhead (fitted shape), fidelity: unvalidated}
+- {id: fuselage.f28, label: F28 bulkhead (fitted shape), fidelity: unvalidated}
+- {id: fuselage.panel, label: Instrument panel (fitted shape), fidelity: unvalidated}
+- {id: fuselage.firewall, label: Firewall (fitted shape), fidelity: unvalidated}
+- {id: fuselage.longerons, label: Top and lower longerons (placement from one sheet only), fidelity: unvalidated}
+- {id: fuselage.gear_pad, label: Main gear attach pad, fidelity: plans-checked}
+- {id: fuselage.gear_extrusions, label: Main gear tube and extrusions, fidelity: no-geometry}
+- {id: fuselage.bottom, label: Fuselage bottom (partial contour), fidelity: unvalidated}
