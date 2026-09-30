@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { barOps, makeStore, visibleOps, type GraphLite, type Op } from '../src/logic/graph'
 
-const op = (id: string, chapter: number, variants: string[], stub = false): Op => ({ id, chapter, title: id, summary: '', variants, stub })
+const op = (id: string, chapter: number, variants: string[], stub = false): Op => ({ id, chapter, title: id, summary: '', variants, stub, components: [] })
 const g: GraphLite = {
   ops: [op('ref', 0, ['both'], true), op('c10.a', 10, ['gu']), op('c11.s', 11, ['gu'], true), op('r30.a', 30, ['roncz']), op('r30.b', 30, ['roncz']), op('c03', 3, ['both'])],
   order: ['ref', 'c03', 'c10.a', 'c11.s', 'r30.a', 'r30.b'],

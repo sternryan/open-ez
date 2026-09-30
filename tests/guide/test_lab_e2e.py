@@ -4,6 +4,7 @@ import json
 import http.server
 import io
 import threading
+import time
 
 import pytest
 from playwright.sync_api import sync_playwright
@@ -219,6 +220,117 @@ def test_every_ply_mesh_has_the_material_its_cloth_dictates_and_wet_is_a_uniform
             pg.evaluate(f"window.__lab.setWet('{first}', 1)")
             assert pg.evaluate(f"window.__lab.material('{first}').wet") == 1
             pg.evaluate("window.__lab.advance(0.1)")  # renders with the new uniform
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _expected_state(g, variant, cur, lay, ghost):
+    """Independent restatement of the build rule, from graph.json alone: earlier ops built, the current op's laid plies (and its
+    whole-part meshes) current, everything later hidden, or ghost when the toggle is on."""
+    byid = {o["id"]: o for o in g["ops"]}
+    order = [i for i in g["order"] if variant in byid[i]["variants"] or "both" in byid[i]["variants"]]
+    idx = {o: i for i, o in enumerate(order)}
+    first = {}
+    for o in order:
+        for c in byid[o]["components"]:
+            first.setdefault(c, o)
+    later = "ghost" if ghost else "hidden"
+    out = {}
+    for comp, plies in g["plies"].items():
+        for r in plies:
+            i = idx.get(r["op"])
+            out[r["node"]] = "hidden" if i is None else "built" if i < idx[cur] else ("current" if r["order"] <= lay else later) if i == idx[cur] else later
+    for c in g["components"]:
+        if c in g["plies"]:
+            continue
+        i = idx.get(first.get(c))
+        out[c] = "hidden" if i is None else "built" if i < idx[cur] else "current" if i == idx[cur] else later
+    return out, idx
+
+
+def test_build_state_follows_op_and_lay_and_stepping_back_hides_later_work(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 960, 600)
+            pg.evaluate("window.__lab.freeze(true)")
+            pg.evaluate("window.__lab.select('r30.top-skin')")
+            assert pg.evaluate("window.__lab.lay()") == 4  # a step opens fully built
+            for ghost in (False, True):
+                pg.evaluate(f"window.__lab.ghost({str(ghost).lower()})")
+                for lay in (4, 1):  # forward, then back
+                    pg.evaluate(f"window.__lab.setLay({lay})")
+                    state = pg.evaluate("window.__lab.state()")
+                    want, idx = _expected_state(g, "roncz", "r30.top-skin", lay, ghost)
+                    assert set(state) <= set(want) and {k: want[k] for k in state} == state, (ghost, lay)  # every mesh, and only meshes that exist
+                    if lay == 1:
+                        for k in (2, 3, 4):
+                            assert state[f"canard.skin_top.p{k}"] == ("ghost" if ghost else "hidden")
+            assert pg.evaluate("window.localStorage.getItem('longez.ghost')") == "1"
+            pg.evaluate("window.__lab.advance(0.1)")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_earlier_op_plies_are_built_and_cured_at_lay_zero_of_the_next_op(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 960, 600)
+            pg.evaluate("window.__lab.freeze(true)")
+            pg.evaluate("window.__lab.select('r30.bottom-skin')")
+            pg.evaluate("window.__lab.setLay(0)")
+            pg.evaluate("window.__lab.advance(2.0)")
+            cap = "canard.spar_cap_bottom.p1"
+            assert pg.evaluate("window.__lab.state()")[cap] == "built"
+            assert pg.evaluate(f"window.__lab.phase('{cap}')") == {"state": "built", "unroll": 1, "front": 1, "cure": 1}
+            assert pg.evaluate(f"window.__lab.material('{cap}').wet") == 0
+            assert pg.evaluate("window.__lab.state()")["canard.skin_bottom.p1"] == "hidden"
+            pg.evaluate("window.__lab.setLay(1)")  # the first skin ply unrolls, dry; the cap next to it stays cured
+            pg.evaluate("window.__lab.advance(0.6)")
+            ph = pg.evaluate("window.__lab.phase('canard.skin_bottom.p1')")
+            assert ph["state"] == "current" and abs(ph["unroll"] - 0.5) < 1e-9 and ph["front"] == 0
+            assert pg.evaluate(f"window.__lab.material('{cap}').wet") == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_play_lays_every_ply_then_cures_and_stops_and_time_only_moves_with_advance(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 960, 600)
+            pg.evaluate("window.__lab.freeze(true)")
+            pg.evaluate("window.__lab.select('r30.top-skin')")
+            assert pg.evaluate("window.__lab.play()") is True
+            assert pg.evaluate("window.__lab.lay()") == 1
+            assert pg.evaluate("document.querySelector('#play').getAttribute('aria-pressed')") == "true"
+            time.sleep(0.3)
+            assert pg.evaluate("window.__lab.phase('canard.skin_top.p1').unroll") == 0  # frozen: wall-clock time does not move it
+            seen = {1}
+            for _ in range(60):
+                if not pg.evaluate("window.__lab.playing()"):
+                    break
+                pg.evaluate("window.__lab.advance(0.25)")
+                seen.add(pg.evaluate("window.__lab.lay()"))
+            assert seen == {1, 2, 3, 4}
+            assert pg.evaluate("window.__lab.playing()") is False
+            assert pg.evaluate("window.__lab.lay()") == 4
+            for k in range(1, 5):
+                assert pg.evaluate(f"window.__lab.phase('canard.skin_top.p{k}').cure") == 1
+                assert pg.evaluate(f"window.__lab.material('canard.skin_top.p{k}').wet") == 0
+            assert pg.evaluate("document.querySelector('#play').getAttribute('aria-pressed')") == "false"
+            assert pg.evaluate("window.__lab.play()") is True  # Play again starts over from ply 1
+            assert pg.evaluate("window.__lab.lay()") == 1
+            assert pg.evaluate("window.__lab.play()") is False  # a second press while playing stops it
+            assert pg.evaluate("window.__lab.playing()") is False
             assert not errors, errors
             b.close()
     finally:

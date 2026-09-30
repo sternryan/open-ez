@@ -5,15 +5,16 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { Pipeline } from './render/pipeline'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
-import { surf } from './core/materials'
-import { compositeMaterial, plyPlane, setWet } from './core/composite'
+import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
 import { orientation, type Pose } from './logic/pose'
 import { labShots, LAB_FOV, type LabShot } from './shots'
 import { CameraRig, easeInOut, type Shot } from './camera'
-import { barOps, makeStore, type GraphLite, type Variant } from './logic/graph'
+import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './logic/graph'
+import { visibleSet, type BuildState, type MeshInfo } from './logic/build'
+import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
 import './style.css'
 
@@ -27,7 +28,8 @@ const setStatus = (msg: string | null, err = false) => {
   statusEl.classList.toggle('err', err)
 }
 
-interface Graph extends GraphLite { components: Record<string, unknown>; layup?: { nodes?: Record<string, LayupNodeLite> } | null }
+interface PlyRef { node: string; op: string; order: number }
+interface Graph extends GraphLite { components: Record<string, unknown>; plies?: Record<string, PlyRef[]>; layup?: { nodes?: Record<string, LayupNodeLite> } | null }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
@@ -42,6 +44,19 @@ interface LabHook {
   setWet(name: string, w: number): void
   /** world-space box [min, max] in metres of a mesh, for placing close-up cameras */
   meshBox(name: string): number[][] | null
+  /** build state per mesh name (built, current, ghost, hidden), as visibleSet answers it */
+  state(): Record<string, BuildState>
+  /** the animation phase of a mesh: state, unroll, wet-out front, cure */
+  phase(name: string): Phase | null
+  lay(): number
+  /** lay plies of the selected op (as the scrubber does): resets the animation clock to 0 */
+  setLay(n: number): void
+  /** the Play button; returns whether it is now playing */
+  play(): boolean
+  playing(): boolean
+  ghost(on: boolean): void
+  /** stop the frame loop advancing time; only advance(s) moves the clock */
+  freeze(on: boolean): void
 }
 declare global { interface Window { __lab?: LabHook } }
 
@@ -50,6 +65,7 @@ const hook: LabHook = {
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
+  state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
 }
 if (TEST) window.__lab = hook
 
@@ -72,7 +88,7 @@ function bake(o: THREE.Mesh, flip: boolean): THREE.BufferGeometry {
   return out
 }
 
-interface Merged { cid: string; node: string | null; mesh: THREE.Mesh; spec: MaterialSpec }
+interface Merged { cid: string; node: string | null; mesh: THREE.Mesh; mat: THREE.Material; spec: MaterialSpec; ply: { op: string; order: number } | null }
 
 function mergeModel(scene: THREE.Object3D, graph: Graph): { cid: string; node: string | null; geo: THREE.BufferGeometry }[] {
   scene.updateMatrixWorld(true)
@@ -207,9 +223,11 @@ async function boot() {
   // ---- deterministic time ----
   let simT = 0
   let stepPose: (dt: number) => void = () => {}
+  let stepBuild: (dt: number) => void = () => {}
   const step = (dt: number) => {
     simT += dt
     stepPose(dt)
+    stepBuild(dt)
     rig.update(dt)
     controls.update()
   }
@@ -220,12 +238,15 @@ async function boot() {
     pipeline.render(scene, camera, simT)
   }
   let last = performance.now()
+  // ?freeze=1 (or __lab.freeze(true)): the frame loop still draws but no longer advances time, so a test or a capture owns the clock
+  let frozen = TEST && params.get('freeze') === '1'
   renderer.setAnimationLoop(() => {
     const t = performance.now(), dt = Math.min((t - last) / 1000, 0.1)
     last = t
-    step(dt)
+    if (!frozen) step(dt)
     render()
   })
+  hook.freeze = (on: boolean) => { frozen = on }
   hook.advance = (s: number) => { step(s); render() }
   hook.stats = () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
 
@@ -251,17 +272,19 @@ async function boot() {
     const cut = new CutState(root, 80, -80)
     cut.amount = 0
     const layupNodes = graph.layup?.nodes ?? null
+    const plyRefs = new Map<string, PlyRef>()
+    for (const list of Object.values(graph.plies ?? {})) for (const r of list) plyRefs.set(r.node, r)
     for (const p of parts) {
       const spec = materialFor(p.node, p.cid, layupNodes)
-      const mat = spec.kind === 'part'
-        ? surf({ color: 0xe6dfcf, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: 0xe6dfcf })
-        : compositeMaterial(spec, cut, plyPlane(p.geo))
+      const mat = spec.kind === 'part' ? partMaterial(cut) : compositeMaterial(spec, cut, plyPlane(p.geo), plySpan(p.geo))
       const mesh = new THREE.Mesh(p.geo, mat)
       mesh.name = p.node ?? p.cid
       mesh.castShadow = true
       mesh.receiveShadow = true
       root.add(mesh)
-      merged.push({ cid: p.cid, node: p.node, mesh, spec })
+      const ref = p.node ? plyRefs.get(p.node) : undefined
+      if (p.node && !ref) throw new Error(`ply ${p.node} is not in graph.plies`)
+      merged.push({ cid: p.cid, node: p.node, mesh, mat, spec, ply: ref ? { op: ref.op, order: ref.order } : null })
     }
     cut.collect(root)
     cut.update()
@@ -345,6 +368,74 @@ async function boot() {
     const store = makeStore(storage ?? { getItem: () => null, setItem: () => {} })
     let variant: Variant = 'roncz'
     let selected: string | null = null
+    // ---- build state: recomputed from scratch with visibleSet on every change (op, lay, variant, ghost), never patched ----
+    // The look of each mesh (unroll, wet-out front, cure) is plyPhase(op, lay, t), t = seconds since `lay` last changed. All time
+    // comes through step(dt), so __lab.advance(s) reproduces any frame.
+    const GHOST_KEY = 'longez.ghost'
+    let ghost = false
+    try { ghost = storage?.getItem(GHOST_KEY) === '1' } catch { ghost = false }
+    graph.__ghost = ghost
+    const infos: MeshInfo[] = merged.map((m) => ({ name: m.node ?? m.cid, component: m.cid, ply: m.ply }))
+    const opCount = (id: string | null) => (id ? Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).length : 0)
+    let lay = 0, layT = DONE_T, playing = false
+    let bstate = new Map<string, BuildState>()
+    let opIdx = new Map<string, number>()
+    const phases = new Map<string, Phase>()
+    let shadowSig = ''
+    // ?hide=<name prefix>[,..] keeps those meshes out of the scene (for close-ups of work hidden inside the core)
+    const hide = (params.get('hide') ?? '').split(',').filter(Boolean)
+    const recompute = () => {
+      opIdx = new Map(visibleOps(graph, variant).map((o, i) => [o.id, i]))
+      bstate = selected && opIdx.has(selected)
+        ? visibleSet(graph, variant, selected, lay, infos)
+        : new Map<string, BuildState>(infos.map((i) => [i.name, 'built']))
+    }
+    const paint = () => {
+      const cur = selected ? opIdx.get(selected) : undefined, count = opCount(selected)
+      let sig = ''
+      for (const m of merged) {
+        const name = m.node ?? m.cid, st = bstate.get(name) ?? 'hidden'
+        const ph = m.ply && cur !== undefined
+          ? plyPhase({ meshOpIndex: opIdx.get(m.ply.op), curOpIndex: cur, order: m.ply.order, lay, count, t: layT, ghost })
+          : partPhase(st)
+        phases.set(name, ph)
+        m.mesh.visible = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && !hide.some((h) => name.startsWith(h))
+        m.mesh.castShadow = st === 'built' || (st === 'current' && ph.unroll >= 1)
+        setPlyLook(m.mat, { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' })
+        sig += m.mesh.visible && m.mesh.castShadow ? '1' : '0'
+      }
+      if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
+    }
+    const refresh = () => { recompute(); paint(); ui.setBuild(lay, opCount(selected)) }
+    const stopPlay = () => { playing = false; ui.setPlaying(false) }
+    const openOp = () => { stopPlay(); lay = opCount(selected); layT = DONE_T; refresh() } // a step opens fully built and cured
+    const setLay = (n: number) => { stopPlay(); lay = Math.max(0, Math.min(n, opCount(selected))); layT = 0; refresh() }
+    const togglePlay = () => {
+      if (playing) { stopPlay(); return }
+      if (!opCount(selected)) return
+      lay = 1; layT = 0; playing = true
+      ui.setPlaying(true)
+      refresh()
+    }
+    const setGhost = (on: boolean) => {
+      ghost = on
+      graph.__ghost = on
+      try { storage?.setItem(GHOST_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
+      ui.setGhost(on)
+      refresh()
+    }
+    stepBuild = (dt) => {
+      const count = opCount(selected), before = layT
+      let changed = false
+      layT += dt
+      if (playing) {
+        while (lay < count && layT >= PLAY_ADVANCE_T) { layT -= PLAY_ADVANCE_T; lay++; changed = true }
+        if (lay >= count && layT >= DONE_T) stopPlay() // the cure has run
+      }
+      layT = Math.min(layT, DONE_T)
+      if (changed) refresh()
+      else if (layT !== before) paint()
+    }
     const goto = (shot: string, fly: boolean) => {
       currentShot = shot
       if (fly) rig.fly(shot, 1.8, 0.05); else rig.set(shot)
@@ -353,6 +444,7 @@ async function boot() {
     const select = (id: string | null, fly = true) => {
       selected = id
       ui.setSelected(id)
+      openOp()
       setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : 'home', fly)
     }
@@ -368,7 +460,11 @@ async function boot() {
       },
       onHome: () => goto('home', true),
       onSelect: (id) => select(id),
+      onGhost: (on) => setGhost(on),
+      onScrub: (n) => setLay(n),
+      onPlay: () => togglePlay(),
     }, store)
+    ui.setGhost(ghost)
     ui.setVariant(variant)
     const firstOps = barOps(graph, variant)
     ui.setOps(firstOps)
@@ -399,9 +495,13 @@ async function boot() {
       const bx = new THREE.Box3().setFromObject(m.mesh)
       return [bx.min.toArray(), bx.max.toArray()]
     }
-    // ?hide=<name prefix>[,..] hides meshes (a stand-in for the build state, which arrives with the ply animation)
-    const hide = (params.get('hide') ?? '').split(',').filter(Boolean)
-    for (const m of merged) if (hide.some((h) => (m.node ?? m.cid).startsWith(h))) m.mesh.visible = false
+    hook.state = () => Object.fromEntries(bstate)
+    hook.phase = (name) => phases.get(name) ?? null
+    hook.lay = () => lay
+    hook.setLay = setLay
+    hook.play = () => { togglePlay(); return playing }
+    hook.playing = () => playing
+    hook.ghost = setGhost
     // ?wet=<node>[,<node>] floods those plies with resin; ?cam=px,py,pz,tx,ty,tz (world metres) places the camera for close-ups.
     for (const n of (params.get('wet') ?? '').split(',').filter(Boolean)) hook.setWet(n, 1)
     const camp = (params.get('cam') ?? '').split(',').map(Number)
