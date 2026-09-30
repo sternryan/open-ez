@@ -116,15 +116,23 @@ def _loadpaths(g, models: Path | None) -> list[dict]:
              "segments": poly[lp.id]["segments"] if lp.id in poly else []} for lp in g.loadpaths]
 
 
+def _cutaway_export(models: Path) -> Path:
+    """The renders were made from the canard-only export beside the site glb (guide.export_glb writes
+    <dir>/canard/); an export without that directory is a flat canard export (the M2 layout)."""
+    d = models.parent / "canard"
+    return d if (d / "longez.glb").is_file() else models.parent
+
+
 def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
-    if not all((models.parent / f).is_file() for f in ("layup.json", "shots.json")):
+    exp = _cutaway_export(models)
+    if not all((exp / f).is_file() for f in ("layup.json", "shots.json")):
         raise SchemaError("--renders needs layup.json and shots.json next to --models (run guide.export_glb)")
-    probs = render_key.check_renders(renders, models.parent, None)
+    probs = render_key.check_renders(renders, exp, None)
     if probs:
         raise SchemaError("renders: " + "; ".join(probs))
     pl = layup.plies(g)
     (out / "renders").mkdir()
-    shots = json.loads((models.parent / "shots.json").read_text())
+    shots = json.loads((exp / "shots.json").read_text())
     for s in shots:
         shutil.copy(renders / f"{s['id']}.png", out / "renders" / f"{s['id']}.png")
     src = lambda s: f"renders/{s['id']}.png"  # noqa: E731

@@ -75,6 +75,32 @@ def test_real_export_nests_plies_and_keeps_inches(tmp_path):  # viewer parent wa
     assert ys and min(ys) >= -1e-6 and abs(max(ys) - 70.8) < 0.01  # inches, BL 0..semi-span (canard_span 141.6 / 2) before the root Z-up→Y-up rotation
 
 
+# The Blender cutaway's inputs are canard-only (render_cutaway.sh; its contract checks the WHOLE scene spans
+# B.L. 0..semi-span). The M2.2 site glb gained the fuselage and broke that contract on anvil; the node set
+# below is the pre-M2.2 export's (f41ac44), so the cutaway input cannot pick up anything else again.
+PRE_M22_CANARD_NODES = {
+    "longez", "canard.core",
+    "canard.shear_web", *(f"canard.shear_web.p{i}" for i in range(1, 7)),
+    "canard.skin_bottom", *(f"canard.skin_bottom.p{i}" for i in range(1, 4)),
+    "canard.skin_top", *(f"canard.skin_top.p{i}" for i in range(1, 5)),
+    "canard.spar_cap_bottom", "canard.spar_cap_bottom.p1", "canard.spar_cap_top", "canard.spar_cap_top.p1",
+}
+
+
+def test_cutaway_export_is_the_canard_alone(tmp_path):
+    export_main(["--out", str(tmp_path / "longez.glb")])
+    d = tmp_path / "canard"
+    assert set(read_glb_node_names(d / "longez.glb")) == PRE_M22_CANARD_NODES
+    j = _glb_json(d / "longez.glb")
+    ys = [v for n in j["nodes"] if "mesh" in n for prim in j["meshes"][n["mesh"]]["primitives"]
+          for a in [j["accessors"][prim["attributes"]["POSITION"]]] for v in (a["min"][1], a["max"][1])]
+    assert ys and min(ys) >= -1e-6 and abs(max(ys) - 70.8) < 0.01  # every mesh: B.L. 0..semi-span
+    lj = json.loads((d / "layup.json").read_text())
+    full = json.loads((tmp_path / "layup.json").read_text())
+    assert "fuselage" not in lj and lj == {k: v for k, v in full.items() if k != "fuselage"}
+    assert (d / "shots.json").read_text() == (tmp_path / "shots.json").read_text()
+
+
 # ---- fuselage box (chapters 4-6) in the lab export (Block 2 M2.2 Task 5) ----
 import math  # noqa: E402
 import re  # noqa: E402

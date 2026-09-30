@@ -50,26 +50,53 @@ def read_glb_node_names(path: Path) -> list[str]:
     return [n.get("name", "") for n in doc.get("nodes", [])]
 
 
-def default_components() -> dict:
+# The Blender cutaway (guide/render_cutaway.sh) renders the canard only, and its contract checks the scene
+# spans B.L. 0..semi-span. It gets its own export in this subdirectory of the --out directory, with the
+# contract's file names (longez.glb, layup.json, shots.json) and canard content only, so the render key
+# moves only when a canard input moves.
+CUTAWAY_DIR = "canard"
+
+
+def canard_components() -> dict:
     from guide.layup_geometry import build_layup
     from guide.schema import load_graph
 
+    return build_layup(load_graph(GRAPH_DIR))
+
+
+def default_components() -> dict:
     from guide import fuselage_export
 
-    return {**build_layup(load_graph(GRAPH_DIR)), **fuselage_export.components()}
+    return {**canard_components(), **fuselage_export.components()}
+
+
+def _canard_layup(graph) -> dict:
+    from core.structures import CanardGenerator
+    from guide import layup
+
+    return layup.layup_json(layup.plies(graph), CanardGenerator().span / 2)
 
 
 def write_layup_files(graph, out_dir: Path) -> None:
     from core.ledger import fuselage_ledger_json
-    from core.structures import CanardGenerator
     from guide import fuselage_export, layup
 
-    pl = layup.plies(graph)
-    lj = layup.layup_json(pl, CanardGenerator().span / 2)
+    lj = _canard_layup(graph)
     lj["fuselage"] = fuselage_export.layup_section()  # chapters 4-6, beside the canard's keys (which are unchanged)
     (out_dir / "layup.json").write_text(json.dumps(lj, indent=1, sort_keys=True))
     (out_dir / "ledger.json").write_text(json.dumps(fuselage_ledger_json(), indent=1, sort_keys=True))
     (out_dir / "shots.json").write_text(json.dumps(layup.shots(), indent=1))
+
+
+def write_cutaway_export(graph, out_dir: Path) -> Path:
+    """The canard-only inputs of the Blender cutaway: <out_dir>/canard/{longez.glb, layup.json, shots.json}."""
+    from guide import layup
+
+    d = out_dir / CUTAWAY_DIR
+    export_components(canard_components(), d / "longez.glb")
+    (d / "layup.json").write_text(json.dumps(_canard_layup(graph), indent=1, sort_keys=True))
+    (d / "shots.json").write_text(json.dumps(layup.shots(), indent=1))
+    return d
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -79,8 +106,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", default="output/guide/longez.glb")
     a = ap.parse_args(argv)
     out = export_components(default_components(), Path(a.out))
-    write_layup_files(load_graph(GRAPH_DIR), out.parent)
-    print(f"wrote {out} (+ layup.json, ledger.json, shots.json) nodes={len(read_glb_node_names(out))}")
+    g = load_graph(GRAPH_DIR)
+    write_layup_files(g, out.parent)
+    cut = write_cutaway_export(g, out.parent)
+    print(f"wrote {out} (+ layup.json, ledger.json, shots.json) nodes={len(read_glb_node_names(out))}; "
+          f"cutaway inputs (canard only) in {cut}")
     return 0
 
 

@@ -20,7 +20,8 @@ ANVIL=${LONGEZ_ANVIL:-anvil}
 CF=${COMPUTE_FABRIC_DIR:-$HOME/compute-fabric-dev}
 FABRIC_GPU=${FABRIC_GPU:-$CF/bin/fabric-gpu}
 SCRIPTS=$CF/deploy/anvil/jobs/blender
-EXPORT=${LONGEZ_EXPORT_DIR:-output/guide}
+# The canard-only cutaway inputs guide.export_glb writes beside longez.glb (the site glb also holds the fuselage).
+EXPORT=${LONGEZ_EXPORT_DIR:-output/guide/canard}
 CACHE=${LONGEZ_RENDER_CACHE:-$HOME/.cache/long-ez/renders}
 POLL_S=${LONGEZ_POLL_S:-10}
 DEPLOYED=/opt/fabric/jobs/blender
