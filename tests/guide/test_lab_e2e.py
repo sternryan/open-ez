@@ -199,3 +199,27 @@ def test_canard_is_inverted_in_the_jig_until_the_turnover_and_every_tour_op_has_
             b.close()
     finally:
         s.shutdown()
+
+
+def test_every_ply_mesh_has_the_material_its_cloth_dictates_and_wet_is_a_uniform_change(rsite):
+    g = _graph(rsite)
+    nodes = g["layup"]["nodes"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 960, 600)
+            names = pg.evaluate("window.__lab.meshNames()")
+            assert pg.evaluate("window.__lab.material('canard.core').kind") == "foam"
+            for node, n in nodes.items():
+                m = pg.evaluate(f"window.__lab.material('{node}')")
+                assert m["kind"] == n["cloth"].lower(), (node, m)  # und / bid
+                assert m["wet"] == 0  # every ply starts cured
+            assert set(nodes) <= set(names)
+            first = next(iter(nodes))
+            pg.evaluate(f"window.__lab.setWet('{first}', 1)")
+            assert pg.evaluate(f"window.__lab.material('{first}').wet") == 1
+            pg.evaluate("window.__lab.advance(0.1)")  # renders with the new uniform
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

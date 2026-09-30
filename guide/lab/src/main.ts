@@ -6,6 +6,8 @@ import { Pipeline } from './render/pipeline'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
 import { surf } from './core/materials'
+import { compositeMaterial, plyPlane, setWet } from './core/composite'
+import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
 import { orientation, type Pose } from './logic/pose'
@@ -25,7 +27,7 @@ const setStatus = (msg: string | null, err = false) => {
   statusEl.classList.toggle('err', err)
 }
 
-interface Graph extends GraphLite { components: Record<string, unknown>; layup?: { nodes?: Record<string, { cloth?: string }> } | null }
+interface Graph extends GraphLite { components: Record<string, unknown>; layup?: { nodes?: Record<string, LayupNodeLite> } | null }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
@@ -35,6 +37,11 @@ interface LabHook {
   pose(): Pose; flipping(): boolean; tableTopY(): number
   /** authored lab shots, model inches in the canard's frame (target is the tours.yaml target) */
   labShots(): Record<string, LabShot>
+  /** the composite material a mesh got (by mesh name), or null */
+  material(name: string): { kind: string; angles: number[]; wet: number } | null
+  setWet(name: string, w: number): void
+  /** world-space box [min, max] in metres of a mesh, for placing close-up cameras */
+  meshBox(name: string): number[][] | null
 }
 declare global { interface Window { __lab?: LabHook } }
 
@@ -42,6 +49,7 @@ const hook: LabHook = {
   ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0 }), advance: () => {},
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
+  material: () => null, setWet: () => {}, meshBox: () => null,
 }
 if (TEST) window.__lab = hook
 
@@ -64,7 +72,7 @@ function bake(o: THREE.Mesh, flip: boolean): THREE.BufferGeometry {
   return out
 }
 
-interface Merged { cid: string; node: string | null; mesh: THREE.Mesh }
+interface Merged { cid: string; node: string | null; mesh: THREE.Mesh; spec: MaterialSpec }
 
 function mergeModel(scene: THREE.Object3D, graph: Graph): { cid: string; node: string | null; geo: THREE.BufferGeometry }[] {
   scene.updateMatrixWorld(true)
@@ -163,7 +171,7 @@ async function boot() {
   const controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
   controls.dampingFactor = 0.075
-  controls.minDistance = 0.4
+  controls.minDistance = 0.15 // close enough to read the weave and the foam cells (12 in = 0.305 m)
   controls.maxDistance = 7.5
   controls.maxPolarAngle = Math.PI * 0.495 // never orbit under the floor: the target sits at table height, so the eye stays above it
   controls.rotateSpeed = 0.7
@@ -239,24 +247,21 @@ async function boot() {
     ])
     const gltf = await new GLTFLoader().loadAsync('../' + cfg.model)
     const parts = mergeModel(gltf.scene, graph)
-    // Placeholder materials by cloth; Task 2 replaces these with real ones.
+    // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
     const cut = new CutState(root, 80, -80)
     cut.amount = 0
-    const cloth = (node: string | null) => (node ? graph.layup?.nodes?.[node]?.cloth : undefined)
-    const paint = (node: string | null) => {
-      const c = cloth(node)
-      if (!node) return { color: 0xe6dfcf, roughness: 0.85 } // foam-ish off-white
-      if (c === 'BID') return { color: 0x5f8489, roughness: 0.42 } // teal-grey
-      return { color: 0xc99a5b, roughness: 0.42 } // amber-tan
-    }
+    const layupNodes = graph.layup?.nodes ?? null
     for (const p of parts) {
-      const o = paint(p.node)
-      const mesh = new THREE.Mesh(p.geo, surf({ ...o, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: o.color }))
+      const spec = materialFor(p.node, p.cid, layupNodes)
+      const mat = spec.kind === 'part'
+        ? surf({ color: 0xe6dfcf, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: 0xe6dfcf })
+        : compositeMaterial(spec, cut, plyPlane(p.geo))
+      const mesh = new THREE.Mesh(p.geo, mat)
       mesh.name = p.node ?? p.cid
       mesh.castShadow = true
       mesh.receiveShadow = true
       root.add(mesh)
-      merged.push({ cid: p.cid, node: p.node, mesh })
+      merged.push({ cid: p.cid, node: p.node, mesh, spec })
     }
     cut.collect(root)
     cut.update()
@@ -378,6 +383,34 @@ async function boot() {
     hook.pose = () => pose
     hook.flipping = () => flipT < 1
     hook.labShots = () => lab
+    hook.material = (name) => {
+      const m = merged.find((x) => (x.node ?? x.cid) === name)
+      if (!m) return null
+      const info = (m.mesh.material as THREE.Material).userData.comp as { wet: number } | undefined
+      return { kind: m.spec.kind, angles: m.spec.angles.slice(), wet: info?.wet ?? 0 }
+    }
+    hook.setWet = (name, w) => {
+      const m = merged.find((x) => (x.node ?? x.cid) === name)
+      if (m) setWet(m.mesh.material as THREE.Material, w)
+    }
+    hook.meshBox = (name) => {
+      const m = merged.find((x) => (x.node ?? x.cid) === name)
+      if (!m) return null
+      const bx = new THREE.Box3().setFromObject(m.mesh)
+      return [bx.min.toArray(), bx.max.toArray()]
+    }
+    // ?hide=<name prefix>[,..] hides meshes (a stand-in for the build state, which arrives with the ply animation)
+    const hide = (params.get('hide') ?? '').split(',').filter(Boolean)
+    for (const m of merged) if (hide.some((h) => (m.node ?? m.cid).startsWith(h))) m.mesh.visible = false
+    // ?wet=<node>[,<node>] floods those plies with resin; ?cam=px,py,pz,tx,ty,tz (world metres) places the camera for close-ups.
+    for (const n of (params.get('wet') ?? '').split(',').filter(Boolean)) hook.setWet(n, 1)
+    const camp = (params.get('cam') ?? '').split(',').map(Number)
+    if (camp.length === 6 && camp.every(Number.isFinite)) {
+      camera.position.set(camp[0], camp[1], camp[2])
+      controls.target.set(camp[3], camp[4], camp[5])
+      controls.update()
+      rig.lastUser = performance.now() // treat as the user's camera so a resize keeps it
+    }
     setStatus(null)
     hook.ready = true
   } catch (e) {

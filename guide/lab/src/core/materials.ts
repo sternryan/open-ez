@@ -1,5 +1,5 @@
 // Adapted from AirsupHQ/airsup-lab src/core/materials.ts (MIT); see NOTICE.
-// Changes: none (unmodified)
+// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged.
 import * as THREE from 'three'
 import { CutState, CUT_PROJ, NO_CUT, GLSL_CUT_FRAG, GLSL_CUT_FRAG_PARS, GLSL_CUT_VERT, GLSL_CUT_VERT_PARS } from './cut'
 import { GLSL_NOISE, NOISE3D } from './noise'
@@ -43,8 +43,28 @@ export interface SurfOpts {
   map?: THREE.Texture | null
   roughnessMap?: THREE.Texture | null
   name?: string
+  /** Extra GLSL for callers that need their own surface model (see composite.ts). All fields optional. */
+  hooks?: SurfHooks
   /** internal: build the back face cap pass of a cut material */
   capPass?: boolean
+}
+
+/**
+ * Injection points in the fragment shader. `pars` sits with the other declarations; `surface` runs after the detail noise
+ * (it may add to surfH and declare locals for the later hooks); `color` runs before the cap colour is applied, `capColor`
+ * after it; `rough` runs before the cap roughness is applied, `capRough` after it.
+ */
+export interface SurfHooks {
+  defs?: string[]
+  pars?: string
+  surface?: string
+  color?: string
+  capColor?: string
+  rough?: string
+  capRough?: string
+  uniforms?: Record<string, { value: unknown }>
+  /** the hooks add height, so switch the bump on */
+  bump?: boolean
 }
 
 const GLSL_BUMP = /* glsl */ `
@@ -136,13 +156,15 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     uTintRange: { value: new THREE.Vector3(o.tint?.y0 ?? 0, o.tint?.y1 ?? 1, o.tint?.strength ?? 0) },
     uNoise3D: NOISE3D,
   }
+  const hk = o.hooks ?? {}
+  if (hk.uniforms) Object.assign(u, hk.uniforms)
   m.userData.u = u
-  const defs: string[] = []
+  const defs: string[] = [...(hk.defs ?? []).map((d) => `#define ${d}`)]
   if (cut) defs.push('#define SURF_CUT')
   if (detail > 0) defs.push('#define SURF_DETAIL')
   if (o.tint) defs.push('#define SURF_TINT')
   if ((o.streaks ?? 0) > 0) defs.push('#define SURF_STREAKS')
-  if ((o.bump ?? 0) > 0 || (o.layers?.[1] ?? 0) > 0 || (o.ribs?.[1] ?? 0) > 0) defs.push('#define SURF_BUMP')
+  if (hk.bump || (o.bump ?? 0) > 0 || (o.layers?.[1] ?? 0) > 0 || (o.ribs?.[1] ?? 0) > 0) defs.push('#define SURF_BUMP')
   const defStr = defs.join('\n') + '\n'
 
   m.onBeforeCompile = (shader) => {
@@ -162,6 +184,7 @@ ${GLSL_BUMP}
 uniform vec3 uCapColor; uniform float uCapRough; uniform float uCapMetal;
 uniform vec4 uDetail; uniform vec2 uLayers; uniform vec2 uRibs; uniform float uStreaks;
 uniform vec3 uTintA; uniform vec3 uTintB; uniform vec3 uTintC; uniform vec3 uTintRange;
+${hk.pars ?? ''}
 `,
     )
     f = f.replace(
@@ -190,6 +213,7 @@ float surfN1 = 0.5, surfN2 = 0.5, surfH = 0.0;
 #endif
 if (uLayers.y > 0.0) surfH += sin(vObj.y * uLayers.x) * uLayers.y;
 if (uRibs.y > 0.0) surfH += smoothstep(-0.2, 0.9, sin(atan(vObj.z, vObj.x) * uRibs.x)) * uRibs.y;
+${hk.surface ?? ''}
 `,
     )
     f = f.replace(
@@ -209,7 +233,9 @@ if (uRibs.y > 0.0) surfH += smoothstep(-0.2, 0.9, sin(atan(vObj.z, vObj.x) * uRi
 #ifdef SURF_STREAKS
   diffuseColor.rgb *= 1.0 - uStreaks * smoothstep(0.45, 0.8, surfN1);
 #endif
+${hk.color ?? ''}
 if (cutCap) diffuseColor.rgb = uCapColor;
+${hk.capColor ?? ''}
 `,
     )
     f = f.replace(
@@ -218,10 +244,12 @@ if (cutCap) diffuseColor.rgb = uCapColor;
 #ifdef SURF_DETAIL
   roughnessFactor = clamp(roughnessFactor * (1.0 + (surfN2 - 0.5) * uDetail.y * 2.0), 0.03, 1.0);
 #endif
+${hk.rough ?? ''}
 if (cutCap) {
   roughnessFactor = uCapRough + (n3(cutHit * 9.0) - 0.5) * 0.08;
   metalnessFactor = uCapMetal;
 }
+${hk.capRough ?? ''}
 `,
     )
     f = f.replace(
@@ -257,7 +285,7 @@ if (uCutGlow > 0.0) {
     )
     shader.fragmentShader = f
   }
-  m.customProgramCacheKey = () => 'surf|' + defStr + (capPass ? 'caps' : '')
+  m.customProgramCacheKey = () => 'surf|' + defStr + (hk.pars ? hk.pars.length : '') + (capPass ? 'caps' : '')
   return m
 }
 
