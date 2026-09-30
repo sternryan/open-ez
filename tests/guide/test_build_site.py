@@ -71,6 +71,6 @@ def test_renders_need_models(tmp_path):
         build(REPO_GRAPH, tmp_path / "site", models=None, scan_base=None, docs=None, renders=tmp_path)
 
 
-def test_legend_states_planform_source():  # planform correction: the chord has no plans source
+def test_legend_states_planform_source():  # Block 1: GU planform stands in until the Roncz one is sourced
     from guide.build_site import LEGEND
-    assert any(e["text"] == "Canard planform from the plans; chord unsourced" for e in LEGEND)
+    assert any(e["text"] == "Canard planform: GU size from the Owner's Manual; Roncz planform unconfirmed" for e in LEGEND)

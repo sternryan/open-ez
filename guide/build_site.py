@@ -44,7 +44,7 @@ LEGEND = [
     {"swatch": "unverified", "text": "Striped: web/spar position not verified"},
     {"swatch": None, "text": "Numbers = lay order"},
     {"swatch": None, "text": "Spar caps: plies as required to fill trough"},
-    {"swatch": None, "text": "Canard planform from the plans; chord unsourced"},
+    {"swatch": None, "text": "Canard planform: GU size from the Owner's Manual; Roncz planform unconfirmed"},
     {"swatch": None, "text": "Not to scale"},
 ]
 
