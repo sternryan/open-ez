@@ -9,6 +9,7 @@ The lab app is adapted from the same project, file by file:
   guide/lab/src/core/noise.ts       (src/core/noise.ts)
   guide/lab/src/core/cut.ts         (src/core/cut.ts)
   guide/lab/src/camera.ts           (src/camera.ts)
+  guide/lab/src/ui/labels.ts        (src/ui/labels.ts)
 
 ----------------------------------------------------------------------------
 

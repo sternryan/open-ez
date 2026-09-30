@@ -1,4 +1,5 @@
 import type { Op, Variant } from '../logic/graph'
+import { fmtBl } from '../logic/section'
 
 type Store = { get(id: string): Set<number>; toggle(id: string, i: number): void }
 export interface UIHandlers {
@@ -8,6 +9,8 @@ export interface UIHandlers {
   onGhost(on: boolean): void
   onScrub(n: number): void
   onPlay(): void
+  onSection(on: boolean, bl: number): void
+  onLabels(on: boolean): void
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -57,6 +60,11 @@ export function initUI(h: UIHandlers, store: Store) {
   $('ghost').addEventListener('change', (e) => h.onGhost((e.target as HTMLInputElement).checked))
   $('scrub').addEventListener('input', (e) => h.onScrub(+(e.target as HTMLInputElement).value)) // user input only: setting .value fires no event
   $('play').addEventListener('click', () => h.onPlay())
+  const secOn = $('section-on') as HTMLInputElement, secBl = $('section-bl') as HTMLInputElement
+  const secChange = () => h.onSection(secOn.checked, +secBl.value)
+  secOn.addEventListener('change', secChange)
+  secBl.addEventListener('input', secChange)
+  $('labels-on').addEventListener('change', (e) => h.onLabels((e.target as HTMLInputElement).checked))
   chips.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-op]') as HTMLElement | null
     if (b) h.onSelect(b.dataset.op!)
@@ -109,6 +117,29 @@ export function initUI(h: UIHandlers, store: Store) {
       s.max = String(count)
       s.value = String(lay)
       $('scrublabel').textContent = `Ply ${lay} of ${count}`
+    },
+    /** show the section controls only when the site has a layup; `max` is the layup's semi-span */
+    initSection(max: number, bl: number) {
+      secBl.max = String(max)
+      secBl.value = String(bl)
+      $('section').hidden = false
+      $('section-station').textContent = fmtBl(bl)
+    },
+    setSection(on: boolean, bl: number) {
+      secOn.checked = on
+      secBl.value = String(bl)
+      $('section-station').textContent = fmtBl(bl)
+    },
+    setLabels(on: boolean) { ($('labels-on') as HTMLInputElement).checked = on },
+    /** the stat tiles: plain text only; `plies` is null when the op has none */
+    setReadout(r: { station: string; layers: string; plies: string | null; cloth: string }) {
+      $('ro-station').textContent = r.station
+      const l = $('ro-layers')
+      l.textContent = r.layers
+      l.title = r.layers // phone: one ellipsised line, the full text stays in the title
+      $('t-plies').hidden = r.plies === null
+      $('ro-plies').textContent = r.plies ?? ''
+      $('ro-cloth').textContent = r.cloth
     },
     setPlaying(on: boolean) {
       $('play').setAttribute('aria-pressed', String(on))

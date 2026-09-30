@@ -5,7 +5,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { Pipeline } from './render/pipeline'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
-import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet } from './core/composite'
+import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
@@ -16,6 +16,8 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
+import { Labels } from './ui/labels'
+import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import './style.css'
 
 const INCH = 0.0254
@@ -29,7 +31,7 @@ const setStatus = (msg: string | null, err = false) => {
 }
 
 interface PlyRef { node: string; op: string; order: number }
-interface Graph extends GraphLite { components: Record<string, unknown>; plies?: Record<string, PlyRef[]>; layup?: { nodes?: Record<string, LayupNodeLite> } | null }
+interface Graph extends GraphLite { components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode> } | null }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
@@ -57,6 +59,25 @@ interface LabHook {
   ghost(on: boolean): void
   /** stop the frame loop advancing time; only advance(s) moves the clock */
   freeze(on: boolean): void
+  /** the section cut as it is now; planeConstant is the plane's model Z in inches (B.L. b sits at Z = -b, the plane 1e-3 in toward the root; the same number as the 2.1 viewer) */
+  cut(): CutInfo
+  /** box [min, max] in model inches (the canard's frame, as exported) of a ply node or part */
+  plyBox(node: string): { min: number[]; max: number[] } | null
+  setSection(on: boolean, bl: number): void
+  /** the cut edge's glow, 0..1: kicked when the station moves, decays with sim time */
+  cutGlow(): number
+  /** model inches -> world metres in the canard's current pose */
+  toWorld(p: number[]): number[]
+  /** place the camera (world metres); the orbit target is `target` */
+  setCamera(pos: number[], target: number[]): void
+  /** the part labels: what each shows right now */
+  labels(): { id: string; text: string; opacity: number; x: number; y: number }[]
+}
+interface CutInfo {
+  enabled: boolean; bl: number; planeConstant: number | null
+  /** true when the plane, in the world as posed now, keeps a point 5 in outboard of the station and removes one 5 in inboard */
+  keepsOutboard: boolean; removesInboard: boolean
+  cappedNodes: string[]; capsVisible: number; capNodesVisible: string[]; clipped: number
 }
 declare global { interface Window { __lab?: LabHook } }
 
@@ -65,6 +86,8 @@ const hook: LabHook = {
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
+  cut: () => ({ enabled: false, bl: 0, planeConstant: null, keepsOutboard: false, removesInboard: false, cappedNodes: [], capsVisible: 0, capNodesVisible: [], clipped: 0 }),
+  plyBox: () => null, setSection: () => {}, labels: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
   state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
 }
 if (TEST) window.__lab = hook
@@ -224,12 +247,16 @@ async function boot() {
   let simT = 0
   let stepPose: (dt: number) => void = () => {}
   let stepBuild: (dt: number) => void = () => {}
+  let stepCut: (dt: number) => void = () => {}
+  let stepLabels: (dt: number) => void = () => {}
   const step = (dt: number) => {
     simT += dt
     stepPose(dt)
     stepBuild(dt)
+    stepCut(dt)
     rig.update(dt)
     controls.update()
+    stepLabels(dt)
   }
   const render = () => {
     pipeline.params.dofFocus = camera.position.distanceTo(controls.target)
@@ -269,6 +296,8 @@ async function boot() {
     const gltf = await new GLTFLoader().loadAsync('../' + cfg.model)
     const parts = mergeModel(gltf.scene, graph)
     // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
+    // The plane lives in the model frame (`root`), so it follows the flip. As in the 2.1 viewer, the kept side of a CutState is local
+    // z < e = -b + 1e-3: the inboard side is removed and the cut face looks toward the root, where the op shots are taken from.
     const cut = new CutState(root, 80, -80)
     cut.amount = 0
     const layupNodes = graph.layup?.nodes ?? null
@@ -406,7 +435,7 @@ async function boot() {
       }
       if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
     }
-    const refresh = () => { recompute(); paint(); ui.setBuild(lay, opCount(selected)) }
+    const refresh = () => { recompute(); paint(); ui.setBuild(lay, opCount(selected)); updateReadout() }
     const stopPlay = () => { playing = false; ui.setPlaying(false) }
     const openOp = () => { stopPlay(); lay = opCount(selected); layT = DONE_T; refresh() } // a step opens fully built and cured
     const setLay = (n: number) => { stopPlay(); lay = Math.max(0, Math.min(n, opCount(selected))); layT = 0; refresh() }
@@ -440,6 +469,124 @@ async function boot() {
       currentShot = shot
       if (fly) rig.fly(shot, 1.8, 0.05); else rig.set(shot)
     }
+
+    // ---- section cut: airsup's CutState on our meshes. Station b (B.L. inches) is the plane at model Z = -b + EPS, so a ply whose
+    // last inch ends exactly at the station still caps. The inboard side is removed (2.1's convention), so the op shots, which
+    // look from the root, see the cut face. ----
+    const EPS = 1e-3
+    const layupN = graph.layup?.nodes ?? null
+    const semi = graph.layup?.semi_span ?? 70
+    let secOn = false, secBl = Math.round(semi / 2), glow = 0
+    for (const m of merged) m.mesh.geometry.computeBoundingBox()
+    const nameOf = (m: Merged) => m.node ?? m.cid
+    const liveState = (m: Merged) => bstate.get(nameOf(m))
+    const isBuilt = (m: Merged) => { const st = liveState(m); return (st === 'built' || st === 'current') && m.mesh.visible }
+    // the same inequality as layersAt / guide.layup.counts_at (bl <= bl_max), with the plane's own tolerance at either end
+    const crosses = (m: Merged) => { const b = m.mesh.geometry.boundingBox!; return b.min.z - EPS <= -secBl && -secBl <= b.max.z + EPS }
+    const isCapped = (m: Merged) => secOn && isBuilt(m) && crosses(m)
+    const applyCut = () => {
+      // CutState: e = depth + (extent - depth) * (1 - amount) is the plane's model Z; solve for the amount that puts it at -b + EPS
+      cut.amount = secOn ? 1 - (-secBl + EPS - cut.depth) / (cut.extent - cut.depth) : 0
+      cut.update()
+      cut.uGlow.value = secOn ? glow : 0 // the line rides the edge while the station moves, and settles (sim time) when it stops
+    }
+    stepCut = (dt) => {
+      if (glow > 0) { glow *= Math.exp(-dt * 4); if (glow < 0.01) glow = 0 }
+      if (secOn) { applyCut(); if (dt > 0 && glow > 0) pipeline.shadowDirty = true }
+    }
+    const setSection = (on: boolean, bl: number) => {
+      const was = secOn
+      secOn = on && !!layupN
+      secBl = Math.max(0, Math.min(bl, semi))
+      glow = 1
+      applyCut()
+      if (secOn !== was) paint() // the cap pass materials are created when the cut opens: give them the plies' current look
+      pipeline.shadowDirty = true
+      ui.setSection(secOn, secBl)
+      updateReadout()
+    }
+
+    // ---- readout: counts and sourced text only ----
+    const CLOTH_ORDER = ['UND', 'BID']
+    const updateReadout = () => {
+      const n = opCount(selected)
+      const cnt = new Map<string, number>()
+      const lit: Record<string, LayupNode> = {}
+      for (const m of merged) {
+        if (!m.node || !layupN?.[m.node]) continue
+        const st = bstate.get(m.node)
+        if (st !== 'built' && st !== 'current') continue
+        cnt.set(layupN[m.node].cloth, (cnt.get(layupN[m.node].cloth) ?? 0) + 1)
+        lit[m.node] = layupN[m.node]
+      }
+      const cloth = [...cnt].sort(([a], [b]) => (CLOTH_ORDER.indexOf(a) + 1 || 99) - (CLOTH_ORDER.indexOf(b) + 1 || 99) || a.localeCompare(b)).map(([k, c]) => `${k} ${c}`).join(' · ')
+      let layers = layupN ? 'Turn on the section to list the layers there' : ''
+      if (secOn) {
+        const order = Object.keys(graph.components)
+        const parts = merged.filter((m) => !m.node && isCapped(m)).sort((a, b) => order.indexOf(a.cid) - order.indexOf(b.cid)).map((m) => graph.components[m.cid]?.label ?? m.cid)
+        const here = layersAt(lit, secBl)
+        if (here.length || !parts.length) parts.push(summarize(graph, here))
+        layers = parts.join(' · ')
+      }
+      ui.setReadout({ station: secOn ? fmtBl(secBl) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
+    }
+
+    // ---- part labels: one per part group that has geometry ----
+    const LABELS_KEY = 'longez.labels'
+    let labelsOn = true
+    try { labelsOn = storage?.getItem(LABELS_KEY) !== '0' } catch { labelsOn = true }
+    const labels = new Labels(document.getElementById('labels') as HTMLElement, camera)
+    const hex = (c: number) => '#' + c.toString(16).padStart(6, '0')
+    const ray = new THREE.Raycaster()
+    const upright = root.matrixWorld.clone() // the canard is upright here, so world directions are model directions
+    /** a point on the part's outer surface at B.L. `bl`, in model inches, with the surface normal; null when nothing is hit there */
+    const anchorAt = (cid: string, bl: number): { bl: number; p: THREE.Vector3; n: THREE.Vector3 } | null => {
+      const ms = merged.filter((m) => m.cid === cid).map((m) => m.mesh)
+      if (!ms.length) return null
+      const bx = new THREE.Box3()
+      for (const m of ms) bx.union(m.geometry.boundingBox!)
+      const dir = cid.includes('bottom') ? new THREE.Vector3(0, 1, 0) : cid.includes('shear_web') ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, -1, 0)
+      const c = bx.getCenter(new THREE.Vector3())
+      const z = Math.min(Math.max(-bl, bx.min.z + 0.3), bx.max.z - 0.3)
+      for (const f of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8]) {
+        const o = new THREE.Vector3(bx.min.x + (bx.max.x - bx.min.x) * f, c.y, z)
+        if (dir.x) o.set(bx.min.x - 4, c.y, z); else if (dir.y < 0) o.y = bx.max.y + 4; else o.y = bx.min.y - 4
+        ray.set(o.clone().applyMatrix4(upright), dir)
+        const hit = ray.intersectObjects(ms, false)[0]
+        if (hit) return { bl: -z, p: hit.point.clone().applyMatrix4(upright.clone().invert()), n: (hit.face?.normal ?? dir.clone().negate()).clone() }
+      }
+      return null
+    }
+    const wp = new THREE.Vector3(), wn = new THREE.Vector3(), cp = new THREE.Vector3()
+    for (const cid of Object.keys(graph.components)) {
+      // candidate anchors along the span: with the section off the label sits near B.L. 25; with it on it rides the nearest one that is on the kept (outboard) side
+      // each part has its own preferred station, so the pills spread along the span instead of stacking on one point
+      const prefer = cid.includes('skin') ? 40 : cid.includes('shear_web') ? 14 : cid.includes('spar_cap') ? 26 : 32
+      const cands = [prefer, 5, 11, 18, 25, 32, 40, 48, 56, 64].map((bl) => anchorAt(cid, bl)).filter((a): a is NonNullable<typeof a> => !!a)
+      if (!cands.length) continue // lift tabs and the like have no geometry, so no label
+      const mine = merged.filter((m) => m.cid === cid)
+      const kind = mine[0].spec.kind
+      const color = hex(kind === 'und' ? COLORS.und : kind === 'bid' ? COLORS.bid : kind === 'foam' ? COLORS.foam : 0xe6dfcf)
+      const byBl = [...cands].sort((a, b) => a.bl - b.bl)
+      const pick = () => (secOn ? byBl.find((a) => a.bl >= secBl + 2) ?? null : cands[0])
+      labels.add({
+        id: cid, text: graph.components[cid]?.label ?? cid, color,
+        at: () => { const a = pick(); return a ? wp.copy(a.p).applyMatrix4(root.matrixWorld) : null },
+        vis: () => {
+          const a = pick()
+          if (!labelsOn || !a || !mine.some(isBuilt)) return 0
+          wp.copy(a.p).applyMatrix4(root.matrixWorld)
+          wn.copy(a.n).transformDirection(root.matrixWorld)
+          return wn.dot(cp.copy(camera.position).sub(wp)) > 0 ? 1 : 0 // the surface faces away from the camera: hide
+        },
+      })
+    }
+    stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt) }
+    const setLabels = (on: boolean) => {
+      labelsOn = on
+      try { storage?.setItem(LABELS_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
+      ui.setLabels(on)
+    }
     buildShots(variant)
     const select = (id: string | null, fly = true) => {
       selected = id
@@ -463,8 +610,12 @@ async function boot() {
       onGhost: (on) => setGhost(on),
       onScrub: (n) => setLay(n),
       onPlay: () => togglePlay(),
+      onSection: (on, bl) => setSection(on, bl),
+      onLabels: (on) => setLabels(on),
     }, store)
     ui.setGhost(ghost)
+    ui.setLabels(labelsOn)
+    if (layupN) ui.initSection(semi, secBl)
     ui.setVariant(variant)
     const firstOps = barOps(graph, variant)
     ui.setOps(firstOps)
@@ -502,6 +653,33 @@ async function boot() {
     hook.play = () => { togglePlay(); return playing }
     hook.playing = () => playing
     hook.ghost = setGhost
+    hook.setSection = setSection
+    hook.cutGlow = () => cut.uGlow.value
+    hook.toWorld = (p) => new THREE.Vector3(p[0], p[1], p[2]).applyMatrix4(root.matrixWorld).toArray()
+    hook.setCamera = (pos, target) => {
+      camera.position.set(pos[0], pos[1], pos[2])
+      controls.target.set(target[0], target[1], target[2])
+      controls.update()
+      rig.lastUser = performance.now()
+    }
+    hook.labels = () => labels.stats()
+    hook.plyBox = (name) => {
+      const ms = merged.filter((m) => nameOf(m) === name || m.cid === name)
+      if (!ms.length) return null
+      const bx = new THREE.Box3()
+      for (const m of ms) bx.union(m.mesh.geometry.boundingBox!)
+      return { min: bx.min.toArray(), max: bx.max.toArray() }
+    }
+    hook.cut = () => {
+      const kept = (z: number) => cut.world.distanceToPoint(new THREE.Vector3(0, 0, z).applyMatrix4(root.matrixWorld)) >= 0
+      const capNodes = merged.filter((m) => isCapped(m) && Array.isArray(m.mesh.material) && (m.mat.userData.back as THREE.Material | undefined)?.userData.u.uGhost.value === 0).map(nameOf)
+      return {
+        enabled: secOn, bl: secBl, planeConstant: secOn ? cut.local.constant : null,
+        keepsOutboard: secOn && kept(-secBl - 5), removesInboard: secOn && !kept(-secBl + 5),
+        cappedNodes: merged.filter(isCapped).map(nameOf), capsVisible: capNodes.length, capNodesVisible: capNodes,
+        clipped: secOn ? merged.filter((m) => m.mesh.visible && m.mesh.geometry.boundingBox!.min.z < -secBl + EPS).length : 0,
+      }
+    }
     // ?wet=<node>[,<node>] floods those plies with resin; ?cam=px,py,pz,tx,ty,tz (world metres) places the camera for close-ups.
     for (const n of (params.get('wet') ?? '').split(',').filter(Boolean)) hook.setWet(n, 1)
     const camp = (params.get('cam') ?? '').split(',').map(Number)
