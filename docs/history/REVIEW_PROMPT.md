@@ -377,7 +377,7 @@ tests/test_compliance_gate.py      # 6 tests
 ## Running the Tests
 
 ```bash
-cd /Users/ryanstern/rutan-ez/.worktrees/physics-mfg-improvements
+cd <repo>/.worktrees/physics-mfg-improvements
 source .venv/bin/activate
 python3 -m pytest tests/ -v   # All 77 should pass
 ```
