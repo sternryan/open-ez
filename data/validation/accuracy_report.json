@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T00:09:43.559403+00:00",
+    "generated": "2026-09-30T00:31:01.860840+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -17,15 +17,15 @@
     },
     "checks": {
       "stability": {
-        "np_fs": 112.56219497303884,
+        "np_fs": 105.93816004781637,
         "aft_limit_fs": 103.0,
-        "static_margin_pct": 24.3404,
+        "static_margin_pct": 7.4208,
         "pass": true,
-        "mac_in": 39.28524480811359
+        "mac_in": 39.59374059305345
       },
       "two_method_np": {
         "status": "not run",
-        "analytic": 112.56219497303884,
+        "analytic": 105.93816004781637,
         "vlm": null,
         "delta": null,
         "bound_in": 1.0,
@@ -37,9 +37,9 @@
   },
   "summary": {
     "total": 12,
-    "pass": 4,
+    "pass": 5,
     "marginal": 0,
-    "fail": 5,
+    "fail": 4,
     "ungraded": 0,
     "not_graded": 3
   },
@@ -47,7 +47,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 112.5622,
+      "computed": 105.9382,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -61,12 +61,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 105.8012,
+      "computed": 99.1241,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 8.801204,
-      "error_pct": 9.073407,
+      "error_abs": 2.124077,
+      "error_pct": 2.18977,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -74,20 +74,20 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 109.5569,
+      "computed": 102.9092,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 6.556874,
-      "error_pct": 6.365897,
-      "grade": "FAIL",
+      "error_abs": 0.090761,
+      "error_pct": 0.088118,
+      "grade": "PASS",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
     },
     {
       "metric_id": "static_margin_pct",
       "description": "Longitudinal static margin (% MAC)",
-      "computed": 23.45,
+      "computed": 6.5373,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -195,16 +195,16 @@
     {
       "metric_id": "wing_area_sqft",
       "description": "Main wing planform area",
-      "computed": 76.0162,
+      "computed": 64.706,
       "reference": 81.99,
       "tolerance_abs": 2.0,
       "tolerance_pct": null,
-      "error_abs": 5.97375,
-      "error_pct": 7.28595,
+      "error_abs": 17.283958,
+      "error_pct": 21.080569,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.wing_area_sqft",
       "units": "square feet",
-      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft)."
+      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft). Model area is the trapezoid over both panels from wing_root_bl to wing_span/2 and excludes the centre section."
     }
   ]
 }

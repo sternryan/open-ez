@@ -138,7 +138,6 @@ class GeometricParams:
     winglet_height: float = 16.0  # Winglet vertical span in inches (Long-EZ winglets, Rutan Ch.19)
     winglet_root_chord: float = 20.0  # Winglet root chord at wing tip junction (inches)
     winglet_tip_chord: float = 12.0  # Winglet tip chord (inches)
-    fuselage_length: float = 214.0  # conflict: left at 214 (tail unsourced); manual overall length 201.4 (om-1980:p3); fs_tail - fs_nose = 175.3
 
     # === CANARD DOWNWASH ===
     canard_vertical_offset_in: float = (
@@ -180,7 +179,7 @@ class GeometricParams:
         mac_w = (
             (2 / 3) * self.wing_root_chord * (1 + taper_w + taper_w**2) / (1 + taper_w)
         )
-        y_mac_w = (self.wing_span / 2 / 3) * (1 + 2 * taper_w) / (1 + taper_w)
+        y_mac_w = (self.wing_panel_span / 3) * (1 + 2 * taper_w) / (1 + taper_w)
         wing_ac = (
             self.fs_wing_le
             + y_mac_w * math.tan(math.radians(self.wing_sweep_le))
@@ -205,11 +204,33 @@ class GeometricParams:
         return wing_ac - canard_ac
 
     @property
-    def wing_area(self) -> float:
-        """Wing planform area in square feet."""
-        # Trapezoidal approximation
+    def wing_tip_bl(self) -> float:
+        """Butt line of the wing tip (wing_span / 2); the tip chord is specified here."""
+        return self.wing_span / 2
+
+    @property
+    def wing_panel_span(self) -> float:
+        """Length of one wing panel, root BL (wing_root_bl) to tip BL (wing_span / 2)."""
+        return self.wing_span / 2 - self.wing_root_bl
+
+    @property
+    def fuselage_length(self) -> float:
+        """Fuselage length, fs_tail - fs_nose (single basis; provenance status is conflict)."""
+        return self.fs_tail - self.fs_nose
+
+    @property
+    def wing_area_sqft(self) -> float:
+        """Model wing planform area in sq ft: both panels, trapezoid from root BL to tip BL.
+
+        Excludes the centre section between the two root BLs (strakes/fuselage).
+        """
         avg_chord = (self.wing_root_chord + self.wing_tip_chord) / 2
-        return (avg_chord * self.wing_span) / 144  # sq in to sq ft
+        return 2 * self.wing_panel_span * avg_chord / 144  # sq in to sq ft
+
+    @property
+    def wing_area(self) -> float:
+        """Wing planform area in square feet (alias of wing_area_sqft)."""
+        return self.wing_area_sqft
 
     @property
     def canard_area(self) -> float:
@@ -219,9 +240,15 @@ class GeometricParams:
 
     @property
     def wing_aspect_ratio(self) -> float:
-        """Wing aspect ratio (span² / area)."""
-        span_ft = self.wing_span / 12
-        return (span_ft**2) / self.wing_area
+        """Aspect ratio of the model's lifting wing (the two exposed panels).
+
+        Span and area come from the SAME planform: the two panels BL wing_root_bl to
+        wing_tip_bl. The centre section is excluded from both (wing_area_sqft excludes it),
+        so AR = (2 * wing_panel_span)^2 / area. Using the full tip-to-tip span_full^2 with
+        the panel-only area mixes two planforms and overstates AR (~10.5 vs ~7.6).
+        """
+        span_ft = 2 * self.wing_panel_span / 12
+        return (span_ft**2) / self.wing_area_sqft
 
     @property
     def wing_le_fs(self) -> float:
@@ -295,7 +322,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "fs_firewall": _p("book", "plans-1980:p101 firewall line at F.S. 125", "high",
                       "spar aft face F.S. 125 (plans-1980:p88) agrees; p171 side view line at 125"),
     "fs_tail": _p("converted-unsourced", note="internal 214.0 shifted by -45.5; no fuselage aft-end station printed in Section I"),
-    "fuselage_length": _p("conflict", note="left at 214 (tail unsourced); manual overall length 201.4 (om-1980:p3); fs_tail - fs_nose = 175.3 with book nose; Block 1 flag"),
+    "fuselage_length": _p("conflict", note="fs_tail - fs_nose (175.3); fs_tail unsourced; manual overall length 201.4 (om-1980:p3) includes more than the fuselage; conflict kept"),
     "wing_le_anchor": _p("cp-corrected", "cp-text:p25 LPC 7 wing root LE 113.9", "high",
                          "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
     "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment; plans p126 TE meets cowl at B.L. 23 F.S. 148.4; not a root chord station"),

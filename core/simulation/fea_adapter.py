@@ -109,7 +109,7 @@ class BeamFEAAdapter:
         Returns both cap-only legacy results (for backward compatibility with
         RegressionRunner) and D-box primary results with composite failure checks.
         """
-        half_span = config.geometry.wing_span / 2
+        half_span = config.geometry.wing_panel_span  # cantilever length, root BL to tip BL
         load = 450.0  # lbf total for gust + maneuver reserve
 
         # --- Existing cap-only results (KEEP for backward compat) ---
@@ -270,7 +270,7 @@ class BucklingAnalyzer:
         # Estimate bending stress: sigma = M*c/I where M from distributed load
         # For a representative wing panel under g-load
         gross_weight_lbf = config.flight_condition.gross_weight_lb
-        half_span_in = config.geometry.wing_span / 2
+        half_span_in = config.geometry.wing_panel_span  # panel length, root BL to tip BL
         t = self.skin_thickness_in
         b = self.panel_width_in
 
@@ -477,7 +477,7 @@ class CompositeFEAAdapter:
         n_stations: int = 10,
     ) -> SparCapResult:
         """Verify spar cap adequacy under design loads."""
-        span_in = span_in or config.geometry.wing_span / 2
+        span_in = span_in or config.geometry.wing_panel_span
         ultimate_load = tip_load_lbf * load_factor * 1.5
 
         station_positions = list(np.linspace(0, span_in, n_stations))
@@ -1047,7 +1047,7 @@ class FlutterEstimator:
     """
 
     def __init__(self, span_in: float = None, chord_in: float = None):
-        self.span_in = span_in or config.geometry.wing_span / 2
+        self.span_in = span_in or config.geometry.wing_panel_span
         self.chord_in = chord_in or (
             (config.geometry.wing_root_chord + config.geometry.wing_tip_chord) / 2
         )
@@ -1063,14 +1063,14 @@ class FlutterEstimator:
 
         # D-box bending stiffness (average across span)
         dbox = DBoxBeamAdapter()
-        half_span = config.geometry.wing_span / 2
+        half_span = config.geometry.wing_panel_span
         stations = dbox._build_stations(half_span)
         EI_values = [s[1].ei_bending for s in stations]
         EI = sum(EI_values) / len(EI_values)  # Average EI
 
         # Wing mass per unit length
         wing_weight_lb = config.structural_weights.wing_weight_lb
-        half_span_in = config.geometry.wing_span / 2
+        half_span_in = config.geometry.wing_panel_span  # per-panel length (mass spread over both panels)
         g = 386.1  # in/s^2
         mu = wing_weight_lb / g / (2.0 * half_span_in)
 
@@ -1089,7 +1089,7 @@ class FlutterEstimator:
         # Estimate polar mass moment per unit length
         # I_theta ~ mu * c^2 / 12  (thin plate approximation)
         wing_weight_lb = config.structural_weights.wing_weight_lb
-        half_span_in = config.geometry.wing_span / 2
+        half_span_in = config.geometry.wing_panel_span  # per-panel length (mass spread over both panels)
         g = 386.1  # in/s^2
         mu = wing_weight_lb / g / (2.0 * half_span_in)
         I_theta = mu * self.chord_in**2 / 12.0

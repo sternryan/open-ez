@@ -60,7 +60,7 @@ def test_np_reference_is_unverified_not_graded():
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG fwd limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 12; gap +19.85 in (116.85 vs 97.0)")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 12; gap +2.12 in (99.12 vs 97.0)")
 def test_cg_fwd_limit_precision():
     """VAL-01: Computed CG forward limit (published datum) must be within 1\" of 97.0.
 
@@ -92,11 +92,10 @@ def test_cg_fwd_limit_precision():
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG aft limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 13; gap +18.85 in (121.85 vs 103.0)")
 def test_cg_aft_limit_precision():
     """VAL-01: Computed CG aft limit (published datum) must be within 1\" of 103.0.
 
-    Known status: XFAIL. Same fs_wing_le datum error shifts CG aft limit from
+    Status: passes (was XFAIL, ledger row 13; wing panel convention corrected). Same fs_wing_le datum error shifts CG aft limit from
     published 103.0\" FS.
 
     This test documents:

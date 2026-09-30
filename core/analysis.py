@@ -161,8 +161,8 @@ class PhysicsEngine:
         mac_wing = (2 / 3) * cr * (1 + taper + taper**2) / (1 + taper)
 
         # Spanwise location of wing MAC (from root, BL 23.3)
-        semi_span = self.geo.wing_span / 2
-        y_mac_wing = (semi_span / 3) * (1 + 2 * taper) / (1 + taper)
+        panel_span = self.geo.wing_panel_span  # root BL to tip BL
+        y_mac_wing = (panel_span / 3) * (1 + 2 * taper) / (1 + taper)
 
         # Leading edge location of wing MAC (accounting for sweep)
         x_mac_le_wing = self.geo.fs_wing_le + y_mac_wing * math.tan(
@@ -171,14 +171,14 @@ class PhysicsEngine:
 
         # Wing planform area (sq in) for one side
         wing_avg_chord = (cr + ct) / 2
-        s_wing_side = wing_avg_chord * semi_span  # sq in, one side
+        s_wing_side = wing_avg_chord * panel_span  # sq in, one side
 
         # === Strake segment ===
         # The strakes extend from the fuselage to BL 23.3, contributing
         # significant lifting area near the root.
         strake_cfg = config.strakes if hasattr(config, "strakes") else None
         if strake_cfg is not None:
-            strake_span = 23.3  # BL at wing root junction
+            strake_span = self.geo.wing_root_bl  # BL at wing root junction
             strake_chord_inboard = (
                 strake_cfg.fs_trailing_edge - strake_cfg.fs_leading_edge
             )
@@ -277,7 +277,7 @@ class PhysicsEngine:
             2
             * self.geo.wing_root_chord
             * (1 - taper_wing)
-            / (self.geo.wing_span * (1 + taper_wing))
+            / (2 * self.geo.wing_panel_span * (1 + taper_wing))
         )
 
         taper_canard = self.geo.canard_tip_chord / self.geo.canard_root_chord
@@ -515,7 +515,7 @@ class PhysicsEngine:
             2
             * self.geo.wing_root_chord
             * (1 - taper_wing)
-            / (self.geo.wing_span * (1 + taper_wing))
+            / (2 * self.geo.wing_panel_span * (1 + taper_wing))
         )
 
         taper_canard = self.geo.canard_tip_chord / self.geo.canard_root_chord
@@ -670,7 +670,7 @@ class VSPBridge:
             '  SetGeomName(wid, "MainWing");',
             "",
             "  // Wing planform",
-            f'  SetParmVal(wid, "Span", "XSec_1", {geo.wing_span / 2});',
+            f'  SetParmVal(wid, "Span", "XSec_1", {geo.wing_panel_span});',
             f'  SetParmVal(wid, "Root_Chord", "XSec_1", {geo.wing_root_chord});',
             f'  SetParmVal(wid, "Tip_Chord", "XSec_1", {geo.wing_tip_chord});',
             f'  SetParmVal(wid, "Sweep", "XSec_1", {geo.wing_sweep_le});',
@@ -678,7 +678,7 @@ class VSPBridge:
             "",
             "  // Wing position",
             f'  SetParmVal(wid, "X_Rel_Location", "XForm", {geo.fs_wing_le});',
-            '  SetParmVal(wid, "Y_Rel_Location", "XForm", 0);',
+            f'  SetParmVal(wid, "Y_Rel_Location", "XForm", {geo.wing_root_bl});',
             '  SetParmVal(wid, "Z_Rel_Location", "XForm", 0);',
             "",
             "  // Wing incidence",
@@ -721,8 +721,8 @@ class VSPBridge:
             '  SetGeomName(vid, "Winglet_L");',
             '  SetParmVal(vid, "Span", "XSec_1", 30);',
             '  SetParmVal(vid, "Sweep", "XSec_1", 45);',
-            f'  SetParmVal(vid, "X_Rel_Location", "XForm", {geo.fs_wing_le + geo.wing_root_chord});',
-            f'  SetParmVal(vid, "Y_Rel_Location", "XForm", {geo.wing_span / 2});',
+            f'  SetParmVal(vid, "X_Rel_Location", "XForm", {geo.fs_wing_le + geo.wing_panel_span * math.tan(math.radians(geo.wing_sweep_le))});',
+            f'  SetParmVal(vid, "Y_Rel_Location", "XForm", {geo.wing_tip_bl});',
             '  SetParmVal(vid, "X_Rel_Rotation", "XForm", 90);',
             "",
             "  // Mirror for right winglet",

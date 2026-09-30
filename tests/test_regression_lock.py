@@ -93,12 +93,12 @@ def _load_ref_data() -> dict:
 # Phase 5 calibrated values — from data/validation/accuracy_report.json (2026-03-13)
 # Each traces to reference_data.json (RAF CP-29, wind tunnel data)
 # DO NOT UPDATE unless re-calibrating against external reference data
-LOCKED_NP_PUBLISHED = 112.5622       # accuracy_report neutral_point_fs.computed
-# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360)
-LOCKED_CG_FWD_PUBLISHED = 105.8012   # accuracy_report cg_range_fwd_fs.computed
-# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798)
-LOCKED_CG_AFT_PUBLISHED = 109.5569   # accuracy_report cg_range_aft_fs.computed
-# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659)
+LOCKED_NP_PUBLISHED = 105.9382       # accuracy_report neutral_point_fs.computed
+# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360); re-locked again, wing panel convention (was 112.5622); re-locked again, wing aspect ratio (was 106.6750)
+LOCKED_CG_FWD_PUBLISHED = 99.1241   # accuracy_report cg_range_fwd_fs.computed
+# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798); re-locked again, wing panel convention (was 105.8012); re-locked again, wing aspect ratio (was 99.8609)
+LOCKED_CG_AFT_PUBLISHED = 102.9092   # accuracy_report cg_range_aft_fs.computed
+# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659); re-locked again, wing panel convention (was 109.5569); re-locked again, wing aspect ratio (was 103.6461)
 LOCKED_STALL_KTAS = 57.3507          # accuracy_report stall_speed_ktas.computed
 # re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867
 
@@ -185,7 +185,7 @@ def test_regression_neutral_point_drift():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 16; gap +19.85 in (116.85 vs 97.0)")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 16; gap +2.12 in (99.12 vs 97.0)")
 def test_regression_cg_fwd_external_truth():
     """REGRESSION LOCK: Forward CG limit (published datum) locked to Phase 5 calibrated value.
 
@@ -246,12 +246,11 @@ def test_regression_cg_fwd_drift():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 18; gap +18.85 in (121.85 vs 103.0)")
 def test_regression_cg_aft_external_truth():
-    """REGRESSION LOCK: Aft CG limit (published datum) locked to Phase 5 calibrated value.
+    """REGRESSION LOCK: Aft CG limit (published datum) versus the published limit.
 
-    External truth: must be within 1.0" of published 103.0" (om-1980:p28).
-    Drift detection: must be within 0.01" of Phase 5 calibrated value 103.9994".
+    External truth: must be within 1.0" of published 103.0" (om-1980:p28). This is a plain
+    passing test (no longer an xfail); drift is covered by test_regression_cg_aft_drift.
 
     Traces: accuracy_report.json cg_range_aft_fs.computed -> reference_data.json
             aircraft_specs.cg_range_aft_fs.value (om-1980:p28).
@@ -278,10 +277,9 @@ def test_regression_cg_aft_external_truth():
 
 
 def test_regression_cg_aft_drift():
-    """REGRESSION LOCK: Aft CG limit (published datum) locked to Phase 5 calibrated value.
+    """REGRESSION LOCK: Aft CG limit (published datum) locked to LOCKED_CG_AFT_PUBLISHED.
 
-    External truth: must be within 1.0" of published 103.0" (om-1980:p28).
-    Drift detection: must be within 0.01" of Phase 5 calibrated value 103.9994".
+    Drift detection: must be within DRIFT_TOLERANCE_FS_IN of the locked value.
 
     Traces: accuracy_report.json cg_range_aft_fs.computed -> reference_data.json
             aircraft_specs.cg_range_aft_fs.value (om-1980:p28).
@@ -603,7 +601,7 @@ def test_regression_values_match_accuracy_report():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 20; 4 PASS of 9 locked; CG fwd +19.85 in, CG aft +18.85 in, max gross +100 lb, NP/stall NOT GRADED")
+@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 20; 5 PASS of 9 locked; CG fwd +2.12 in, max gross +100 lb, NP/stall NOT GRADED")
 def test_regression_locked_metrics_all_pass():
     """External truth: every locked metric grades PASS in accuracy_report.json (9 PASS metrics)."""
     report = _load_accuracy_report()

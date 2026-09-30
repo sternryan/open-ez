@@ -46,7 +46,9 @@ class AircraftAssembly(AircraftComponent):
         # Position them relative to FS 0
         # For the wing, we apply washout and dihedral in the generator,
         # here we just place it at its leading edge station.
-        wing_pos = wing_geo.translate((config.geometry.fs_wing_le, 0, 0))
+        wing_pos = wing_geo.translate(
+            (config.geometry.fs_wing_le, config.geometry.wing_root_bl, 0)
+        )
 
         # Canard is at its station
         canard_pos = canard_geo.translate((config.geometry.fs_canard_le, 0, 0))
@@ -78,7 +80,9 @@ class AircraftAssembly(AircraftComponent):
             self.wing.geometry,
             name="MainWing",
             color=cq.Color("white"),
-            loc=cq.Location(cq.Vector(config.geometry.fs_wing_le, 0, 0)),
+            loc=cq.Location(
+                cq.Vector(config.geometry.fs_wing_le, config.geometry.wing_root_bl, 0)
+            ),
         )
 
         self._assembly.add(

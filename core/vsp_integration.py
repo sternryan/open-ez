@@ -215,17 +215,18 @@ class VSPIntegration:
         # surface geoms. We define the right half-span only; VSPAERO handles mirroring.
         NO_SYM_FLAG = 0.0
 
-        # Main wing — right half only (Y=0 to +wing_span/2).
+        # Main wing — right half only (Y=wing_root_bl to +wing_span/2).
         # VSPAERO Symmetry=1 will mirror it to create the full-span solution.
         wing_id = vsp.AddGeom("WING", "")
         vsp.SetGeomName(wing_id, "MainWing")
-        vsp.SetParmVal(wing_id, "Span", "XSec_1", geom.wing_span / 2)
+        vsp.SetParmVal(wing_id, "Span", "XSec_1", geom.wing_panel_span)
         vsp.SetParmVal(wing_id, "Root_Chord", "XSec_1", geom.wing_root_chord)
         vsp.SetParmVal(wing_id, "Tip_Chord", "XSec_1", geom.wing_tip_chord)
         vsp.SetParmVal(wing_id, "Sweep", "XSec_1", geom.wing_sweep_le)
         vsp.SetParmVal(wing_id, "Dihedral", "XSec_1", geom.wing_dihedral)
         vsp.SetParmVal(wing_id, "Twist", "XSec_1", -geom.wing_washout)
         vsp.SetParmVal(wing_id, "X_Rel_Location", "XForm", geom.wing_le_fs)
+        vsp.SetParmVal(wing_id, "Y_Rel_Location", "XForm", geom.wing_root_bl)
         vsp.SetParmVal(wing_id, "Z_Rel_Location", "XForm", geom.wing_le_wl)
         vsp.SetParmVal(wing_id, "Sym_Planar_Flag", "Sym", NO_SYM_FLAG)  # Half-span only
 
@@ -293,7 +294,10 @@ class VSPIntegration:
         # Wing mean aerodynamic chord (average of root and tip for trapezoidal wing)
         wing_mac = (geom.wing_root_chord + geom.wing_tip_chord) / 2.0
         vsp.SetDoubleAnalysisInput("VSPAEROSweep", "Sref", [geom.wing_area])
-        vsp.SetDoubleAnalysisInput("VSPAEROSweep", "bref", [geom.wing_span])
+        # Sref/bref/cref describe ONE planform: the two exposed panels (root BL to tip BL),
+        # so bref = 2 * wing_panel_span, matching Sref = wing_area. Units as passed:
+        # Sref = sq ft (wing_area), bref = inches, cref = inches (pre-existing mixed units).
+        vsp.SetDoubleAnalysisInput("VSPAEROSweep", "bref", [2 * geom.wing_panel_span])
         vsp.SetDoubleAnalysisInput("VSPAEROSweep", "cref", [wing_mac])
 
         # 3. Execute — VSPAERO runs as a subprocess; results go to disk (.polar file)

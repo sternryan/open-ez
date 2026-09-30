@@ -574,7 +574,8 @@ def collect_metrics(
     # -------------------------------------------------------------------------
 
     # --- Wing Area ---
-    computed_wing_area_sqft = geo.wing_area  # config.geometry.wing_area (already in sqft)
+    # Model's own trapezoid: 2 panels, each root BL (wing_root_bl) to tip BL (wing_span/2).
+    computed_wing_area_sqft = geo.wing_area_sqft
     metrics.append(
         {
             "metric_id": "wing_area_sqft",
@@ -584,7 +585,8 @@ def collect_metrics(
             "units": "square feet",
             "convention_note": (
                 "Reference is the manual's wing area, which excludes the canard "
-                "(om-1980:p3; total 94.8 sq ft)."
+                "(om-1980:p3; total 94.8 sq ft). Model area is the trapezoid over both "
+                "panels from wing_root_bl to wing_span/2 and excludes the centre section."
             ),
         }
     )

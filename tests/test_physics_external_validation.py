@@ -48,7 +48,7 @@ class TestGeometryAgainstPublishedPlans:
             f"Wing span {span_in:.1f} in deviates >1% from published 313.2 in"
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 30; model wing_area 76.02 sq ft vs bound floor 80.0 (gap -3.98 sq ft)")
+    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 30; model wing_area 64.71 sq ft vs bound floor 80.0 (gap -15.29 sq ft)")
     def test_wing_area_within_published_range(self):
         """Wing area (full-span trapezoidal planform) should be in the 90-130 sq ft range.
 
@@ -63,7 +63,6 @@ class TestGeometryAgainstPublishedPlans:
             f"(Rutan plans cite 53.6 sq ft per semi-panel reference area)"
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 31; model AR 8.96 vs bound ceiling 8.5 (gap +0.46)")
     def test_wing_aspect_ratio_within_published_range(self):
         """Wing AR should be in the range 6.0-8.0.
 
@@ -267,7 +266,7 @@ class TestLiftCurveSlopeSanity:
         # Anderson eq. 5.69 with sweep correction
         tan_sweep_le = math.tan(math.radians(geo.wing_sweep_le))
         tan_sweep_half = tan_sweep_le - (
-            2 * geo.wing_root_chord * (1 - taper) / (geo.wing_span * (1 + taper))
+            2 * geo.wing_root_chord * (1 - taper) / (2 * geo.wing_panel_span * (1 + taper))
         )
         a = 2 * math.pi * ar / (2 + math.sqrt(4 + ar**2 * (1 + tan_sweep_half**2)))
 
@@ -288,9 +287,10 @@ class TestLiftCurveSlopeSanity:
     def test_wing_ar_consistent_with_published(self):
         """Wing AR from config geometry should match config property."""
         geo = config.geometry
-        span_ft = geo.wing_span / 12
+        # exposed panels, BL wing_root_bl to wing_tip_bl: same planform for span and area
+        panel = geo.wing_span / 2 - geo.wing_root_bl
         area = geo.wing_area
-        ar_computed = (span_ft**2) / area
+        ar_computed = ((2 * panel / 12) ** 2) / area
 
         assert abs(ar_computed - geo.wing_aspect_ratio) < 0.01, (
             "wing_aspect_ratio property inconsistent with span/area"
