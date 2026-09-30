@@ -58,7 +58,7 @@ def test_lab_renders_the_canard_and_old_viewer_still_loads(rsite):
         s.shutdown()
 
 
-def _open(p, url, w, h, init=None, query=""):
+def _open(p, url, w, h, init=None, query="", q="low"):
     b = p.chromium.launch(args=GL)
     ctx = b.new_context(viewport={"width": w, "height": h})
     if init:
@@ -66,7 +66,7 @@ def _open(p, url, w, h, init=None, query=""):
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(url + "lab/?test=1&q=low" + query)
+    pg.goto(url + "lab/?test=1" + (f"&q={q}" if q else "") + query)
     pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
     return b, pg, errors
 
@@ -999,3 +999,137 @@ def test_recorder_frames_are_reproducible(rsite):
         assert frac <= 0.01, f"frame {i} differs in {frac:.2%} of pixels"
     # and the frames are not the same picture: the clock really moves the film
     assert runs[0][0] != runs[0][240]
+
+
+# ---- quality tiers and the frame budget (Task 7) ----
+FRAME_BUDGET_MS = 33  # the budget; never raised. Default rAF quantises at 16.7 ms, so a median of 33.3 ms FAILS it.
+FRAMES_JS = """(() => { const d = []; let run = false, last = 0;
+    const tick = t => { if (run && last) d.push(t - last); last = t; requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    window.__frames = { start() { d.length = 0; run = true; last = 0; }, stop() { run = false; return d.slice(); } }; })()"""
+# Drags #section-bl from 0 to max over `ms`, one input event per animation frame; returns the slider value seen at each frame.
+DRAG_JS = """(ms) => new Promise(res => { const el = document.querySelector('#section-bl'), max = +el.max, step = +el.step || 1, t0 = performance.now(), seen = [];
+    const tick = t => { const k = Math.min(1, (t - t0) / ms); el.value = k < 1 ? Math.round(max * k / step) * step : el.max; seen.push(+el.value);
+        el.dispatchEvent(new Event('input', {bubbles: true})); if (k < 1) requestAnimationFrame(tick); else res(seen); };
+    requestAnimationFrame(tick); })"""
+# Feeds frame times until the tier changes (or `max` frames); one evaluate, because a page rendering the high tier in software GL answers slowly.
+FEED_JS = """([ms, max]) => { const t0 = window.__lab.tier(); for (let i = 0; i < max; i++) { window.__lab.feedFrame(ms); if (window.__lab.tier() !== t0) break; } return window.__lab.tier(); }"""
+EFFECTIVE_MAX_JS = """(() => { const e = document.querySelector('#section-bl'), v = e.value; e.value = e.max; const m = +e.value; e.value = v; return m; })()"""  # max after step snapping
+
+
+def test_frame_time_median_while_dragging_the_section_on_the_low_tier(rsite):
+    # Ported from the 2.1 viewer's budget test. Headless swiftshader (software GL) is a PROXY for the iPad, not a measurement of it:
+    # the iPad judgement is the owner's walk-through. The budget is a median rAF delta <= 33 ms over a continuous 2 s drag of the
+    # section slider from B.L. 0 to max, top-skin op, all plies, load paths on, section on, at 1180x820, on ?q=low. It is never raised.
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            # real frames: not frozen, and ?realframes=1 lets the low tier's adaptive resolution see them (tests otherwise feed their own)
+            b, pg, errors = _open(p, url, 1180, 820, init=FRAMES_JS, q="low", query="&realframes=1")
+            assert pg.evaluate("window.__lab.tier()") == "low" and pg.evaluate("window.__lab.auto()") is False
+            pg.evaluate("window.__lab.select('r30.top-skin')")  # a step opens fully built: all its plies
+            assert pg.is_checked("#paths-on") and len([x for x in pg.evaluate("window.__lab.paths()") if x["visible"]]) == 3
+            pg.click("#section-on")
+            pg.eval_on_selector("#section-bl", "(e) => { e.value = 0; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+            pg.wait_for_timeout(500)
+            max_bl = pg.evaluate(EFFECTIVE_MAX_JS)
+            # The low tier trims its resolution while frames run long (quality.ts). Give it a warm-up drag of the same cut, then wait for the
+            # resolution to stop moving, so the measured drag runs at the resolution the tier settled on (printed below).
+            pg.evaluate(DRAG_JS, 2000)
+            pg.eval_on_selector("#section-bl", "(e) => { e.value = 0; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+            still, last = 0, None
+            for _ in range(60):
+                pg.wait_for_timeout(1000)
+                cur = pg.evaluate("window.__lab.resScale()")
+                still = still + 1 if cur == last else 0
+                last = cur
+                if still >= 3:
+                    break
+            assert still >= 3, f"resolution never settled (scale {last})"
+            print("settled resolution scale", last, "pixels", pg.evaluate("window.__lab.stats()")["pixels"])
+            before = pg.evaluate("window.__lab.cut()")
+            assert before["enabled"] and before["bl"] == pytest.approx(0, abs=1e-6), before
+            pg.evaluate("window.__frames.start()")
+            seen = pg.evaluate(DRAG_JS, 2000)
+            d = pg.evaluate("window.__frames.stop()")
+            pg.wait_for_timeout(150)
+            after = pg.evaluate("window.__lab.cut()")
+            st = pg.evaluate("window.__lab.stats()")
+            d = sorted(d)
+            med = d[len(d) // 2]
+            print("frame stats", st, "n", len(d), "distinct bl", len(set(seen)))
+            print("median frame ms", med)
+            # the cut really moved during the drag (not a frozen view being timed)
+            assert after["enabled"] and after["bl"] == pytest.approx(max_bl), (before["bl"], after["bl"], max_bl)
+            assert seen[0] <= max_bl * 0.05 and seen[-1] == max_bl, (seen[:3], seen[-3:], max_bl)
+            assert all(a <= c for a, c in zip(seen, seen[1:])), "slider values must be monotonic non-decreasing"
+            assert len(set(seen)) >= 100, len(set(seen))
+            assert st["calls"] > 20, st  # the last frame drew a real scene
+            assert len(d) >= 10, len(d)
+            assert pg.evaluate("window.__lab.tier()") == "low"
+            assert med <= FRAME_BUDGET_MS, (med, len(d), st)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_forced_tier_freeze_and_rec_turn_automatic_step_down_off(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            for q, query, want_auto in [("mid", "", False), (None, "&freeze=1", False)]:
+                b, pg, errors = _open(p, url, 500, 360, q=q, query=query)
+                assert pg.evaluate("window.__lab.auto()") is want_auto
+                start = pg.evaluate("window.__lab.tier()")
+                assert pg.evaluate(FEED_JS, [80, 400]) == start
+                assert not errors, errors
+                b.close()
+            # ?rec=1 is a forced high tier, and off
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 500, "height": 360})
+            pg.goto(url + "lab/?rec=1&test=1")
+            pg.wait_for_function("window.__rec && window.__lab && window.__lab.ready", timeout=90000)
+            assert pg.evaluate("window.__lab.tier()") == "high" and pg.evaluate("window.__lab.auto()") is False
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_auto_step_down_drops_high_to_mid_to_low_and_the_scene_keeps_its_state(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 500, 360, q=None, query="&op=r30.top-skin")  # no ?q=: auto is on, and a desktop starts on high
+            assert pg.evaluate("window.__lab.auto()") is True and pg.evaluate("window.__lab.tier()") == "high"
+            pg.evaluate("window.__lab.setLay(3)")
+            names = pg.evaluate("window.__lab.meshNames()")
+            sel, lay = pg.evaluate("window.__lab.selected()"), pg.evaluate("window.__lab.lay()")
+            assert sel == "r30.top-skin" and lay == 3 and pg.inner_text("#quality-label") == "Quality: High (auto)"
+            # fast frames change nothing
+            assert pg.evaluate(FEED_JS, [16.7, 200]) == "high"
+            seen = ["high"]
+            for _ in range(2):  # slow frames until the tier drops (the frames right after a drop are ignored while it settles)
+                seen.append(pg.evaluate(FEED_JS, [60, 60]))
+            assert seen == ["high", "mid", "low"], seen
+            assert pg.evaluate(FEED_JS, [400, 200]) == "low"  # never below low
+            assert pg.evaluate(FEED_JS, [5, 200]) == "low"  # and no step back up
+            # nothing about the build was lost, and it still draws
+            assert pg.evaluate("window.__lab.meshNames()") == names
+            assert pg.evaluate("window.__lab.selected()") == sel and pg.evaluate("window.__lab.lay()") == lay
+            # It still draws. One full-file run read 0 draw calls here: three.js skips a frame while the GL context is lost, and swiftshader
+            # seems to drop it when the tier and the resolution are rebuilt back to back (not confirmed). So redraw until a frame lands.
+            pg.wait_for_function("(window.__lab.advance(0.05), window.__lab.stats().calls > 20)", timeout=10000, polling=200)
+            assert pg.inner_text("#quality-label") == "Quality: Low (auto)"
+            assert pg.get_attribute('#quality-seg button[data-q="auto"]', "aria-pressed") == "true"
+            # the segmented control overrides: a tier turns auto off, Auto turns it back on
+            pg.click('#quality-seg button[data-q="high"]')
+            assert pg.evaluate("window.__lab.tier()") == "high" and pg.evaluate("window.__lab.auto()") is False
+            assert pg.inner_text("#quality-label") == "Quality: High"
+            assert pg.get_attribute('#quality-seg button[data-q="high"]', "aria-pressed") == "true"
+            pg.evaluate("window.__lab.advance(0.05)")
+            assert pg.evaluate("window.__lab.meshNames()") == names and pg.evaluate("window.__lab.lay()") == lay
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

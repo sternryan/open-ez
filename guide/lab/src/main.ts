@@ -6,6 +6,7 @@ import { Pipeline, LAYER_GLOW } from './render/pipeline'
 import { GLOW_TIME, GLOW_VIEW_H, flowRibbon, glowLineMaterial } from './render/flow'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
+import { CHEAP, setCheapShaders } from './core/materials'
 import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS, FOLLOW } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
@@ -17,6 +18,7 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
+import { TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
 import { Director, canardTour, TOUR_BUILD_RATE } from './director'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
@@ -42,7 +44,11 @@ interface LoadPath { id: string; label: string; kind: string; parts: string[]; s
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
-  ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number }; advance(seconds: number): void
+  /** quality tier in use; setTier picks one by hand (and turns automatic step-down off); feedFrame injects a frame time (ms) into the step-down rule */
+  /** the low tier's adaptive resolution: the multiplier on the pixel count it draws (1 = the tier's full budget) */
+  resScale(): number
+  tier(): Tier; setTier(t: Tier): void; auto(): boolean; setAuto(on: boolean): void; feedFrame(ms: number): void
+  ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number; pixels: number }; advance(seconds: number): void
   /** the tour (the film) is running; the tourSteps index it is on */
   touring(): boolean; tourIndex(): number
   selected(): string | null; select(opId: string | null): void; camera(): CamState; shot(name: string): CamState | null; flying(): boolean
@@ -95,13 +101,14 @@ interface CutInfo {
 declare global { interface Window { __lab?: LabHook } }
 
 const hook: LabHook = {
-  ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0 }), advance: () => {},
+  ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0, pixels: 0 }), advance: () => {},
   touring: () => false, tourIndex: () => -1,
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
   cut: () => ({ enabled: false, bl: 0, planeConstant: null, keepsOutboard: false, removesInboard: false, cappedNodes: [], capsVisible: 0, capNodesVisible: [], clipped: 0 }),
   plyBox: () => null, setSection: () => {}, labels: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
+  resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
 }
 if (TEST) window.__lab = hook
@@ -188,26 +195,30 @@ async function boot() {
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.NoToneMapping
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap
   renderer.shadowMap.autoUpdate = false
   renderer.localClippingEnabled = true
   renderer.info.autoReset = false // count the whole frame (every pipeline pass), not just the last render call
 
   const coarse = matchMedia('(pointer: coarse)').matches
-  const q = params.get('q') || (REC || !coarse ? 'high' : 'mid')
-  const quality = q === 'low' || q === 'mid' ? q : 'high'
+  // Quality tier (quality.ts): ?q=high|mid|low forces one and turns automatic step-down off; so do ?freeze=1 and ?rec=1, which must be deterministic.
+  const forcedTier = parseTier(params.get('q'))
+  let tier: Tier = forcedTier ?? (REC ? 'high' : startTier({ coarse, width: window.innerWidth, height: window.innerHeight }))
+  let res: ResState = initialRes(3000) // adaptive resolution, low tier only (see quality.ts); off for ?freeze=1 and ?rec=1 like the tier step-down
+  const resAdapt = !REC && params.get('freeze') !== '1'
+  let autoOn = !forcedTier && !REC && params.get('freeze') !== '1'
+  CHEAP.on = TIERS[tier].cheapShaders // set before any material exists
 
   const scene = new THREE.Scene()
   scene.background = null // a colour background would force-clear on every render() call
-  scene.environment = workshopEnvironment(renderer)
+  const envMap = workshopEnvironment(renderer)
+  scene.environment = TIERS[tier].cheapShaders ? null : envMap
   scene.environmentIntensity = 1.5
 
   // ---- lights: a warm key from the overhead fixtures (one shadowed spot over the table), a cool low fill, the room env for the rest ----
   const key = new THREE.SpotLight(0xffe6c8, 21, 0, 0.5, 1, 2)
   key.position.set(-0.7, ROOM.h - 0.35, 0.5)
   key.castShadow = true
-  const sm = quality === 'low' ? 1024 : quality === 'mid' ? 2048 : 4096
-  key.shadow.mapSize.set(sm, sm)
+  key.shadow.mapSize.set(Math.max(1, TIERS[tier].shadowMap), Math.max(1, TIERS[tier].shadowMap))
   key.shadow.camera.near = 0.5
   key.shadow.camera.far = 6
   key.shadow.bias = -0.0008
@@ -217,6 +228,9 @@ async function boot() {
   const fill = new THREE.DirectionalLight(0xb9cfff, 0.9)
   fill.position.set(-3, 1.6, 2.4)
   scene.add(fill)
+  // the low tier lights every surface in its own shader (SURF_CHEAP): no lights, no shadows, no environment
+  key.visible = fill.visible = !TIERS[tier].cheapShaders
+  renderer.shadowMap.enabled = !TIERS[tier].cheapShaders
 
   // ---- camera ----
   const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.05, 90)
@@ -231,17 +245,21 @@ async function boot() {
 
   const rig = new CameraRig(camera, controls)
 
-  const pipeline = new Pipeline(renderer, { ao: quality !== 'low', msaa: quality === 'low' ? 0 : 4, aoSamples: REC ? 16 : 8 })
-  pipeline.aoScale = 0.5
+  const pipeline = new Pipeline(renderer, { ao: TIERS[tier].ao, msaa: TIERS[tier].msaa, aoSamples: REC ? 16 : TIERS[tier].aoSamples })
   pipeline.params.ao = 0.55
-  pipeline.params.dofTaps = REC ? 40 : 14
   pipeline.params.sharpen = 0.25
   pipeline.params.bloom = 0.12
-  const dofOn = quality === 'high'
+  // everything a tier changes in the pipeline; the caller resizes afterwards (targets are rebuilt at the new size and pixel ratio)
+  const tierPipeline = () => {
+    const t = TIERS[tier]
+    pipeline.configure({ ao: t.ao, aoSamples: REC ? 16 : t.aoSamples, aoScale: t.aoScale, msaa: t.msaa, bloom: t.bloom })
+    pipeline.params.dofTaps = REC ? 40 : t.dofTaps
+  }
+  tierPipeline()
 
   const resize = () => {
     const W = window.innerWidth, H = window.innerHeight
-    const dpr = Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1 : 1.75)
+    const dpr = Math.max(0.1, tierPixelRatio(TIERS[tier], window.devicePixelRatio, W, H) * Math.sqrt(res.scale))
     renderer.setPixelRatio(dpr)
     renderer.setSize(W, H, false)
     camera.aspect = W / H
@@ -280,22 +298,70 @@ async function boot() {
   }
   const render = () => {
     pipeline.params.dofFocus = camera.position.distanceTo(controls.target)
-    pipeline.params.dofAperture = dofOn ? 9 : 0
+    pipeline.params.dofAperture = TIERS[tier].dof ? 9 : 0
     renderer.info.reset()
     pipeline.render(scene, camera, simT)
   }
   let last = performance.now()
+  // ---- quality tier: applying one, and the automatic step-down (driven by real frame times only) ----
+  // Nothing here reloads the page or touches the scene state: it rebuilds the pipeline targets, the shadow map and the shader variants.
+  // The first seconds are ignored (shader compiles and the model upload make long frames that say nothing about the device).
+  let stepState: StepState = initialStep(tier, 3000)
+  let onTier: () => void = () => {}
+  const applyTier = (t: Tier) => {
+    if (t === tier) return
+    tier = t
+    res = initialRes(1500)
+    const spec = TIERS[t]
+    tierPipeline()
+    key.shadow.mapSize.set(Math.max(1, spec.shadowMap), Math.max(1, spec.shadowMap))
+    key.shadow.dispose() // drops the old map; the next frame allocates one at the new size
+    pipeline.shadowDirty = true
+    // the light set and the shadow filter are compiled into every material: recompile them once for the new tier
+    scene.environment = spec.cheapShaders ? null : envMap
+    key.visible = fill.visible = !spec.cheapShaders
+    renderer.shadowMap.enabled = !spec.cheapShaders
+    scene.traverse((o) => { const m = (o as THREE.Mesh).material; if (m) for (const x of Array.isArray(m) ? m : [m]) x.needsUpdate = true })
+    setCheapShaders(scene, spec.cheapShaders)
+    resize()
+    onTier()
+  }
+  const setAuto = (on: boolean) => { autoOn = on; stepState = initialStep(tier); onTier() }
+  const feedRes = (ms: number) => {
+    if (tier !== 'low' || !resAdapt) return
+    const n = nextRes(res, ms)
+    const changed = n.scale !== res.scale
+    res = n
+    if (changed) resize()
+  }
+  const feed = (ms: number) => {
+    feedRes(ms)
+    if (!autoOn) return
+    const n = nextTier(stepState, ms)
+    const drop = n.tier !== stepState.tier
+    stepState = n
+    if (drop) applyTier(n.tier)
+  }
+  // Tests own the clock: their frames are only the ones they inject (feedFrame), unless ?realframes=1 asks for the real path.
+  const realFrames = !TEST || params.get('realframes') === '1'
   // ?freeze=1 (or __lab.freeze(true)): the frame loop still draws but no longer advances time, so a test or a capture owns the clock
   let frozen = TEST && params.get('freeze') === '1'
   if (!REC) renderer.setAnimationLoop(() => {
     const t = performance.now(), dt = Math.min((t - last) / 1000, 0.1)
+    if (realFrames && hook.ready && !frozen) feed(t - last)
     last = t
     if (!frozen) step(dt)
     render()
   })
   hook.freeze = (on: boolean) => { frozen = on }
   hook.advance = (s: number) => { step(s); render() }
-  hook.stats = () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles })
+  hook.resScale = () => res.scale
+  hook.tier = () => tier
+  hook.setTier = (t: Tier) => { autoOn = false; if (t === tier) onTier(); else applyTier(t) }
+  hook.auto = () => autoOn
+  hook.setAuto = setAuto
+  hook.feedFrame = feed
+  hook.stats = () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixels: pipeline.w * pipeline.h })
 
   // ---- data + model ----
   const merged: Merged[] = []
@@ -758,8 +824,11 @@ async function boot() {
       onSection: (on, bl) => { userAct(); setSection(on, bl) },
       onLabels: (on) => { userAct(); setLabels(on) },
       onPaths: (on) => { userAct(); setPaths(on) },
+      onQuality: (q) => { if (q === 'auto') setAuto(true); else hook.setTier(q) },
     }, store)
     ui.setGhost(ghost)
+    onTier = () => ui.setQuality(tier, autoOn)
+    onTier()
     ui.setLabels(labelsOn)
     ui.setPaths(pathsOn)
     if (layupN) ui.initSection(semi, secBl)

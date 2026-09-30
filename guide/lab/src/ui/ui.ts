@@ -13,6 +13,7 @@ export interface UIHandlers {
   onSection(on: boolean, bl: number): void
   onLabels(on: boolean): void
   onPaths(on: boolean): void
+  onQuality(q: 'high' | 'mid' | 'low' | 'auto'): void
 }
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
@@ -67,6 +68,10 @@ export function initUI(h: UIHandlers, store: Store) {
   const secChange = () => h.onSection(secOn.checked, +secBl.value)
   secOn.addEventListener('change', secChange)
   secBl.addEventListener('input', secChange)
+  $('quality-seg').addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button[data-q]') as HTMLElement | null
+    if (b) h.onQuality(b.dataset.q as 'high' | 'mid' | 'low' | 'auto')
+  })
   $('labels-on').addEventListener('change', (e) => h.onLabels((e.target as HTMLInputElement).checked))
   $('paths-on').addEventListener('change', (e) => h.onPaths((e.target as HTMLInputElement).checked))
   chips.addEventListener('click', (e) => {
@@ -153,6 +158,15 @@ export function initUI(h: UIHandlers, store: Store) {
     setPlaying(on: boolean) {
       $('play').setAttribute('aria-pressed', String(on))
       $('play').textContent = on ? 'Stop' : 'Play'
+    },
+    /** the tier in use and whether it is being picked automatically */
+    setQuality(tier: 'high' | 'mid' | 'low', auto: boolean) {
+      const name = { high: 'High', mid: 'Med', low: 'Low' }[tier]
+      $('quality-label').textContent = `Quality: ${name}${auto ? ' (auto)' : ''}`
+      for (const b of $('quality-seg').querySelectorAll('button[data-q]')) {
+        const q = (b as HTMLElement).dataset.q
+        b.setAttribute('aria-pressed', String(q === 'auto' ? auto : !auto && q === tier))
+      }
     },
     setVariant(v: Variant) {
       for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))

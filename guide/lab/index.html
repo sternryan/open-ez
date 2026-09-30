@@ -46,6 +46,15 @@
         <label class="check"><input type="checkbox" id="paths-on" checked> Load paths</label>
       </div>
     </div>
+    <div class="group" id="quality">
+      <span class="label" id="quality-label">Quality</span>
+      <div id="quality-seg" class="seg" role="group" aria-label="Rendering quality" aria-describedby="quality-label">
+        <button type="button" data-q="high" aria-pressed="false">High</button>
+        <button type="button" data-q="mid" aria-pressed="false">Med</button>
+        <button type="button" data-q="low" aria-pressed="false">Low</button>
+        <button type="button" data-q="auto" aria-pressed="false" title="Start high and step down if frames run long">Auto</button>
+      </div>
+    </div>
   </aside>
 
   <div id="dock">

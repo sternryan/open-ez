@@ -1,5 +1,5 @@
 // Adapted from AirsupHQ/airsup-lab src/core/materials.ts (MIT); see NOTICE.
-// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines, including one after lights_physical_fragment) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged. The cap pass gets a polygon offset so a cap wins over the coincident face of the neighbouring layer.
+// Changes: added SurfOpts.hooks (extra GLSL injected at fixed points, extra uniforms and defines, including one after lights_physical_fragment) for the composite-shop materials in composite.ts; behaviour without hooks is unchanged. The cap pass gets a polygon offset so a cap wins over the coincident face of the neighbouring layer. Added the SURF_CHEAP variant (flat lighting, no detail noise or bump) for the low quality tier.
 import * as THREE from 'three'
 import { CutState, CUT_PROJ, NO_CUT, GLSL_CUT_FRAG, GLSL_CUT_FRAG_PARS, GLSL_CUT_VERT, GLSL_CUT_VERT_PARS } from './cut'
 import { GLSL_NOISE, NOISE3D } from './noise'
@@ -83,6 +83,39 @@ vec3 surfPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir) {
 `
 
 /**
+ * The low quality tier's shader switch. While `on`, every surf() material is built with SURF_CHEAP (the composite weave and foam
+ * cells drop to their albedo-only variant, the noise detail and bump perturbation are skipped everywhere, the room's included). setCheapShaders flips the ones that already exist,
+ * including each cut material's lazily made cap pass, and recompiles them.
+ */
+export const CHEAP = { on: false }
+// The flat light of the low tier, as GLSL literals: a warm key from the overhead fixture side, and a sky/ground ambient.
+const CHEAP_KEY_DIR = '-0.42, 0.86, 0.29'
+const CHEAP_KEY = '1.05, 0.9, 0.7'
+const CHEAP_SKY = '0.5, 0.53, 0.62'
+const CHEAP_GROUND = '0.22, 0.19, 0.16'
+export function setCheapShaders(root: THREE.Object3D, on: boolean) {
+  CHEAP.on = on
+  const flip = (m: THREE.Material | undefined) => {
+    if (!m) return
+    if (!m.userData.u) return // only surf() materials carry the variant
+    const had = m.defines?.SURF_CHEAP === 1
+    if (had === on) return
+    m.defines = { ...(m.defines ?? {}) }
+    if (on) m.defines.SURF_CHEAP = 1
+    else delete m.defines.SURF_CHEAP
+    m.needsUpdate = true
+  }
+  root.traverse((o) => {
+    const mesh = o as THREE.Mesh
+    if (!mesh.isMesh) return
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+    for (const m of mats) { flip(m); flip(m.userData.back as THREE.Material | undefined) }
+    const front = mesh.userData.front as THREE.Material | undefined
+    flip(front); flip(front?.userData.back as THREE.Material | undefined)
+  })
+}
+
+/**
  * PBR surface with procedural wear (roughness breakup, colour variation,
  * micro bump, print layers, heat tint) and optional section cut.
  */
@@ -140,6 +173,7 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     }
   } else if (o.side !== undefined) m.side = o.side
 
+  if (CHEAP.on) m.defines = { ...(m.defines ?? {}), SURF_CHEAP: 1 }
   const detail = o.detail ?? 0
   const u = {
     uCutPlane: cut ? cut.uPlane : NO_CUT.uPlane,
@@ -180,7 +214,11 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     let f = shader.fragmentShader
     f = f.replace(
       '#include <common>',
-      `${defStr}${capsDef}#include <common>
+      `${defStr}#ifdef SURF_CHEAP
+#undef SURF_DETAIL
+#undef SURF_STREAKS
+#endif
+${capsDef}#include <common>
 ${GLSL_CUT_FRAG_PARS}
 ${GLSL_NOISE}
 ${GLSL_BUMP}
@@ -258,7 +296,7 @@ ${hk.capRough ?? ''}
     f = f.replace(
       '#include <normal_fragment_maps>',
       `#include <normal_fragment_maps>
-#ifdef SURF_BUMP
+#if defined(SURF_BUMP) && !defined(SURF_CHEAP)
   if (!cutCap) normal = surfPerturb(-vViewPosition, normal, vec2(dFdx(surfH), dFdy(surfH)), faceDirection);
 #endif
 {
@@ -286,6 +324,22 @@ if (uCutGlow > 0.0) {
 #endif
 `,
     )
+    // Low tier (SURF_CHEAP): no light loop, no shadows, no image-based light. The surface is lit by one baked key direction and a sky/ground
+    // gradient, which costs a few multiplies per pixel instead of the full physically based light model.
+    f = f.replace('#include <lights_fragment_begin>', `#ifdef SURF_CHEAP
+vec3 geometryViewDir = normalize(vViewPosition);
+vec3 geometryClearcoatNormal = vec3(0.0);
+{
+  float cheapUp = dot(normal, normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz)) * 0.5 + 0.5;
+  float cheapNL = max(dot(normal, normalize((viewMatrix * vec4(${CHEAP_KEY_DIR}, 0.0)).xyz)), 0.0);
+  reflectedLight.indirectDiffuse += material.diffuseColor * mix(vec3(${CHEAP_GROUND}), vec3(${CHEAP_SKY}), cheapUp);
+  reflectedLight.directDiffuse += material.diffuseColor * vec3(${CHEAP_KEY}) * cheapNL;
+}
+#else
+#include <lights_fragment_begin>
+#endif`)
+    f = f.replace('#include <lights_fragment_maps>', '#ifndef SURF_CHEAP\n#include <lights_fragment_maps>\n#endif')
+    f = f.replace('#include <lights_fragment_end>', '#ifndef SURF_CHEAP\n#include <lights_fragment_end>\n#endif')
     if (hk.lights) f = f.replace('#include <lights_physical_fragment>', `#include <lights_physical_fragment>\n${hk.lights}`)
     shader.fragmentShader = f
   }
