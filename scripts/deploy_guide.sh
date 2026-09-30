@@ -10,7 +10,7 @@ SCAN_BASE=private/scan-1980/pages/
 $PY -m guide.check                       # full mode; exits non-zero on any gate failure
 $PY -m guide.export_glb --out output/guide/longez.glb
 CF=${COMPUTE_FABRIC_DIR:-$HOME/compute-fabric-dev}
-KEY=$($PY -m guide.render_key --export output/guide --scripts "$CF/deploy/anvil/jobs/blender")
+KEY=$($PY -m guide.render_key --export output/guide/canard --scripts "$CF/deploy/anvil/jobs/blender")
 RENDERS="${LONGEZ_RENDER_CACHE:-$HOME/.cache/long-ez/renders}/$KEY"
 [ -f "$RENDERS/manifest.json" ] || { echo "no renders for key $KEY; run guide/render_cutaway.sh first" >&2; exit 1; }
 $PY -m guide.build_site --out site --models output/guide/longez.glb --scan-base "$SCAN_BASE" --renders "$RENDERS"
