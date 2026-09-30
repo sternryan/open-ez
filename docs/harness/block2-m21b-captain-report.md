@@ -153,3 +153,34 @@ Every Block 2 M2.1 test in `tests/guide/test_viewer_e2e.py` is now covered by a 
 | tour_button_is_touch_sized_and_clear_of_other_controls | NEW, 44 px |
 | frame_time_median_while_dragging_the_section | Task 7, 33 ms |
 | frame_time_at_dpr2 (reported only) / section_at_dpr2_projection_and_cap_pixels / phone_section_readout_one_line | NEW |
+
+## Follow-up after Task 8: test lanes, WebKit (61ab071)
+
+Done at the lead's direction, after the Task 8 commit.
+- **`local_render` marker.** It is registered in `pyproject.toml`. The number of collected tests is unchanged at 629 (counted before the WebKit parameter was added). Three tests are marked:
+  - the viewer's `test_isolate_visibly_ghosts_other_plies_on_screen`;
+  - the lab's `test_recorder_frames_are_reproducible`;
+  - the lab's `test_frame_time_median_while_dragging_the_section_on_the_low_tier`.
+  The viewer's 2.1 frame-time test no longer exists: it moved to the lab in Task 8.
+- **`remote_test.sh`.** It now quotes every argument into the ssh command with `printf %q`. It adds `-m "not local_render"` unless the caller passes `-m` itself.
+  - `remote_test_all.sh` drops its quoting workaround.
+  - Its Mac `local_render` pass no longer deselects the lab file. Before, that deselect stopped the two lab `local_render` tests from running anywhere.
+  - Quoting proof: `--collect-only -m "not local_render"` on the Linux node exits 0 and collects 683 tests. It used to exit 5.
+- **The lab budget test's premise.** The old check `len(set(seen)) >= 100` failed on the Mac node: a 92-frame run gave 91 distinct stations, with a 16.7 ms median. That check measured frame count, not whether the plane moved. The new checks are:
+  - at least 90% of drag ticks give a new station;
+  - no tick jumps more than a tenth of the span.
+  The 33 ms budget is unchanged.
+- **WebKit.** Every lab e2e test is now parametrized over Chromium and WebKit, which is the iPad's engine. WebKit is skipped off macOS or when it is not installed, and it was installed in user space locally and on the Mac node.
+  - All 61 WebKit tests passed locally in 131 s, so no lab code needed fixing (crew run). Chromium also passed 61 of 61, in 308 s.
+  - The Linux shard never runs WebKit, because it ignores the lab file.
+- **Captain's gate at 61ab071.**
+  - `source ~/.config/long-ez/env && bash scripts/remote_test_all.sh` (host names stripped from the output):
+    ```
+    == linux (exit 0)
+    556 passed, 2 skipped, 9 xfailed, 3 warnings in 60.79s (0:01:00)
+    == mac (exit 0)
+    118 passed, 12 warnings in 142.55s (0:02:22)
+    5 passed, 23 warnings in 56.42s
+    --- remote_test_all: linux=0 mac=0, wall 201s
+    ```
+  - Locally: `.venv/bin/python -m pytest -q -p no:cacheprovider -m local_render` gave `5 passed, 685 deselected, 8 warnings in 42.50s`.
