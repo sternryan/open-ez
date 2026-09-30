@@ -5,7 +5,9 @@ import argparse
 import dataclasses
 import html
 import json
+import hashlib
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -13,6 +15,39 @@ from guide import layup, render_key
 from guide.schema import SchemaError, load_graph, topo_order, validate
 
 VIEWER = Path(__file__).parent / "viewer"
+LAB = Path(__file__).parent / "lab"
+_LAB_INPUTS = ("package.json", "package-lock.json", "index.html", "tsconfig.json", "vite.config.mjs")
+
+
+def _digest(paths: list[Path]) -> str:
+    h = hashlib.sha256()
+    for p in paths:
+        h.update(str(p.relative_to(LAB)).encode() + b"\0" + p.read_bytes() + b"\0")
+    return h.hexdigest()
+
+
+def _lab_stamp() -> str:
+    files = [LAB / n for n in _LAB_INPUTS if (LAB / n).is_file()]
+    files += sorted(p for p in (LAB / "src").rglob("*") if p.is_file())
+    return _digest(files)
+
+
+def build_lab() -> Path:
+    """Build guide/lab with npm (only when its inputs changed) and return its dist directory. Never skips silently."""
+    npm = shutil.which("npm")
+    if not npm:
+        raise RuntimeError("building the lab needs node and npm on PATH (install Node 20+); it is not skipped silently")
+    dist, mods = LAB / "dist", LAB / "node_modules"
+    lock_stamp = mods / ".lock-stamp"
+    lock = _digest([LAB / "package-lock.json"])
+    if not mods.is_dir() or not lock_stamp.is_file() or lock_stamp.read_text() != lock:
+        subprocess.run([npm, "--prefix", str(LAB), "ci"], check=True)
+        lock_stamp.write_text(lock)
+    stamp = _lab_stamp()
+    if not (dist / "index.html").is_file() or not (dist / ".stamp").is_file() or (dist / ".stamp").read_text() != stamp:
+        subprocess.run([npm, "--prefix", str(LAB), "run", "build"], check=True)
+        (dist / ".stamp").write_text(stamp)
+    return dist
 
 
 def _op_json(op) -> dict:
@@ -112,6 +147,7 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(VIEWER, out, ignore=shutil.ignore_patterns("tests"))
+    shutil.copytree(build_lab(), out / "lab", ignore=shutil.ignore_patterns(".stamp"))
     payload = {
         "ops": [_op_json(g.ops[i]) for i in topo_order(g)],
         "order": topo_order(g),

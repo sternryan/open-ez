@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Long-EZ build lab</title>
+  <style>
+    :root { --ink: #eee7dc; --bg: #14110e; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    #app { position: fixed; inset: 0; }
+    #gl { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+    #chip { position: fixed; top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
+      padding: 7px 13px; border-radius: 999px; background: rgba(20, 17, 14, 0.62); backdrop-filter: blur(6px);
+      border: 1px solid rgba(238, 231, 220, 0.16); font-size: 13px; letter-spacing: 0.04em; pointer-events: none; }
+    #chip b { font-weight: 600; }
+    #status { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); font-size: 13px; opacity: 0.8;
+      padding: 6px 12px; border-radius: 8px; background: rgba(20, 17, 14, 0.6); pointer-events: none; max-width: 90vw; text-align: center; }
+    #status.err { opacity: 1; background: rgba(120, 30, 20, 0.85); }
+    #status[hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app"><canvas id="gl" tabindex="0"></canvas></div>
+  <div id="chip"><b>Long-EZ build lab</b> &middot; canard</div>
+  <div id="status" role="status">Loading the canard&hellip;</div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
