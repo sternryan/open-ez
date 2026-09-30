@@ -93,12 +93,12 @@ def _load_ref_data() -> dict:
 # Phase 5 calibrated values — from data/validation/accuracy_report.json (2026-03-13)
 # Each traces to reference_data.json (RAF CP-29, wind tunnel data)
 # DO NOT UPDATE unless re-calibrating against external reference data
-LOCKED_NP_PUBLISHED = 123.1360       # accuracy_report neutral_point_fs.computed
-# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549)
-LOCKED_CG_FWD_PUBLISHED = 113.9798   # accuracy_report cg_range_fwd_fs.computed
-# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532)
-LOCKED_CG_AFT_PUBLISHED = 119.0659   # accuracy_report cg_range_aft_fs.computed
-# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536)
+LOCKED_NP_PUBLISHED = 112.5622       # accuracy_report neutral_point_fs.computed
+# re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360)
+LOCKED_CG_FWD_PUBLISHED = 105.8012   # accuracy_report cg_range_fwd_fs.computed
+# re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798)
+LOCKED_CG_AFT_PUBLISHED = 109.5569   # accuracy_report cg_range_aft_fs.computed
+# re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659)
 LOCKED_STALL_KTAS = 57.3507          # accuracy_report stall_speed_ktas.computed
 # re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867
 

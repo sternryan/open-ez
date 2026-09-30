@@ -184,7 +184,6 @@ class TestDatumReferenceDataConsistency:
             "Dual FS display not implemented."
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 8; gap fwd +19.85 in, aft +18.85 in")
     def test_published_cg_range_is_reasonable(self):
         """Translated CG range limits must be within ±10 inches of reference data CG range.
 

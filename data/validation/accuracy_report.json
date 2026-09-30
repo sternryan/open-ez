@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-29T23:52:23.020196+00:00",
+    "generated": "2026-09-30T00:04:20.035131+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -30,7 +30,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 123.136,
+      "computed": 112.5622,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -44,12 +44,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 113.9798,
+      "computed": 105.8012,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 16.97977,
-      "error_pct": 17.504917,
+      "error_abs": 8.801204,
+      "error_pct": 9.073407,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -57,12 +57,12 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 119.0659,
+      "computed": 109.5569,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 16.065947,
-      "error_pct": 15.598007,
+      "error_abs": 6.556874,
+      "error_pct": 6.365897,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
@@ -70,7 +70,7 @@
     {
       "metric_id": "static_margin_pct",
       "description": "Longitudinal static margin (% MAC)",
-      "computed": 37.1492,
+      "computed": 23.45,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -178,12 +178,12 @@
     {
       "metric_id": "wing_area_sqft",
       "description": "Main wing planform area",
-      "computed": 110.0,
+      "computed": 76.0162,
       "reference": 81.99,
       "tolerance_abs": 2.0,
       "tolerance_pct": null,
-      "error_abs": 28.01,
-      "error_pct": 34.162703,
+      "error_abs": 5.97375,
+      "error_pct": 7.28595,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.wing_area_sqft",
       "units": "square feet",
