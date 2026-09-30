@@ -1866,3 +1866,93 @@ def test_tour_from_a_stub_only_chapter_falls_back_to_the_first_real_chapter(rsit
             b.close()
     finally:
         s.shutdown()
+
+
+def _lose(pg):
+    """Force a context loss through WEBGL_lose_context; skip (with the reason) on a build that does not expose it."""
+    if not pg.evaluate("window.__lab.loseContext()"):
+        pytest.skip(f"{_SHARED.get('engine')}: this headless build does not expose WEBGL_lose_context, so a loss cannot be forced (not faked)")
+    pg.wait_for_function("window.__lab.contextLost()", timeout=10000)
+
+
+def test_context_loss_shows_an_overlay_and_a_restore_brings_the_frame_back(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820)
+            assert pg.evaluate("window.__lab.contextLost()") is False
+            assert pg.locator("#gl-lost").is_hidden()
+            _lose(pg)
+            assert pg.locator("#gl-lost").is_visible()
+            assert pg.locator("#gl-lost-reload").is_visible()
+            # the UI cards stay usable while the 3D is paused
+            ids = pg.evaluate("[...document.querySelectorAll('#chips button')].map((x, i) => i)")
+            assert len(ids) >= 2
+            before = pg.evaluate("window.__lab.selected()")
+            pg.locator("#chips button").nth(1).click()
+            assert pg.evaluate("window.__lab.selected()") != before
+            assert pg.evaluate("window.__lab.restoreContext()") is True
+            pg.wait_for_function("!window.__lab.contextLost()", timeout=10000)
+            deadline = time.time() + 10
+            calls = 0
+            while time.time() < deadline:
+                pg.evaluate("window.__lab.advance(0.05)")
+                calls = pg.evaluate("window.__lab.stats().calls")
+                if calls > 20 and pg.locator("#gl-lost").is_hidden():
+                    break
+                time.sleep(0.2)
+            assert pg.locator("#gl-lost").is_hidden(), "the overlay stayed after the restore"
+            assert pg.evaluate("window.__lab.contextLost()") is False
+            assert calls > 20, f"no frame drawn after the restore (calls={calls})"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_context_loss_reload_button_returns_to_the_same_op(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, _ = _open(p, url, 1180, 820)
+            ops = pg.evaluate("[...document.querySelectorAll('#chips button')].length")
+            assert ops >= 2
+            pg.locator("#chips button").nth(1).click()
+            op = pg.evaluate("window.__lab.selected()")
+            assert op
+            _lose(pg)
+            pg.locator("#gl-lost-reload").click()
+            pg.wait_for_url(f"**op={op}*", timeout=30000)
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.evaluate("window.__lab.selected()") == op
+            assert pg.evaluate("window.__lab.contextLost()") is False
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_context_restore_drops_one_tier_when_auto_is_on_and_remembers_it(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, _ = _open(p, url, 1180, 820, q="")  # no ?q=: automatic quality, starts on high on a desktop
+            assert pg.evaluate("window.__lab.auto()") is True
+            assert pg.evaluate("window.__lab.tier()") == "high"
+            _lose(pg)
+            assert pg.evaluate("window.__lab.tier()") == "high", "the tier must not move while the context is lost"
+            pg.evaluate("window.__lab.restoreContext()")
+            pg.wait_for_function("!window.__lab.contextLost()", timeout=10000)
+            assert pg.evaluate("window.__lab.tier()") == "mid"
+            assert pg.evaluate("window.__lab.auto()") is True
+            for _ in range(20):
+                pg.evaluate("window.__lab.advance(0.05)")
+                if pg.locator("#gl-lost").is_hidden():
+                    break
+                time.sleep(0.2)
+            assert pg.locator("#gl-lost").is_hidden()
+            pg.reload()  # the session remembers: the reload starts a tier down
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.evaluate("window.__lab.tier()") == "mid"
+            b.close()
+    finally:
+        s.shutdown()
