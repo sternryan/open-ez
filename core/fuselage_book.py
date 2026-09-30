@@ -131,6 +131,17 @@ def _w_pieces() -> list[tuple[float, float, float, float]]:
 _W_PIECES = _w_pieces()
 
 
+def plan_bend_points() -> list[tuple[float, float]]:
+    """(FS, half width) at every breakpoint of the plan bend, forward edge to the longeron's aft overhang.
+
+    Linear between points. The sides, longerons and inside plies are bent by y' = y + half_width(x), so a
+    reader can flatten them again (the lab lays the sides flat on the table for chapter 5).
+    """
+    end = G.fs_f22 + G.side_panel_length + 1.0
+    pts = [(x0, h0) for x0, _x1, h0, _s in _W_PIECES if x0 < end]
+    return pts + [(end, half_width(end))]
+
+
 def half_width(fs: float) -> float:
     """Half of the inner width between the sides at FS (the plan bend)."""
     for x0, x1, h0, s in _W_PIECES:

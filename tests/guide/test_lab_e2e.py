@@ -1956,3 +1956,157 @@ def test_context_restore_drops_one_tier_when_auto_is_on_and_remembers_it(rsite):
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# The fuselage box (Block 2 M2.2 Task 5): a second subject, chapters 4-6, in its own corner of the shop. The canard stays the default.
+# ======================================================================================================================
+_BOOK_BOND_ORDER = ("front_seat_bkhd", "panel", "f22", "rear_seat_bkhd", "firewall")  # plans-1980:p40, then F28 (p41)
+
+
+def _fuse_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [i for i in g["order"] if byid[i]["chapter"] in (4, 5, 6) and not byid[i]["stub"]
+            and ("both" in byid[i]["variants"] or "roncz" in byid[i]["variants"])]
+
+
+def _chips(pg):
+    return pg.eval_on_selector_all("#opbar button[data-op]", "els => els.map(e => e.dataset.op)")
+
+
+def test_fuselage_subject_bar_bond_order_fidelity_labels_cg_and_back_to_the_canard(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            assert pg.evaluate("window.__lab.subject()") == "canard"  # the default
+            canard_bar = _chips(pg)
+            assert canard_bar == _bar_ops(g, "roncz")
+            pg.click('#subject button[data-subject="fuselage"]')
+            assert pg.evaluate("window.__lab.subject()") == "fuselage"
+            assert _chips(pg) == _fuse_ops(g) and len(_chips(pg)) >= 31  # exactly chapters 4-6, graph order, no stubs
+            assert pg.is_hidden("#variant")  # the variant only changes the canard
+            assert set(pg.evaluate("Object.keys(window.__lab.state())")) == {n for p in fz["parts"].values() for n in [p["node"]]} | set(fz["nodes"])
+            shots = pg.evaluate("window.__lab.fuseShots()")
+            assert set(_fuse_ops(g)) <= set(shots) and all(shots[o] for o in _fuse_ops(g))  # every op has its own lab shot
+            # the ch6 bond ops put their bulkhead in the jig one at a time, in the book's order
+            bonds = [o for o in _fuse_ops(g) if o.startswith("f06.bond-")]
+            for i, op in enumerate(bonds):
+                pg.click(f'#opbar button[data-op="{op}"]')
+                pl = pg.evaluate("window.__lab.placement()")
+                assert [k for k in _BOOK_BOND_ORDER if pl[k] == "jig"] == list(_BOOK_BOND_ORDER[: i + 1]), (op, pl)
+                assert pl["side_left"] == pl["side_right"] == "jig" and pl["bottom"] == "none"
+            pg.click('#opbar button[data-op="f06.bond-panel"]')
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["front_seat_bkhd"] == pl["panel"] == "jig" and pl["f22"] == "table", pl
+            assert pg.evaluate("window.__lab.jigPose()") == "inverted"  # the book builds the box upside down
+            # chapter 5: the sides lie flat on the table; chapter 4: the bulkheads are made flat on the table
+            pg.click('#opbar button[data-op="f05.inside-layup"]')
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["side_left"] == pl["side_right"] == "table" and pl["front_seat_bkhd"] == "table", pl
+            # a fitted (representational) part and every ply on it carry the hatch; a book part never does; the labels say so
+            pg.evaluate("window.__lab.select(null)")  # the finished box: every part exists
+            pg.evaluate("window.__lab.advance(3)")
+            for part, row in fz["parts"].items():
+                m = pg.evaluate(f"window.__lab.material('{row['node']}')")
+                assert m["hatch"] == (row["fidelity"] == "representational") and m["fidelity"] == row["fidelity"], (part, m)
+            for node, n in fz["nodes"].items():
+                assert pg.evaluate(f"window.__lab.material('{node}').hatch") == (n["fidelity"] == "representational"), node
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            for part, row in fz["parts"].items():
+                assert ("fitted shape" in labs[row["node"]]["text"]) == (row["fidelity"] == "representational"), labs[row["node"]]
+            assert any(labs[r["node"]]["opacity"] > 0.5 for r in fz["parts"].values() if r["fidelity"] == "representational")
+            assert pg.is_visible("#t-legend") and "fitted shape" in pg.inner_text("#t-legend")
+            # the CG row: the strict ledger has no weight yet, so it says so; the lower bound is never presented as the CG
+            assert pg.inner_text("#ro-cg") == "not yet computed"
+            sub = pg.inner_text("#ro-cg-sub")
+            assert "lower bound" in sub and "not yet computed" not in sub.split("·")[-1]
+            # back to the canard: its bar exactly, its meshes, no fuselage rows in the readout
+            pg.click('#subject button[data-subject="canard"]')
+            assert _chips(pg) == canard_bar
+            assert pg.evaluate("window.__lab.subject()") == "canard" and pg.is_visible("#variant")
+            assert all(k.startswith("canard.") for k in pg.evaluate("Object.keys(window.__lab.state())"))
+            assert pg.is_hidden("#t-cg") and pg.is_hidden("#t-legend")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_subject_choice_survives_a_reload_and_storage_that_throws(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820)
+            pg.click('#subject button[data-subject="fuselage"]')
+            assert pg.evaluate("window.localStorage.getItem('longez.subject')") == "fuselage"
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.evaluate("window.__lab.subject()") == "fuselage" and _chips(pg) == _fuse_ops(g)
+            assert pg.get_attribute('#subject button[data-subject="fuselage"]', "aria-pressed") == "true"
+            assert not errors, errors
+            b.close()
+            throwing = "Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } })"
+            b, pg, errors = _open(p, url, 1180, 820, init=throwing)
+            assert pg.evaluate("window.__lab.subject()") == "canard"  # nothing to remember: the default
+            pg.click('#subject button[data-subject="fuselage"]')
+            assert pg.evaluate("window.__lab.subject()") == "fuselage" and _chips(pg) == _fuse_ops(g)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_fuselage_station_cut_opens_the_front_seat_bulkhead_and_lists_its_layers(rsite):
+    from PIL import Image
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    fs = 72.0  # through the front seat bulkhead (it slopes from FS 63.55 at the floor to 81.75 at the top)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f06.bottom-tape")
+            assert pg.evaluate("window.__lab.subject()") == "fuselage"  # a chapter 4-6 op in the address opens the fuselage
+            pg.evaluate("window.__lab.advance(3)")
+            bx = pg.evaluate("window.__lab.plyBox('fuselage.front_seat_bkhd')")
+            assert bx["min"][0] < fs < bx["max"][0]
+            # look at the station from forward of it (the side the cut removes)
+            ctr = [fs, (bx["min"][1] + bx["max"][1]) / 2, 0]
+            pos = pg.evaluate(f"window.__lab.fuseToWorld([{fs - 70}, {bx['max'][1] + 30}, 30])")
+            tgt = pg.evaluate(f"window.__lab.fuseToWorld({ctr})")
+            pg.evaluate(f"window.__lab.setCamera({pos}, {tgt})")
+            pg.evaluate("window.__lab.advance(0.2)")
+            corners = [[fs, y, z] for y in (bx["min"][1], bx["max"][1]) for z in (bx["min"][2], bx["max"][2])]
+            pts = [pg.evaluate(f"window.__lab.project(window.__lab.fuseToWorld({c}))") for c in corners]
+            x0, x1 = max(0, min(q[0] for q in pts)), min(1180, max(q[0] for q in pts))
+            y0, y1 = max(0, min(q[1] for q in pts)), min(820, max(q[1] for q in pts))
+            assert x1 - x0 > 60 and y1 - y0 > 30, pts
+            clip = {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}
+            off = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            pg.evaluate(f"window.__lab.setSection(true, {fs})")
+            pg.evaluate("window.__lab.advance(3)")  # the cut-edge glow has settled
+            on = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+            n, total = _changed(on, off), on.width * on.height
+            assert n > 0.10 * total, (n, total)
+            c = pg.evaluate("window.__lab.cut()")
+            assert c["enabled"] and c["fs"] == fs and c["planeConstant"] == pytest.approx(-fs, abs=1e-6)
+            assert c["keepsAft"] and c["removesForward"]
+            assert "fuselage.front_seat_bkhd" in c["capNodesVisible"] and c["capsVisible"] == len(c["cappedNodes"])
+            # the readout lists the layers there, from layup.json alone: the front seat bulkhead's plies that span the station, by cloth
+            want = {}
+            for n_ in fz["nodes"].values():
+                if n_["part"] == "front_seat_bkhd" and n_["fs_min"] - 1e-3 <= fs <= n_["fs_max"] + 1e-3:
+                    want[n_["cloth"]] = want.get(n_["cloth"], 0) + 1
+            txt = pg.inner_text("#ro-layers")
+            assert "Front seat bulkhead: " + ", ".join(f"{v} {k}" for k, v in want.items()) in txt, (txt, want)
+            assert pg.inner_text("#ro-station") == "FS 72"
+            assert fz["parts"]["bottom"]["label"] in txt  # a fitted part is named with its fidelity in the layers too
+            pg.evaluate(f"window.__lab.setSection(false, {fs})")
+            assert pg.evaluate("window.__lab.cut().capsVisible") == 0 and pg.inner_text("#ro-station") == "Section off"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

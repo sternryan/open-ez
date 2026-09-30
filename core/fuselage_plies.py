@@ -480,6 +480,26 @@ def _plies(graph, extra_rows) -> list[FusePly]:
     return out
 
 
+def region_of(p: FusePly) -> Region:
+    """The Region object a ply was measured on (its SCOPE target for its part). The lab export builds the ply's
+    shell on it, so the geometry and the area come from the same selection."""
+    place = SCOPE[(p.op, p.where)]
+    for t in place.targets:
+        if t.part == p.part:
+            return t.region
+    raise FusePlyError(f"{p.node}: part {p.part} is not a target of {p.op}")
+
+
+def region_direction(part_name: str, face_name: str) -> tuple[float, float, float]:
+    """The direction a ``Face(face_name)`` region's faces point (the rule the faces are picked by)."""
+    return _direction(part_name, face_name)
+
+
+def region_faces(part_name: str, face_name: str):
+    """The faces of a part solid that a ``Face(face_name)`` region measures (same normal rule as the areas)."""
+    return _faces(part_name, build_fuselage()[part_name], face_name)
+
+
 def excluded_by_part() -> dict[str, list[str]]:
     """Excluded rows per affected part, as 'op: where' strings (glass there is not complete)."""
     out: dict[str, list[str]] = {}

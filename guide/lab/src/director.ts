@@ -291,3 +291,33 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
   s.push({ t: t + 16.2, act: 'noop' })
   return s
 }
+
+/**
+ * The fuselage film: every chapter 4-6 op in graph order (the box, from the bulkheads to the taped bottom). The same grammar as a
+ * canard chapter (click the chip, Play what has plies) without the section steps; `plies` counts an op's fuselage plies.
+ * The page's `closeup` action flies to the fuselage's own home view.
+ */
+export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: string) => number, chapters = [4, 5, 6]): Step[] {
+  const ops = chapters.flatMap((ch) => tourSteps(graph, variant, ch))
+  const s: Step[] = []
+  s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
+  s.push({ t: 0, card: { title: 'Fuselage box', sub: `Chapters ${chapters[0]}–${chapters[chapters.length - 1]}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
+  s.push({ t: 2.6, cursor: 'show' })
+  let t = 3.0
+  ops.forEach((o, i) => {
+    const chip = `#chips button[data-op="${o.op}"]`
+    s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i })
+    const n = plies(o.op)
+    if (!n) { t += 0.6 + 1.7; return }
+    t += 0.6 + 1.9
+    s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
+    t += 0.5 + playSeconds(n)
+  })
+  s.push({ t, act: 'finish' })
+  s.push({ t: t + 1.9, cursor: 'hide' })
+  s.push({ t: t + 2.0, act: 'closeup' })
+  s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })
+  s.push({ t: t + 13.4, card: { title: 'Fuselage box', sub: 'Build rehearsal' }, dur: 1.0 })
+  s.push({ t: t + 16.2, act: 'noop' })
+  return s
+}

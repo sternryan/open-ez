@@ -94,6 +94,16 @@ def test_layup_shipped_when_next_to_models(tmp_path):
     assert set(g["layup"]) == {"ops", "semi_span", "nodes"} and g["layup"]["semi_span"] == 63.0
 
 
+def test_ledger_json_ships_beside_the_data_when_the_export_has_one(tmp_path):
+    e = make_export(tmp_path / "e")
+    build(REPO_GRAPH, tmp_path / "site", models=e / "longez.glb", scan_base=None, docs=None)
+    assert not (tmp_path / "site" / "ledger.json").exists()  # an export without a ledger ships none (the lab says so)
+    led = {"cg": {"weight_lb": 0, "arm_in": None, "included": [], "excluded": {"f22": "not yet computed: x"}}}
+    (e / "ledger.json").write_text(json.dumps(led))
+    build(REPO_GRAPH, tmp_path / "site2", models=e / "longez.glb", scan_base=None, docs=None)
+    assert json.loads((tmp_path / "site2" / "ledger.json").read_text()) == led
+
+
 def test_no_layup_means_null(gdir, tmp_path):
     build(gdir, tmp_path / "site", models=None, scan_base=None, docs=None)
     assert json.loads((tmp_path / "site" / "graph.json").read_text())["layup"] is None

@@ -22,7 +22,7 @@ export interface Workshop {
   jigZ: number[]
 }
 
-class Batch {
+export class Batch {
   private m = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[] }>()
   constructor(private mats: Record<string, THREE.Material>) {}
   add(key: string, geo: THREE.BufferGeometry, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
@@ -48,7 +48,7 @@ class Batch {
   }
 }
 
-function pegTexture(): THREE.CanvasTexture {
+export function pegTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas')
   c.width = c.height = 64
   const g = c.getContext('2d')!
@@ -64,7 +64,7 @@ function pegTexture(): THREE.CanvasTexture {
   return t
 }
 
-const glow = (hex: number, k: number) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k) })
+export const glow = (hex: number, k: number) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(k) })
 
 /**
  * @param span   length of the modelled canard along Z, metres

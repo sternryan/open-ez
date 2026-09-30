@@ -181,6 +181,9 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
     (out / "models").mkdir()
     if models:
         shutil.copy(models, out / "models" / "longez.glb")
+        ledger = models.parent / "ledger.json"  # the fuselage mass ledger (guide.export_glb writes it beside layup.json)
+        if ledger.is_file():
+            shutil.copy(ledger, out / "ledger.json")
     if docs:
         _render_docs(docs, out / "docs")
 
