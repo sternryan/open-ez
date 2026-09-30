@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T01:26:13.616738+00:00",
+    "generated": "2026-09-30T01:35:41.405083+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -17,17 +17,17 @@
     },
     "checks": {
       "stability": {
-        "np_fs": 106.50197153689606,
+        "np_fs": 110.68224245766193,
         "aft_limit_fs": 103.0,
-        "static_margin_pct": 8.6897,
+        "static_margin_pct": 19.0624,
         "pass": true,
         "mac_in": 40.30046429579024
       },
       "two_method_np": {
         "status": "fail",
-        "analytic": 106.50197153689606,
+        "analytic": 110.68224245766193,
         "vlm": 112.3616,
-        "delta": 5.859628463103931,
+        "delta": 1.6793575423380673,
         "bound_in": 1.0,
         "vlm_source": {
           "file": "data/validation/vspaero_np.json",
@@ -42,9 +42,9 @@
   },
   "summary": {
     "total": 12,
-    "pass": 3,
+    "pass": 2,
     "marginal": 0,
-    "fail": 2,
+    "fail": 3,
     "ungraded": 0,
     "not_graded": 7
   },
@@ -52,7 +52,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 106.502,
+      "computed": 110.6822,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -66,12 +66,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 99.5663,
+      "computed": 103.7465,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 2.566262,
-      "error_pct": 2.645631,
+      "error_abs": 6.746533,
+      "error_pct": 6.955188,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -79,20 +79,20 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 103.419,
+      "computed": 107.5993,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 0.418986,
-      "error_pct": 0.406783,
-      "grade": "PASS",
+      "error_abs": 4.599257,
+      "error_pct": 4.465298,
+      "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
     },
     {
       "metric_id": "static_margin_pct",
       "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
-      "computed": 8.6897,
+      "computed": 19.0624,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,

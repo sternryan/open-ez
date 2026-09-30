@@ -343,6 +343,29 @@ Four labelled waterlines touch the canard; none is a leading-edge waterline. On 
 | W.L. 21.8 | cobelu:ch30 sheet C-1 | reference line above the full-scale canard section | not a template datum |
 | No other W.L. found | plans-1980:p54 (image read); p56, p57, p71, p72 (OCR search only) | canard chapters show no further waterline | p54 read on image; the other four searched by OCR text only, not read on image |
 
+**Follow-up re-read of sheet C-3 (2026-09-29, image read, zoomed).** Question: is C-3's W.L. 19.8
+the same point as p171's W.L. 18.9? It is not. On each of templates A, B, C and D, "W.L. 19.8" sits
+beside a small arrow that points onto the one straight line drawn inside the template, the line
+labelled "LEVEL LINE" at its other end; the label is on that line and nowhere on the contour. On
+template A (canard cores, left and right) the level line enters the section at the nose, between
+the upper and lower station-1 marks, and runs aft to the lower contour ahead of the elevator
+cutout; the trailing edge (stations 31 and 32) sits above it. So 19.8 is the waterline of the
+R1145MS core's level jig line through its nose, printed identically on the inboard templates C
+(used at B.L. 0) and D (used at B.L. 54.0), i.e. a spanwise-constant jig datum. The ch30 text cites
+C-3 only for hot-wiring and checking templates and states no installed canard waterline. p171's
+18.9 is the 1980 first-edition side view of the GU canard (owner-confirmed read, level with its
+lower surface). Different canard, different point on the section: not a digit transposition, and
+not two readings of one dimension.
+
+Model value: unchanged, `canard_le_wl` 1.5 and `canard_vertical_offset_in` 1.5 (18.9 - 17.4). The
+evidence explains the two numbers but does not supply the quantity the model needs for the canard
+it models: the model canard is GU-sized (the p171 planform), and for that canard p171 is the only
+installed waterline; 19.8 belongs to the Roncz core and is a jig line, and no source gives the
+installed Roncz chord-plane waterline in the fuselage frame. The provenance status stays
+`conflict` (downgrading it is a lead call). Sensitivity, C4 model: NP 110.682 (h 1.5), 110.689
+(h 2.0, GU level line 19.4), 110.694 (h 2.4, Roncz level line 19.8): 0.012 in across the whole
+book range, so the choice does not bear on the two-method gap.
+
 ### Canard chord
 
 | value | citation | what the page says (≤10 words) | copy caveat |
