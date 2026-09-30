@@ -13,7 +13,7 @@ SITE="$WORK/site"
 "$PY" -m guide.export_glb --out "$WORK/export/longez.glb"
 # Our own Blender stills, keyed to this export exactly as deploy_guide.sh does. Missing cache = loud failure, not a silent omission.
 CF="${COMPUTE_FABRIC_DIR:-$HOME/compute-fabric-dev}"
-KEY="$("$PY" -m guide.render_key --export "$WORK/export" --scripts "$CF/deploy/anvil/jobs/blender")"
+KEY="$("$PY" -m guide.render_key --export "$WORK/export/canard" --scripts "$CF/deploy/anvil/jobs/blender")"
 RENDERS="${LONGEZ_RENDER_CACHE:-$HOME/.cache/long-ez/renders}/$KEY"
 [ -f "$RENDERS/manifest.json" ] || { echo "no renders for key $KEY; run guide/render_cutaway.sh first" >&2; exit 1; }
 "$PY" -m guide.build_site --public --out "$SITE" --models "$WORK/export/longez.glb" --renders "$RENDERS"
