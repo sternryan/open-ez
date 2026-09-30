@@ -7,7 +7,7 @@ Handles positioning, intersection checks, and full-aircraft exports.
 """
 
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 import cadquery as cq
 
 from .base import AircraftComponent
@@ -26,12 +26,13 @@ class AircraftAssembly(AircraftComponent):
     """
 
     def __init__(self, name: str = "open_ez_airframe"):
-        from .structures import MainWingGenerator, CanardGenerator, Fuselage
+        from .fuselage_book import BookFuselage
+        from .structures import MainWingGenerator, CanardGenerator
 
         super().__init__(name, "Complete airframe assembly")
         self.wing = MainWingGenerator()
         self.canard = CanardGenerator()
-        self.fuselage = Fuselage()
+        self.fuselage = BookFuselage()
 
         # Internal assembly store
         self._assembly = cq.Assembly(name=name)
@@ -53,8 +54,8 @@ class AircraftAssembly(AircraftComponent):
         # Canard is at its station
         canard_pos = canard_geo.translate((config.geometry.fs_canard_le, 0, 0))
 
-        # Fuselage is nose-at-FS-nose
-        fuse_pos = fuse_geo.translate((config.geometry.fs_nose, 0, 0))
+        # The book fuselage is already built in FS (x), B.L. (y) and W.L. - 17.4 (z): no shift.
+        fuse_pos = fuse_geo.translate((0, 0, 0))
 
         # Combine into one solid
         self._geometry = fuse_pos.union(wing_pos).union(canard_pos)
@@ -73,7 +74,7 @@ class AircraftAssembly(AircraftComponent):
             self.fuselage.geometry,
             name="Fuselage",
             color=cq.Color("lightgray"),
-            loc=cq.Location(cq.Vector(config.geometry.fs_nose, 0, 0)),
+            loc=cq.Location(cq.Vector(0, 0, 0)),
         )
 
         self._assembly.add(
@@ -106,6 +107,24 @@ class AircraftAssembly(AircraftComponent):
 
         cq.exporters.export(top_view, str(dxf_file))
         return dxf_file
+
+    def manufacturing_plan(self, output_path: Path) -> Dict[str, Any]:
+        """Write the assembly STEP and report it; no per-part tooling is implied.
+
+        The components own their manufacturing artifacts (``BookFuselage.manufacturing_plan``,
+        the wing and canard plans); this reports only the assembly solid.
+        """
+        if self._geometry is None:
+            self.generate_geometry()
+        step_path = self.export_step(output_path)
+        return {
+            "cad_step": {
+                "path": step_path,
+                "format": "STEP",
+                "tolerance": None,
+                "artifact": "airframe_assembly_solid",
+            }
+        }
 
     def get_mass_properties(self) -> Dict[str, float]:
         """Calculate total volume and estimated weight."""

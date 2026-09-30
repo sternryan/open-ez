@@ -7,7 +7,6 @@ Includes support for:
 - Jig Generation Hooks
 
 WingGenerator: Lofted wing/canard cores with sweep, dihedral, washout.
-Fuselage: Station-based profile lofting with bulkhead integration.
 
 All dimensions derive from config/aircraft_config.py.
 """
@@ -23,8 +22,8 @@ from .base import AircraftComponent, FoamCore
 from .aerodynamics import Airfoil, AirfoilFactory
 
 # NOTE: JigFactory extracted from manufacturing.py to jig_factory.py.
-# The circular dependency between structures ↔ manufacturing is documented
-# and stable (manufacturing uses TYPE_CHECKING for BulkheadProfile/Fuselage).
+# The circular dependency between structures <-> manufacturing is documented
+# and stable.
 from .jig_factory import JigFactory
 
 
@@ -528,152 +527,6 @@ class MainWingGenerator(WingGenerator):
             n_stations=10,
             description=description,
         )
-
-
-@dataclass
-class BulkheadProfile:
-    """Fuselage cross-section at a station."""
-
-    station: float  # FS (fuselage station) in inches
-    width: float  # Maximum width at this station
-    height: float  # Maximum height at this station
-    floor_height: float  # Floor position relative to datum
-
-
-class Fuselage(AircraftComponent):
-    """
-    Fuselage outer mold line (OML) generator.
-
-    Builds fuselage from a series of bulkhead cross-sections,
-    lofted with spline surfaces.
-    """
-
-    def __init__(
-        self, name: str = "fuselage", description: str = "Long-EZ fuselage OML"
-    ):
-        super().__init__(name, description)
-        self._profiles: List[BulkheadProfile] = []
-        self._init_profiles()
-
-    def _init_profiles(self) -> None:
-        """Initialize bulkhead profiles from config."""
-        geo = config.geometry
-
-        # Define key fuselage stations
-        # These are derived from the SSOT, not hard-coded
-        bh = geo.fuselage_bulkhead_heights
-        self._profiles = [
-            BulkheadProfile(
-                station=geo.fs_nose, width=0.0, height=0.0, floor_height=0.0
-            ),
-            BulkheadProfile(
-                station=geo.fs_canard_le,
-                width=18.0,  # Derived from canard attachment
-                height=bh[0],
-                floor_height=-8.0,
-            ),
-            BulkheadProfile(
-                station=geo.fs_pilot_seat,  # F-22
-                width=geo.cockpit_width,
-                height=bh[1],
-                floor_height=-12.0,
-            ),
-            BulkheadProfile(
-                station=geo.fs_rear_seat,  # F-28
-                width=geo.cockpit_width - 2.0,  # Slight taper
-                height=bh[2],
-                floor_height=-10.0,
-            ),
-            BulkheadProfile(
-                station=geo.fs_firewall, width=18.0, height=bh[3], floor_height=-6.0
-            ),
-            BulkheadProfile(
-                station=geo.fs_tail, width=6.0, height=bh[4], floor_height=-2.0
-            ),
-        ]
-
-    def _create_bulkhead_wire(self, profile: BulkheadProfile) -> cq.Wire:
-        """Create a bulkhead cross-section wire."""
-        # Simplified elliptical cross-section
-        # Real implementation would use actual bulkhead shapes
-        w = profile.width / 2
-        h = profile.height / 2
-
-        if w < 0.1 or h < 0.1:
-            # Near-point for nose - circle in YZ plane
-            return cq.Wire.makeCircle(
-                0.1, cq.Vector(profile.station, 0, 0), cq.Vector(1, 0, 0)
-            )
-
-        # Create ellipse in YZ plane
-        ellipse = (
-            cq.Workplane("YZ")
-            .center(0, profile.floor_height + h)
-            .ellipse(h, w)  # h is Z (vertical), w is Y (lateral)
-            .wire()
-        )
-
-        # Move to correct station along X axis
-        return ellipse.val().moved(cq.Location(cq.Vector(profile.station, 0, 0)))
-
-    def _build_geometry(self) -> cq.Workplane:
-        """
-        Generate fuselage OML via lofting.
-
-        Returns:
-            CadQuery solid representing fuselage shell
-        """
-        wires = [self._create_bulkhead_wire(p) for p in self._profiles]
-
-        # Loft through profiles
-        lofted = cq.Solid.makeLoft(wires)
-
-        # Shell to create foam core thickness
-        foam_thickness = config.materials.foam_core_thickness
-        shelled = lofted.shell([], foam_thickness)
-
-        self._geometry = cq.Workplane("XY").add(shelled)
-        return self._geometry
-
-    def get_bulkhead(self, station_name: str) -> BulkheadProfile:
-        """
-        Get bulkhead profile by station name.
-
-        Args:
-            station_name: "F22", "F28", etc.
-
-        Returns:
-            BulkheadProfile at that station
-        """
-        station_map = {
-            "F22": config.geometry.fs_pilot_seat,
-            "F28": config.geometry.fs_rear_seat,
-            "firewall": config.geometry.fs_firewall,
-        }
-
-        target_station = station_map.get(station_name)
-        if target_station is None:
-            raise ValueError(f"Unknown station: {station_name}")
-
-        for profile in self._profiles:
-            if abs(profile.station - target_station) < 0.1:
-                return profile
-
-        raise ValueError(f"No profile at station {station_name}")
-
-    def export_dxf(self, output_path: Path) -> Path:
-        """Export all bulkhead profiles as DXF."""
-        for profile in self._profiles:
-            if profile.width > 1.0:  # Skip degenerate profiles
-                wire = self._create_bulkhead_wire(profile)
-                station_name = f"FS_{profile.station:.0f}"
-                bulkhead_path = output_path / f"{self.name}_{station_name}.dxf"
-                cq.exporters.export(
-                    cq.Workplane("XY").add(wire), str(bulkhead_path), exportType="DXF"
-                )
-                self._write_artifact_metadata(bulkhead_path, artifact_type="DXF")
-
-        return output_path / f"{self.name}_bulkheads.dxf"
 
 
 class StrakeGenerator(AircraftComponent):

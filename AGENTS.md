@@ -109,8 +109,10 @@ Do not copy numbers into this file; they go stale. Read:
   Diagnosis and numbers: `docs/block1-report.md`.
 - Canard planform is GU-sized (conflict flag); the Roncz planform is unconfirmed.
 - Empty weight and CG limits fail against the manual; they wait on the Block 2 ledger.
-- `scripts/assembly_test.py::test_full_assembly` is a strict xfail: `Fuselage` is an unsourced
-  placeholder that cannot be instantiated. See the reason string in that file.
+- The fuselage box (`core/fuselage_book.py`, chapters 4–6) tags every part `book`, `derived` or
+  `representational`; F22, F28, the panel, the firewall and the bottom are fitted shapes (their
+  outlines are on full-size sheets the owner does not hold). Nothing aft of the firewall or forward of
+  F22 is modelled yet.
 - Regression snapshots (`tests/snapshots/`, `accuracy_report.json`) lock the code's current output;
   they are not external truth.
 - Nothing has been validated against hardware. G-code has never run on a CNC machine.
