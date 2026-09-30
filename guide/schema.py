@@ -353,7 +353,10 @@ def topo_order(g: Graph) -> list[str]:
             visit(r)
         order.append(n)
 
-    for n in sorted(g.ops, key=lambda i: (g.ops[i].chapter, i)):
+    # Within a chapter the authored order (the chapter file's list order) breaks ties, not the op id:
+    # ids sort alphabetically, which put chapter 4's firewall ahead of the seat bulkheads.
+    authored = {op_id: k for k, op_id in enumerate(g.ops)}
+    for n in sorted(g.ops, key=lambda i: (g.ops[i].chapter, authored[i])):
         visit(n)
     return order
 

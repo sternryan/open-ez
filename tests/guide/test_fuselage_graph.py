@@ -86,3 +86,30 @@ def test_recall_finds_the_four_new_annotations(g):
     got = {(a.scan_pp, a.cp, a.lpc) for a in hits}
     assert {(34, 27, 42), (34, 25, 17), (35, 25, 25), (36, 25, 5)} <= got
     assert misses == []
+
+
+# Snapshot of the canard chapters' order taken before the authored-order tie-break (2026-09-30);
+# the tie-break must not move any of them.
+CANARD_ORDER = [
+    "ref.back-cover-3view", "c03.layup-skills", "c10.templates-cores", "c10.shear-web", "c10.jig-cores",
+    "c10.bottom-spar-skin", "c10.top-spar-skin", "c11.elevators", "c12.alignment-pins", "c12.align-canard",
+    "r30.templates-cores", "r30.lift-tabs", "r30.shear-web", "r30.jig-assemble", "r30.bottom-spar-cap",
+    "r30.bottom-skin", "r30.turnover-twist-check", "r30.hinge-foam", "r30.top-spar-cap", "r30.top-skin",
+    "r30.elevators", "r30.install-pins", "r30.align-canard",
+]
+
+
+def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
+    from guide.schema import topo_order
+
+    g = load_graph(GRAPH)
+    order = topo_order(g)
+    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6)] == CANARD_ORDER
+    # plans pp 4-1 to 4-3: front seat, rear seat, panel/F22/F28, firewall
+    assert [i for i in order if g.ops[i].chapter == 4] == [
+        "f04.front-seat-bkhd-front", "f04.front-seat-bkhd-back", "f04.rear-seat-bkhd-foam",
+        "f04.rear-seat-bkhd-hole", "f04.panel-f22-f28-aft", "f04.panel-f22-f28-fwd",
+        "f04.firewall-aft", "f04.firewall-fwd",
+    ]
+    for ch in (5, 6):  # each chapter follows its file's list order
+        assert [i for i in order if g.ops[i].chapter == ch] == [i for i in g.ops if g.ops[i].chapter == ch]
