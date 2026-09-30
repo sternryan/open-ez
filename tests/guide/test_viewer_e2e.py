@@ -1179,3 +1179,314 @@ def test_load_paths_are_drawn_in_their_own_colours(rsite, scheme):  # thin near-
         assert web["shear"] > 150 and web["bending"] < 10 and web["lift"] < 10, web  # only the paths whose parts exist draw
         b.close()
     s.shutdown()
+
+
+# ---- Block 2 M2.1 Task 5: chapter tours (real export: rsite)
+def _ch30_steps(rsite):
+    g = json.loads((rsite / "graph.json").read_text())
+    by = {o["id"]: o for o in g["ops"]}
+    return [i for i in g["order"] if by[i]["chapter"] == 30 and not by[i]["stub"] and "roncz" in by[i]["variants"]], g["tours"]
+
+
+def _selected(pg):
+    return pg.evaluate("[...document.querySelectorAll('#ops li.selected')].map(l => l.dataset.op)")
+
+
+def _tour_done(pg, timeout=60000):
+    pg.wait_for_function("!window.__tour().running", timeout=timeout)
+
+
+def test_tour_button_starts_the_tour_and_the_selected_op_advances(rsite):
+    want, _ = _ch30_steps(rsite)
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        assert pg.evaluate("document.querySelector('#tour').getBoundingClientRect().height") >= 44
+        assert pg.inner_text("#tour") == "Tour" and pg.evaluate("window.__tour().running") is False
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        first = _selected(pg)
+        pg.click("#tour")
+        assert pg.inner_text("#tour") == "Stop tour" and pg.get_attribute("#tour", "aria-pressed") == "true"
+        pg.wait_for_function("window.__tour().i >= 2", timeout=30000)
+        assert _selected(pg) != first
+        assert pg.evaluate("window.__tour().steps") == want
+        _tour_done(pg)
+        assert pg.inner_text("#tour") == "Tour"
+        assert pg.evaluate("window.__tour().log") == want  # every step's op was selected, in order, once
+        assert _selected(pg) == [want[-1]]  # the walk ends on the last op
+        b.close()
+    s.shutdown()
+
+
+def test_tour_with_nothing_selected_tours_the_variants_first_chapter(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        assert pg.is_visible("#tour") and _selected(pg) == []
+        pg.click("#tour")
+        assert pg.evaluate("window.__tour().steps")[0] == "r30.templates-cores"
+        pg.click("#tour")
+        pg.select_option("#variant", "gu")
+        pg.click("#tour")
+        assert pg.evaluate("window.__tour().steps")[0] == "c10.templates-cores" and pg.evaluate("window.__tour().steps").count("c12.align-canard") == 0
+        b.close()
+    s.shutdown()
+
+
+def test_tour_follows_the_selected_ops_chapter(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.select_option("#variant", "gu"); pg.click('#ops li[data-op="c12.align-canard"]')
+        pg.click("#tour")
+        assert pg.evaluate("window.__tour().steps") == ["c12.alignment-pins", "c12.align-canard"]
+        b.close()
+    s.shutdown()
+
+
+def test_escape_stops_the_tour_and_the_op_stays_put(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.templates-cores"]'); pg.click("#tour")
+        pg.wait_for_function("window.__tour().i >= 1", timeout=30000)
+        pg.keyboard.press("Escape")
+        t = pg.evaluate("window.__tour()")
+        assert t["running"] is False and pg.inner_text("#tour") == "Tour"
+        held = _selected(pg); pg.wait_for_timeout(900)
+        assert _selected(pg) == held and held == [t["log"][-1]] and pg.evaluate("window.__tour().log") == t["log"]
+        b.close()
+    s.shutdown()
+
+
+def test_second_press_stops_the_tour(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.templates-cores"]'); pg.click("#tour")
+        pg.wait_for_function("window.__tour().i >= 1", timeout=30000)
+        pg.click("#tour")
+        assert pg.evaluate("window.__tour().running") is False and pg.inner_text("#tour") == "Tour"
+        held = _selected(pg); pg.wait_for_timeout(700)
+        assert _selected(pg) == held
+        b.close()
+    s.shutdown()
+
+
+def test_op_click_and_variant_change_stop_the_tour(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)  # normal dwell: the tour is still on step 0 when we interrupt
+        pg.click('#ops li[data-op="r30.templates-cores"]'); pg.click("#tour")
+        assert pg.evaluate("window.__tour().running")
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert pg.evaluate("window.__tour().running") is False and _selected(pg) == ["r30.top-skin"]
+        pg.click("#tour"); assert pg.evaluate("window.__tour().running")
+        pg.select_option("#variant", "gu")
+        assert pg.evaluate("window.__tour().running") is False
+        b.close()
+    s.shutdown()
+
+
+def test_tour_leaves_the_section_cut_and_paths_as_the_user_set_them(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        _sec(pg, 40); pg.uncheck("#paths")
+        pg.click("#tour"); _tour_done(pg)
+        assert pg.is_checked("#section-on") and pg.input_value("#section-bl") == "40" and not pg.is_checked("#paths")
+        assert "B.L. 40" in pg.inner_text("#section-readout")
+        b.close()
+    s.shutdown()
+
+
+def test_tour_eases_to_each_authored_shot_and_runs_the_scrubber(rsite):
+    want, tours = _ch30_steps(rsite)
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        pg.evaluate("""() => { window.__rec = []; const f = () => { const t = window.__tour();
+            if (t.running) window.__rec.push({ op: t.op, cam: window.__guide.camera(), scrub: +document.querySelector('#scrub').value, max: +document.querySelector('#scrub').max });
+            requestAnimationFrame(f); }; f(); }""")
+        pg.click("#tour"); _tour_done(pg)
+        rec = pg.evaluate("window.__rec")
+        seen = [r["op"] for i, r in enumerate(rec) if i == 0 or rec[i - 1]["op"] != r["op"]]
+        assert seen == want, seen
+        for op, shot in tours.items():
+            frames = [r for r in rec if r["op"] == op]
+            best = min(sum((a - c) ** 2 for a, c in zip(r["cam"]["target"], shot["target"])) ** 0.5 for r in frames)
+            assert best < 0.05, (op, best)  # the ease reaches the authored target within the step
+            dist = sum((a - c) ** 2 for a, c in zip(shot["position"], shot["target"])) ** 0.5
+            assert min(abs(r["cam"]["distance"] - dist) for r in frames) < 0.5, op
+        web = [r["scrub"] for r in rec if r["op"] == "r30.shear-web"]
+        assert web[0] == 1 and max(web) >= 3 and web == sorted(web)  # the scrubber lays the plies across the dwell
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("width", [1180, 390])
+def test_tour_button_is_touch_sized_and_clear_of_other_controls(rsite, width):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, width, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        r = lambda sel: pg.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; }", sel)  # noqa: E731
+        t = r("#tour"); assert t[3] - t[1] >= 44 and pg.is_visible("#tour")
+        if width == 390:
+            assert t[1] >= r("#c")[3] - 1  # phone: flows below the canvas
+            assert pg.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        for other in ("#buildbar", "#parts", "#section", "#isobar"):
+            if pg.is_visible(other):
+                o = r(other); assert t[2] <= o[0] or o[2] <= t[0] or t[3] <= o[1] or o[3] <= t[1], (other, t, o)
+        b.close()
+    s.shutdown()
+
+
+# ---- Task 5 hardening (csite: real graph + cutaway renders, so the ply dock and the view toggle exist)
+def _tour_at(pg, op, timeout=60000):
+    pg.wait_for_function("(o) => window.__tour().op === o", arg=op, timeout=timeout)
+
+
+def _start_tour_at_shear_web(p, url):
+    b, pg = _open_build(p, url)  # normal dwell: 4 s per step, so the tour is still on that step when we act
+    pg.click('#ops li[data-op="r30.templates-cores"]'); pg.click("#tour")
+    _tour_at(pg, "r30.shear-web")
+    assert pg.is_visible("#play") and pg.evaluate("document.querySelector('#scrub').max") != "1"
+    return b, pg
+
+
+def test_play_press_mid_tour_stops_the_tour(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _start_tour_at_shear_web(p, url)
+        pg.click("#play")
+        t = pg.evaluate("window.__tour()")
+        assert t["running"] is False and pg.inner_text("#tour") == "Tour"
+        assert pg.get_attribute("#play", "aria-pressed") == "true"  # Play itself runs, unfought
+        pg.wait_for_function("document.querySelector('#scrub').value === document.querySelector('#scrub').max", timeout=8000)
+        assert _selected(pg) == ["r30.shear-web"]  # the tour did not advance the op under Play
+        b.close()
+    s.shutdown()
+
+
+def test_scrub_drag_mid_tour_stops_the_tour_and_the_value_sticks(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _start_tour_at_shear_web(p, url)
+        _scrub(pg, 3)
+        assert pg.evaluate("window.__tour().running") is False and pg.inner_text("#tour") == "Tour"
+        pg.wait_for_timeout(600)
+        assert pg.input_value("#scrub") == "3" and _selected(pg) == ["r30.shear-web"]
+        b.close()
+    s.shutdown()
+
+
+def _cam_scrub(pg):  # camera rounded to 1e-6: OrbitControls damping leaves float dust, not motion
+    return pg.evaluate("""() => { const c = window.__guide.camera(), r = x => Math.round(x * 1e6) / 1e6;
+        return [c.target.map(r), r(c.distance), document.querySelector('#scrub').value, window.__tour().op]; }""")
+
+
+@pytest.mark.parametrize("how", ["escape", "second_press"])
+def test_stopping_the_tour_leaves_no_animation(csite, how):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _start_tour_at_shear_web(p, url)
+        pg.wait_for_timeout(700)  # mid-ease, mid-scrub
+        if how == "escape": pg.keyboard.press("Escape")
+        else: pg.click("#tour")
+        assert pg.evaluate("window.__tour().running") is False
+        snap = _cam_scrub(pg); pg.wait_for_timeout(500)
+        assert _cam_scrub(pg) == snap, how
+        b.close()
+    s.shutdown()
+
+
+def test_isolate_stops_the_tour(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _start_tour_at_shear_web(p, url)
+        pg.click('#parts .chip[data-cid="canard.shear_web"]')
+        assert pg.evaluate("window.__tour().running") is True  # opening the dock alone is not an interruption
+        pg.click(f'#plydock button[data-node="{P3}"]')
+        assert pg.evaluate("window.__tour().running") is False and pg.inner_text("#tour") == "Tour"
+        assert pg.evaluate("window.__guide.isolated()") == P3
+        snap = _cam_scrub(pg); pg.wait_for_timeout(500)
+        assert _cam_scrub(pg) == snap and pg.evaluate("window.__guide.isolated()") == P3
+        b.close()
+    s.shutdown()
+
+
+@pytest.mark.parametrize("how", ["cutaway", "glance"])
+def test_leaving_3d_stops_the_tour(csite, how):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _start_tour_at_shear_web(p, url)
+        if how == "cutaway": pg.click('#viewtoggle [data-view="cutaway"]')
+        else: pg.click('#ops li[data-op="__glance"]')
+        assert pg.evaluate("window.__tour().running") is False
+        assert pg.evaluate("window.__guide.paneMode()") == how  # the user's own choice is not clobbered by the restore
+        held = _selected(pg); pg.wait_for_timeout(500)
+        assert _selected(pg) == held
+        b.close()
+    s.shutdown()
+
+
+def test_tour_from_a_stub_only_chapter_falls_back_to_the_first_real_chapter(csite):
+    want, _ = _ch30_steps(csite)
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="c03.layup-skills"]')
+        assert _selected(pg) == ["c03.layup-skills"]
+        pg.click("#tour")
+        t = pg.evaluate("window.__tour()")
+        assert t["running"] is True and t["steps"] == want, t
+        b.close()
+    s.shutdown()
+
+
+def test_tour_restores_the_cutaway_view_in_memory_without_writing_storage(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url)
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"
+        assert pg.evaluate("localStorage.getItem('longez.view')") == "cutaway"
+        pg.click('#ops li[data-op="r30.templates-cores"]')  # no cutaway here: the 3D pane (and the Tour button) show, the remembered view stays cutaway
+        pg.evaluate("Storage.prototype.setItem = function (k) { window.__wrote = k; }")  # any storage write during the tour is a failure
+        pg.click("#tour"); _tour_at(pg, "r30.shear-web")
+        assert pg.evaluate("window.__guide.paneMode()") == "3d"  # forced 3D for the run
+        pg.click("#tour")
+        assert pg.evaluate("window.__guide.paneMode()") == "cutaway"  # view is back, on an op that has a cutaway
+        assert pg.evaluate("localStorage.getItem('longez.view')") == "cutaway" and pg.evaluate("window.__wrote ?? null") is None
+        b.close()
+    s.shutdown()
+
+
+def test_tour_order_matches_the_graph_and_scrubber_completes_before_each_advance(csite):
+    want, _ = _ch30_steps(csite)  # expected from graph.json, independent of the app's tourLog
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = _open_build(p, url, extra="&fast=1")
+        pg.click('#ops li[data-op="r30.templates-cores"]')
+        pg.evaluate("""() => { window.__dom = []; const f = () => {
+            const sel = [...document.querySelectorAll('#ops li.selected')].map(l => l.dataset.op).join(',');
+            const sc = document.querySelector('#scrub');
+            if (window.__tour().running) window.__dom.push({ sel, v: +sc.value, max: +sc.max, shown: !document.querySelector('#scrubwrap').hidden });
+            requestAnimationFrame(f); }; f(); }""")
+        pg.click("#tour"); _tour_done(pg)
+        dom = pg.evaluate("window.__dom")
+        seq = [r["sel"] for i, r in enumerate(dom) if i == 0 or dom[i - 1]["sel"] != r["sel"]]
+        assert seq == want, seq
+        with_plies = 0
+        for op in want:
+            fr = [r for r in dom if r["sel"] == op]
+            if fr[0]["shown"] and fr[0]["max"] > 1:
+                with_plies += 1
+                assert max(r["v"] for r in fr) == fr[0]["max"], (op, [r["v"] for r in fr])  # reached the top ply before the advance
+        assert with_plies >= 1
+        b.close()
+    s.shutdown()

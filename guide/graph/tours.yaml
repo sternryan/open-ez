@@ -1,0 +1,13 @@
+# Camera shots for the chapter tours, keyed by operation id. Ops with no entry get the home view.
+# Frame is the viewer's world frame, in inches: X runs aft along the chord, Y is up, and B.L. b sits at Z = -b
+# (the canard spans Z from -70.8 to 0; the root is at Z = 0). The home camera looks in from +X, +Y, +Z.
+# "target" is the point looked at; "position" is where the camera sits.
+shots:
+  # Plies laid on the underside are hidden under the core from the home view, so look up at them from below.
+  r30.bottom-spar-cap: {target: [5, 0, -27], position: [8, -55, 25]}
+  r30.bottom-skin: {target: [6, 0, -33], position: [10, -75, 28]}
+  # From the root end, a little above, looking outboard along the web so its ply edges and the slot it lies in show.
+  r30.shear-web: {target: [3, 0.4, -20], position: [9, 6, 8]}
+  # The upper surface faces the home camera's side, so these two only need a straight-down, span-filling view.
+  r30.top-spar-cap: {target: [5, 0.6, -27], position: [8, 55, 25]}
+  r30.top-skin: {target: [6, 0.8, -33], position: [10, 75, 28]}
