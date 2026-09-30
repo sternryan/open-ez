@@ -103,7 +103,7 @@ converged in one fix round.
    - The spec's glb `op`/`lay` tags are not in the export (spec §3.3). The plan chose `layup.json` as the only mapping.
 4. **Runtime:** the suite is now about 5.5 min, up from about 50 s. The ~85 e2e tests dominate, and each launches chromium.
 5. **Leak scan, not this milestone's code:**
-   - `docs/history/idea.md:5` claims the design is in the public domain.
+   - `docs/history/idea.md:5` made an unsourced claim about the plans' legal status (fixed in da588f5).
    - `docs/history/REVIEW_PROMPT.md:380` has a home-directory path.
    - Both files were moved there by 05af411 from root files that are already public on origin/main.
    - Both break the public-repo rules. Fix or drop them before the push.
