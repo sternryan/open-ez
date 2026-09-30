@@ -1,29 +1,46 @@
 # TODOS
 
-## Build guide
+Near-term open items. The long view (blocks 1 to 7 and what each must prove) is the roadmap:
+`docs/superpowers/specs/2026-09-29-roadmap-same-airplane-new-process-design.md`. Block 2 work is
+planned in `docs/superpowers/specs/2026-09-30-block2-rehearsal-design.md`.
 
-### Canard planform plans check
+## Sources to find (Block 1 "still flagged")
 
-**What:** Confirm open-ez's canard span, chord and sweep (147 in, 17 to 13.5 in, 13.5 deg) against the book.
+Each clears a flag in `docs/block1-report.md` part 3. Book or registered source only; never measure
+an undimensioned image.
 
-**Why:** ch 30 describes 108 in inboard cores plus separate tips and a 130 in jig surface. Until this is checked, the M2 cutaway is labelled topology-only, not a dimensioned drawing.
+- **Roncz canard planform.** Span and chord of the Roncz canard as built. Today the model uses the
+  GU planform from the owner's manual (conflict flag). P1: it moves the canard AC and the NP.
+- **Canard waterline and incidence.** A page that labels the canard LE or chord-line waterline, and
+  a printed incidence angle. P2.
+- **Fuselage aft end.** A printed aft-end station, which settles `fs_tail` and the fuselage length
+  conflict with the manual's overall length. P3.
+- **Wing root butt line and strake trailing edge.** Printed stations for `wing_root_bl` and
+  `StrakeConfig.fs_trailing_edge`. P3.
+- **Reference values.** A printed neutral point, stall speed, range, and airfoil coefficients for
+  the R1145MS and Eppler 1230, each registered with a page cite. P2 for the NP.
+- **Manual edition.** The date of the owner's manual revision the transcription follows. P3.
+- **Spar trough / shear web chordwise position.** The trough templates (page C-3) to replace the
+  0.25c placeholder and set `position_verified` true. Neither the owner's set nor cobelu has C-3. P3.
 
-**Context:** Logged in the M2 spec (`docs/superpowers/specs/2026-09-29-build-guide-m2-layup-cutaway-design.md` §9). Use the book only: the ch 30 pages and the back-cover 3-view (scan p.171). It is the same kind of job as M1's open wing-LE check (open-ez `fs_wing_le=125.61` vs plans-corrected 113.9, CP25 LPC7).
+## Checks that fail on purpose
 
-**Effort:** M
-**Priority:** P2
-**Depends on:** M2 task 0 (the flat-core fix) landing first.
+- **Two-method NP.** Analytic vs VSPAERO disagree by more than the 1.0 in bound. The next step is a
+  method chosen from a textbook source before it is run, per the ledger. Do not widen the bound.
+- **Empty weight and CG limits.** Wait on Block 2 ledger closure (per-part mass from geometry and
+  ply schedules).
 
-### Source for the spar trough / shear web chordwise position
+## Code
 
-**What:** Find the trough templates ("C"/"D", page C-3) and replace the 0.25c placeholder, flipping `position_verified` to true.
-
-**Why:** This is the one geometric unknown the M2 hero section carries as a label.
-
-**Context:** Neither the owner's set nor cobelu has page C-3. cobelu ch 30 places the shear web at the forward edge of the spar trough, and the templates set that edge. Leads are unverified: TERF's RAF CD-ROM, community archives. Check a lead before claiming it exists.
-
-**Effort:** S (once a source exists)
-**Priority:** P3
-**Depends on:** A source turning up.
+- **Fuselage and full-airframe assembly.** `core.structures.Fuselage` is an elliptical placeholder
+  with unsourced dimensions and no `manufacturing_plan`, so `AircraftAssembly` cannot be built
+  (`scripts/assembly_test.py`, strict xfail). Rebuild the fuselage from book stations in Block 2
+  rather than patching the placeholder.
+- **Kernel validation.** The laminate kernel has been checked against one textbook E-glass case.
+  It needs published carbon and glass data before Block 3 relies on it (roadmap section 5).
 
 ## Completed
+
+- Canard planform plans check: done by the 2026-09-29 planform correction; the result is the
+  conflict flag above (`docs/geometry-correction-ledger.md`).
+- Tests no longer rewrite tracked files: the suite writes to `tmp_path`, and `output/` is untracked.
