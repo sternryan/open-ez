@@ -107,7 +107,7 @@ def test_two_method_current_vlm_file_grades_by_the_1in_bound(tmp_path):
     assert r["status"] == "fail" and abs(r["delta"] - 2.0) < 1e-9
 
 
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md row 53; analytic 106.50 vs VLM 112.36, delta +5.86 in against the 1.0 in bound")
+@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 53 and 54; analytic 110.68 vs VLM 112.36, delta +1.68 in against the 1.0 in bound (C4 partial-span downwash)")
 def test_committed_report_two_method_np_agrees():
     """External check: the committed report's analytic and VLM NPs agree within the 1.0 in bound."""
     tm = json.loads(REPORT.read_text())["metadata"]["checks"]["two_method_np"]
