@@ -7,6 +7,7 @@ import { GLANCE, plyRows, isolateLabel, cutawayFor, hasGlance, readView, writeVi
 import { visibleSet, pathVisible } from "./build.js";
 import { layersAt, summarize, fmtBl } from "./section.js";
 import { makeCut, capColors } from "./cut.js";
+import { tourSteps, tourStart, stepTour } from "./tour.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
@@ -26,7 +27,7 @@ const byId = new Map(graph.ops.map(o => [o.id, o]));
 const meshes = new Map();
 const plyNode = new Map(); let isolated = null;
 let current = null;
-const qs = new URLSearchParams(location.search), TEST = qs.get("test") === "1", STEP_MS = qs.get("fast") === "1" ? 30 : 700;
+const qs = new URLSearchParams(location.search), TEST = qs.get("test") === "1", FAST = qs.get("fast") === "1", STEP_MS = FAST ? 30 : 700;
 const GHOST_KEY = "longez.ghost";
 try { graph.__ghost = storage?.getItem(GHOST_KEY) === "1"; } catch { graph.__ghost = false; }
 $("#ghost").checked = !!graph.__ghost;
@@ -82,6 +83,7 @@ let lastT = performance.now();
 renderer.setAnimationLoop(() => {
   const t = performance.now(), dt = (t - lastT) / 1000; lastT = t;
   if (pathsGroup.visible) for (const t of flowTex) t.offset.x -= dt * 0.6; // flow; no per-frame allocation
+  if (tour) tourTick(Math.min(dt, TOUR_DT_MAX));
   controls.update(); renderer.render(scene, camera);
 });
 
@@ -219,19 +221,69 @@ function setLay(n) { layIndex = n; $("#scrub").value = n; $("#scrublabel").textC
 function syncBuildbar() {
   const on = !!buildOp() && $("#c").hidden === false, n = on ? opPlies(current) : 0;
   $("#buildbar").hidden = !on; $("#scrubwrap").hidden = n === 0;
+  $("#tour").hidden = $("#c").hidden; // needs no selected op, only the 3D pane
   $("#section").hidden = !graph.layup || $("#c").hidden;
 }
 $("#ghost").onchange = e => {
   graph.__ghost = e.target.checked; try { storage?.setItem(GHOST_KEY, graph.__ghost ? "1" : "0"); } catch { /* per-viewer convenience only */ }
   applyBuild();
 };
-$("#scrub").oninput = e => { stopPlay(); setLay(+e.target.value); };
+$("#scrub").oninput = e => { stopTour(); stopPlay();  // user-initiated only: setLay assigns .value and fires no input event
+  setLay(+e.target.value); };
 $("#play").onclick = () => {
+  stopTour(); // the tour drives the scrubber itself; a running Play would fight it
   if (timer) return stopPlay();
   const max = +$("#scrub").max; setLay(1);
   $("#play").setAttribute("aria-pressed", "true"); $("#play").textContent = "Stop";
   timer = setInterval(() => { if (layIndex >= max) return stopPlay(); setLay(layIndex + 1); if (layIndex >= max) stopPlay(); }, STEP_MS);
 };
+// ---- Tour: a scripted walk through one chapter. tourSteps/stepTour (tour.js) are pure; this drives selectOp, the scrubber and the camera.
+// Each step selects its op, runs the scrubber 1..max across the dwell and eases the camera to the op's shot over EASE seconds.
+// The section cut and load paths are left as the viewer set them. dt is clamped so a stalled frame cannot skip a step.
+const DWELL = FAST ? 0.3 : 4, EASE = FAST ? 0.15 : 0.8, TOUR_DT_MAX = 0.1;
+const tFromT = new THREE.Vector3(), tFromP = new THREE.Vector3(), tToT = new THREE.Vector3(), tToP = new THREE.Vector3();
+let tour = null, touring = false, tourLog = [], tourSavedView = null;
+// The selected op's chapter, unless it has nothing to build (a stub-only chapter): then the variant's first non-stub chapter.
+function tourStepsForSelection() {
+  const v = $("#variant").value, vis = visibleOps(graph, v), cur = byId.get(current);
+  const own = cur && vis.includes(cur) ? tourSteps(graph, v, cur.chapter) : [];
+  return own.length ? own : tourSteps(graph, v, vis.find(o => !o.stub)?.chapter);
+}
+function tourGoto(i) {
+  const step = tour.steps[i];
+  tFromT.copy(controls.target); tFromP.copy(camera.position);
+  touring = true; try { selectOp(step.op); } finally { touring = false; }
+  if (!tour) return; // selectOp can end the tour (the pane left 3D)
+  if (home) flyTo(tFromT, tFromP); // selecting snapped to the home view; ease from where the camera was
+  const shot = step.shot;
+  if (shot) { tToT.fromArray(shot.target); tToP.fromArray(shot.position); }
+  else if (home) { tToT.copy(home.target); tToP.copy(home.position); }
+  else { tToT.copy(tFromT); tToP.copy(tFromP); }
+  tourLog.push(step.op);
+  if (opPlies(step.op)) setLay(1);
+}
+function tourTick(dt) {
+  const prev = tour.st.i; tour.st = stepTour(tour.st, dt);
+  if (tour.st.done) return stopTour();
+  if (tour.st.i !== prev) { tourGoto(tour.st.i); if (!tour) return; }
+  const t = tour.st.t, k = Math.min(1, t / EASE), e = k * k * (3 - 2 * k), n = opPlies(tour.steps[tour.st.i].op);
+  controls.target.lerpVectors(tFromT, tToT, e); camera.position.lerpVectors(tFromP, tToP, e);
+  if (n) { const want = Math.min(n, 1 + Math.floor(t / DWELL * n)); if (want !== layIndex) setLay(want); }
+}
+function stopTour() {
+  if (!tour) return;
+  if (tourSavedView !== null) { view = tourSavedView; tourSavedView = null; } // in memory only; storage was never written
+  tour = null; $("#tour").setAttribute("aria-pressed", "false"); $("#tour").textContent = "Tour";
+}
+function startTour() {
+  const steps = tourStepsForSelection();
+  if (!steps.length) return;
+  stopPlay(); tourSavedView = view; view = "3d"; // the tour is a 3D walk: for this run only, do not persist the view
+  tour = { steps, st: tourStart(steps.length, DWELL) }; tourLog = [];
+  $("#tour").setAttribute("aria-pressed", "true"); $("#tour").textContent = "Stop tour";
+  tourGoto(0);
+}
+$("#tour").onclick = () => (tour ? stopTour() : startTour());
 function highlight(cids) {
   for (const [m, cid] of meshes) m.material.emissive?.setHex(cids.includes(cid) ? 0x1f5f8b : 0x000000);
 }
@@ -274,6 +326,7 @@ function markSelected(ids) {
   for (const li of document.querySelectorAll("#ops li")) li.classList.toggle("selected", ids.includes(li.dataset.op));
 }
 function selectOp(id) {
+  if (!touring) stopTour(); // a user click ends the tour; the tour's own selects do not
   current = id; const op = byId.get(id); markSelected([id]); $("#plydock").hidden = true;
   $("#op-title").textContent = op.title;
   $("#op-summary").textContent = op.stub ? "Prerequisite outside this slice." : op.summary;
@@ -321,7 +374,7 @@ function clearDetail() {
 }
 function syncChecklistHeading() { $("#checklist-h").hidden = $("#checklist").children.length === 0; }
 function isolate(node) {
-  stopPlay(); isolated = node; // isolate overrides the build state's look until cleared; hidden plies stay hidden except the isolated one
+  stopTour(); stopPlay(); isolated = node; // isolate overrides the build state's look until cleared; hidden plies stay hidden except the isolated one
   const st = buildState(); if (!st) applyVariantVisibility();
   for (const [m, cid] of meshes) {
     const on = plyNode.get(m) === node;
@@ -371,7 +424,7 @@ function applyPane() {
   for (const b of document.querySelectorAll("#viewtoggle button")) b.setAttribute("aria-checked", String(b.dataset.view === view));
   $("#viewport").classList.toggle("paned", mode !== "3d");
   $("#c").hidden = mode !== "3d"; $("#parts").hidden = mode !== "3d"; syncBuildbar();
-  if (mode !== "3d") { stopPlay(); $("#plydock").hidden = true; showAll(); }
+  if (mode !== "3d") { stopTour(); stopPlay(); $("#plydock").hidden = true; showAll(); }
   for (const b of document.querySelectorAll("#viewtoggle button")) b.tabIndex = b.dataset.view === view ? 0 : -1;
   $("#cutpane").hidden = mode !== "cutaway"; $("#glance").hidden = mode !== "glance";
   $("#legend").hidden = mode !== "glance"; document.querySelector("main").classList.toggle("glance", mode === "glance");
@@ -390,7 +443,7 @@ function zoom(src, alt) {
   $("#zoombody").replaceChildren(im); $("#zoom").showModal();
 }
 function selectGlance() {
-  stopPlay(); current = GLANCE; markSelected([GLANCE]); highlight([]); showAll(); $("#plydock").hidden = true;
+  stopTour(); stopPlay(); current = GLANCE; markSelected([GLANCE]); highlight([]); showAll(); $("#plydock").hidden = true;
   $("#op-title").textContent = "Canard layup at a glance";
   $("#op-summary").textContent = graph.cutaway.count_note;
   for (const id of ["#parts", "#changes", "#source", "#checklist"]) $(id).replaceChildren();
@@ -414,7 +467,7 @@ function selectGlance() {
   applyPane();
 }
 for (const b of document.querySelectorAll("#viewtoggle button")) {
-  b.onclick = () => { view = b.dataset.view; writeView(storage ?? { setItem() {} }, view); applyPane(); };
+  b.onclick = () => { stopTour(); view = b.dataset.view; writeView(storage ?? { setItem() {} }, view); applyPane(); };
   b.onkeydown = e => {
     if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); const o = [...document.querySelectorAll("#viewtoggle button")].find(x => x !== b); o.focus(); o.click(); }
   };
@@ -422,7 +475,7 @@ for (const b of document.querySelectorAll("#viewtoggle button")) {
 $("#cutzoom").onclick = () => zoom($("#cutimg").src, $("#cutimg").alt);
 $("#cutretry").onclick = () => { const c = cutawayFor(graph, current); if (c) showCut({ ...c, src: `${c.src}?r=${Date.now()}` }); };
 $("#zoomclose").onclick = () => $("#zoom").close();
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#zoom").open) showAll(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#zoom").open) { stopTour(); showAll(); } });
 window.__guide = { selectComponent, isolated: () => isolated,
   flyHome: () => { if (home) flyTo(home.target, home.position); },
   camera: () => ({ target: controls.target.toArray(), distance: camera.position.distanceTo(controls.target) }),
@@ -430,7 +483,7 @@ window.__guide = { selectComponent, isolated: () => isolated,
   meshOpacities: () => [...meshes.keys()].map(m => ({ node: plyNode.get(m) ?? null, component: meshes.get(m), opacity: m.material.opacity, emissive: m.material.emissive?.getHex() ?? 0, visible: m.visible })), paneMode: () => current ? paneMode(graph, current, view) : "3d", meshComponents: () => [...new Set(meshes.values())],
   visibleMeshComponents: () => [...new Set([...meshes].filter(([m]) => m.visible).map(([, c]) => c))] };
 $("#variant").onchange = () => {
-  renderList(); applyVariantVisibility(); stopPlay();
+  stopTour(); renderList(); applyVariantVisibility(); stopPlay();
   const still = current === GLANCE || current && visibleOps(graph, $("#variant").value).some(o => o.id === current);
   if (still) markSelected([current]); else { current = null; clearDetail(); }
   if (isolated) { // applyVariantVisibility() just un-hid build-hidden plies: redo the isolate rule, or drop it if its ply left the variant
@@ -440,6 +493,8 @@ $("#variant").onchange = () => {
   syncBuildbar();
 };
 if (TEST) {
+  window.__tour = () => ({ running: !!tour, i: tour ? tour.st.i : -1, op: tour ? tour.steps[tour.st.i].op : null,
+    steps: tour ? tour.steps.map(s => s.op) : [], log: [...tourLog] });
   window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
   window.__cut = () => cut?.info() ?? {};
   window.__paths = () => paths.map(p => ({ id: p.id, visible: pathsGroup.visible && p.group.visible }));

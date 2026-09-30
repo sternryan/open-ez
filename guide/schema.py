@@ -10,7 +10,7 @@ VARIANTS = {"gu", "roncz", "both"}
 FIDELITY = {"no-geometry", "unvalidated", "plans-checked", "a-sheet-verified"}
 STATUS = {"verified", "unresolved", "conflict"}
 KIND = {"official", "community"}
-RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml", "loadpaths.yaml"}
+RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml", "loadpaths.yaml", "tours.yaml"}
 LOADPATH_KINDS = {"bending", "shear", "lift"}
 
 
@@ -22,6 +22,8 @@ ANNOTATION_KEYS = {"scan_pp", "cp", "lpc", "class", "text", "confirmed"}
 COMPONENT_KEYS = {"id", "label", "fidelity"}
 LOADPATH_FILE_KEYS = {"paths"}
 LOADPATH_KEYS = {"id", "label", "kind", "parts"}
+TOUR_FILE_KEYS = {"shots"}
+SHOT_KEYS = {"target", "position"}
 
 
 class SchemaError(ValueError):
@@ -113,6 +115,7 @@ class Graph:
     annotations: list[Annotation] = field(default_factory=list)
     pages: dict[int, str] = field(default_factory=dict)
     loadpaths: list[LoadPath] = field(default_factory=list)
+    tours: dict[str, dict] = field(default_factory=dict)  # op id -> {"target": [x, y, z], "position": [x, y, z]} camera shot
 
 
 def _read(path: Path):
@@ -222,6 +225,22 @@ def load_graph(graph_dir: Path) -> Graph:
                 g.loadpaths.append(LoadPath(d["id"], d.get("label", ""), d["kind"], tuple(parts)))
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"{where}: {e}") from e
+    tp = graph_dir / "tours.yaml"
+    if tp.exists():
+        t_data = _read(tp)
+        _extra(t_data, TOUR_FILE_KEYS, "tours.yaml")
+        shots = t_data.get("shots")
+        if not isinstance(shots, dict):
+            raise SchemaError("tours.yaml: shots must be a mapping of op id to shot")
+        for op_id, shot in shots.items():
+            where = f"tours.yaml shot {op_id}"
+            _extra(shot, SHOT_KEYS, where)
+            for k in SHOT_KEYS:
+                v = shot.get(k)
+                if not (isinstance(v, list) and len(v) == 3
+                        and all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in v)):
+                    raise SchemaError(f"{where}: {k} must be a list of 3 numbers, got {v!r}")
+            g.tours[str(op_id)] = {k: [float(x) for x in shot[k]] for k in ("target", "position")}
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue
@@ -315,6 +334,9 @@ def validate(g: Graph) -> list[str]:
         for cid in lp.parts:
             if cid not in g.components:
                 errs.append(f"load path {lp.id}: unknown component {cid}")
+    for op_id in g.tours:
+        if op_id not in g.ops:
+            errs.append(f"tours.yaml: shot for unknown op {op_id}")
     errs.extend(_cycle(g))
     return errs
 

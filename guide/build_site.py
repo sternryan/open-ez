@@ -121,6 +121,7 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         "plies": _plies(models),
         "layup": _layup(models),
         "loadpaths": _loadpaths(g, models),
+        "tours": g.tours,
         "cutaway": None,
     }
     if renders:
