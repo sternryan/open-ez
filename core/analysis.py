@@ -605,7 +605,7 @@ class PhysicsEngine:
             "stability": {
                 "neutral_point_fs": metrics.neutral_point,
                 "cg_location_fs": metrics.cg_location,
-                "static_margin_pct": metrics.static_margin,
+                "margin_at_model_cg_pct": metrics.static_margin,
                 "is_stable": metrics.is_stable,
                 "mac_length": mac,
                 "mac_le_fs": mac_le,

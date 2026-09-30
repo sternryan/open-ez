@@ -99,11 +99,11 @@ LOCKED_CG_FWD_PUBLISHED = 99.1241   # accuracy_report cg_range_fwd_fs.computed
 # re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798); re-locked again, wing panel convention (was 105.8012); re-locked again, wing aspect ratio (was 99.8609)
 LOCKED_CG_AFT_PUBLISHED = 102.9092   # accuracy_report cg_range_aft_fs.computed
 # re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659); re-locked again, wing panel convention (was 109.5569); re-locked again, wing aspect ratio (was 103.6461)
-LOCKED_STALL_KTAS = 57.3507          # accuracy_report stall_speed_ktas.computed
-# re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867
+LOCKED_STALL_KTAS = 55.3018          # accuracy_report stall_speed_ktas.computed
+# re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867; re-locked again, flight-condition gross weight 1325 lb (was 57.3507)
 
 # Config values — locked to prevent accidental modification; exact matches expected
-LOCKED_GROSS_WEIGHT_LB = 1425.0      # accuracy_report max_gross_weight_lb.computed
+LOCKED_GROSS_WEIGHT_LB = 1325.0      # accuracy_report max_gross_weight_lb.computed
 LOCKED_CANARD_CLMAX = 1.35           # accuracy_report canard_clmax.computed
 LOCKED_WING_CLMAX = 1.45             # accuracy_report wing_clmax.computed
 LOCKED_CANARD_ALPHA_0L_DEG = -3.0    # accuracy_report canard_alpha_0l_deg.computed
@@ -131,7 +131,7 @@ def _compute_stall_ktas(ref_data: dict) -> float:
     canard_area_sqft = truth["canard_area_sqft"]["value"]  # 12.8 sqft
     total_area_sqft = wing_area_sqft + canard_area_sqft    # 94.79 sqft
 
-    W = config.flight_condition.gross_weight_lb                                 # 1425 lb
+    W = config.flight_condition.gross_weight_lb                                 # 1325 lb
     rho = 0.002377      # slug/ft^3 (sea-level standard atmosphere)
     S = total_area_sqft
     cl_max = config.aero_limits.canard_clmax                                    # 1.35
@@ -347,11 +347,11 @@ def test_regression_stall_speed_drift():
 
 
 def test_regression_max_gross_weight():
-    """REGRESSION LOCK: config gross weight must exactly equal the locked 1425.0 lb.
+    """REGRESSION LOCK: config gross weight must exactly equal the locked 1325.0 lb.
 
-    No tolerance. This locks the config's 1425 lb, which is the manual's takeoff-only
-    band (om-1980:p28); max gross weight is 1325 lb (om-1980:p4). Also guards against
-    accidental config edits.
+    No tolerance. This locks the config's 1325 lb, the manual's normal max takeoff
+    gross (om-1980:p4); 1425 lb is the takeoff-only band (om-1980:p28, data/mass_ledger.yaml).
+    Also guards against accidental config edits.
 
     Traces: accuracy_report.json max_gross_weight_lb.computed -> reference_data.json
             aircraft_specs.max_gross_weight_lb.value (om-1980:p4).
@@ -363,7 +363,7 @@ def test_regression_max_gross_weight():
         f"config.flight_condition.gross_weight_lb = {computed_gross_weight} lb, "
         f"Phase 5 locked value = {LOCKED_GROSS_WEIGHT_LB} lb. "
         f"FAA-approved max gross weight for Long-EZ Model 61 is a hard regulatory limit. "
-        f"This must be an exact match to the locked 1425.0 lb (takeoff-only band, om-1980:p28)."
+        f"This must be an exact match to the locked 1325.0 lb (om-1980:p4)."
     )
 
 

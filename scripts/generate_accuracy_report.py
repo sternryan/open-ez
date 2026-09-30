@@ -257,11 +257,17 @@ def two_method_np(analytic: float, vlm: float | None, bound_in: float) -> dict:
             "vlm": vlm, "delta": delta, "bound_in": bound_in}
 
 
-def current_vlm_np(data_dir: Path, wing_span_in: float, canard_span_in: float) -> tuple[float | None, str]:
+def current_vlm_np(
+    data_dir: Path,
+    wing_span_in: float,
+    canard_span_in: float,
+    wing_root_bl: float,
+    wing_panel_span_in: float,
+) -> tuple[float | None, str]:
     """Return (VLM NP in published FS, reason). None means no CURRENT run.
 
     Conservative: the polars file must carry an explicit ``neutral_point_fs`` AND a
-    ``geometry`` block whose wing/canard spans match the current config geometry.
+    ``geometry`` block whose wing/canard spans, wing root BL and wing panel span match the current config geometry.
     """
     path = data_dir / "vspaero_native_polars.json"
     try:
@@ -281,13 +287,15 @@ def current_vlm_np(data_dir: Path, wing_span_in: float, canard_span_in: float) -
     ok_geom = (
         abs(float(geom.get("wing_span_in", -1)) - wing_span_in) < 0.05
         and abs(float(geom.get("canard_span_in", -1)) - canard_span_in) < 0.05
+        and abs(float(geom.get("wing_root_bl", -1)) - wing_root_bl) < 0.05
+        and abs(float(geom.get("wing_panel_span_in", -1)) - wing_panel_span_in) < 0.05
     )
     if not isinstance(np_val, (int, float)):
         why.append("vspaero_native_polars.json holds no neutral point")
     if not ok_geom:
         why.append(
             f"vspaero_native_polars.json ({polars.get('timestamp', 'no timestamp')}) has no "
-            "geometry marker matching the current wing/canard spans, so it predates the current geometry"
+            "geometry marker matching the current wing/canard spans, wing root BL and wing panel span, so it predates the current geometry"
         )
     if isinstance(np_val, (int, float)) and ok_geom:
         return float(np_val), ""
@@ -303,7 +311,9 @@ def compute_checks(engine: object, config_module: object, data_dir: Path) -> dic
     # MAC: PhysicsEngine.calculate_mac() in core/analysis.py (the MAC used for static margin).
     mac_in, _ = engine.calculate_mac()  # type: ignore[attr-defined]
     aft_fs = float(load_ledger()["envelope"]["aft_fs"])
-    vlm, reason = current_vlm_np(data_dir, geo.wing_span, geo.canard_span)
+    vlm, reason = current_vlm_np(
+        data_dir, geo.wing_span, geo.canard_span, geo.wing_root_bl, geo.wing_panel_span
+    )
     two = two_method_np(np_fs, vlm, TWO_METHOD_NP_BOUND_IN)
     if two["status"] == "not run":
         two["reason"] = reason or "no current VLM run"
@@ -380,15 +390,22 @@ def collect_metrics(
     )
 
     # --- Static Margin ---
-    # StabilityMetrics.static_margin is already stored in percent (margin * 100.0
-    # at analysis.py line 367). Do NOT multiply by 100 again.
-    computed_sm = stability.static_margin
+    # ONE number: the same stability_at_aft_limit() that feeds metadata.checks.stability.
+    # (NP - manual aft CG limit FS 103) / MAC. Deliberately NOT the model's own CG-aft
+    # (StabilityMetrics.static_margin), which is a different quantity.
+    from core.ledger import load_ledger  # noqa: E402
+
+    mac_in, _ = engine.calculate_mac()  # type: ignore[union-attr]
+    sm_check = stability_at_aft_limit(
+        computed_np_pub, float(load_ledger()["envelope"]["aft_fs"]), mac_in
+    )
     metrics.append(
         {
             "metric_id": "static_margin_pct",
-            "description": "Longitudinal static margin (% MAC)",
-            **spec_fields(specs, "static_margin_pct", computed_sm),
+            "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
+            **spec_fields(specs, "static_margin_pct", sm_check["static_margin_pct"]),
             "source": "reference_data.json:aircraft_specs.static_margin_pct",
+            "notes": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28): (NP - 103.0) / MAC x 100, from stability_at_aft_limit(); identical to metadata.checks.stability.static_margin_pct. Reference (12.0) unverified, not graded.",
             "units": "percent MAC",
         }
     )

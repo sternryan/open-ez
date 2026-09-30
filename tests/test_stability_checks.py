@@ -39,3 +39,27 @@ def test_report_carries_both_checks():  # Review Focus 5, at report level
         metric_passes = sum(1 for m in report["metrics"] if m["grade"].lower() == "pass")
         assert report["summary"]["pass"] == metric_passes
         assert "two_method_np" not in {m["metric_id"] for m in report["metrics"]}
+
+
+def test_static_margin_metric_is_the_check_number():  # one static margin
+    report = json.loads(REPORT.read_text())
+    st = report["metadata"]["checks"]["stability"]
+    assert st["aft_limit_fs"] == 103.0
+    metric = next(m for m in report["metrics"] if m["metric_id"] == "static_margin_pct")
+    assert abs(metric["computed"] - st["static_margin_pct"]) < 1e-6
+    assert metric["grade"] == "NOT GRADED"
+
+
+def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
+    from scripts.generate_accuracy_report import current_vlm_np
+
+    good = {"wing_span_in": 300.0, "canard_span_in": 140.0, "wing_root_bl": 23.3, "wing_panel_span_in": 126.7}
+    (tmp_path / "vspaero_native_polars.json").write_text(json.dumps({"neutral_point_fs": 110.0, "geometry": good}))
+    args = (300.0, 140.0, 23.3, 126.7)
+    _, reason = current_vlm_np(tmp_path, *args)
+    assert "predates" not in reason
+    for key in ("wing_root_bl", "wing_panel_span_in"):
+        stale = {k: v for k, v in good.items() if k != key}
+        (tmp_path / "vspaero_native_polars.json").write_text(json.dumps({"neutral_point_fs": 110.0, "geometry": stale}))
+        val, reason = current_vlm_np(tmp_path, *args)
+        assert val is None and "predates" in reason
