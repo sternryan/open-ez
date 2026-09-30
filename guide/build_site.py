@@ -63,6 +63,11 @@ def _plies(models: Path | None) -> dict:
     return out
 
 
+def _layup(models: Path | None) -> dict | None:
+    lj = models.parent / "layup.json" if models else None
+    return json.loads(lj.read_text()) if lj and lj.is_file() else None
+
+
 def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
     if not all((models.parent / f).is_file() for f in ("layup.json", "shots.json")):
         raise SchemaError("--renders needs layup.json and shots.json next to --models (run guide.export_glb)")
@@ -101,6 +106,7 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         "pages": {str(k): v for k, v in g.pages.items()},
         "annotations": [dataclasses.asdict(a) for a in g.annotations if a.confirmed],
         "plies": _plies(models),
+        "layup": _layup(models),
         "cutaway": None,
     }
     if renders:

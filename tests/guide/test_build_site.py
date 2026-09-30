@@ -84,3 +84,19 @@ def test_ply_rows_carry_op(tmp_path):  # build progression reads the owning op f
     rows = [r for rs in g["plies"].values() for r in rs]
     assert rows and all(r["op"] in ops for r in rows)
     assert sum(r["op"] == "r30.shear-web" for r in g["plies"]["canard.shear_web"]) == 6
+
+
+def test_layup_shipped_when_next_to_models(tmp_path):
+    e = make_export(tmp_path / "e")
+    build(REPO_GRAPH, tmp_path / "site", models=e / "longez.glb", scan_base=None, docs=None)
+    g = json.loads((tmp_path / "site" / "graph.json").read_text())
+    assert g["layup"] == json.loads((e / "layup.json").read_text())
+    assert set(g["layup"]) == {"ops", "semi_span", "nodes"} and g["layup"]["semi_span"] == 63.0
+
+
+def test_no_layup_means_null(gdir, tmp_path):
+    build(gdir, tmp_path / "site", models=None, scan_base=None, docs=None)
+    assert json.loads((tmp_path / "site" / "graph.json").read_text())["layup"] is None
+    glb = tmp_path / "bare" / "longez.glb"; glb.parent.mkdir(); glb.write_bytes(b"glTF")
+    build(gdir, tmp_path / "site2", models=glb, scan_base=None, docs=None)  # models without a layup.json beside it
+    assert json.loads((tmp_path / "site2" / "graph.json").read_text())["layup"] is None

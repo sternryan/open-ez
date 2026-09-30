@@ -39,6 +39,11 @@
             <output id="scrublabel" for="scrub" aria-live="polite"></output>
           </span>
         </div>
+        <div id="section" hidden>
+          <label class="opt"><input type="checkbox" id="section-on"> Section cut</label>
+          <input type="range" id="section-bl" min="0" max="1" value="0" step="0.5" aria-label="Section station, B.L. in inches">
+          <output id="section-readout" for="section-bl" aria-live="polite"></output>
+        </div>
         <div id="parts"></div><div id="plydock" hidden></div>
       </div>
     </section>

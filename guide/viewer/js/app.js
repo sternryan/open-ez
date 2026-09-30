@@ -2,8 +2,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { GLANCE, plyRows, isolateLabel, cutawayFor, hasGlance, readView, writeView, paneMode } from "./cutaway.js";
 import { visibleSet } from "./build.js";
+import { layersAt, summarize, fmtBl } from "./section.js";
+import { makeCut, capColors } from "./cut.js";
 import { componentsInVariant, sourceLabel, noneMessage, visibleOps, opsForComponent, badge, scanView, makeStore } from "./graph.js";
 
 const $ = s => document.querySelector(s);
@@ -28,11 +31,11 @@ const GHOST_KEY = "longez.ghost";
 try { graph.__ghost = storage?.getItem(GHOST_KEY) === "1"; } catch { graph.__ghost = false; }
 $("#ghost").checked = !!graph.__ghost;
 const plyInfo = new Map(); for (const rows of Object.values(graph.plies ?? {})) for (const r of rows) plyInfo.set(r.node, { op: r.op, order: r.order });
-let layIndex = 0, timer = null;
+let layIndex = 0, timer = null, cut = null;
 
 // ---- 3D
 const canvas = $("#c");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, stencil: true }); // stencil: section caps
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
 const controls = new OrbitControls(camera, canvas);
@@ -44,26 +47,55 @@ function resize() {
 new ResizeObserver(resize).observe(canvas);
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
 
+// The export has one mesh per face (~1,800). They are static, so bake each mesh's world transform and merge everything that shares
+// a ply node (or, for parts without plies, a component) into ONE mesh: ~25 draw calls, and the section cut adds two per solid.
+// `meshes` (mesh -> component) and `plyNode` (mesh -> ply node) now key the merged meshes; picking, isolate and build state are unchanged.
+function bake(o, flip) {
+  const g = o.geometry.clone().applyMatrix4(o.matrixWorld), pos = g.attributes.position, out = new THREE.BufferGeometry();
+  const P = new Float32Array(pos.count * 3), N = new Float32Array(pos.count * 3), nor = g.attributes.normal;
+  for (let i = 0; i < pos.count; i++) {
+    P.set([pos.getX(i), pos.getY(i), pos.getZ(i)], i * 3);
+    if (nor) N.set([nor.getX(i), nor.getY(i), nor.getZ(i)], i * 3);
+  }
+  const idx = g.index ? Array.from(g.index.array) : Array.from({ length: pos.count }, (_, i) => i);
+  if (flip) for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]]; // a mirroring transform reverses winding
+  out.setAttribute("position", new THREE.BufferAttribute(P, 3)); out.setIndex(idx);
+  if (nor) out.setAttribute("normal", new THREE.BufferAttribute(N, 3)); else out.computeVertexNormals();
+  return out;
+}
 new GLTFLoader().load(cfg.model, gltf => {
-  scene.add(gltf.scene);
+  gltf.scene.updateMatrixWorld(true);
+  const groups = new Map();
   gltf.scene.traverse(o => {
     if (!o.isMesh) return;
     // GLTFLoader strips dots from node names (canard.core -> canardcore); the original is kept in userData.name.
     const nm = x => x.userData?.name ?? x.name;
     let n = o; while (n && !graph.components[nm(n)] && n.parent) n = n.parent;
     const cid = graph.components[nm(n)] ? nm(n) : nm(o);
-    // Each mesh gets its own material instance, so isolating one ply never leaks opacity to another.
-    o.material = new THREE.MeshStandardMaterial({ color: 0xc9c4b8 });
-    meshes.set(o, cid);
     let q = o; while (q && !/\.p\d+$/.test(nm(q)) && q.parent) q = q.parent;
-    if (q && /\.p\d+$/.test(nm(q))) plyNode.set(o, nm(q));
+    const node = q && /\.p\d+$/.test(nm(q)) ? nm(q) : null, key = `${cid}|${node ?? ""}`;
+    if (!groups.has(key)) groups.set(key, { cid, node, geos: [] });
+    groups.get(key).geos.push(bake(o, o.matrixWorld.determinant() < 0));
   });
-  const box = new THREE.Box3().setFromObject(gltf.scene), c = box.getCenter(new THREE.Vector3());
+  for (const [, g] of groups) {
+    const geo = g.geos.length === 1 ? g.geos[0] : mergeGeometries(g.geos);
+    if (!geo) throw new Error(`could not merge ${g.node ?? g.cid}`);
+    // Each merged mesh gets its own material instance, so isolating one ply never leaks opacity to another.
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xc9c4b8 }));
+    m.name = g.node ?? g.cid; scene.add(m);
+    meshes.set(m, g.cid); if (g.node) plyNode.set(m, g.node);
+  }
+  const box = new THREE.Box3().setFromObject(scene), c = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3()).length();
   controls.target.copy(c); camera.position.copy(c).add(new THREE.Vector3(size * 1.0, size * 0.8, size * 1.3));
   camera.near = size / 1000; camera.far = size * 10; camera.updateProjectionMatrix();
   home = { target: controls.target.clone(), position: camera.position.clone() };
-  applyVariantVisibility();
+  const col = capColors();
+  cut = makeCut(renderer, scene, [...meshes].map(([mesh, cid]) => {
+    const node = plyNode.get(mesh) ?? cid;
+    return { mesh, name: node, color: col[graph.layup?.nodes?.[node]?.cloth] ?? col.foam }; // unverified-position plies keep their cloth colour
+  }));
+  applyVariantVisibility(); syncSection();
   if (current && byId.has(current)) highlight(byId.get(current).components);
   if (isolated) isolate(isolated); else applyBuild();
 }, undefined, () => { $("#model-status").textContent = "3D unavailable — steps and sources still work"; });
@@ -71,6 +103,7 @@ new GLTFLoader().load(cfg.model, gltf => {
 function applyVariantVisibility() {
   const used = componentsInVariant(graph, $("#variant").value);
   for (const [m, cid] of meshes) m.visible = used.has(cid);
+  cut?.sync(); refreshReadout();
 }
 // Build state: recomputed from scratch on every change, never patched (a ply must not outlive its step).
 function opPlies(id) { return Object.values(graph.plies ?? {}).flat().filter(r => r.op === id).length; }
@@ -99,12 +132,38 @@ function applyBuild() {
     mat.transparent = ghost; mat.opacity = ghost ? 0.2 : 1; mat.depthWrite = !ghost;
     mat.needsUpdate = true; // transparent toggles the OPAQUE shader define; without this nothing ghosts on screen
   }
+  cut?.sync(); refreshReadout();
+}
+// Section: the cut applies to whatever the build state leaves visible; cut.sync() re-derives the caps whenever that changes.
+// The readout is what the plane cuts: the plies on screen at full strength (built or current; ghosted future work and isolate-dimmed plies
+// are not built layers) that exist at this station, plus any other solid the plane opens (the foam core). It re-derives on every change of what is visible.
+function refreshReadout() {
+  const out = $("#section-readout"), on = graph.layup && $("#section-on").checked, bl = +$("#section-bl").value;
+  if (!on) { out.textContent = ""; return; }
+  let layers = layersAt(graph.layup.nodes, bl), parts = [];
+  if (meshes.size) {
+    const lit = new Set(); for (const m of meshes.keys()) if (m.visible && !m.material.transparent) lit.add(plyNode.get(m) ?? meshes.get(m));
+    layers = layers.filter(l => lit.has(l.node));
+    const order = Object.keys(graph.components), cut1 = new Set(cut?.info().cappedNodes ?? []);
+    parts = [...lit].filter(n => cut1.has(n) && !graph.layup.nodes[n]).sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(n => graph.components[n]?.label ?? n);
+  }
+  if (layers.length || !parts.length) parts.push(summarize(graph, layers));
+  out.textContent = `${fmtBl(bl)}: ${parts.join(" · ")}`;
+}
+function syncSection() {
+  if (cut) { cut.setStation(+$("#section-bl").value); cut.enable($("#section-on").checked); }
+  refreshReadout();
+}
+if (graph.layup) {
+  const semi = graph.layup.semi_span; $("#section-bl").max = semi; $("#section-bl").value = Math.round(semi / 2);
+  $("#section-on").onchange = $("#section-bl").oninput = syncSection;
 }
 function stopPlay() { clearInterval(timer); timer = null; $("#play").setAttribute("aria-pressed", "false"); $("#play").textContent = "Play"; }
 function setLay(n) { layIndex = n; $("#scrub").value = n; $("#scrublabel").textContent = `Ply ${n} of ${$("#scrub").max}`; applyBuild(); }
 function syncBuildbar() {
   const on = !!buildOp() && $("#c").hidden === false, n = on ? opPlies(current) : 0;
   $("#buildbar").hidden = !on; $("#scrubwrap").hidden = n === 0;
+  $("#section").hidden = !graph.layup || $("#c").hidden;
 }
 $("#ghost").onchange = e => {
   graph.__ghost = e.target.checked; try { storage?.setItem(GHOST_KEY, graph.__ghost ? "1" : "0"); } catch { /* per-viewer convenience only */ }
@@ -217,7 +276,7 @@ function isolate(node) {
   const cid = $("#plydock").dataset.cid;
   $("#isotext").textContent = isolateLabel(graph, cid, node); $("#isobar").hidden = false;
   $("#viewport").classList.add("isolating");
-  zoomToPly(node);
+  zoomToPly(node); cut?.sync(); refreshReadout();
   for (const b of document.querySelectorAll("#plydock button")) b.setAttribute("aria-pressed", String(b.dataset.node === node));
 }
 function showAll() {
@@ -326,6 +385,18 @@ $("#variant").onchange = () => {
 };
 if (TEST) {
   window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
+  window.__cut = () => cut?.info() ?? {};
+  // Face the cut squarely from the root side and return the cut face (core section) as a canvas-pixel rect, so a test can probe it.
+  window.__cutView = () => {
+    const bl = +$("#section-bl").value, box = new THREE.Box3();
+    for (const [m, cid] of meshes) if (cid === "canard.core") box.expandByObject(m);
+    const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+    const d = sz.x * 0.6 / (camera.aspect * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+    flyTo(new THREE.Vector3(c.x, c.y, -bl), new THREE.Vector3(c.x, c.y, -bl + d)); camera.updateMatrixWorld();
+    const r = canvas.getBoundingClientRect(), px = (x, y) => { const v = new THREE.Vector3(x, y, -bl).project(camera); return [(v.x + 1) / 2 * r.width, (1 - v.y) / 2 * r.height]; };
+    const [x0, y1] = px(box.min.x, box.min.y), [x1, y0] = px(box.max.x, box.max.y);
+    return { x0: Math.max(0, x0), y0: Math.max(0, y0), x1: Math.min(r.width, x1), y1: Math.min(r.height, y1) };
+  };
   window.__visibleNames = () => [...new Set([...meshes.keys()].filter(m => m.visible).map(m => plyNode.get(m) ?? meshes.get(m)))];
 }
-renderList();
+renderList(); syncBuildbar();
