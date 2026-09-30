@@ -3,6 +3,12 @@ This repository includes code adapted from third-party sources.
 guide/viewer/js/cut.js is adapted from src/core/cut.ts in AirsupHQ/airsup-lab
 (https://github.com/AirsupHQ/airsup-lab), used under the MIT License below.
 
+The lab app is adapted from the same project, file by file:
+  guide/lab/src/render/pipeline.ts  (src/render/pipeline.ts)
+  guide/lab/src/core/materials.ts   (src/core/materials.ts)
+  guide/lab/src/core/noise.ts       (src/core/noise.ts)
+  guide/lab/src/core/cut.ts         (src/core/cut.ts)
+
 ----------------------------------------------------------------------------
 
 MIT License

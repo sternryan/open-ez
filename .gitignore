@@ -51,3 +51,7 @@ output/guide/
 
 # Private owner material (scan renders, OCR) — never commit
 private/
+
+# Lab app (built at site-assembly time)
+guide/lab/node_modules/
+guide/lab/dist/

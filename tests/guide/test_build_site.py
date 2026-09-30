@@ -100,3 +100,18 @@ def test_no_layup_means_null(gdir, tmp_path):
     glb = tmp_path / "bare" / "longez.glb"; glb.parent.mkdir(); glb.write_bytes(b"glTF")
     build(gdir, tmp_path / "site2", models=glb, scan_base=None, docs=None)  # models without a layup.json beside it
     assert json.loads((tmp_path / "site2" / "graph.json").read_text())["layup"] is None
+
+
+def test_site_ships_the_lab(gdir, tmp_path):
+    out = tmp_path / "site"
+    build(gdir, out, models=None, scan_base=None, docs=None)
+    assert (out / "lab" / "index.html").is_file()
+    assert list((out / "lab" / "assets").glob("*.js"))
+    assert not (out / "lab" / ".stamp").exists()  # the build stamp is bookkeeping, not site content
+
+
+def test_lab_build_fails_loudly_without_npm(gdir, tmp_path, monkeypatch):
+    import guide.build_site as bs
+    monkeypatch.setattr(bs.shutil, "which", lambda name, *a, **k: None)
+    with pytest.raises(RuntimeError, match="npm"):
+        build(gdir, tmp_path / "site", models=None, scan_base=None, docs=None)
