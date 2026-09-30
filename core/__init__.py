@@ -16,7 +16,8 @@ __all__ = [
     # Structures
     "WingGenerator",
     "CanardGenerator",
-    "Fuselage",
+    "BookFuselage",
+    "build_fuselage",
     # Compliance
     "ComplianceTracker",
     "ComplianceTaskTracker",
@@ -51,7 +52,8 @@ _LAZY_IMPORTS = {
     "Airfoil": "core.aerodynamics",
     "WingGenerator": "core.structures",
     "CanardGenerator": "core.structures",
-    "Fuselage": "core.structures",
+    "BookFuselage": "core.fuselage_book",
+    "build_fuselage": "core.fuselage_book",
     "ComplianceTracker": "core.compliance",
     "ComplianceTaskTracker": "core.compliance",
     "TaskRole": "core.compliance",

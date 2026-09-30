@@ -189,10 +189,6 @@ class GeometricParams:
         1.5  # Vertical separation canard AC to wing plane (see GEOMETRY_PROVENANCE)
     )
 
-    # === FUSELAGE BULKHEAD HEIGHTS ===
-    # Heights at key stations: canard LE, pilot seat, rear seat, firewall, tail
-    fuselage_bulkhead_heights: Tuple[float, ...] = (24.0, 38.0, 34.0, 20.0, 8.0)
-
     # === ERGONOMICS ===
     cockpit_width: float = 23.0  # F-22 interior width
     pilot_height_max: float = 77.0  # Max pilot height (inches)

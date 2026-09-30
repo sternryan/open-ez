@@ -15,7 +15,7 @@ Module layout
 - GCodeWriter     – 4-axis G-code generation
 - GCodeEngine     – high-level orchestrator for batch G-code generation
 
-JigFactory and FuselageJigFactory are re-exported from core.jig_factory.
+JigFactory is re-exported from core.jig_factory.
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ import numpy as np
 from config import config
 
 # Re-exports for backward compatibility
-from .jig_factory import JigFactory, FuselageJigFactory  # noqa: F401
+from .jig_factory import JigFactory  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

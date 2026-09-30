@@ -1,24 +1,8 @@
 from pathlib import Path
 
-import pytest
-
 from core.assembly import AircraftAssembly
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=TypeError,
-    reason=(
-        "AircraftAssembly cannot be instantiated. It and core.structures.Fuselage "
-        "never implemented the abstract AircraftComponent.manufacturing_plan. "
-        "Behind that, Fuselage._build_geometry calls lofted.shell([], t), which "
-        "CadQuery 2.8 no longer accepts (Shape.shell now takes a selector). "
-        "Fuselage is a placeholder: elliptical bulkheads with unsourced literal "
-        "widths and floor heights, so making this pass would present an unsourced "
-        "fuselage as a full-airframe result. Left failing until the fuselage is "
-        "built from the book."
-    ),
-)
 def test_full_assembly(tmp_path):
     print("🚀 Starting Full Aircraft Assembly Test...")
 
