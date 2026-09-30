@@ -52,7 +52,7 @@ new ResizeObserver(resize).observe(canvas);
 // Load paths: points ship in the frame of the CadQuery solids (X chord, Y = B.L., Z up), so they hang under a group carrying the glb root's
 // -90 deg X rotation (guide/loadpaths.py); the meshes above have that rotation baked in. Each polyline is a thin tube (WebGL lines are
 // always 1 px) with NormalBlending in a saturated colour (additive blending washes to white on the light page), a stripe texture whose
-// offset runs in the render loop for the flow, and depthTest off so paths inside the skin stay visible. Not clipped by the section cut.
+// offset runs in the render loop for the flow, and depthTest off so paths inside the skin stay visible. The section cut clips them with the structure's plane (no caps).
 const PATHS_KEY = "longez.paths", KIND_COLOR = { bending: 0xf28c00, shear: 0x1478ff, lift: 0x14a84b };
 const TUBE_R = 0.25, STRIPE = 4; // inches: tube radius; stripe period along the line
 const pathsGroup = new THREE.Group(); pathsGroup.rotation.x = -Math.PI / 2; scene.add(pathsGroup);
@@ -138,7 +138,7 @@ new GLTFLoader().load(cfg.model, gltf => {
   cut = makeCut(renderer, scene, [...meshes].map(([mesh, cid]) => {
     const node = plyNode.get(mesh) ?? cid;
     return { mesh, name: node, color: col[graph.layup?.nodes?.[node]?.cloth] ?? col.foam }; // unverified-position plies keep their cloth colour
-  }));
+  }), Object.values(KIND_COLOR).map(k => k.mat));
   applyVariantVisibility(); syncSection();
   if (current && byId.has(current)) highlight(byId.get(current).components);
   if (isolated) isolate(isolated); else applyBuild();
@@ -500,6 +500,8 @@ if (TEST) {
     steps: tour ? tour.steps.map(s => s.op) : [], log: [...tourLog] });
   window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
   window.__cut = () => cut?.info() ?? {};
+  // Do the load-path materials carry the section plane (the same object the structure is clipped by)?
+  window.__pathClip = () => Object.values(KIND_COLOR).map(k => !!cut && !!k.mat.clippingPlanes?.includes(cut.plane));
   // Frame timing: requestAnimationFrame deltas (ms) between start() and stop(); stats() = what the last frame drew.
   window.__frames = { _d: [], _on: false, _last: 0,
     start() { this._d = []; this._on = true; this._last = 0; const tick = t => { if (!this._on) return; if (this._last) this._d.push(t - this._last); this._last = t; requestAnimationFrame(tick); }; requestAnimationFrame(tick); },

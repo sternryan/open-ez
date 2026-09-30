@@ -56,8 +56,8 @@ function scissorFor(rd, cam, it, z) {
 function shown(o, scene) { for (let x = o; x; x = x.parent) { if (!x.visible) return false; if (x === scene) return true; } return false; }
 
 // entries: [{mesh, name, color}]. A solid is every mesh sharing a `name` (a solid may be split over several meshes, and one mesh alone
-// need not be closed). Meshes must be in their world position when this is called (they are static).
-export function makeCut(renderer, scene, entries) {
+// need not be closed). extraMats: uncapped materials (the load paths) that are only clipped by the same plane. Meshes must be in their world position when this is called (they are static).
+export function makeCut(renderer, scene, entries, extraMats = []) {
   const plane = new THREE.Plane(new THREE.Vector3(...AXIS), 0), planes = [plane];
   let on = false, bl = 0, items = null;
   const solids = new Map();
@@ -115,6 +115,7 @@ export function makeCut(renderer, scene, entries) {
       if (v === on) return;
       if (v && !items) build();
       on = v; renderer.localClippingEnabled = v;
+      for (const m of extraMats) { m.clippingPlanes = v ? planes : null; m.needsUpdate = true; }
       for (const it of list) {
         for (const m of it.meshes) { m.material.clippingPlanes = v ? planes : null; m.material.needsUpdate = true; }
         if (!items) continue;
@@ -124,7 +125,7 @@ export function makeCut(renderer, scene, entries) {
       }
       sync();
     },
-    sync,
+    sync, plane,
     info: () => {
       const objs = it => (items && it.cap ? [it.cap, ...it.passes.flatMap(([, b, f]) => [b, f])] : []);
       return { enabled: on, bl, axis: [...AXIS], planeConstant: plane.constant,
