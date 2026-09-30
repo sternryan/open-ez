@@ -312,3 +312,23 @@ Done at the lead's direction, after the Task 8 commit.
   - everything else: `557 passed, 2 skipped, 9 xfailed, 11 warnings in 118.19s`
   - `-m local_render`: `5 passed, 697 deselected, 8 warnings in 44.96s`
   - lab typecheck clean, lab node tests 87/87.
+
+## Follow-up 3: fan-out re-run and stall guard (dc24764)
+- Nodes back (the lead: a transient stall). Fan-out against the committed state (fad4fa0, plus the
+  stall guard); rsync also carried the public-build lane's uncommitted build_site.py, leakcheck.py and
+  test_public_build.py, which did not fail anything. Host names stripped:
+  ```
+  == linux (exit 0)
+  562 passed, 2 skipped, 9 xfailed, 3 warnings in 62.07s (0:01:02)
+  == mac (exit 0)
+  124 passed, 12 warnings in 150.70s (0:02:30)
+  5 passed, 23 warnings in 56.39s
+  --- remote_test_all: linux=0 mac=0, wall 209s
+  ```
+  Mac 124 = the lab file on Chromium and WebKit, minus local_render (62 per engine).
+- `remote_test.sh` gives ssh and rsync `BatchMode=yes`, `ConnectTimeout=15`, `ServerAliveInterval=15`,
+  `ServerAliveCountMax=4`, and caps the remote run with `timeout` (`OPEN_EZ_TEST_TIMEOUT`, default
+  1500 s; exit 124 is reported). Proof: an unroutable host fails in 15.0 s with "rsync failed", where
+  the stall hung for 30 min.
+- Local gate for the commit: `-m local_render` 5 passed, 697 deselected in 59.05 s. (The first commit
+  attempt was refused by the verify hook, which also unstaged the file; re-staged and committed.)
