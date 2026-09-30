@@ -14,7 +14,7 @@ PATTERNS = {
     "tailnet hostname": re.compile(r"\.ts\.net"),
     "tailnet IP (100.x)": re.compile(r"(?<![\d.])100\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])"),
     "home path": re.compile(r"/Users/"),
-    "forbidden phrase 'public domain'": re.compile(r"public domain", re.I),
+    "forbidden legal-status phrase": re.compile(r"public\s+domain", re.I),
     "airsup": re.compile(r"airsup", re.I),
 }
 

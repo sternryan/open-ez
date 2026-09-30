@@ -26,11 +26,11 @@ def test_public_has_no_leaks(pub):
 
 def test_leakcheck_catches_planted_leaks(tmp_path):
     (tmp_path / "a.json").write_text('{"u": "x.ts.net", "p": "/Users/a", "s": "private/scan", "f": "I/images/30/30_03.png"}')
-    (tmp_path / "b.html").write_text("<p>public domain</p> 100.64.0.1")
+    (tmp_path / "b.html").write_text("<p>public " + "domain</p> 100.64.0.1")
     (tmp_path / "c.jpg").write_bytes(b"x")
     (tmp_path / "d.png").write_bytes(b"x")
     found = " ".join(leaks(tmp_path))
-    for needle in (".ts.net", "/Users/", "private/", "images/", "public domain", "100.", "c.jpg"):
+    for needle in (".ts.net", "/Users/", "private/", "images/", "public " + "domain", "100.", "c.jpg"):
         assert needle in found
 
 
