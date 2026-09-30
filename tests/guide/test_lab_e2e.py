@@ -58,7 +58,7 @@ def test_lab_renders_the_canard_and_old_viewer_still_loads(rsite):
         s.shutdown()
 
 
-def _open(p, url, w, h, init=None):
+def _open(p, url, w, h, init=None, query=""):
     b = p.chromium.launch(args=GL)
     ctx = b.new_context(viewport={"width": w, "height": h})
     if init:
@@ -66,7 +66,7 @@ def _open(p, url, w, h, init=None):
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(url + "lab/?test=1&q=low")
+    pg.goto(url + "lab/?test=1&q=low" + query)
     pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
     return b, pg, errors
 
@@ -343,7 +343,8 @@ EPS = 1e-3
 
 
 def _lab_at(p, url, op, w=960, h=600):
-    b, pg, errors = _open(p, url, w, h)
+    # frozen from boot, so the sim clock (and the flow pulses' phase) is the same on every run, whatever the machine load
+    b, pg, errors = _open(p, url, w, h, query="&freeze=1")
     pg.evaluate("window.__lab.freeze(true)")
     pg.evaluate(f"window.__lab.select('{op}')")  # a step opens fully built
     return b, pg, errors
@@ -601,6 +602,180 @@ def test_part_labels_follow_the_build_the_camera_and_the_toggle(rsite):
             pg.reload()
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             assert not pg.is_checked("#labels-on")  # remembered
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- load paths as flows (Task 5)
+def _drawn(pg):
+    return sorted(x["id"] for x in pg.evaluate("window.__lab.paths()") if x["drawn"])
+
+
+def _seen(pg):
+    return sorted(x["id"] for x in pg.evaluate("window.__lab.paths()") if x["visible"])
+
+
+def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_storage(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _lab_at(p, url, "r30.shear-web")
+            assert [x["id"] for x in pg.evaluate("window.__lab.paths()")] == ["lift-into-caps", "cap-bending", "web-shear"]
+            assert _drawn(pg) == ["web-shear"]
+            for op, want in [("r30.bottom-spar-cap", ["web-shear"]),  # only the bottom cap exists: neither cap path has both caps
+                             ("r30.top-spar-cap", ["cap-bending", "web-shear"]),  # both caps, no skins yet: no lift
+                             ("r30.bottom-skin", ["web-shear"]),  # the jig pose is inverted; the bottom skin alone is not enough
+                             ("r30.templates-cores", [])]:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                assert _drawn(pg) == want, op
+            pg.evaluate("window.__lab.select('r30.top-skin')")
+            pg.evaluate("window.__lab.setLay(0)")
+            assert _drawn(pg) == ["cap-bending", "web-shear"]  # skins exist once the first ply of the top skin is laid
+            pg.evaluate("window.__lab.setLay(1)")
+            assert _drawn(pg) == ["cap-bending", "lift-into-caps", "web-shear"]
+            pg.evaluate("window.__lab.select('r30.shear-web')")  # stepping back hides what no longer exists
+            assert _drawn(pg) == ["web-shear"]
+            # the toggle: off draws nothing but the build state is unchanged; remembered across a reload, and on again
+            pg.evaluate("window.__lab.select('r30.top-skin')")
+            assert pg.is_checked("#paths-on") and len(_drawn(pg)) == 3
+            pg.uncheck("#paths-on")
+            assert _drawn(pg) == [] and _seen(pg) == ["cap-bending", "lift-into-caps", "web-shear"]
+            pg.evaluate("window.__lab.select('r30.shear-web')"); pg.evaluate("window.__lab.select('r30.top-skin')")
+            assert _drawn(pg) == []  # stays off across steps
+            assert pg.evaluate("window.localStorage.getItem('longez.paths')") == "0"
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert not pg.is_checked("#paths-on") and _drawn(pg) == []  # remembered
+            pg.evaluate("window.__lab.select('r30.top-skin')")
+            assert _drawn(pg) == []
+            pg.check("#paths-on")
+            assert len(_drawn(pg)) == 3
+            assert not errors, errors
+            # localStorage throws: on by default, and the toggle still works
+            ctx = b.new_context(viewport={"width": 960, "height": 600})
+            ctx.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})")
+            pg2 = ctx.new_page()
+            errs2 = []
+            pg2.on("pageerror", lambda e: errs2.append(str(e)))
+            pg2.goto(url + "lab/?test=1&q=low&op=r30.top-skin")
+            pg2.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg2.is_checked("#paths-on") and len(_drawn(pg2)) == 3
+            pg2.uncheck("#paths-on")
+            assert _drawn(pg2) == []
+            assert not errs2, errs2
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_load_path_points_lie_on_their_parts_in_world_space_upright_and_inverted(rsite):
+    g = _graph(rsite)
+    corners = """(cid) => { const L = window.__lab, b = L.plyBox(cid), pts = [];
+        for (const x of [b.min[0], b.max[0]]) for (const y of [b.min[1], b.max[1]]) for (const z of [b.min[2], b.max[2]]) pts.push(L.toWorld([x, y, z]));
+        return [0, 1, 2].map((i) => [Math.min(...pts.map((q) => q[i])), Math.max(...pts.map((q) => q[i]))]) }"""  # a half turn about Z keeps the box axis aligned
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            for op, pose in (("r30.top-skin", "upright"), ("r30.bottom-skin", "inverted")):
+                b, pg, errors = _lab_at(p, url, op)
+                pg.evaluate("window.__lab.advance(3)")
+                assert pg.evaluate("window.__lab.pose()") == pose
+                paths = pg.evaluate("window.__lab.paths()")
+                checked = 0
+                for lp in g["loadpaths"]:
+                    boxes = [pg.evaluate(corners, c) for c in lp["parts"] if pg.evaluate("(c) => !!window.__lab.plyBox(c)", c)]
+                    pts = next(x for x in paths if x["id"] == lp["id"])["worldPoints"]
+                    assert len(pts) == sum(len(sg) for sg in lp["segments"])
+                    for pt in pts:  # within 0.5 in (0.0127 m) of one of its parts' boxes
+                        assert any(all(bx[i][0] - 0.0127 <= pt[i] <= bx[i][1] + 0.0127 for i in range(3)) for bx in boxes), (op, lp["id"], pt, boxes)
+                        checked += 1
+                assert checked >= 40
+                web = next(x for x in paths if x["id"] == "web-shear")["worldPoints"]
+                assert abs(web[0][2] - web[-1][2]) == pytest.approx(54 * 0.0254, abs=1e-3)  # spans the 54 in of B.L., along Z
+                assert not errors, errors
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def _hue(rgb):
+    import colorsys
+    return colorsys.rgb_to_hsv(*[c / 255 for c in rgb])[0] * 360
+
+
+def _strongest(im, xy, r=7):
+    """The most saturated pixel (HSV) within r px of xy, as (saturation, rgb). """
+    import colorsys
+    best = (-1.0, (0, 0, 0))
+    for x in range(max(0, int(xy[0]) - r), min(im.width, int(xy[0]) + r + 1)):
+        for y in range(max(0, int(xy[1]) - r), min(im.height, int(xy[1]) + r + 1)):
+            px = im.getpixel((x, y))[:3]
+            sat = colorsys.rgb_to_hsv(*[c / 255 for c in px])[1]
+            if sat > best[0]:
+                best = (sat, px)
+    return best
+
+
+def _own_kind(kinds, rgb):
+    def d(k):
+        a = abs(_hue(rgb) - _hue([c * 255 for c in kinds[k]]))
+        return min(a, 360 - a)
+    return min(kinds, key=d)
+
+
+def test_the_section_cut_clips_load_paths_and_the_flows_are_drawn_in_their_own_colours(rsite):
+    from PIL import Image
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _lab_at(p, url, "r30.top-skin")
+            pg.add_style_tag(content="#controls,#dock,#labels,#opbar{visibility:hidden}")
+            pg.evaluate("window.__lab.advance(3)")
+            paths = {x["id"]: x for x in pg.evaluate("window.__lab.paths()")}
+            assert not any(x["clipped"] for x in paths.values())  # section off: unclipped
+            kinds = {x["kind"]: x["color"] for x in paths.values()}
+            assert len(kinds) == 3 and len({tuple(c) for c in kinds.values()}) == 3
+
+            def snap():
+                pg.evaluate("window.__lab.advance(0)")
+                return Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+
+            def mid(x, i=None):  # the middle of a polyline's first segment (points are in order, two segments' worth for bending)
+                pts = x["worldPoints"]
+                n = len(pts) if i is None else i
+                return [(pts[n // 2 - 1][k] + pts[n // 2][k]) / 2 for k in range(3)]
+
+            web, cap, lift = paths["web-shear"], paths["cap-bending"], paths["lift-into-caps"]
+            pg.evaluate("document.getElementById('paths-on').click()")
+            bare = snap()  # the same frame without the flows: the laminate is cream
+            pg.evaluate("document.getElementById('paths-on').click()")
+            im = snap()
+            for x in (web, cap, lift):
+                xy = pg.evaluate("(p) => window.__lab.project(p)", mid(x, 6 if x is lift else 9 if x is cap else None))
+                sat, rgb = _strongest(im, xy)
+                if x["kind"] == "bending":  # amber is close to the cream laminate's hue: it must also be clearly more saturated than the bare frame
+                    assert sat > _strongest(bare, xy)[0] + 0.15, (x["id"], sat, rgb)
+                assert _own_kind(kinds, rgb) == x["kind"], (x["id"], rgb)
+            # the plane is the structure's: at B.L. 30 the web at B.L. 22 is clipped away, at B.L. 45 it is not
+            pg.evaluate("window.__lab.setSection(true, 30)")
+            paths = {x["id"]: x for x in pg.evaluate("window.__lab.paths()")}
+            assert all(x["clipped"] for x in paths.values())  # every path reaches inboard of B.L. 30 (lift starts at 6.75)
+            im = snap()
+            wp = paths["web-shear"]["worldPoints"]
+            at = lambda bl: [wp[0][0], wp[0][1], wp[0][2] + (wp[-1][2] - wp[0][2]) * bl / 54]  # noqa: E731
+            xk, xg = (pg.evaluate("(p) => window.__lab.project(p)", at(bl)) for bl in (45, 22))
+            assert all(0 <= q[0] < 960 and 0 <= q[1] < 600 for q in (xk, xg)), (xk, xg)  # both stations are on screen at this shot
+            sk, kept = _strongest(im, xk)
+            sg, gone = _strongest(im, xg)
+            assert _own_kind(kinds, kept) == "shear" and sk > 0.4, (kept, sk)
+            assert _own_kind(kinds, gone) != "shear" or sg < 0.4, (gone, sg)  # clipped with the structure
+            pg.evaluate("window.__lab.setSection(true, 5)")  # the lift paths lie outboard of B.L. 5; the spar caps and the web reach the root
+            clipped = {x["id"]: x["clipped"] for x in pg.evaluate("window.__lab.paths()")}
+            assert clipped == {"lift-into-caps": False, "cap-bending": True, "web-shear": True}
+            pg.evaluate("window.__lab.setSection(false, 5)")
+            assert not any(x["clipped"] for x in pg.evaluate("window.__lab.paths()"))
             assert not errors, errors
             b.close()
     finally:

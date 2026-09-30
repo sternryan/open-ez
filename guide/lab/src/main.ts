@@ -2,10 +2,11 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import { Pipeline } from './render/pipeline'
+import { Pipeline, LAYER_GLOW } from './render/pipeline'
+import { GLOW_TIME, GLOW_VIEW_H, flowRibbon, glowLineMaterial } from './render/flow'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
-import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS } from './core/composite'
+import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS, FOLLOW } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
@@ -13,7 +14,7 @@ import { orientation, type Pose } from './logic/pose'
 import { labShots, LAB_FOV, type LabShot } from './shots'
 import { CameraRig, easeInOut, type Shot } from './camera'
 import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './logic/graph'
-import { visibleSet, type BuildState, type MeshInfo } from './logic/build'
+import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
 import { Labels } from './ui/labels'
@@ -31,7 +32,8 @@ const setStatus = (msg: string | null, err = false) => {
 }
 
 interface PlyRef { node: string; op: string; order: number }
-interface Graph extends GraphLite { components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode> } | null }
+interface Graph extends GraphLite { loadpaths?: LoadPath[]; components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode> } | null }
+interface LoadPath { id: string; label: string; kind: string; parts: string[]; segments: number[][][] }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
 interface LabHook {
@@ -72,6 +74,10 @@ interface LabHook {
   setCamera(pos: number[], target: number[]): void
   /** the part labels: what each shows right now */
   labels(): { id: string; text: string; opacity: number; x: number; y: number }[]
+  /** the load paths: visible = its parts exist in the build; drawn = visible and the toggle is on; worldPoints in metres, every segment's points in order, after the canard's pose; clipped = a point is on the removed side of the section plane */
+  paths(): { id: string; kind: string; visible: boolean; drawn: boolean; color: number[]; worldPoints: number[][]; clipped: boolean }[]
+  /** world metres -> canvas CSS pixels [x, y] with the camera as it is now */
+  project(p: number[]): number[]
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
@@ -88,7 +94,7 @@ const hook: LabHook = {
   material: () => null, setWet: () => {}, meshBox: () => null,
   cut: () => ({ enabled: false, bl: 0, planeConstant: null, keepsOutboard: false, removesInboard: false, cappedNodes: [], capsVisible: 0, capNodesVisible: [], clipped: 0 }),
   plyBox: () => null, setSection: () => {}, labels: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
-  state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
+  paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
 }
 if (TEST) window.__lab = hook
 
@@ -233,6 +239,7 @@ async function boot() {
     camera.aspect = W / H
     camera.updateProjectionMatrix()
     pipeline.setSize(Math.round(W * dpr), Math.round(H * dpr))
+    GLOW_VIEW_H.value = Math.round(H * dpr)
     // Portrait screens see far less width: pull every shot back, as airsup does.
     rig.scale = camera.aspect >= 1 ? Math.max(1, 1.6 / camera.aspect) : Math.min(3.2, (1.6 / camera.aspect) * 0.82)
     if (rig.lastUser < 0 && !rig.flying && currentShot) rig.set(currentShot) // the user has not touched the camera: keep the framing
@@ -249,11 +256,14 @@ async function boot() {
   let stepBuild: (dt: number) => void = () => {}
   let stepCut: (dt: number) => void = () => {}
   let stepLabels: (dt: number) => void = () => {}
+  let stepFlows: (dt: number) => void = () => {}
   const step = (dt: number) => {
     simT += dt
+    GLOW_TIME.value = simT
     stepPose(dt)
     stepBuild(dt)
     stepCut(dt)
+    stepFlows(dt)
     rig.update(dt)
     controls.update()
     stepLabels(dt)
@@ -435,7 +445,68 @@ async function boot() {
       }
       if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
     }
-    const refresh = () => { recompute(); paint(); ui.setBuild(lay, opCount(selected)); updateReadout() }
+    // ---- load paths: airsup's glow-line flows. The points ship in the CadQuery frame (X chord, Y = B.L., Z up), so they hang under a
+    // group carrying the glb root's -90 deg X rotation, inside `root`: they follow the scale, the recentring and the flip. Each polyline
+    // is a camera-facing ribbon (lines are 1 px in WebGL): a hot core above the bloom threshold, a soft coloured halo, and comet pulses
+    // running along its arc length, added as light. While any flow is drawn the laminate dims a little (FOLLOW) so the light reads.
+    // Qualitative only: the colours name a kind of load, the brightness carries no magnitude. Direction of travel: lift runs skin -> cap
+    // (its points are already in that order), bending and shear run toward the root, so any segment that starts at the root is reversed. ----
+    const PATHS_KEY = 'longez.paths'
+    // speed: pulses per second past a point; scale: pulse spacing (in). Pulses travel speed * scale inches per second.
+    const FLOW: Record<string, { color: number; speed: number; scale: number }> = {
+      bending: { color: 0xff6a10, speed: 0.9, scale: 9 }, // amber, along the caps to the root
+      shear: { color: 0x2a86ff, speed: 0.9, scale: 8 }, // electric blue, along the web to the root
+      lift: { color: 0x10e070, speed: 1.2, scale: 2.5 }, // green, from the skins into the caps
+    }
+    const FLOW_LOOK = { base: 0.45, pulse: 2.2, core: 1.6, halo: 0.9, hot: 0.08, dim: 0.85, halfWidth: 0.4 * INCH, px: [7, 20] as [number, number] }
+    let pathsOn = true
+    try { pathsOn = storage?.getItem(PATHS_KEY) !== '0' } catch { pathsOn = true }
+    const pathsGroup = new THREE.Group()
+    pathsGroup.name = 'loadPaths'
+    pathsGroup.rotation.x = -Math.PI / 2
+    root.add(pathsGroup)
+    const flowEmph = { value: 1 }
+    const flowMats: Record<string, THREE.ShaderMaterial> = {}
+    for (const [kind, f] of Object.entries(FLOW)) flowMats[kind] = glowLineMaterial(cut, { ...FLOW_LOOK, color: f.color, emph: flowEmph, speed: f.speed, scale: f.scale })
+    interface PathObj { p: LoadPath; group: THREE.Group; visible: boolean }
+    const pathObjs: PathObj[] = []
+    for (const lp of graph.loadpaths ?? []) {
+      const mat = flowMats[lp.kind]
+      const group = new THREE.Group()
+      group.name = lp.id
+      group.visible = false
+      for (const seg of mat ? lp.segments : []) {
+        let pts = seg.map(([x, y, z]) => new THREE.Vector3(x, y, z))
+        if ((lp.kind === 'bending' || lp.kind === 'shear') && pts[0].y < pts[pts.length - 1].y) pts = pts.reverse()
+        const tube = new THREE.Mesh(flowRibbon(pts), mat)
+        tube.layers.set(LAYER_GLOW)
+        tube.renderOrder = 10
+        tube.frustumCulled = false
+        group.add(tube)
+      }
+      pathsGroup.add(group)
+      pathObjs.push({ p: lp, group, visible: false })
+    }
+    // recomputed from the build state on every change, never patched; no build state draws nothing
+    const syncPaths = () => {
+      for (const o of pathObjs) {
+        o.visible = pathVisible(o.p, bstate)
+        o.group.visible = o.visible && pathsOn
+      }
+    }
+    // the laminate dims while any flow is drawn, eased in sim time so a recorded frame is reproducible
+    stepFlows = (dt) => {
+      const want = pathObjs.some((o) => o.group.visible) ? 1 : 0
+      FOLLOW.value += (want - FOLLOW.value) * (1 - Math.exp(-dt * 5))
+      if (Math.abs(want - FOLLOW.value) < 1e-3) FOLLOW.value = want
+    }
+    const setPaths = (on: boolean) => {
+      pathsOn = on
+      try { storage?.setItem(PATHS_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
+      ui.setPaths(on)
+      syncPaths()
+    }
+    const refresh = () => { recompute(); paint(); syncPaths(); ui.setBuild(lay, opCount(selected)); updateReadout() }
     const stopPlay = () => { playing = false; ui.setPlaying(false) }
     const openOp = () => { stopPlay(); lay = opCount(selected); layT = DONE_T; refresh() } // a step opens fully built and cured
     const setLay = (n: number) => { stopPlay(); lay = Math.max(0, Math.min(n, opCount(selected))); layT = 0; refresh() }
@@ -612,9 +683,11 @@ async function boot() {
       onPlay: () => togglePlay(),
       onSection: (on, bl) => setSection(on, bl),
       onLabels: (on) => setLabels(on),
+      onPaths: (on) => setPaths(on),
     }, store)
     ui.setGhost(ghost)
     ui.setLabels(labelsOn)
+    ui.setPaths(pathsOn)
     if (layupN) ui.initSection(semi, secBl)
     ui.setVariant(variant)
     const firstOps = barOps(graph, variant)
@@ -663,6 +736,25 @@ async function boot() {
       rig.lastUser = performance.now()
     }
     hook.labels = () => labels.stats()
+    hook.paths = () => {
+      pathsGroup.updateWorldMatrix(true, true)
+      return pathObjs.map((o) => {
+        const pts = o.p.segments.flat().map((q) => new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(pathsGroup.matrixWorld))
+        const c = flowMats[o.p.kind]?.uniforms.uColor.value as THREE.Color | undefined
+        const rgb = c ? c.getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace) : { r: 0, g: 0, b: 0 }
+        return {
+          id: o.p.id, kind: o.p.kind, visible: o.visible, drawn: o.visible && pathsOn, color: [rgb.r, rgb.g, rgb.b],
+          worldPoints: pts.map((v) => v.toArray()),
+          clipped: secOn && pts.some((v) => cut.world.distanceToPoint(v) < 0),
+        }
+      })
+    }
+    hook.project = (p) => {
+      camera.updateMatrixWorld()
+      const v = new THREE.Vector3(p[0], p[1], p[2]).project(camera)
+      const r = canvas.getBoundingClientRect()
+      return [(v.x * 0.5 + 0.5) * r.width + r.left, (-v.y * 0.5 + 0.5) * r.height + r.top]
+    }
     hook.plyBox = (name) => {
       const ms = merged.filter((m) => nameOf(m) === name || m.cid === name)
       if (!ms.length) return null
