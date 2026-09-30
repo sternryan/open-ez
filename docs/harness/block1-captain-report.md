@@ -80,3 +80,38 @@ Rewritten: 7, 11, 14 → (a) "reference unverified, NOT GRADED"; 8, 12, 13, 16, 
 5. Config gross weight 1425 (takeoff-only band) vs max 1325: needs a ruling (row 22).
 6. The report's `static_margin_pct` metric (23.45) and the new stability check (24.34) use different CGs; not reconciled.
 7. Private corpus lives under `LONGEZ_SOURCE_CACHE` (line appended to the local env file; value never printed).
+
+## Follow-up round (lead rulings, 2026-09-29)
+
+All five items are done and committed (not pushed): `774204c` (items 1 and 4), `a704dfa` (items 3 and 5), `e038f65` (item 2), `570ca1b` (report and ledger).
+
+1. **Wing panel convention.** Each panel now runs from BL 23.3 (wing_root_bl) to BL 156.6 (span/2), so the panel span is 133.3. New properties `wing_tip_bl`, `wing_panel_span` and `wing_area_sqft` are used by every consumer: the analysis MAC, lift slope and VSP script, `openvsp_runner`, `vsp_integration`, `fea_adapter`, the CadQuery assembly and structures, `main` and `smoke_test`.
+   - New tests in `tests/test_wing_planform.py` check the tip BL (±0.5 of 156.6), the area against an independent trapezoid, and the MAC.
+   - Captain ruling on aspect ratio: AR = (2 × panel)² / panel area = 7.63. The old formula divided the full span squared by the panel-only area (10.53), which mixes two planforms.
+   - **Wing area is 64.71 sq ft against the manual's 81.99, a gap of −17.28.** I did not force it. The panels exclude the centre section inside BL 23.3 and the strakes, and the manual doesn't say whether its 81.99 includes them.
+   - Re-triage:
+     - Ledger row 30 (area) is still a strict xfail.
+     - Row 31 (AR) now passes, so its xfail is removed; the bound is unchanged.
+     - CG aft (rows 13 and 18) now passes, so those xfails are removed.
+     - Two physics bounds that now test the book planform became strict xfails: row 36 (Anderson lift slope 4.682 against a 4.6 ceiling; the test had hard-coded the retired planform) and row 37 (D-box weight 4.72 lb against a 5 lb floor). The crew had proposed reverting these tests or pinning a fixed literal; I rejected both.
+2. **airfoil_data audit.** None of the 8 values or 2 sources was found in the CP text, cobelu or the plans OCR, or in public web copies we actually fetched. UIUC holds coordinates only, and no Purdue report was found.
+   - All 8 values are now unverified, `roncz-wt` and `eppler-report` are deleted, and a `truth_airfoil` accessor gates them.
+   - The 4 airfoil metrics are NOT GRADED. Ledger rows 39–42.
+3. **Gross weight.** Config gross is now 1325 (om-1980:p4); 1425 stays as the ledger's takeoff-only band. Row 22 now passes and its xfail is removed. The locked gross weight is now 1325, and the stall drift lock moved 57.35 → 55.30 (row 38).
+4. **Fuselage length.** `fuselage_length` is now a property, fs_tail − fs_nose = 175.3. Both VSP builders use it, and the `conflict` flag against 201.4 is kept (row 35).
+5. **One static margin.** The report's `static_margin_pct` metric and the stability check now use the same function at the ledger aft limit FS 103, and a test asserts they are equal. The model-CG margin exported by `core/analysis.py` is renamed `margin_at_model_cg_pct`. The two-method currency marker now also requires wing_root_bl and the panel span to match.
+
+**Updated check results**
+- NP 105.94 (was 112.56), NOT GRADED.
+- Stability at the aft limit FS 103: PASS, MAC 39.59, margin 7.42 % MAC (was 24.34).
+- Wing area 64.71 sq ft against 81.99: FAIL, gap −17.28.
+- CG fwd 99.12 against 97: FAIL (+2.12). CG aft 102.91 against 103: PASS.
+- Report: 12 metrics, 2 PASS (CG aft, max gross), 3 FAIL (CG fwd, empty weight 640 vs 750, wing area), 7 NOT GRADED.
+- Two-method NP: not run.
+- Final suite: 1 failed (the pre-existing assembly test), 489 passed, 2 skipped, 6 xfailed. Node tests 16/16, `guide.check` OK, leak scan clean.
+
+**Still worth knowing**
+- The stall computation uses an unverified CLmax, so the stall metric stays NOT GRADED.
+- Pre-existing unit mix in `vsp_integration`: Sref is in sq ft while bref and cref are in inches.
+- Pre-existing oddities left alone: the flutter `b` term is a heuristic semi-span, and the half-chord-sweep formula carries an extra 2/(1+λ) factor compared with the textbook form.
+- The glb, cutaway and wing geometry changed again. Re-export before you deploy.
