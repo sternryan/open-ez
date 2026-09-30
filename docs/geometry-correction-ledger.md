@@ -94,6 +94,106 @@ The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out o
 | 46 | `tests/test_regression_lock.py::test_regression_neutral_point_drift`, `test_regression_cg_fwd_drift`, `test_regression_cg_aft_drift` | computed within 0.01 in of `LOCKED_NP_PUBLISHED` 105.9382, `LOCKED_CG_FWD_PUBLISHED` 99.1241, `LOCKED_CG_AFT_PUBLISHED` 102.9092 | re-locked: 105.9382 to 108.5007, 99.1241 to 101.6866, 102.9092 to 105.4718; bound unchanged (0.01 in) | (a) | Drift locks, not external truth; moved by the reference area (row 45). NP 108.50 is reported NOT GRADED; its closeness to the old unverified 108.0 is not evidence of anything. |
 | 47 | xfail reason text only: `tests/test_precision_validation.py::test_cg_fwd_limit_precision` (row 12), `tests/test_regression_lock.py::test_regression_cg_fwd_external_truth` (row 16), `::test_regression_locked_metrics_all_pass` (row 41), `tests/test_lift_curve_theory.py::TestLiftCurveSlopeWing::test_anderson_reference_value` (row 36) | gaps +2.12 in (99.12 vs 97.0); 2 PASS of 9 locked; a = 4.682/rad | gaps +4.69 in (101.69 vs 97.0); 1 PASS of 9 locked (max gross), CG fwd and CG aft FAIL; a = 4.827/rad (AR 8.34) | (b) | Bookkeeping; bounds and strictness unchanged. Regenerated report: 12 metrics, 2 PASS (max gross, wing area), 3 FAIL (CG fwd +4.69 in, CG aft +2.47 in, empty weight -110 lb), 7 NOT GRADED. |
 | 48 | `tests/test_stability_checks.py::test_vlm_marker_requires_root_bl_and_panel_span` | `current_vlm_np(data_dir, wing_span, canard_span, wing_root_bl, panel_span)` read `vspaero_native_polars.json` (no NP, no geometry block: always "not run") | `current_vlm_np(data_dir, marker)` reads `vspaero_np.json` (written by `python3.13 scripts/vspaero_np.py`); the marker is `scripts.vspaero_np.geometry_marker(config.geometry)` (spans, wing root BL, panel span, chords, sweeps, washout, incidences, stations, waterlines); dropping wing_root_bl or the panel span still makes the run stale. New: `test_two_method_reads_vspaero_np_json_stale_geometry_is_not_run`, `test_two_method_missing_vlm_file_is_not_run`, `test_two_method_current_vlm_file_grades_by_the_1in_bound` | (a) | The two-method NP check now runs. VSPAERO 3.48.2 VLM (wing panels BL 23.3 to tip + canard, Mach 0, Y-symmetry, alpha -2 to 6 deg, Xref FS 103): NP FS 111.13, least-squares dCMy/dCL -0.2016 (r^2 0.992). Analytic 108.50. Delta 2.63 in against the 1.0 in bound: the check FAILS and is left failing; nothing was tuned. Diagnosis: (1) the analytic formula puts the wing's lift at the panel+strake blended MAC quarter chord, FS 118.70, while weighting it by the gross trapezoid area; the VLM wing alone (no strake, no centre section) has its AC at FS 134.96 (the panel-only MAC quarter chord is 132.69), so the two methods model different wings; (2) the analytic canard downwash factor is the far-field formula with a 1.5 in vertical offset; (3) the VLM's local NP between adjacent alpha points ranges FS 109.2 to 114.0, consistent with the canard wake passing 1.5 in above the wing plane, and a fixed wake gives the same 111.12. Moving Xref to FS 90 gives 111.12 (reference-independent, as it should). Extending the VLM wing to the centreline (diagnostic only, not recorded) gives 112.36. |
+| 49 | `tests/test_half_chord_sweep.py` (new: `test_hand_computed_trapezoid`, `test_matches_the_raymer_form_with_the_trapezoids_own_aspect_ratio`, `test_constant_chord_keeps_the_le_sweep`, `test_panel_and_gross_trapezoid_share_the_half_chord_line`); `tests/test_lift_curve_theory.py` (module docstring, `TestLiftCurveSlopeWing.TAPER_RATIO`, `test_physics_engine_matches_anderson` replica, `TestLiftCurveSlopeCanard::test_canard_slope_has_sweep_correction` replica, `test_anderson_reference_value` xfail reason); `tests/test_physics_external_validation.py::TestLiftCurveSlopeSanity::test_wing_lift_slope_physical_bounds` replica | replicas used tan L_c/2 = tan L_LE - 2 c_r (1 - lam)/(b (1 + lam)) (the engine's own term); the helper was fed lam = c_t/c_r of the panel with the gross AR; xfail reason a = 4.827/rad | replicas use tan L_LE - (c_r - c_t)/b of the reference trapezoid; lam = c_t/c_0 with the gross AR; the xfail stays strict, reason a = 4.780/rad vs ceiling 4.6; tolerances (3%, 5%, [3.0, 5.5]) unchanged | (c) | Ledger C1. The replicas copied the engine's formula, so they could not catch it. The new hand-computed test was red on the old term (3 of 4 failing on the numeric assertion) before the fix. The new `core.analysis.half_chord_sweep_tan` is used by the NP and the canard stall-priority check. NP 108.50 to 108.41. |
+| 50 | `tests/test_wing_planform.py::test_calculate_mac_uses_the_same_planform` | `calculate_mac()` equals the panel + strake area-weighted blend (MAC 39.59 in; strake at BL 0 to 23.3 with LE FS 50) | `calculate_mac()` equals the MAC of the reference trapezoid by direct numerical integration of c(y)^2 (not the closed form): MAC 40.30 in, LE FS 117.33, AC FS 127.41; the test also checks that planform's area is `wing_area_sqft` | (a) | Ledger C2: one wing planform. The static margin, the CG limits (NP minus fixed MAC fractions) and the canard stall-priority Reynolds number now use the 40.30 MAC; `GeometricParams.canard_arm` uses the same wing AC. NP 108.41 to 116.19. |
+| 51 | `tests/test_stability_checks.py::test_vlm_marker_requires_root_bl_and_panel_span` | dropping `wing_root_bl` or `wing_panel_span_in` makes the run stale | also dropping `wing_centerline_chord_in` or `vlm_wing_inboard_bl` makes it stale | (a) | Ledger C2, VLM side. `scripts/vspaero_np.py` records the wing from BL 0 (the reference trapezoid); the af5841d panels-only run lacks both keys and reads as stale. `data/validation/vspaero_np.json` regenerated (OpenVSP 3.48.2): NP FS 112.36, dCMy/dCL -0.2323 (r^2 0.9987), cref 40.30. |
+| 52 | `tests/test_canard_stall_and_downwash.py::TestDownwashModel::test_zero_vertical_offset_stronger_downwash`; drift locks `tests/test_regression_lock.py::test_regression_neutral_point_drift`, `test_regression_cg_fwd_drift`, `test_regression_cg_aft_drift`; `tests/test_precision_validation.py::test_cg_aft_limit_precision`, `tests/test_regression_lock.py::test_regression_cg_aft_external_truth`; xfail reason text of `test_cg_fwd_limit_precision`, `test_regression_cg_fwd_external_truth`, `test_regression_locked_metrics_all_pass` | np_h0 > np_h100 (downwash cut the canard term); locks 108.5007 / 101.6866 / 105.4718; CG aft strict xfail (+2.47 in); reasons CG fwd +4.69 in, 1 PASS of 9 locked | np_h0 < np_h100 (106.50 vs 110.49); re-locked 106.5020 / 99.5663 / 103.4190, bound 0.01 in unchanged; CG aft strict xfail removed (it XPASSed): 103.42, gap +0.42 in, bound 1.0 unchanged; CG fwd still strict xfail, gap +2.57 in (99.57 vs 97.0); 2 PASS of 9 locked (max gross, CG aft) | (c) + (a) | Ledger C3: the downwash factor acts on the wing, the aft surface (Raymer eq. 16.9), so more downwash moves the NP forward; the old test encoded the wrong-surface model. The drift locks moved with C1 to C3 (NP 116.19 to 106.50 at C3). The CG aft PASS is NP minus the retired 0.0765 MAC fraction and inherits an NP that the two-method check does not confirm: it is not evidence. Regenerated report: 12 metrics, 3 PASS (CG aft, max gross, wing area), 2 FAIL (CG fwd +2.57 in, empty weight -110 lb), 7 NOT GRADED. |
+| 53 | `tests/test_stability_checks.py::test_committed_report_two_method_np_agrees` (new) | none (the failing two-method check had no test) | committed report `two_method_np.status == "pass"`, strict xfail: analytic 106.50 vs VLM 112.36, delta +5.86 in, bound 1.0 in | (b) | The check fails after C1 to C3 and is left failing; see the reconciliation section for the diagnosis (far-field full-span downwash). The bound is unchanged. |
+
+## Two-method NP reconciliation (2026-09-29, follow-up)
+
+Written before any change was made or any comparison was run. Each change below is justified by a
+textbook relation or by consistency between the two methods, not by its effect on the numbers; the
+NP before and after each change is recorded in the table at the end of this section as it is run.
+
+**One configuration for both methods.** Wing = the gross reference trapezoid: the straight panel
+LE and TE extended to the centreline (chord 55.13 at BL 0, 20.0 at the tip BL 156.6, LE sweep
+22.98 deg), both halves, 81.70 sq ft, AR 8.34. This is the planform whose area is already
+`wing_area_sqft` (the reference area, within 0.4% of om-1980:p3). Canard = the config rectangle
+(141.6 in x 13.02 in). No strakes, no fuselage, no winglets, in either method. The strakes are
+excluded from both rather than modelled in both because the config has no strake planform that a
+VLM could be given without inventing geometry: `StrakeConfig.fs_trailing_edge` (99.5) is
+converted-unsourced, `calculate_mac()` places the strake at BL 0 to 23.3 with its LE at FS 50
+blending into a root chord whose LE is at FS 99.2 (not a physical outline), and the book strake
+(LE FS 50 at the fuselage side, 73.3 at BL 23, 99.5 at BL 45, meeting the wing LE at BL 58) exists
+only in comments, with no fuselage-side BL and no TE. Consequence stated up front: the real strakes
+add lifting area ahead of the wing, so the modelled configuration is not the whole aircraft; both
+methods omit the same thing, so the comparison is like for like.
+
+- **C1, half-chord sweep.** Raymer (Aircraft Design, sec. 7, sweep conversion) and DATCOM
+  (sec. 2.2.2): tan L_n = tan L_m - (4/A)(n - m)(1 - lam)/(1 + lam). With m = 0 (LE), n = 1/2 and
+  the trapezoid's own A = 2b/(c_r(1 + lam)) (b the full span), this is
+  tan L_c/2 = tan L_LE - (c_r - c_t)/b. Geometrically: the half-chord line sits c/2 aft of the LE,
+  so across a semispan b/2 it falls (c_r - c_t)/2 behind the LE line, a tangent change of
+  (c_r - c_t)/b. `core/analysis.py` used 2 c_r (1 - lam)/(b (1 + lam)), which is the correct term
+  times 2/(1 + lam): 1.43x for the wing (lam = 0.40), no effect on the constant-chord canard
+  (lam = 1). The panel and the gross trapezoid share the same half-chord line (the gross trapezoid
+  extends the panel taper linearly), so the corrected value does not depend on which is used. The
+  fix goes in one helper used by both the NP and the canard stall-priority check, red-first
+  against a hand-computed trapezoid. The test helper `_le_sweep_to_half_chord_sweep` in
+  `tests/test_lift_curve_theory.py` is the textbook form but was fed the panel taper (c_t/c_r at
+  BL 23.3) with the gross-trapezoid AR, mixing planforms; it now gets lam = c_t/c_0 of the same
+  trapezoid as the AR.
+- **C2, one wing planform in the analytic method.** The analytic NP weighted the wing's lift by the
+  gross reference area but placed it at the quarter chord of a panel+strake blended MAC (FS 118.70).
+  The area and the AC must describe the same planform. For a straight-tapered wing the subsonic AC
+  is at the quarter chord of the MAC (Raymer sec. 4, MAC of a trapezoid; Anderson, Fundamentals of
+  Aerodynamics, sec. 5; Etkin and Reid sec. 2): c_bar = (2/3) c_0 (1 + lam + lam^2)/(1 + lam),
+  y_bar = (b/6)(1 + 2 lam)/(1 + lam), x_LE(y_bar) = x_LE(0) + y_bar tan L_LE, x_ac = x_LE +
+  c_bar/4, all of the gross trapezoid. `calculate_mac()` returns this c_bar and x_LE, so the static
+  margin is normalised by the MAC of the reference planform (the textbook SM = (x_np - x_cg)/c_bar
+  pairs c_bar with S_ref) and equals the VLM's cref. The lift slope already uses the gross AR.
+- **C2, same planform in the VLM.** The recorded VSPAERO run models the wing from BL 0 with the
+  centreline chord (the gross trapezoid), not the exposed panels from BL 23.3. The VLM geometry
+  marker gains `wing_centerline_chord_in` and `vlm_wing_inboard_bl` (0.0), so the previous
+  panels-only run (no such keys) reads as stale, not current.
+- **C3, downwash on the aft surface.** The analytic NP multiplied the CANARD term by
+  (1 - d eps/d alpha). In the two-surface neutral point (Raymer eq. 16.9; Etkin and Reid sec. 2.3;
+  Nelson, Flight Stability and Automatic Control, sec. 2.4) that factor belongs to the aft surface,
+  which flies in the forward surface's downwash; for a canard layout the aft surface is the wing.
+  The canard's own trailing vortices are already in its finite-AR slope a_c. The factor moves to the
+  wing term: NP = [a_w S_w (1 - d eps/d alpha) x_w + a_c S_c x_c] / [a_w S_w (1 - d eps/d alpha) +
+  a_c S_c]. The d eps/d alpha expression itself (far field 2 a_c/(pi A_c), times
+  1/(1 + (2h/b_c)^2)) is unchanged. Approximations it keeps, recorded here and not changed: (i) the
+  far-field value is applied to the whole wing, though the canard (141.6 in) spans 45% of the wing
+  (313.2 in) and the wing outboard of the canard tip vortices sees upwash; (ii) the wing's upwash
+  at the canard is omitted; (iii) the canard height h = 1.5 in is the flagged W.L. conflict and is
+  not touched.
+
+| Step | Analytic NP (FS) | VLM NP (FS) | Delta (VLM - analytic, in) | Two-method (bound 1.0 in) |
+|---|---|---|---|---|
+| before (af5841d) | 108.50 | 111.13 (panels only) | +2.63 | FAIL |
+| after C1 | 108.41 | 111.13 (panels only; C1 does not touch the VLM) | +2.72 | FAIL |
+| after C2 | 116.19 | 112.36 (gross reference wing) | -3.83 | FAIL |
+| after C3 | 106.50 | 112.36 | +5.86 | FAIL |
+
+**Result: the check still FAILS, and is left failing** (strict xfail, row 53). Nothing was tuned;
+the canard waterline was not touched. Static margin at the manual's aft limit FS 103:
+(106.50 - 103.0)/40.30 = 8.69% MAC (MAC now the reference trapezoid's, 40.30 in).
+
+**Diagnosis of the remaining +5.86 in** (VSPAERO diagnostics, same geometry, not recorded runs):
+
+| Component | Analytic | VLM | Agreement |
+|---|---|---|---|
+| wing alone AC (FS) | 127.41 (reference MAC quarter chord) | 128.28 | 0.87 in |
+| wing alone lift slope (/rad, on S_ref) | 4.780 | 4.827 | 1.0% |
+| canard alone AC (FS) | 21.96 | 21.77 | 0.19 in |
+| canard lift slope x S_c/S_ref (/rad) | 0.820 | 0.808 | 1.5% |
+| combined lift slope (/rad) | 4.136 | 5.555 | analytic 26% low |
+| wing factor (1 - de/da), net | 0.694 | 0.953 (implied: the value that puts the isolated VLM components at the VLM NP) | |
+
+Each surface alone agrees to within an inch and 1.5%; the whole gap is the interference model. The
+analytic method applies the far-field downwash 2a_c/(pi A_c) = 0.306 to the entire wing; the VLM's
+net effect (canard downwash on the wing plus wing upwash on the canard) is about 0.05. The
+canard spans 45% of the wing, the wing outboard of its tip vortices sees upwash, and the far-field
+value is the fully developed wake, not the value at a wing whose AC is ~105 in behind the canard AC.
+C3 put the factor on the right surface, and that exposed its magnitude as the dominant error. The
+canard height is not the driver in the analytic method (NP 106.50 at h = 0, 110.49 at h = 100 in;
+the 1.5 in offset changes the vertical factor by 0.04%); in the VLM the wake passes 1.5 in above the
+wing and a fixed wake gives 112.42, so wake relaxation is not the driver either. The next honest
+step is a partial-span downwash model with a textbook source (e.g. DATCOM 4.4.1 or a
+horseshoe-vortex average over the wing span) chosen before it is run, and the book W.L. conflict
+resolved; neither is done here.
 
 ## NP gap
 

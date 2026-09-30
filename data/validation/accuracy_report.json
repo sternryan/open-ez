@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T01:08:13.664841+00:00",
+    "generated": "2026-09-30T01:26:13.616738+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -17,23 +17,23 @@
     },
     "checks": {
       "stability": {
-        "np_fs": 108.50068946906737,
+        "np_fs": 106.50197153689606,
         "aft_limit_fs": 103.0,
-        "static_margin_pct": 13.8928,
+        "static_margin_pct": 8.6897,
         "pass": true,
-        "mac_in": 39.59374059305345
+        "mac_in": 40.30046429579024
       },
       "two_method_np": {
         "status": "fail",
-        "analytic": 108.50068946906737,
-        "vlm": 111.1258,
-        "delta": 2.6251105309326306,
+        "analytic": 106.50197153689606,
+        "vlm": 112.3616,
+        "delta": 5.859628463103931,
         "bound_in": 1.0,
         "vlm_source": {
           "file": "data/validation/vspaero_np.json",
           "vsp_version": "OpenVSP 3.48.2",
-          "timestamp": "2026-09-30T01:06:51.495044+00:00",
-          "method": "VSPAERO vortex lattice (VLM), wing panels + canard, thin surfaces, Mach 0, Y-symmetry"
+          "timestamp": "2026-09-30T01:19:35.650160+00:00",
+          "method": "VSPAERO vortex lattice (VLM), gross reference wing (BL 0 to tip) + canard, thin surfaces, Mach 0, Y-symmetry"
         }
       }
     },
@@ -42,9 +42,9 @@
   },
   "summary": {
     "total": 12,
-    "pass": 2,
+    "pass": 3,
     "marginal": 0,
-    "fail": 3,
+    "fail": 2,
     "ungraded": 0,
     "not_graded": 7
   },
@@ -52,7 +52,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 108.5007,
+      "computed": 106.502,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -66,12 +66,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 101.6866,
+      "computed": 99.5663,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 4.686607,
-      "error_pct": 4.831553,
+      "error_abs": 2.566262,
+      "error_pct": 2.645631,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -79,20 +79,20 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 105.4718,
+      "computed": 103.419,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 2.471768,
-      "error_pct": 2.399775,
-      "grade": "FAIL",
+      "error_abs": 0.418986,
+      "error_pct": 0.406783,
+      "grade": "PASS",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
     },
     {
       "metric_id": "static_margin_pct",
       "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
-      "computed": 13.8928,
+      "computed": 8.6897,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,

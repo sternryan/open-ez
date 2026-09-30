@@ -171,20 +171,18 @@ class GeometricParams:
     def canard_arm(self) -> float:
         """Distance from wing AC to canard AC (critical for stability).
 
-        Uses MAC-based quarter chord with sweep offset for both surfaces.
+        Uses MAC-based quarter chord with sweep offset for both surfaces. The wing is the
+        gross reference trapezoid (centreline chord to tip), the planform of wing_area_sqft
+        and of PhysicsEngine.calculate_mac (ledger C2).
         """
 
-        # Wing AC: MAC quarter-chord with sweep offset
-        taper_w = self.wing_tip_chord / self.wing_root_chord
-        mac_w = (
-            (2 / 3) * self.wing_root_chord * (1 + taper_w + taper_w**2) / (1 + taper_w)
-        )
-        y_mac_w = (self.wing_panel_span / 3) * (1 + 2 * taper_w) / (1 + taper_w)
-        wing_ac = (
-            self.fs_wing_le
-            + y_mac_w * math.tan(math.radians(self.wing_sweep_le))
-            + 0.25 * mac_w
-        )
+        # Wing AC: MAC quarter-chord of the reference trapezoid, with sweep offset
+        tan_le = math.tan(math.radians(self.wing_sweep_le))
+        c0 = self.wing_centerline_chord
+        taper_w = self.wing_tip_chord / c0
+        mac_w = (2 / 3) * c0 * (1 + taper_w + taper_w**2) / (1 + taper_w)
+        y_mac_w = (self.wing_span / 6) * (1 + 2 * taper_w) / (1 + taper_w)
+        wing_ac = self.fs_wing_le - self.wing_root_bl * tan_le + y_mac_w * tan_le + 0.25 * mac_w
 
         # Canard AC: MAC quarter-chord with sweep offset
         taper_c = self.canard_tip_chord / self.canard_root_chord
