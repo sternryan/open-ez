@@ -1,0 +1,167 @@
+{
+ "canard.shear_web.p1": {
+  "bl_max": 54.0,
+  "cloth": "UND",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 1,
+  "orientation": "crossed",
+  "position_verified": false,
+  "where": "crossed, full span (108 in)"
+ },
+ "canard.shear_web.p2": {
+  "bl_max": 54.0,
+  "cloth": "UND",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 2,
+  "orientation": "crossed",
+  "position_verified": false,
+  "where": "crossed, full span (108 in)"
+ },
+ "canard.shear_web.p3": {
+  "bl_max": 30.0,
+  "cloth": "UND",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 3,
+  "orientation": "crossed",
+  "position_verified": false,
+  "where": "crossed, inboard of BL 30"
+ },
+ "canard.shear_web.p4": {
+  "bl_max": 30.0,
+  "cloth": "UND",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 4,
+  "orientation": "crossed",
+  "position_verified": false,
+  "where": "crossed, inboard of BL 30"
+ },
+ "canard.shear_web.p5": {
+  "bl_max": 20.0,
+  "cloth": "BID",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 5,
+  "orientation": "45 degrees",
+  "position_verified": false,
+  "where": "45 degrees, inboard of BL 20"
+ },
+ "canard.shear_web.p6": {
+  "bl_max": 10.0,
+  "cloth": "BID",
+  "component": "canard.shear_web",
+  "op": "r30.shear-web",
+  "op_index": 0,
+  "order": 6,
+  "orientation": "45 degrees",
+  "position_verified": false,
+  "where": "45 degrees, inboard of BL 10"
+ },
+ "canard.skin_bottom.p1": {
+  "bl_max": null,
+  "cloth": "UND",
+  "component": "canard.skin_bottom",
+  "op": "r30.bottom-skin",
+  "op_index": 2,
+  "order": 1,
+  "orientation": "spanwise",
+  "position_verified": true,
+  "where": "spanwise, first ply"
+ },
+ "canard.skin_bottom.p2": {
+  "bl_max": null,
+  "cloth": "BID",
+  "component": "canard.skin_bottom",
+  "op": "r30.bottom-skin",
+  "op_index": 2,
+  "order": 2,
+  "orientation": "45 degrees",
+  "position_verified": true,
+  "where": "45 degrees, full span"
+ },
+ "canard.skin_bottom.p3": {
+  "bl_max": null,
+  "cloth": "UND",
+  "component": "canard.skin_bottom",
+  "op": "r30.bottom-skin",
+  "op_index": 2,
+  "order": 3,
+  "orientation": "spanwise",
+  "position_verified": true,
+  "where": "spanwise, last ply"
+ },
+ "canard.skin_top.p1": {
+  "bl_max": null,
+  "cloth": "UND",
+  "component": "canard.skin_top",
+  "op": "r30.top-skin",
+  "op_index": 4,
+  "order": 1,
+  "orientation": "spanwise",
+  "position_verified": true,
+  "where": "spanwise, first ply"
+ },
+ "canard.skin_top.p2": {
+  "bl_max": null,
+  "cloth": "BID",
+  "component": "canard.skin_top",
+  "op": "r30.top-skin",
+  "op_index": 4,
+  "order": 2,
+  "orientation": "45 degrees",
+  "position_verified": true,
+  "where": "45 degrees, full span"
+ },
+ "canard.skin_top.p3": {
+  "bl_max": null,
+  "cloth": "UND",
+  "component": "canard.skin_top",
+  "op": "r30.top-skin",
+  "op_index": 4,
+  "order": 3,
+  "orientation": "spanwise",
+  "position_verified": true,
+  "where": "spanwise, final plies"
+ },
+ "canard.skin_top.p4": {
+  "bl_max": null,
+  "cloth": "UND",
+  "component": "canard.skin_top",
+  "op": "r30.top-skin",
+  "op_index": 4,
+  "order": 4,
+  "orientation": "spanwise",
+  "position_verified": true,
+  "where": "spanwise, final plies"
+ },
+ "canard.spar_cap_bottom.p1": {
+  "bl_max": 54.0,
+  "cloth": "UND",
+  "component": "canard.spar_cap_bottom",
+  "op": "r30.bottom-spar-cap",
+  "op_index": 1,
+  "order": 1,
+  "orientation": "spanwise",
+  "position_verified": false,
+  "where": "3 in UND tape, plies as required to fill trough (tapered)"
+ },
+ "canard.spar_cap_top.p1": {
+  "bl_max": 54.0,
+  "cloth": "UND",
+  "component": "canard.spar_cap_top",
+  "op": "r30.top-spar-cap",
+  "op_index": 3,
+  "order": 1,
+  "orientation": "spanwise",
+  "position_verified": false,
+  "where": "3 in UND tape, plies as required to fill trough (tapered)"
+ }
+}
