@@ -1,159 +1,143 @@
-# Open-EZ PDE
+# Open-EZ
 
 This file provides guidance to any coding agent working with code in this repository.
 
 ## Project Overview
 
-Open-EZ PDE is a "Plans-as-Code" Parametric Design Environment for modernizing the Rutan Long-EZ (Model 61) aircraft. It transforms fragmented legacy plans into executable Python code with aerodynamic validation.
+open-ez models the Rutan Long-EZ (Model 61) as code: CadQuery geometry, an in-browser build
+rehearsal (`guide/`), and physics checks, with every value traced to a registered source page or
+visibly flagged. The direction is set by the roadmap,
+`docs/superpowers/specs/2026-09-29-roadmap-same-airplane-new-process-design.md`: same airplane,
+new process (rehearse the book build, then test changed parts on paper, then printed plugs, cast
+molds and carbon).
+
+This is a PUBLIC repository. See "Public-repo hygiene" below before adding anything.
 
 ## Tech Stack
 
-- **Python 3.10+**
-- **CadQuery** (OpenCASCADE B-Rep kernel) - script-centric geometry generation
-- **OpenVSP** (NASA) - aerodynamic validation via vortex lattice solver
-- **NumPy/SciPy** - numerical analysis, airfoil spline interpolation
-- **ezdxf** - legacy DXF parsing
+- **Python 3.11+** (the local venv runs 3.12; CI runs 3.11)
+- **CadQuery** (OpenCASCADE B-Rep kernel) for geometry
+- **OpenVSP 3.48.2 / VSPAERO** for the vortex-lattice leg of the two-method NP check. Its Python
+  bindings are not on pip; `scripts/install_openvsp.sh` installs them for a separate python3.13.
+- **NumPy/SciPy**, **ezdxf**, **PyYAML**
+- **Guide:** a static site built by `guide/build_site.py`; viewer in `guide/viewer/` (three.js,
+  node tests); Playwright for the viewer end-to-end tests (`requirements-guide-dev.txt`)
 
-## Build Commands
+## Commands
 
 ```bash
-pip install -r requirements.txt
-python main.py --generate-all  # Produces STEP, DXF, G-code outputs
+python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -r requirements-guide-dev.txt
+.venv/bin/python -m pytest -q                      # full Python suite
+node --test guide/viewer/tests/*.test.mjs          # viewer unit tests
+.venv/bin/python -m guide.check --schema-only      # guide schema gate (full mode needs the private corpus)
+.venv/bin/python -m guide.export_glb --out output/guide/longez.glb
+.venv/bin/python -m guide.build_site --out site --models output/guide/longez.glb
+python3.13 scripts/vspaero_np.py                   # VSPAERO NP leg -> data/validation/vspaero_np.json
+.venv/bin/python scripts/generate_accuracy_report.py  # -> data/validation/accuracy_report.json
+pre-commit run --all-files                         # ruff, ruff-format, mypy (scripts/), smoke test
 ```
+
+The test suite writes only to pytest's `tmp_path`. It does not rewrite tracked files; if a run
+leaves `git status` dirty, that is a bug in a test, not something to restore by hand.
 
 ## Architecture
 
-### Core Design Principle: Single Source of Truth (SSOT)
-All dimensions derive from `config/aircraft_config.py`. Never hard-code dimensions - use derived variables. Changes to config propagate through geometry, analysis, and documentation.
+### Single Source of Truth (SSOT)
+All dimensions derive from `config/aircraft_config.py`. Never hard-code dimensions; use the config
+fields and derived properties (for example `fs_wing_le` is derived from `wing_le_anchor` and the
+sweep, `fuselage_length` is `fs_tail - fs_nose`). Changes to config propagate through geometry,
+analysis, the report and the guide.
+
+### Sources and provenance (the rule every value follows)
+- Every citable document is registered in `data/sources/registry.yaml`. A citation is
+  `<id>:p<page>`; `core/sources.py` rejects unknown ids.
+- Every geometry value in `GEOMETRY_PROVENANCE` (`config/aircraft_config.py`) is `book`,
+  `cp-corrected` or `derived` with a registry citation, or is flagged `conflict`, `unsourced` or
+  `converted-unsourced`. Never upgrade a flag without a page in hand.
+- `data/validation/reference_data.json` entries are `confirmed`, `derived` or `unverified`. Only
+  confirmed and derived values count as truth (`core/reference.py`); a check may not grade against
+  an unverified value.
+- Never measure an undimensioned image and call it a source.
+- A physics bound that the book geometry fails is left failing (strict `xfail` citing its ledger
+  row), never widened. Record every moved test in `docs/geometry-correction-ledger.md`.
+- A gate counts only after it has been shown to fail on a deliberately broken input.
 
 ### Directory Structure
-- `config/` - Aircraft configuration (pilot height, engine, structural preferences)
-- `core/` - Geometry classes (AircraftComponent base class)
-- `data/airfoils/` - .dat files (Selig/Lednicer format)
-- `output/` - Generated artifacts (STEP/, STL/, DXF/, GCODE/, VSP/)
+- `config/` aircraft configuration and `GEOMETRY_PROVENANCE`
+- `core/` geometry, analysis, mass ledger, sources, manufacturing, compliance
+- `guide/` build-rehearsal graph (`guide/graph/*.yaml`), site builder and viewer
+- `data/` airfoils, source registry, mass ledger, validation data
+- `scripts/` report generation, VSPAERO NP, source fetcher, smoke and CI checks
+- `tests/` Python suite (`tests/guide/` for the guide)
+- `docs/` reports, ledger, specs and plans (`docs/superpowers/`), captain logs (`docs/harness/`),
+  and `docs/history/` for retired planning documents
+- `output/` generated artifacts only, gitignored, nothing tracked
 
 ### Key Modules
-- **AirfoilFactory**: Ingests .dat files, applies CubicSpline smoothing, handles trailing-edge closure
-- **WingGenerator**: Lofting with sweep, dihedral, washout; spar cap trough subtraction based on ply counts
-- **GCodeWriter**: 4-axis hot-wire synchronization for CNC foam cutting
-- **ComplianceTracker**: FAA Form 8000-38 credit tally for 51% Rule
+- **AirfoilFactory** (`core/aerodynamics.py`): ingests .dat files, CubicSpline smoothing,
+  trailing-edge closure, washout and reflex
+- **WingGenerator / MainWingGenerator / CanardGenerator** (`core/structures.py`): lofted foam cores
+- **Analysis** (`core/analysis.py`): NP, static margin, CG limits, partial-span canard downwash
+- **Mass ledger** (`core/ledger.py`, `data/mass_ledger.yaml`): per-part mass and CG with sources
+- **GCodeWriter / GCodeEngine** (`core/manufacturing.py`): 4-axis hot-wire paths (never run on a machine)
+- **ComplianceTracker** (`core/compliance/`): builder-credit tally for the 51% rule
 
 ### Base Class Pattern
-All components inherit from `AircraftComponent` with mandatory methods:
-- `generate_geometry()` - CadQuery solid generation
-- `export_dxf()` - Manufacturing artifact export
+Components inherit from `AircraftComponent` (`core/base.py`) and must implement
+`_build_geometry()`, `export_dxf()` and `manufacturing_plan()`.
 
-## Critical Safety Mandate
+## Canard Airfoil Default
 
-**Default to Roncz R1145MS canard airfoil** - not optional. The original GU25-5(11)8 airfoil causes dangerous lift loss in rain. The Roncz design prevents pitch-down moments from surface contamination.
+The canard airfoil defaults to the Roncz R1145MS, chosen for its behaviour in rain (the original
+GU25-5(11)8 loses lift when wet). `AircraftConfig.validate()` reports an error if the canard airfoil
+is changed. Do not remove that default. Note the planform is still GU-sized: no Roncz chord source
+has been found (`docs/block1-report.md`, "Still flagged").
 
-## Airfoil Processing
+## Current State
 
-When working with airfoil data:
-1. Parse .dat files from UIUC database format
-2. Apply `scipy.interpolate.CubicSpline` for smoothing
-3. Use Savitzky-Golay filter to remove digitization noise
-4. Ensure closed trailing edge
-5. Support `apply_washout(angle)` and `apply_reflex(percent)` methods
-
-## Manufacturing Output
-
-- **G-code**: 4-axis paths with root/tip synchronization, kerf compensation based on wire diameter and foam density
-- **STL**: Incidence jigs, drill guides, vortilon templates
-- **DXF**: Laser-cut bulkheads
-
-## Regulatory Compliance
-
-The system must generate **Fabrication Aids**, not finished parts, to maintain FAA amateur-built status. The ComplianceTracker tallies builder credits to ensure >50% builder contribution per 14 CFR Part 21.191(g).
-
-## Current State (as of 2026-03)
-
-**Status:** Active development — safety-critical physics, structural & manufacturing improvements
-**Last Active:** March 2026
-**Built:** Plans-as-Code parametric design environment. CadQuery geometry generation, OpenVSP aerodynamic validation, airfoil processing with spline interpolation, 4-axis G-code for CNC foam cutting, ComplianceTracker for FAA 51% Rule, DXF legacy plan parsing. Prototype output packages and validation data.
-**Next:** Continue structural improvements, manufacturing output refinement, validation against physical measurements
-
-## Quick Commands
-
-```bash
-pip install -r requirements.txt
-python main.py --generate-all     # Produce STEP, DXF, G-code outputs
-pre-commit run --all-files        # Lint (ruff-format, mypy)
-```
+Do not copy numbers into this file; they go stale. Read:
+- `docs/block1-report.md`: Block 1 (baseline truth) results, current NP, CG and report counts, and
+  the "Still flagged" list with what clears each item.
+- `docs/geometry-correction-ledger.md`: every test that moved and why.
+- `data/validation/accuracy_report.json`: the live report (`metadata.checks`, `summary`).
+- `docs/superpowers/specs/2026-09-30-block2-rehearsal-design.md`: Block 2 (rehearsal) in progress.
+- `TODOS.md`: open items.
 
 ## Known Issues
 
-- Validation data is prototype-stage -- needs comparison against physical measurements
-- Critical safety: must use Roncz R1145MS canard airfoil (not GU25-5(11)8)
-- `config.geometry.fs_wing_le=133` may use wrong datum, causing NP ~45" aft of published value
-- Canard AC calculation omits sweep correction (~8.5" error)
-- Physics baselines are self-referential (generated by same code being tested)
-- G-code not yet validated on physical CNC hardware
+- The two-method NP check fails (analytic vs VSPAERO, bound 1.0 in); left failing on purpose.
+  Diagnosis and numbers: `docs/block1-report.md`.
+- Canard planform is GU-sized (conflict flag); the Roncz planform is unconfirmed.
+- Empty weight and CG limits fail against the manual; they wait on the Block 2 ledger.
+- `scripts/assembly_test.py::test_full_assembly` is a strict xfail: `Fuselage` is an unsourced
+  placeholder that cannot be instantiated. See the reason string in that file.
+- Regression snapshots (`tests/snapshots/`, `accuracy_report.json`) lock the code's current output;
+  they are not external truth.
+- Nothing has been validated against hardware. G-code has never run on a CNC machine.
 
-## Historical Planning Documents
+## Commit Hygiene
 
-The following root-level docs are retained for historical reference but are no longer active:
-- `implementation_plan.md` -- Completed 5-phase roadmap (all phases done Jan 2026)
-- `sprint_backlog.md` -- Completed sprint tracking
-- `agents.md` -- see "Historical: Swarm Personas" below (original swarm personas, superseded by GSD framework)
-- `swarm_strategy.md` -- Original multi-agent strategy (superseded by GSD framework)
-- `REVIEW_PROMPT.md` -- Review template for Feb 2026 physics/mfg PR (review completed)
-- `idea.md` -- Genesis document with research and vision (historical reference)
-- `vision.md` -- Project pitch/vision document (historical reference)
+- Stage named files; never `git add -A` or `git add .` (private material and build outputs live
+  in the tree).
+- Run the full suite green before committing.
+- Commit messages say what changed and why; claims in a message must be true of the diff.
 
-## Historical: Swarm Personas (Archived)
+## Public-repo hygiene
 
-> **Status: ARCHIVED -- Historical Reference Only**
->
-> This section describes the original role-based personas used during initial development
-> (December 2025 -- January 2026). These personas ([ARCH], [AERO], [MFG], [GOV], [OPS])
-> were an early experiment in prompt-engineering for LLM-guided aerospace development.
-> They have been superseded by the GSD framework and specialized Claude Code agents
-> (see `~/.claude/agents/{core,utility}/`).
->
-> The domain knowledge embedded in these persona definitions remains relevant and is now
-> captured above in this file, `.planning/codebase/ARCHITECTURE.md`, and the project memory.
+- The Long-EZ plans remain under copyright. The repo holds its own code and its own words. Do not
+  commit plans pages, scans, OCR text or long quotes; cite by registry id and page, paraphrase in
+  ten words or fewer.
+- `private/` (scan renders, OCR) and the source corpus (`$LONGEZ_SOURCE_CACHE`) are never
+  committed.
+- No hostnames, IP addresses, home-directory paths or private locations in tracked files. Deploy
+  targets come from environment variables (`scripts/deploy_guide.sh`).
+- Third-party code keeps its license notice in `NOTICE`.
 
-This document defines the agentic personas used to develop the Open-EZ Plans-as-Code environment.
+## Regulatory
 
-### 1. Role: Lead Systems Architect (Tag: [ARCH])
-*   **Profile:** Polymath engineer, aerospace designer, and software architect.
-*   **Mission:** Convert legacy plans into a 21st-century Parametric Design Environment (PDE).
-*   **Core Competency:** Python, CadQuery, Geometric Determinism.
-*   **Source of Truth:** `aircraft_config.py`.
-*   **Directives:**
-    *   Prioritize "Engineering Determinism" over "Forum Folklore".
-    *   Treat aircraft geometry as executable code.
+Outputs are fabrication aids for an amateur-built aircraft, not certified data. The
+ComplianceTracker tallies builder credits toward the 51% rule, 14 CFR 21.191(g).
 
-### 2. Role: Aerodynamics & Physics Lead (Tag: [AERO])
-*   **Profile:** Computational fluid dynamics (CFD) specialist and flight safety engineer.
-*   **Mission:** Ensure the parametric model creates a stable, safe flying vehicle.
-*   **Core Competency:** OpenVSP, Stability Analysis, Airfoil Theory.
-*   **Directives:**
-    *   **The "Roncz" Mandate:** Enforce the use of the Roncz R1145MS canard airfoil.
-    *   Validate CoG (Center of Gravity) for every configuration change.
-    *   "Safety is non-negotiable."
+## History
 
-### 3. Role: Manufacturing & Tooling Engineer (Tag: [MFG])
-*   **Profile:** Expert in CNC fabrication, composite layups, and rapid prototyping.
-*   **Mission:** Translate digital geometry into physical parts with minimal friction.
-*   **Core Competency:** G-Code generation, 4-Axis Hot Wire cutting, 3D Printing (Jigs).
-*   **Directives:**
-    *   Automate everything: No manual templates.
-    *   Ensure designs account for tool kerf, material expansion, and print orientation.
-
-### 4. Role: Regulatory & Compliance Officer (Tag: [GOV])
-*   **Profile:** Aviation law specialist and certification auditor.
-*   **Mission:** Protect the project's legal standing and the builder's "Amateur-Built" status.
-*   **Core Competency:** FAA Title 14 CFR Part 21.191(g), Documentation.
-*   **Directives:**
-    *   Maintain the `ComplianceTracker` to log builder education vs. automation.
-    *   Ensure the Code remains a "Fabrication Aid" and not a commercial kit.
-
-### 5. Role: Swarm Operations Manager (Tag: [OPS])
-*   **Profile:** Technical Project Manager and Systems Integrator.
-*   **Mission:** Manage the "Swarm Sprint" lifecycle, model context, and output quality.
-*   **Core Competency:** Task decomposition, Context Sharding, Quality Assurance.
-*   **Directives:**
-    *   Prevent "Context Overflow" by scoping tasks strictly.
-    *   Synthesize inputs from ARCH, AERO, and MFG into coherent plans.
+Retired planning documents, including the original swarm personas, are in `docs/history/`.
