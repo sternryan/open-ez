@@ -1,56 +1,104 @@
+/* Layout rule: the canard owns the middle of the frame. Two small cards sit on the diagonal that the shots leave free (controls top
+   right, the readout and step bottom left) and the op bar runs along the bottom edge. Rarely used settings live in a popover. */
 :root {
   --ink: #eee9e1;
-  --ink-dim: rgba(238, 233, 225, 0.62);
+  --ink-dim: rgba(238, 233, 225, 0.6);
+  --ink-soft: rgba(238, 233, 225, 0.84);
   --bg: #0f0d0b;
-  --card: rgba(17, 15, 13, 0.66);
-  --line: rgba(238, 233, 225, 0.14);
+  --card: rgba(18, 16, 14, 0.62);
+  --well: rgba(0, 0, 0, 0.22);
+  --line: rgba(238, 233, 225, 0.12);
+  --hover: rgba(238, 233, 225, 0.1);
   --accent: #f2b15a;
+  --on-ink: #15120f;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  --pad: max(14px, env(safe-area-inset-left));
+  --gap: 14px;
+  --top: max(var(--gap), env(safe-area-inset-top));
+  --left: max(var(--gap), env(safe-area-inset-left));
+  --right: max(var(--gap), env(safe-area-inset-right));
+  --bottom: max(12px, env(safe-area-inset-bottom));
+  --hit: 34px; /* control height; 40 on touch screens */
+  --bar: 48px;
 }
+@media (pointer: coarse) { :root { --hit: 40px; --bar: 52px; } }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 14px/1.45 var(--sans); overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 13px/1.4 var(--sans); overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
 #app { position: fixed; inset: 0; }
 #gl { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.label { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
+.label { font-size: 11px; line-height: 1.2; color: var(--ink-dim); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.card { position: fixed; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35); }
+.card { position: fixed; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.25); backdrop-filter: blur(16px) saturate(1.25); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32); }
 
-/* control card, top right */
-#controls { top: max(14px, env(safe-area-inset-top)); right: max(14px, env(safe-area-inset-right)); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end; max-width: calc(100vw - 28px); }
-#controls .group { display: flex; flex-direction: column; gap: 6px; }
-.seg { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: 10px; background: rgba(0, 0, 0, 0.25); }
-.seg button, .btn { border: 0; background: transparent; padding: 6px 14px; border-radius: 8px; min-height: 32px; }
-.seg button[aria-pressed="true"] { background: var(--ink); color: #15120f; font-weight: 600; }
-.btn { border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
-.btn:hover, .seg button:not([aria-pressed="true"]):hover { background: rgba(238, 233, 225, 0.12); }
+/* ---- controls: one compact card, top right. Row 1 variant and view; row 2 the build scrubber; row 3 the section cut. ---- */
+#controls { top: var(--top); right: var(--right); width: 404px; max-width: calc(100vw - 2 * var(--gap)); padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.crow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.row { display: flex; gap: 6px; align-items: center; }
+.seg { display: inline-flex; padding: 2px; gap: 2px; border: 1px solid var(--line); border-radius: 9px; background: var(--well); }
+.seg button, .btn { border: 0; background: transparent; padding: 0 12px; border-radius: 7px; min-height: calc(var(--hit) - 6px); white-space: nowrap; }
+@media (pointer: coarse) { .seg button { min-height: var(--hit); } }
+.btn { min-height: var(--hit); border: 1px solid var(--line); background: var(--well); border-radius: 9px; }
+.btn.sq { width: var(--hit); padding: 0; display: grid; place-items: center; }
+.seg button[aria-pressed="true"], .btn[aria-pressed="true"], .btn[aria-expanded="true"] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
+.btn:hover, .seg button:not([aria-pressed="true"]):hover { background: var(--hover); }
+.btn[aria-pressed="true"]:hover, .btn[aria-expanded="true"]:hover { background: var(--ink); }
+/* the two slider rows line up: a fixed lead control, the slider, a right-aligned value */
+.crow.slide { display: grid; grid-template-columns: 76px 1fr 74px; gap: 10px; padding-top: 6px; border-top: 1px solid var(--line); }
+.crow.slide .lead { width: 100%; justify-content: center; }
+.val { font-size: 12px; color: var(--ink-dim); text-align: right; white-space: nowrap; }
+input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--accent); min-height: var(--hit); }
+.check { display: inline-flex; gap: 8px; align-items: center; min-height: var(--hit); cursor: pointer; white-space: nowrap; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.check.lead { padding: 0 10px 0 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--well); }
+.check.lead:has(input:checked) { border-color: rgba(242, 177, 90, 0.55); }
 
-#quality .label { text-transform: none; letter-spacing: 0; opacity: 0.75; }
-#quality .seg button { padding: 3px 10px; min-height: 26px; font-size: 12px; }
-#controls .row { display: flex; gap: 8px; align-items: center; }
-#scrub { width: 180px; accent-color: var(--accent); min-height: 32px; }
-.check { display: inline-flex; gap: 8px; align-items: center; min-height: 32px; cursor: pointer; }
-.check input { accent-color: var(--accent); width: 16px; height: 16px; }
-#play[aria-pressed="true"] { background: var(--ink); color: #15120f; font-weight: 600; }
+/* the display popover: part names, load paths, future work, quality (placed under the control card by src/ui/ui.ts) */
+#viewpop { z-index: 20; width: 220px; padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 0; }
+#viewpop > .label { margin-bottom: 2px; }
+#viewpop .group { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+#quality-seg { display: flex; }
+#quality-seg button { flex: 1; padding: 0 6px; font-size: 12px; }
 
-#section-bl { width: 150px; accent-color: var(--accent); min-height: 32px; }
-#section-station { min-width: 5.2em; color: var(--ink-dim); }
-
-/* bottom left: the readout tiles over the step card */
-#dock { position: fixed; left: var(--pad); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 62px); width: min(360px, calc(100vw - 28px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-#dock > .card { position: static; pointer-events: auto; }
-#readout { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; padding: 0; overflow: hidden; background: var(--line); }
-#readout .tile { background: rgba(17, 15, 13, 0.72); padding: 8px 12px 9px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-#readout .tile[hidden] { display: none; }
-#readout .tile.wide { grid-column: 1 / -1; }
-#readout .tile b { font-size: 15px; line-height: 1.3; font-weight: 600; letter-spacing: 0; overflow-wrap: anywhere; }
-#readout .tile.wide b { font-size: 12.5px; font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-#readout .tile[data-k="mass"] b { font-size: 12.5px; font-weight: 500; color: var(--ink-dim); font-family: var(--sans); }
+/* ---- bottom left: one card, the stat tiles in a row, the layers line, then the step (title, and a disclosure for the rest) ---- */
+#dock { left: var(--left); bottom: calc(var(--bottom) + var(--bar) + 8px); width: min(392px, calc(100vw - 2 * var(--gap))); display: flex; flex-direction: column; overflow: hidden; }
+#readout .tiles { display: flex; }
+#readout .tile { display: flex; flex-direction: column; gap: 3px; padding: 8px 11px 9px; min-width: 0; flex: none; }
+#readout .tile .label { white-space: nowrap; }
+#readout .tiles .tile + .tile { border-left: 1px solid var(--line); }
+#readout .tile[data-k="cloth"] { flex: 1 1 auto; }
+#readout .tile b { font-size: 13px; line-height: 1.25; font-weight: 600; white-space: nowrap; }
 #readout .tile[data-k="station"] b { color: var(--accent); }
+#readout .tile[data-k="mass"] { flex: 0 1 auto; }
+#readout .tile[data-k="mass"] b { font-size: 11.5px; line-height: 1.2; font-weight: 500; color: var(--ink-dim); font-family: var(--sans); white-space: normal; }
+#readout .layers { flex-direction: row; align-items: baseline; gap: 8px; padding: 7px 12px; border-top: 1px solid var(--line); }
+#readout .layers .label { flex: none; }
+#ro-layers { font-weight: 500 !important; font-size: 12px !important; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+#step { display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--line); }
+#step-head { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1px 10px; padding: 9px 12px 10px; cursor: pointer; }
+#step-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
+#step-head .label { grid-column: 1; }
+#step-title { grid-column: 1; margin: 0; font-size: 15px; line-height: 1.25; font-weight: 600; letter-spacing: -0.005em; }
+#step-head .chev { grid-column: 2; grid-row: 1 / 3; width: 8px; height: 8px; margin: 0 4px 4px 0; border-right: 1.5px solid var(--ink-dim); border-bottom: 1.5px solid var(--ink-dim); transform: rotate(45deg); transition: transform 0.15s; }
+#step[data-open="true"] .chev { transform: rotate(-135deg); margin: 4px 4px 0 0; }
+#step[data-open="false"] #step-body { display: none; }
+#step-body { padding: 0 12px 12px; overflow-y: auto; max-height: 34vh; }
+#step-summary { margin: 0 0 8px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; }
+#checklist-h { all: unset; display: flex; gap: 6px; align-items: center; font-size: 11px; color: var(--ink-dim); cursor: default; }
+#checklist-h .fold { display: none; }
+#step[data-compact="true"] #checklist-h { cursor: pointer; min-height: 28px; }
+#step[data-compact="true"] #checklist-h .fold { display: block; width: 6px; height: 6px; border-right: 1.5px solid var(--ink-dim); border-bottom: 1.5px solid var(--ink-dim); transform: rotate(-135deg); margin-left: 2px; transition: transform 0.15s; }
+#step[data-compact="true"][data-list="closed"] #checklist-h .fold { transform: rotate(45deg); margin-top: -3px; }
+#step[data-compact="true"][data-list="closed"] #checklist { display: none; }
+#checklist { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; }
+#checklist li label { display: flex; gap: 10px; align-items: flex-start; padding: 4px 0; cursor: pointer; font-size: 12.5px; color: var(--ink-soft); }
+@media (pointer: coarse) { #step[data-compact="true"] #checklist-h { min-height: var(--hit); } #checklist li label { padding: 12px 0; } }
+#checklist input { margin: 1px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
 
 /* part labels: small pills with a leader dot in the material's colour */
 #labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
@@ -58,68 +106,48 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--ink); background: rgba(14, 12, 10, 0.72); border: 1px solid rgba(238, 233, 225, 0.2); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); will-change: transform, opacity; }
 .lbl i { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--accent); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55); }
 
-/* step card */
-#step { width: 100%; max-height: 40vh; display: flex; flex-direction: column; overflow: hidden; }
-#step-head { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 12px 14px 8px; cursor: default; }
-#step-head .label { grid-column: 1 / -1; }
-#step-title { margin: 0; font-size: 17px; line-height: 1.25; font-weight: 600; }
-#step-head .chev { display: none; }
-#step-body { padding: 0 14px 14px; overflow-y: auto; }
-#step-summary { margin: 0 0 12px; color: rgba(238, 233, 225, 0.86); }
-#checklist-h { all: unset; display: flex; gap: 6px; align-items: center; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); cursor: default; }
-#checklist-h[hidden] { display: none; }
-#checklist-h .fold { display: none; }
-#step[data-compact="true"] #checklist-h { cursor: pointer; padding: 4px 0; }
-#step[data-compact="true"] #checklist-h .fold { display: block; width: 6px; height: 6px; border-right: 1.5px solid var(--ink-dim); border-bottom: 1.5px solid var(--ink-dim); transform: rotate(-135deg); margin-left: 2px; transition: transform 0.15s; }
-#step[data-compact="true"][data-list="closed"] #checklist-h .fold { transform: rotate(45deg); }
-#step[data-compact="true"][data-list="closed"] #checklist { display: none; }
-#checklist { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
-#checklist li label { display: flex; gap: 10px; align-items: flex-start; padding: 5px 0; cursor: pointer; }
-#checklist input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
-
-/* bottom bar */
-#opbar { position: fixed; left: var(--pad); right: max(14px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); height: 50px; display: flex; align-items: center; gap: 6px; padding: 6px;
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35); }
-#opbar .icon { flex: none; width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; display: grid; place-items: center; }
-#opbar .icon:hover, #chips button:hover { background: rgba(238, 233, 225, 0.12); }
-#chips { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; padding: 0 2px; }
+/* ---- bottom bar: the build steps ---- */
+#opbar { position: fixed; left: var(--left); right: var(--right); bottom: var(--bottom); height: var(--bar); display: flex; align-items: center; gap: 4px; padding: 5px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; -webkit-backdrop-filter: blur(16px) saturate(1.25); backdrop-filter: blur(16px) saturate(1.25); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32); }
+#opbar .icon { flex: none; width: calc(var(--bar) - 12px); height: calc(var(--bar) - 12px); border: 0; border-radius: 8px; background: transparent; display: grid; place-items: center; }
+#opbar .icon:hover, #chips button:hover { background: var(--hover); }
+#chips { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; padding: 0 2px; }
 #chips::-webkit-scrollbar { display: none; }
-#chips button { flex: none; border: 0; background: transparent; white-space: nowrap; padding: 7px 12px; border-radius: 9px; color: var(--ink-dim); display: inline-flex; align-items: center; gap: 8px; }
-#chips button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.6; }
-#chips button[aria-current="true"] { background: var(--ink); color: #15120f; font-weight: 600; }
-#chips button[aria-current="true"]::before { opacity: 1; background: #15120f; }
-#chips .none { padding: 7px 12px; color: var(--ink-dim); }
+#chips button { flex: none; border: 0; background: transparent; white-space: nowrap; height: calc(var(--bar) - 12px); padding: 0 12px; border-radius: 8px; color: var(--ink-dim); display: inline-flex; align-items: center; gap: 8px; }
+#chips button::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+#chips button[aria-current="true"] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
+#chips button[aria-current="true"]::before { opacity: 1; background: var(--on-ink); }
+#chips .none { padding: 0 12px; color: var(--ink-dim); }
 
 #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 13px; padding: 8px 14px; border-radius: 10px; background: var(--card); max-width: 90vw; text-align: center; pointer-events: none; }
 #status.err { background: rgba(120, 30, 20, 0.88); }
-#status[hidden] { display: none; }
 
-/* phone: cards stay small so the model keeps most of the screen */
+/* ---- phone: the control card spans the top, the dock is one readout line over the step title ---- */
 @media (max-width: 640px) {
-  #controls { left: var(--pad); right: max(14px, env(safe-area-inset-right)); padding: 8px 10px; gap: 8px 14px; justify-content: space-between; }
-  #controls .label { display: none; }
-  .seg button, .btn { padding: 5px 12px; min-height: 34px; }
-  #scrub { width: 120px; }
-  #dock { width: auto; right: max(14px, env(safe-area-inset-right)); gap: 6px; }
-  #step { max-height: 38vh; }
-  /* the readout collapses to one compact line: station, layers (ellipsis), plies, cloth */
+  :root { --gap: 10px; }
+  .wide-only { display: none; }
+  #controls { left: var(--left); width: auto; padding: 6px; gap: 5px; }
+  .crow.slide { grid-template-columns: 66px 1fr 76px; gap: 8px; padding-top: 5px; }
+  .check.lead { padding: 0 6px; gap: 6px; }
+  .seg button, .btn { padding: 0 11px; }
+  .btn.sq { padding: 0; }
+  #dock { right: var(--right); width: auto; }
+  /* the readout collapses to one line: station, plies, layers (ellipsis); cloth and mass wait for a wider screen */
   #readout { display: flex; align-items: stretch; }
-  #readout .tile { padding: 6px 10px; flex: none; justify-content: center; }
+  #readout .tiles { display: contents; }
+  #readout .tile, #readout .layers { padding: 7px 10px; justify-content: center; border-top: 0; }
+  #readout .tile + .tile, #readout .layers { border-left: 1px solid var(--line); }
   #readout .tile .label { display: none; }
-  #readout .tile b { font-size: 12.5px; white-space: nowrap; }
-  #readout .tile.wide { flex: 1 1 0; min-width: 0; }
-  #readout .tile.wide b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; -webkit-line-clamp: unset; }
+  #readout .tile b { font-size: 12.5px; }
+  #readout .layers { flex: 1 1 0; min-width: 0; }
   #readout .tile[data-k="mass"], #readout .tile[data-k="cloth"] { display: none; }
-  #readout .tile[data-k="plies"] { order: 1; }
-  #readout .tile[data-k="station"] { order: 0; }
-  #readout .tile.wide { order: 2; }
-  #section-bl { width: 110px; }
-  #step-head { cursor: pointer; padding: 10px 12px; align-items: center; }
-  #step-head .chev { display: block; width: 8px; height: 8px; border-right: 2px solid var(--ink-dim); border-bottom: 2px solid var(--ink-dim); transform: rotate(45deg); transition: transform 0.15s; grid-row: 2; grid-column: 2; }
-  #step[data-open="true"] .chev { transform: rotate(-135deg); }
-  #step-title { font-size: 15px; }
-  #step[data-open="false"] #step-body { display: none; }
-  #step-body { padding: 0 12px 12px; }
+  #ro-layers { white-space: nowrap; display: block; }
+  #step-head { padding: 8px 12px 9px; }
+  #step-title { font-size: 14px; }
+  #step-body { max-height: 36vh; }
+}
+@media (min-width: 641px) {
+  #ro-layers { white-space: nowrap; }
 }
 
 /* film: the cursor that clicks the controls, and the title / closing card. All driven by the sim clock (src/director.ts). */
@@ -135,4 +163,4 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* recorder: nothing may animate on wall-clock time */
 body.rec * { cursor: none !important; transition: none !important; animation: none !important; }
 /* ?clean=1: the canvas and the film cards only */
-body.clean #controls, body.clean #dock, body.clean #opbar, body.clean #labels, body.clean #cursor { display: none !important; }
+body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, body.clean #labels, body.clean #cursor { display: none !important; }

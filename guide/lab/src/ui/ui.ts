@@ -25,24 +25,26 @@ export function initUI(h: UIHandlers, store: Store) {
   let ops: Op[] = []
   let selected: string | null = null
   const phone = matchMedia('(max-width: 640px)')
+  // up to iPad width the step card starts as its title line (the rest behind the disclosure) so the canard keeps the frame
+  const narrow = matchMedia('(max-width: 1180px)')
 
-  const setOpen = (open: boolean) => { step.dataset.open = String(open); head.setAttribute('aria-expanded', String(open)) }
-  // Phones start collapsed to the title line; wide screens always show the body (the toggle is inert there).
-  setOpen(!phone.matches)
-  phone.addEventListener('change', () => setOpen(!phone.matches))
-  head.addEventListener('click', () => { if (phone.matches) setOpen(step.dataset.open !== 'true') })
+  let listOpen = false
+  const setOpen = (open: boolean) => { step.dataset.open = String(open); head.setAttribute('aria-expanded', String(open)); fit() }
+  narrow.addEventListener('change', () => setOpen(!narrow.matches))
+  head.addEventListener('click', () => setOpen(step.dataset.open !== 'true'))
 
-  // Desktop: when the whole card (summary and checklist) would cover more than ~40% of the canvas height, the checklist folds
-  // behind its heading so the card stays a strip and the canard keeps the room. Phones already collapse the whole body.
-  const COVER = 0.4
-  let listOpen = true
+  // When the open card would cover too much of the frame the checklist folds behind its heading. The budget is the smaller of 40% of
+  // the viewport height and about 8.5% of the viewport area over the dock's width. Phones show the whole body once it is opened.
   const fit = () => {
-    if (phone.matches) { step.dataset.compact = 'false'; return }
     step.dataset.compact = 'false'
     step.dataset.list = 'open'
-    // the card is height-capped, so measure what it wants (heading plus the body's full scroll height), not what it got
-    const natural = head.offsetHeight + $('step-body').scrollHeight
-    const compact = natural > window.innerHeight * COVER && list.children.length > 0
+    if (phone.matches || step.dataset.open !== 'true') return
+    const dock = $('dock')
+    const body = $('step-body')
+    // the body is height-capped, so measure what it wants (its full scroll height), not what it got
+    const natural = dock.offsetHeight - body.offsetHeight + body.scrollHeight
+    const budget = Math.min(window.innerHeight * 0.4, (0.085 * window.innerWidth * window.innerHeight) / Math.max(1, dock.offsetWidth))
+    const compact = natural > budget && list.children.length > 0
     step.dataset.compact = String(compact)
     step.dataset.list = compact && !listOpen ? 'closed' : 'open'
     $('checklist-h').setAttribute('aria-expanded', String(!compact || listOpen))
@@ -52,7 +54,29 @@ export function initUI(h: UIHandlers, store: Store) {
     listOpen = !listOpen
     fit()
   })
-  window.addEventListener('resize', fit)
+
+  // the display popover hangs under the control card, right-aligned with it
+  const more = $('more'), pop = $('viewpop'), controls = $('controls')
+  const placePop = () => {
+    const r = controls.getBoundingClientRect()
+    pop.style.top = `${Math.round(r.bottom + 8)}px`
+    pop.style.right = `${Math.round(window.innerWidth - r.right)}px`
+  }
+  const setPop = (open: boolean) => {
+    pop.hidden = !open
+    more.setAttribute('aria-expanded', String(open))
+    if (open) placePop()
+  }
+  more.addEventListener('click', () => setPop(pop.hidden))
+  document.addEventListener('pointerdown', (e) => {
+    const t = e.target as Node
+    if (!pop.hidden && !pop.contains(t) && !more.contains(t)) setPop(false)
+  })
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pop.hidden) { setPop(false); more.focus() } })
+  // the card changes height as rows appear (scrubber, section): keep the popover under it
+  new ResizeObserver(() => { if (!pop.hidden) placePop() }).observe(controls)
+  window.addEventListener('resize', () => { fit(); if (!pop.hidden) placePop() })
+  setOpen(!narrow.matches)
 
   variant.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-variant]') as HTMLElement | null

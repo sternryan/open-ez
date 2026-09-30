@@ -75,6 +75,21 @@ def _graph(rsite):
     return json.loads((rsite / "graph.json").read_text())
 
 
+def _display(pg):
+    """Open the display popover (part names, load paths, future work, quality) if it is closed."""
+    if pg.get_attribute("#more", "aria-expanded") != "true":
+        pg.click("#more")
+    assert pg.is_visible("#viewpop")
+
+
+def _unfold_checklist(pg):
+    """Wide screens fold the checklist behind its heading when the step card would cover too much of the frame."""
+    if pg.get_attribute("#step", "data-open") != "true":
+        pg.click("#step-head")
+    if pg.get_attribute("#step", "data-list") == "closed":
+        pg.click("#checklist-h")
+
+
 def _bar_ops(g, variant):
     byid = {o["id"]: o for o in g["ops"]}
     return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
@@ -160,6 +175,7 @@ def test_checklist_survives_reload_and_works_without_storage(rsite):
             b, pg, errors = _open(p, url, 1400, 860)
             box = "#checklist input[type=checkbox] >> nth=0"
             assert pg.locator("#checklist input[type=checkbox]").count() >= 1
+            _unfold_checklist(pg)
             pg.check(box)
             pg.reload()
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
@@ -167,6 +183,7 @@ def test_checklist_survives_reload_and_works_without_storage(rsite):
             b.close()
             throwing = "Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked') } })"
             b, pg, errors = _open(p, url, 1400, 860, init=throwing)
+            _unfold_checklist(pg)
             pg.check(box)  # falls back to memory
             assert pg.is_checked(box)
             assert not errors, errors
@@ -595,6 +612,7 @@ def test_part_labels_follow_the_build_the_camera_and_the_toggle(rsite):
             pg.evaluate("window.__lab.select('r30.top-skin')")
             pg.evaluate("window.__lab.advance(3)")
             assert pg.is_checked("#labels-on")
+            _display(pg)
             pg.click("#labels-on")
             pg.evaluate("window.__lab.advance(3)")
             assert all(x["opacity"] < 0.05 for x in pg.evaluate("window.__lab.labels()"))
@@ -640,6 +658,7 @@ def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_s
             # the toggle: off draws nothing but the build state is unchanged; remembered across a reload, and on again
             pg.evaluate("window.__lab.select('r30.top-skin')")
             assert pg.is_checked("#paths-on") and len(_drawn(pg)) == 3
+            _display(pg)
             pg.uncheck("#paths-on")
             assert _drawn(pg) == [] and _seen(pg) == ["cap-bending", "lift-into-caps", "web-shear"]
             pg.evaluate("window.__lab.select('r30.shear-web')"); pg.evaluate("window.__lab.select('r30.top-skin')")
@@ -650,6 +669,7 @@ def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_s
             assert not pg.is_checked("#paths-on") and _drawn(pg) == []  # remembered
             pg.evaluate("window.__lab.select('r30.top-skin')")
             assert _drawn(pg) == []
+            _display(pg)
             pg.check("#paths-on")
             assert len(_drawn(pg)) == 3
             assert not errors, errors
@@ -662,6 +682,7 @@ def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_s
             pg2.goto(url + "lab/?test=1&q=low&op=r30.top-skin")
             pg2.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             assert pg2.is_checked("#paths-on") and len(_drawn(pg2)) == 3
+            _display(pg2)
             pg2.uncheck("#paths-on")
             assert _drawn(pg2) == []
             assert not errs2, errs2
@@ -1123,12 +1144,79 @@ def test_auto_step_down_drops_high_to_mid_to_low_and_the_scene_keeps_its_state(r
             assert pg.inner_text("#quality-label") == "Quality: Low (auto)"
             assert pg.get_attribute('#quality-seg button[data-q="auto"]', "aria-pressed") == "true"
             # the segmented control overrides: a tier turns auto off, Auto turns it back on
+            _display(pg)
             pg.click('#quality-seg button[data-q="high"]')
             assert pg.evaluate("window.__lab.tier()") == "high" and pg.evaluate("window.__lab.auto()") is False
             assert pg.inner_text("#quality-label") == "Quality: High"
             assert pg.get_attribute('#quality-seg button[data-q="high"]', "aria-pressed") == "true"
             pg.evaluate("window.__lab.advance(0.05)")
             assert pg.evaluate("window.__lab.meshNames()") == names and pg.evaluate("window.__lab.lay()") == lay
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- layout: the canard owns the frame (Task 8) ----
+_CANARD_BOX_JS = """() => {
+  const L = window.__lab, W = innerWidth, H = innerHeight, st = L.state()
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9
+  for (const n of Object.keys(st)) {
+    if (st[n] === 'hidden') continue
+    const b = L.meshBox(n)
+    if (!b) continue
+    for (const x of [b[0][0], b[1][0]]) for (const y of [b[0][1], b[1][1]]) for (const z of [b[0][2], b[1][2]]) {
+      const p = L.project([x, y, z]); x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1])
+    }
+  }
+  return [Math.max(0, x0), Math.max(0, y0), Math.min(W, x1), Math.min(H, y1)]
+}"""
+_CARDS = ("#controls", "#dock", "#opbar")
+
+
+def _rect(pg, sel):
+    return pg.evaluate(f"(() => {{ const r = document.querySelector('{sel}').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] }})()")
+
+
+@pytest.mark.parametrize("w,h", [(1400, 860), (1180, 820), (390, 844)])
+def test_the_cards_leave_the_canard_clear_and_touch_targets_are_40px(rsite, w, h):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            ctx = b.new_context(viewport={"width": w, "height": h}, has_touch=w < 1400)  # the iPad and the phone have coarse pointers
+            pg = ctx.new_page()
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            for op in (None, "r30.top-skin"):
+                pg.goto(url + "lab/?test=1&q=low" + (f"&op={op}" if op else ""))
+                pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+                if op:
+                    pg.evaluate("window.__lab.setLay(Number(document.getElementById('scrub').max))")
+                    pg.evaluate("window.__lab.setSection(true, 20)")
+                pg.evaluate("window.__lab.advance(4)")
+                assert not pg.evaluate("window.__lab.flying()")
+                assert pg.is_hidden("#viewpop")  # the display popover starts closed
+                if w == 390:
+                    # a phone cannot keep the canard clear of every card, but the band between the top and bottom cards is >= 300 px
+                    top = _rect(pg, "#controls")[3]
+                    bottom = min(_rect(pg, "#dock")[1], _rect(pg, "#opbar")[1])
+                    assert bottom - top >= 300, (op, top, bottom)
+                    continue
+                box = pg.evaluate(_CANARD_BOX_JS)
+                area = (box[2] - box[0]) * (box[3] - box[1])
+                assert area > 0.05 * w * h, (op, box)  # the canard is on screen, not a speck
+                for sel in _CARDS:
+                    c = _rect(pg, sel)
+                    ov = max(0, min(box[2], c[2]) - max(box[0], c[0])) * max(0, min(box[3], c[3]) - max(box[1], c[1]))
+                    assert ov < 0.10 * area, (w, op, sel, round(ov / area, 3), box, c)
+            if w < 1400:
+                # every control in the cards is a 40 px target on a touch screen, the popover's too
+                pg.click("#more")
+                small = pg.evaluate("""() => [...document.querySelectorAll(['#controls button', '#controls input[type=range]', '#controls label.check',
+                    '#viewpop button', '#viewpop label.check', '#opbar button', '#step-head'].join(','))].filter((e) => e.offsetParent)
+                    .map((e) => [e.id || e.textContent.trim().slice(0, 24), e.getBoundingClientRect().height]).filter((x) => x[1] < 39.5)""")
+                assert small == [], small
             assert not errors, errors
             b.close()
     finally:
