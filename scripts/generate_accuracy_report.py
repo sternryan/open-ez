@@ -228,6 +228,91 @@ def load_vspaero_provenance(data_dir: Path) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Physics checks (Block 1 Task 8): stability at the aft limit, two-method NP
+# ---------------------------------------------------------------------------
+
+TWO_METHOD_NP_BOUND_IN = 1.0
+# A VSPAERO run is "current" only if it records an NP and the geometry it ran on matches config.
+
+
+def stability_at_aft_limit(np_fs: float, aft_fs: float, mac_in: float) -> dict:
+    """NP must lie aft of the manual's aft CG limit (positive static margin there)."""
+    margin = round((np_fs - aft_fs) / mac_in * 100.0, 6)
+    return {
+        "np_fs": np_fs,
+        "aft_limit_fs": aft_fs,
+        "static_margin_pct": round(margin, 4),
+        "pass": bool(np_fs > aft_fs),
+    }
+
+
+def two_method_np(analytic: float, vlm: float | None, bound_in: float) -> dict:
+    """Analytic vs vortex-lattice NP. None (no VLM run) is 'not run', never a pass."""
+    if vlm is None:
+        return {"status": "not run", "analytic": analytic, "vlm": None,
+                "delta": None, "bound_in": bound_in}
+    delta = abs(analytic - vlm)
+    return {"status": "pass" if delta <= bound_in else "fail", "analytic": analytic,
+            "vlm": vlm, "delta": delta, "bound_in": bound_in}
+
+
+def current_vlm_np(data_dir: Path, wing_span_in: float, canard_span_in: float) -> tuple[float | None, str]:
+    """Return (VLM NP in published FS, reason). None means no CURRENT run.
+
+    Conservative: the polars file must carry an explicit ``neutral_point_fs`` AND a
+    ``geometry`` block whose wing/canard spans match the current config geometry.
+    """
+    path = data_dir / "vspaero_native_polars.json"
+    try:
+        polars = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "vspaero_native_polars.json missing or unreadable"
+    try:
+        import openvsp  # noqa: F401
+        have_vsp = True
+    except ImportError:
+        have_vsp = False
+    why = []
+    if not have_vsp:
+        why.append("OpenVSP python module not installed")
+    np_val = polars.get("neutral_point_fs")
+    geom = polars.get("geometry") or {}
+    ok_geom = (
+        abs(float(geom.get("wing_span_in", -1)) - wing_span_in) < 0.05
+        and abs(float(geom.get("canard_span_in", -1)) - canard_span_in) < 0.05
+    )
+    if not isinstance(np_val, (int, float)):
+        why.append("vspaero_native_polars.json holds no neutral point")
+    if not ok_geom:
+        why.append(
+            f"vspaero_native_polars.json ({polars.get('timestamp', 'no timestamp')}) has no "
+            "geometry marker matching the current wing/canard spans, so it predates the current geometry"
+        )
+    if isinstance(np_val, (int, float)) and ok_geom:
+        return float(np_val), ""
+    return None, "; ".join(why)
+
+
+def compute_checks(engine: object, config_module: object, data_dir: Path) -> dict:
+    """Assemble metadata.checks."""
+    from core.ledger import load_ledger  # noqa: E402
+
+    geo = config_module.geometry  # type: ignore[attr-defined]
+    np_fs = geo.to_published_datum(engine.calculate_cg_envelope().neutral_point)  # type: ignore[attr-defined]
+    # MAC: PhysicsEngine.calculate_mac() in core/analysis.py (the MAC used for static margin).
+    mac_in, _ = engine.calculate_mac()  # type: ignore[attr-defined]
+    aft_fs = float(load_ledger()["envelope"]["aft_fs"])
+    vlm, reason = current_vlm_np(data_dir, geo.wing_span, geo.canard_span)
+    two = two_method_np(np_fs, vlm, TWO_METHOD_NP_BOUND_IN)
+    if two["status"] == "not run":
+        two["reason"] = reason or "no current VLM run"
+    return {
+        "stability": {**stability_at_aft_limit(np_fs, aft_fs, mac_in), "mac_in": mac_in},
+        "two_method_np": two,
+    }
+
+
 def collect_metrics(
     ref_data: dict,
     config_module: object,
@@ -507,7 +592,7 @@ def collect_metrics(
     return metrics
 
 
-def build_report(metrics: list[dict], vspaero_provenance: dict) -> dict:
+def build_report(metrics: list[dict], vspaero_provenance: dict, checks: dict | None = None) -> dict:
     """
     Build the full accuracy report dict from graded metrics and provenance.
 
@@ -529,6 +614,7 @@ def build_report(metrics: list[dict], vspaero_provenance: dict) -> dict:
         "metadata": {
             "generated": datetime.now(timezone.utc).isoformat(),
             "vspaero_provenance": vspaero_provenance,
+            "checks": checks or {},
             "geometry_basis": "book (planform correction 2026-09-29); NP is a check, not a fit; see docs/geometry-correction-ledger.md",
             "traceability": (
                 "All metric sources trace to reference_data.json (external published/measured) "
@@ -587,7 +673,8 @@ def generate_accuracy_report(output_path: Path | None = None) -> Path:
     metrics = collect_metrics(ref_data, config, engine)
 
     # Build report structure
-    report = build_report(metrics, vspaero_provenance)
+    checks = compute_checks(engine, config, data_dir)
+    report = build_report(metrics, vspaero_provenance, checks)
 
     # Enforce traceability — raises ValueError on violations
     validate_sources(report, ref_data)
@@ -616,6 +703,15 @@ def main() -> None:
     print(f"  FAIL:     {summary['fail']}")
     print(f"  UNGRADED: {summary['ungraded']}")
     print(f"  NOT GRADED (unverified reference): {summary['not_graded']}")
+    print()
+    st = report["metadata"]["checks"]["stability"]
+    print(f"CHECK stability at aft limit FS {st['aft_limit_fs']}: "
+          f"{'PASS' if st['pass'] else 'FAIL'} (NP FS {st['np_fs']:.2f}, margin {st['static_margin_pct']:.2f}% MAC)")
+    tm = report["metadata"]["checks"]["two_method_np"]
+    if tm["status"] == "not run":
+        print(f"CHECK two-method NP: NOT RUN ({tm['reason']})")
+    else:
+        print(f"CHECK two-method NP: {tm['status'].upper()} (delta {tm['delta']:.3f} in, bound {tm['bound_in']} in)")
     print()
 
     # Print metric table
