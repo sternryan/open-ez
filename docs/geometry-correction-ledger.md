@@ -82,6 +82,8 @@ The pre-existing failure `scripts/assembly_test.py::test_full_assembly` is out o
 
 ## NP gap
 
+Superseded by Block 1 (2026-09-29): 108.0 is unverified; NP 112.56 is reported, not graded; CG references are 97/103 from om-1980:p28; see docs/block1-report.md.
+
 Values read from `data/validation/accuracy_report.json` (regenerated 2026-09-29).
 
 | Quantity | Computed (FS in) | Reference (FS in) | Gap (computed - reference, in) | Grade |
