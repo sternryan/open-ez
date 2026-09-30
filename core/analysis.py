@@ -45,6 +45,21 @@ from .openvsp_runner import (  # noqa: F401
 )
 
 
+
+def half_chord_sweep_tan(tan_sweep_le: float, root_chord: float, tip_chord: float, span: float) -> float:
+    """tan of the half-chord sweep of a straight-tapered trapezoid.
+
+    span is the full span of the trapezoid (tip to tip); root_chord is its chord at the
+    plane of symmetry, tip_chord its tip chord.
+
+    Raymer sec. 7 / DATCOM 2.2.2: tan L_n = tan L_LE - (4n/A)(1 - lam)/(1 + lam), with n = 1/2
+    and the trapezoid's own A = 2b/(c_r(1 + lam)), reduces to tan L_LE - (c_r - c_t)/b: the
+    half-chord line falls (c_r - c_t)/2 behind the LE line across the semispan b/2. (The
+    previous 2 c_r (1 - lam)/(b (1 + lam)) was this times 2/(1 + lam); ledger C1.)
+    """
+    return tan_sweep_le - (root_chord - tip_chord) / span
+
+
 @dataclass
 class StabilityMetrics:
     """Key flight safety indicators."""
@@ -143,79 +158,29 @@ class PhysicsEngine:
 
     def calculate_mac(self) -> Tuple[float, float]:
         """
-        Calculate Mean Aerodynamic Chord and its location for strake+wing planform.
+        Mean Aerodynamic Chord and its LE station for the reference wing planform.
 
-        Computes MAC piecewise: strake segment + outer wing segment, then
-        combines using area-weighted averaging. The strake contributes
-        significant area near the root and shifts the overall MAC forward.
+        The reference planform is the gross trapezoid: the straight panel LE and TE extended to
+        the centreline (chord ``wing_centerline_chord`` at BL 0, ``wing_tip_chord`` at the tip BL),
+        the same planform as ``wing_area_sqft`` and ``wing_aspect_ratio``. MAC of a trapezoid
+        (Raymer sec. 7; Etkin and Reid sec. 2):
+            c_bar = (2/3) c_0 (1 + lam + lam^2) / (1 + lam)
+            y_bar = (b/6) (1 + 2 lam) / (1 + lam)
+            x_LE(y_bar) = x_LE(0) + y_bar tan(sweep_LE)
+        Strakes are not part of this planform (ledger C2: no sourced strake outline exists).
 
         Returns:
             Tuple of (MAC length, MAC leading edge FS location)
         """
-        cr = self.geo.wing_root_chord
+        c0 = self.geo.wing_centerline_chord
         ct = self.geo.wing_tip_chord
-        taper = ct / cr
+        lam = ct / c0
+        tan_le = math.tan(math.radians(self.geo.wing_sweep_le))
 
-        # === Outer wing segment (BL 23.3 to tip) ===
-        # Standard trapezoidal MAC formula
-        mac_wing = (2 / 3) * cr * (1 + taper + taper**2) / (1 + taper)
-
-        # Spanwise location of wing MAC (from root, BL 23.3)
-        panel_span = self.geo.wing_panel_span  # root BL to tip BL
-        y_mac_wing = (panel_span / 3) * (1 + 2 * taper) / (1 + taper)
-
-        # Leading edge location of wing MAC (accounting for sweep)
-        x_mac_le_wing = self.geo.fs_wing_le + y_mac_wing * math.tan(
-            math.radians(self.geo.wing_sweep_le)
-        )
-
-        # Wing planform area (sq in) for one side
-        wing_avg_chord = (cr + ct) / 2
-        s_wing_side = wing_avg_chord * panel_span  # sq in, one side
-
-        # === Strake segment ===
-        # The strakes extend from the fuselage to BL 23.3, contributing
-        # significant lifting area near the root.
-        strake_cfg = config.strakes if hasattr(config, "strakes") else None
-        if strake_cfg is not None:
-            strake_span = self.geo.wing_root_bl  # BL at wing root junction
-            strake_chord_inboard = (
-                strake_cfg.fs_trailing_edge - strake_cfg.fs_leading_edge
-            )
-            strake_chord_outboard = cr  # Blends into wing root
-            strake_avg_chord = (strake_chord_inboard + strake_chord_outboard) / 2
-            s_strake_side = strake_avg_chord * strake_span  # sq in, one side
-
-            # Strake MAC (trapezoidal)
-            strake_taper = (
-                strake_chord_outboard / strake_chord_inboard
-                if strake_chord_inboard > 0
-                else 1.0
-            )
-            mac_strake = (
-                (2 / 3)
-                * strake_chord_inboard
-                * (1 + strake_taper + strake_taper**2)
-                / (1 + strake_taper)
-            )
-
-            # Strake MAC LE location (strake starts at fs_leading_edge)
-            _y_mac_strake = (
-                (strake_span / 3) * (1 + 2 * strake_taper) / (1 + strake_taper)
-            )
-            x_mac_le_strake = strake_cfg.fs_leading_edge  # Minimal sweep on strake
-
-            # === Area-weighted combination ===
-            s_total = s_wing_side + s_strake_side
-            mac = (mac_wing * s_wing_side + mac_strake * s_strake_side) / s_total
-            x_mac_le = (
-                x_mac_le_wing * s_wing_side + x_mac_le_strake * s_strake_side
-            ) / s_total
-        else:
-            # Fallback: simple trapezoidal (no strake config)
-            mac = mac_wing
-            x_mac_le = x_mac_le_wing
-
+        mac = (2 / 3) * c0 * (1 + lam + lam**2) / (1 + lam)
+        y_mac = (self.geo.wing_span / 6) * (1 + 2 * lam) / (1 + lam)
+        x_le_centerline = self.geo.fs_wing_le - self.geo.wing_root_bl * tan_le
+        x_mac_le = x_le_centerline + y_mac * tan_le
         return mac, x_mac_le
 
     def calculate_neutral_point(self) -> float:
@@ -225,14 +190,16 @@ class PhysicsEngine:
         The neutral point is the center of lift for the complete aircraft.
         For a canard, it's weighted by the lift contributions of both surfaces.
 
-        Uses the simplified formula:
-        NP = (a_w * S_w * x_ac_w + a_c * S_c * x_ac_c * eta) / (a_w * S_w + a_c * S_c * eta)
+        Two-surface neutral point (Raymer eq. 16.9; Etkin and Reid sec. 2.3), with the
+        forward surface's downwash acting on the AFT surface, which for a canard is the wing:
+        NP = (a_w S_w (1 - de/da) x_ac_w + a_c S_c x_ac_c) / (a_w S_w (1 - de/da) + a_c S_c)
 
         where:
         - a = lift curve slope (per radian)
-        - S = reference area
-        - x_ac = aerodynamic center location
-        - eta = canard efficiency factor
+        - S = area; the wing is the gross reference trapezoid (wing_area_sqft)
+        - x_ac = aerodynamic center: quarter chord of each surface's MAC (calculate_mac for
+          the wing, the same planform as S_w)
+        - de/da = canard downwash derivative at the wing (ledger C3)
         """
         # Areas (sq ft)
         s_wing = self.geo.wing_area
@@ -270,23 +237,17 @@ class PhysicsEngine:
         ar_canard = (self.geo.canard_span / 12) ** 2 / s_canard  # span in feet
 
         # Half-chord sweep from LE sweep and taper ratio
-        # tan(sweep_c/2) = tan(sweep_LE) - 2*cr*(1-lambda)/(b*(1+lambda))
-        taper_wing = self.geo.wing_tip_chord / self.geo.wing_root_chord
+        # tan(sweep_c/2) = tan(sweep_LE) - (c_r - c_t)/b (Raymer sec. 7; half_chord_sweep_tan)
         tan_sweep_le_wing = math.tan(math.radians(self.geo.wing_sweep_le))
-        tan_sweep_half_wing = tan_sweep_le_wing - (
-            2
-            * self.geo.wing_root_chord
-            * (1 - taper_wing)
-            / (2 * self.geo.wing_panel_span * (1 + taper_wing))
+        tan_sweep_half_wing = half_chord_sweep_tan(  # reference trapezoid (same line as the panel)
+            tan_sweep_le_wing, self.geo.wing_centerline_chord, self.geo.wing_tip_chord,
+            self.geo.wing_span,
         )
 
-        taper_canard = self.geo.canard_tip_chord / self.geo.canard_root_chord
         tan_sweep_le_canard = math.tan(math.radians(self.geo.canard_sweep_le))
-        tan_sweep_half_canard = tan_sweep_le_canard - (
-            2
-            * self.geo.canard_root_chord
-            * (1 - taper_canard)
-            / (self.geo.canard_span * (1 + taper_canard))
+        tan_sweep_half_canard = half_chord_sweep_tan(
+            tan_sweep_le_canard, self.geo.canard_root_chord, self.geo.canard_tip_chord,
+            self.geo.canard_span,
         )
 
         # beta^2 = 1 - M^2 (approx 1.0 for low-speed, M < 0.25)
@@ -315,18 +276,21 @@ class PhysicsEngine:
         #   d(epsilon)/d(alpha) = (2 / (pi * AR_c)) * a_c
         # With vertical offset h between canard and wing plane:
         #   d(epsilon)/d(alpha) *= 1 / (1 + (2*h / b_c)^2)
-        # Canard efficiency factor: eta = 1 - d(epsilon)/d(alpha)
+        # The downwash acts on the aft surface (the wing): its effective slope is
+        # a_w (1 - de/da). The canard's own vortices are already in its finite-AR a_c.
+        # Kept approximations (ledger C3): far-field de/da applied over the whole wing
+        # although the canard spans ~45% of it; wing upwash at the canard omitted.
         h = self.geo.canard_vertical_offset_in  # vertical separation
         b_c = self.geo.canard_span  # canard span (inches)
         vert_factor = 1.0 / (1.0 + (2.0 * h / b_c) ** 2)
         d_eps_dalpha = (2.0 / (math.pi * ar_canard)) * a_canard * vert_factor
-        eta_canard = 1.0 - d_eps_dalpha
+        wing_downwash_factor = 1.0 - d_eps_dalpha
 
         # Calculate NP
-        numerator = (a_wing * s_wing * ac_wing) + (
-            a_canard * s_canard * ac_canard * eta_canard
-        )
-        denominator = (a_wing * s_wing) + (a_canard * s_canard * eta_canard)
+        wing_term = a_wing * s_wing * wing_downwash_factor
+        canard_term = a_canard * s_canard
+        numerator = wing_term * ac_wing + canard_term * ac_canard
+        denominator = wing_term + canard_term
 
         np_location = numerator / denominator
         return np_location
@@ -509,22 +473,17 @@ class PhysicsEngine:
         ar_wing = self.geo.wing_aspect_ratio
         ar_canard = (self.geo.canard_span / 12) ** 2 / self.geo.canard_area
 
-        taper_wing = self.geo.wing_tip_chord / self.geo.wing_root_chord
         tan_le_wing = math.tan(math.radians(self.geo.wing_sweep_le))
-        tan_half_wing = tan_le_wing - (
-            2
-            * self.geo.wing_root_chord
-            * (1 - taper_wing)
-            / (2 * self.geo.wing_panel_span * (1 + taper_wing))
+        tan_half_wing = half_chord_sweep_tan(
+            tan_le_wing, self.geo.wing_root_chord, self.geo.wing_tip_chord,
+            2 * self.geo.wing_panel_span,
         )
 
         taper_canard = self.geo.canard_tip_chord / self.geo.canard_root_chord
         tan_le_canard = math.tan(math.radians(self.geo.canard_sweep_le))
-        tan_half_canard = tan_le_canard - (
-            2
-            * self.geo.canard_root_chord
-            * (1 - taper_canard)
-            / (self.geo.canard_span * (1 + taper_canard))
+        tan_half_canard = half_chord_sweep_tan(
+            tan_le_canard, self.geo.canard_root_chord, self.geo.canard_tip_chord,
+            self.geo.canard_span,
         )
 
         a_wing = (
