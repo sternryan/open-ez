@@ -157,6 +157,16 @@ Each block proves something before the next one relies on it.
     - Expected shape of the answer: printing the tool directly is plausible for small parts; large
       surfaces (many 256 mm sections) likely still favour plug → cast, because registration, bonded
       joints and thermal expansion over the span are the hard problems.
+  - **Toolchain (adopt when Block 4 starts):** the MIT-licensed text-to-cad skill library
+    (github.com/earthtojake/text-to-cad), pinned to a release:
+    - DFM, which measures draft and undercuts, gates every plug and mold for release;
+    - DfAM check (wall thickness, overhangs, supports, orientation) gates every printed section;
+    - G-code (real slicer CLIs) and the Bambu Lab handoff print the scale prototype on the owner's
+      P2S, with no print started without the owner's go;
+    - engineering drawings and DXF for jigs and templates.
+
+    Geometry still comes from `config/` and CadQuery; these tools check and hand off, they don't
+    author the airplane.
   - Printed jigs, drill guides and incidence blocks, and printed copies of the book's hot-wire
     templates (so the rehearsal can become physical), are in this lane too.
   - Print plugs from the CAD surfaces, sectioned to fit the printer.
