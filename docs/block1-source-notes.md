@@ -273,3 +273,83 @@ Every station below was read on the page image (crops of the scan at 300-600 dpi
 - Manual: 201.4 overall, no definition on the page. Nose tip -6.8 plus 201.4 is F.S. 194.6. Plans p171 and p135 both print 196.6 for the top aft corner of the winglet, which gives 203.4, 2.0 in more than the manual. Nothing on any page equates 201.4 with a station.
 - No page prints a station for the spinner, propeller plane or cowl end. A pixel-scale read of the p171 side view (about 2.55 px per inch, fitted on the printed -6.8, 17, 50, 110.5, 125, 196.6 leaders) puts the propeller disc near F.S. 159 and the dashed spinner outline near F.S. 173; this is an estimate, not a book value.
 - What is unknown: what the manual's 201.4 measures, and where the fuselage ends.
+
+## Wing and canard (Task 7)
+
+Values below were read on page images (crops at 400-500 dpi) unless the row says otherwise. The plans-1980 wing layout on p126 (chapter 19, printed page 19-10) is hand-lettered; the writer's 4 and 9 look alike, so where a digit is ambiguous the row says which reading the surrounding arithmetic selects. Page numbers for plans-1980 are PDF page numbers of the scan; the printed chapter page is in parentheses where it helps. No cobelu page number is recorded for sheet C-3, so it is cited by sheet.
+
+### Wing
+
+| value | citation | what the page says (≤10 words) | copy caveat |
+|---|---|---|---|
+| Span 26.1 ft | om-1980:p3 | dimensions table wing span | transcription (see earlier table) |
+| Tip rib at B.L. 157 (span 2 x 157 = 314 in, derived) | plans-1980:p126, plans-1980:p171 | outboard end of the wing labelled B.L. 157 | derived: 314 in = 26.17 ft; manual 26.1 ft = 313.2 in |
+| Chord 42.7 at B.L. 55.5 | plans-1980:p126 | chord printed beside the inboard section label | clean read |
+| Chord 31.35 at B.L. 106.25 | plans-1980:p126 | chord printed beside the mid section label | clean read |
+| Chord 20.0 at B.L. 157 | plans-1980:p126 | chord printed beside the tip section label | clean read; 20.0 = 176 - 156 |
+| Leading-edge sweep 22.98 deg | plans-1980:p126 | angle marked on the leading-edge line, twice | read twice, two labels agree |
+| Trailing-edge angles 12.49 deg inboard, 11.36 deg outboard | plans-1980:p126; plans-1980:p127 | trailing-edge angle labels; foam block cut angles agree | p127 prints 77.51/102.49 and 78.64/101.36 for the same cuts |
+| Shear web angle 18.42 deg | plans-1980:p126 | angle marked on the outboard shear web line | not a planform value |
+| Leading-edge F.S. 156 at B.L. 157 | plans-1980:p126; plans-1980:p171 | tip leading-edge station | typed-style digits, two pages agree |
+| Trailing-edge F.S. 155.6 at B.L. 55.5 | plans-1980:p126 | trailing-edge station at the inboard section | already in the Task 6 notes |
+| Trailing-edge F.S. 165.8 at B.L. 106.25 | plans-1980:p126 | trailing-edge station at the mid section | clean read |
+| Trailing-edge F.S. 176 at B.L. 157 | plans-1980:p126 | trailing-edge station at the tip | middle digit slightly blurred; 156 + 20.0 = 176 |
+| Leading-edge F.S. 134.45 at B.L. 106.25 | plans-1980:p126 | leading-edge station at the mid section | label reads 134.?5, hand 4/9 ambiguity; 165.8 - 31.35 selects 134.45 |
+| Leading-edge F.S. 112.9 at B.L. 55.5 | plans-1980:p126 | leading-edge station at the inboard section | first digit sits on an axis tick; 155.6 - 42.7 = 112.9 |
+| Chord lines and leading edge flat at W.L. 17.4 | plans-1980:p126; plans-1980:p134 | leading-edge line is flat; wing plane at waterline 17.4 | p126 hand digit reads 17.?0 (4/9 ambiguity); p134 typed "17.4" settles it |
+| Trailing edge rises W.L. 16.95 to 18.35 (B.L. 55.5 to 157) | plans-1980:p126 | trailing edge slopes up along the outer wing | consistent with the washin and washout below |
+| Dihedral: wing is flat | plans-1980:p134 (printed 19-18) | wing jigged flat at its 17.4 waterline plane | text; no dihedral angle is printed anywhere in Section I |
+| Incidence: jig for zero, reference board level | plans-1980:p134 | wing top reference board must be level | text; one washer changes incidence 0.4 deg |
+| Washin 0.6 deg at B.L. 55.5; washout 0.96 deg at 106.25; 2.7 deg at 157 | plans-1980:p126 | twist printed beside each section label | reference for the twist not stated on the page |
+| Section thickness 16.2, 15.7, 15.0 percent; modified Eppler 1230 | plans-1980:p126 | per-section thickness and airfoil family note | clean read |
+| Trailing edge meets cowling at F.S. 148.4, B.L. 23, W.L. 17.5 | plans-1980:p126 | inboard trailing-edge kink ends at engine cowling line | 148.4 also read in Task 6 |
+| Foam blocks: chord-direction 28.0 / 42.0 / 28.0, panel edges B.L. 23, 55.5, 106.25, 157 | plans-1980:p127 (printed 19-11) | block layout dimensions and rib butt lines | page says not to scale; block sizes, not planform |
+
+Derived, not printed (every input cited above; labelled "derived"):
+
+| derived value | inputs | result |
+|---|---|---|
+| Root chord at B.L. 23 (leading edge extended through the strake) | LE F.S. 112.9 at B.L. 55.5, sweep 22.98 deg (p126); TE F.S. 148.4 at B.L. 23 (p126) | LE 99.1, so chord about 49.3 in |
+| Same, by straight extrapolation of the outer taper | chords 42.7 at 55.5 and 20.0 at 157 (p126) | about 49.9 in at B.L. 23.3 |
+| Outer taper is straight | 42.7, 31.35, 20.0 at 55.5, 106.25, 157 | midpoint of the ends is 31.35, exact |
+| Sweep check from stations | LE F.S. 113.9 at B.L. 58 (CP25 LPC 7), 156 at B.L. 157 (p126) | atan(42.1 / 99) = 23.0 deg, agrees with 22.98 |
+| Planform area, one panel to the centerline | outer chords above; chord 49.3 held from B.L. 0 to 23, linear to 42.7 at 55.5 | about 80.7 sq ft both sides, 1.6 percent under om-1980:p3 81.99; assumes constant chord inboard of B.L. 23, not printed |
+
+### Model against the book
+
+Model values are the current GeometricParams fields.
+
+| field | model | book value | note |
+|---|---|---|---|
+| wing_span | 316.8 in | 313.2 in (26.1 ft); 314 in tip ribs | model comment says 26.4 ft |
+| wing_root_chord | 68.0 in at B.L. 23.3 | about 49.3 in at B.L. 23 (derived); 42.7 at B.L. 55.5 (printed) | 68 not found anywhere |
+| wing_tip_chord | 32.0 in | 20.0 in at B.L. 157 | printed |
+| wing_sweep_le | 25 deg | 22.98 deg | printed |
+| wing_dihedral | -4.5 deg | flat (0), no angle printed | model sign is anhedral, book is flat |
+| wing_incidence | 0 deg | zero, jig level to the reference board | text |
+| wing_washout | 1.0 deg at tip | 2.7 deg at tip, 0.96 at 106.25, 0.6 washin at 55.5 | printed |
+| wing_le_wl | 0.0 | W.L. 17.4 in book frame | model frame is longeron-relative |
+| wing area (model formula) | 110.0 sq ft | 81.99 sq ft (om-1980:p3) | model is 34 percent high; its half-span also starts at B.L. 23.3, so the tip lands at B.L. 181.7 |
+
+### Canard waterline
+
+Four labelled waterlines touch the canard; none is a leading-edge waterline. On plans-1980:p171 the side view has a leader "W.L. 18.9" whose line runs level with the flat lower surface of the small canard drawing beside the F.S. 18.7 callout (my reading by alignment: the leader ends at the fuselage skin, not on a labelled part). In cobelu ch30, sheet C-3, "W.L. 19.8" is printed, with a small arrow, on the level line running through each hot-wire template A, B, C and D. That level line is a jig reference drawn inside the section, the same kind of datum that plans-1980:p55 (printed 10-2) calls "W.L. 19.4" for the GU templates, where a CP25 LPC 16 handwritten note says 19.4 is correct but not centred on the shear web. Sheet C-1 adds "W.L. 21.8, for reference" on a level line above the full-scale section. So 18.9 (a surface as drawn), 19.4 (GU template level line), 19.8 (Roncz template level line) and 21.8 (drawing reference line) are different references, not one point, and the gap between 18.9 and 19.8 is 0.9 in. The wing plane is W.L. 17.4 (p126, p134), so the book puts the canard reference lines 1.5 to 2.4 in above the wing plane, against 12 in in the model.
+
+| value | citation | what the page says (≤10 words) | copy caveat |
+|---|---|---|---|
+| W.L. 18.9 | plans-1980:p171 | side-view leader level with canard flat lower surface | alignment reading; hand digits 8 and 9 read on zoom |
+| W.L. 19.4 | plans-1980:p55 and CP25 LPC 16 note | GU template level line for the shear web face | typed digits, handwritten note repeats 19.4 |
+| W.L. 19.8 | cobelu:ch30 sheet C-3 | Roncz template level line on cores A to D | printed four times, identical |
+| W.L. 21.8 | cobelu:ch30 sheet C-1 | reference line above the full-scale canard section | not a template datum |
+| No other W.L. found | plans-1980:p54 (image read); p56, p57, p71, p72 (OCR search only) | canard chapters show no further waterline | p54 read on image; the other four searched by OCR text only, not read on image |
+
+### Canard chord
+
+| value | citation | what the page says (≤10 words) | copy caveat |
+|---|---|---|---|
+| GU canard span 142 in, cores 20.5 + 50.5 per side | plans-1980:p54 (printed 10-1) | canard span dimension over the six cores | clean read; matches 141.6 from om-1980:p3 |
+| GU block sizes 7 x 14 x 64, inboard core 3.4 x 9.3 x 50.5 | plans-1980:p54 | foam block layout, not chord | block widths, not a chord |
+| Roncz jig blocks 126 in apart | cobelu:p13 ch30 | outboard jig blocks spacing | already the model canard_span |
+| Roncz elevator 65 in each side | cobelu:ch30 sheet C-1 | elevator planform half-length | agrees with cp-43:p1 130 in |
+| No canard chord printed | plans-1980:p54, p55, p56, p57; cobelu:ch30 sheets C-1, C-3, C-4 | no chord figure on the canard or template pages | templates are full size but carry no chord dimension; GU template pages A-2, A-9, A-10 are not in the scan |
+| Roncz chord about 12 in (derived, low confidence) | cobelu:ch30 sheet C-1 full-scale section | section drawn full scale; measured against its 3 in spar cap and 1 in tube | measured 11.6 to 12.2 in on the scan; scan scale unverified, do not use as a model value |

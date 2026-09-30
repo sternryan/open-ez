@@ -89,10 +89,11 @@ class LaminateDefinition:
         return ["engrave_labels", "pocket_features", "profile_cut"]
 
 
-# Canard chord: Task 1 chord search found no sourced value (docs/geometry-correction-ledger.md).
-CHORD = 15.25
-CHORD_STATUS = "unsourced"
-CHORD_SOURCE = ""
+# Canard chord: the Roncz chord was not found (docs/block1-source-notes.md, Roncz canard); the GU
+# planform from the manual is used: 12.8 sq ft * 144 / 141.6 in (11.8 ft).
+CHORD = 13.02
+CHORD_STATUS = "conflict"
+CHORD_SOURCE = "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft"
 
 
 @dataclass
@@ -100,18 +101,18 @@ class GeometricParams:
     """Primary aircraft geometry - all dimensions in inches unless noted."""
 
     # === MAIN WING (Eppler 1230 Modified) ===
-    wing_span: float = 316.8  # Total span (26.4 ft)
-    wing_root_chord: float = 68.0  # Root chord at BL 23.3
-    wing_tip_chord: float = 32.0  # Tip chord
-    wing_sweep_le: float = 25.0  # Leading edge sweep (degrees)
-    wing_dihedral: float = -4.5  # Negative = anhedral (degrees)
+    wing_span: float = 313.2  # Total span (26.1 ft, om-1980:p3)
+    wing_root_chord: float = 49.90  # Root chord at BL 23.3, derived (see GEOMETRY_PROVENANCE)
+    wing_tip_chord: float = 20.0  # Tip chord at B.L. 157 (plans-1980:p126)
+    wing_sweep_le: float = 22.98  # Leading edge sweep (degrees), plans-1980:p126
+    wing_dihedral: float = 0.0  # wing jigged flat (plans-1980:p134); no angle printed
     wing_washout: float = 1.0  # Tip washout (degrees)
     wing_incidence: float = 0.0  # Relative to longerons (degrees)
     wing_oswald_e: float = 0.80  # Oswald efficiency factor (typical for tapered wing)
 
     # === CANARD (Roncz R1145MS - SAFETY CRITICAL) ===
-    canard_span: float = 126.0  # Roncz structural core, BL +/-63 (cobelu ch 30 jig blocks); tips not modelled
-    canard_chord: float = CHORD  # constant chord (book planform is a rectangle); see GEOMETRY_PROVENANCE
+    canard_span: float = 141.6  # GU planform 11.8 ft (om-1980:p3); Roncz planform unconfirmed (core jig blocks 126 apart, cobelu:p13)
+    canard_chord: float = CHORD  # constant chord (GU planform rectangle); see GEOMETRY_PROVENANCE
     canard_sweep_le: float = 0.0  # zero sweep (plans p.71)
     canard_incidence: float = -1.5  # Relative to longerons (degrees)
     canard_oswald_e: float = 0.75  # Oswald efficiency factor (lower AR, less efficient)
@@ -132,8 +133,8 @@ class GeometricParams:
     # internal_fs - datum_offset_in = published_fs
 
     # === OPENVSP GEOMETRY (positions for 3D model) ===
-    wing_le_wl: float = 0.0  # Wing LE waterline, Z position in inches (at longeron level)
-    canard_le_wl: float = 12.0  # Canard LE waterline, ~12" above longerons on Long-EZ
+    wing_le_wl: float = 0.0  # model zero = book W.L. 17.4, the wing plane (plans-1980:p134)
+    canard_le_wl: float = 1.5  # above the wing plane: p171 W.L. 18.9 - 17.4; see GEOMETRY_PROVENANCE
     winglet_height: float = 16.0  # Winglet vertical span in inches (Long-EZ winglets, Rutan Ch.19)
     winglet_root_chord: float = 20.0  # Winglet root chord at wing tip junction (inches)
     winglet_tip_chord: float = 12.0  # Winglet tip chord (inches)
@@ -141,7 +142,7 @@ class GeometricParams:
 
     # === CANARD DOWNWASH ===
     canard_vertical_offset_in: float = (
-        12.0  # Vertical separation canard AC to wing plane
+        1.5  # Vertical separation canard AC to wing plane (see GEOMETRY_PROVENANCE)
     )
 
     # === FUSELAGE BULKHEAD HEIGHTS ===
@@ -249,7 +250,7 @@ class GeometricParams:
 
 
 PROVENANCE_STATUSES = frozenset(
-    {"book", "cp-corrected", "derived-unsourced", "converted-unsourced", "unsourced", "conflict"}
+    {"book", "cp-corrected", "derived", "derived-unsourced", "converted-unsourced", "unsourced", "conflict"}
 )
 
 
@@ -258,24 +259,31 @@ def _p(status: str, source: str = "", confidence: str = "n/a", note: str = "") -
 
 
 # Where each planform/station value comes from. Statuses: book (plans page), cp-corrected (a
-# Canard Pusher correction), derived-unsourced (computed from an unverified input),
+# Canard Pusher correction), derived (computed from book/cp-corrected values; the formula is in the
+# note and the source cites the input pages), derived-unsourced (computed from an unverified input),
 # converted-unsourced (shifted between frames, never checked), unsourced, conflict.
 # tests/test_geometry_provenance.py fails if a matching GeometricParams field lacks an entry.
 GEOMETRY_PROVENANCE: dict[str, dict] = {
-    "canard_span": _p("book", "cobelu:p13 ch30 Step 18 jig blocks", "high",
-                      "Fig 30-20: outboard jig blocks 126 in apart (core to BL +/-63); page 13 of the ch30 PDF. Roncz core only; curled tips not modelled; GU span is 142 (p.54), reference only"),
-    "canard_chord": _p(CHORD_STATUS, CHORD_SOURCE, "n/a" if CHORD_STATUS == "unsourced" else "high",
-                       "no sourced value; mean of the retired 17.0/13.5 taper; see docs/geometry-correction-ledger.md Chord search"),
+    "canard_span": _p("conflict", "om-1980:p3 canard span 11.8 ft", "medium",
+                      "GU planform (om-1980 p3); Roncz planform unconfirmed. Roncz elevator tip-to-tip 130 (cp-43:p1); cobelu ch30 Roncz core jig blocks 126 apart (cobelu:p13); plans GU span 142 (plans-1980:p54, B.L. 71 at p171)"),
+    "canard_chord": _p(CHORD_STATUS, CHORD_SOURCE, "medium",
+                       "GU planform (om-1980 p3); Roncz planform unconfirmed; chord = 12.8*144/141.6"),
     "canard_sweep_le": _p("book", "plans-1980:p71", "high", "zero sweep (ch12 canard installation); p.171 planform agrees"),
-    "canard_incidence": _p("unsourced", note="set by incidence blocks; value not in the book"),
+    "canard_incidence": _p("unsourced", note="set by incidence blocks; value not in the book; CP 47 gives the method (level against top longeron), no angle"),
     "canard_oswald_e": _p("unsourced", note="aero estimate, not a plans value"),
-    "canard_le_wl": _p("unsourced", note="not in the book"),
-    "canard_vertical_offset_in": _p("unsourced", note="canard AC to wing plane separation; not checked against the book"),
-    "wing_span": _p("unsourced", note="not verified against the book"),
-    "wing_root_chord": _p("unsourced", note="not verified against the book"),
-    "wing_tip_chord": _p("unsourced", note="not verified against the book"),
-    "wing_sweep_le": _p("unsourced", note="not verified against the book"),
-    "wing_dihedral": _p("unsourced", note="not verified against the book"),
+    "canard_le_wl": _p("conflict", "plans-1980:p171 W.L. 18.9 at canard", "medium",
+                       "model z is relative to the wing plane (wing_le_wl 0 = book W.L. 17.4, plans-1980:p126/p134). p171 3-view W.L. 18.9 at the canard lower surface (GU, first edition) gives 18.9-17.4 = 1.5; GU template level line W.L. 19.4 (plans-1980:p55) and Roncz template level line W.L. 19.8 (cobelu C-3) are different references; none is labelled as the LE"),
+    "canard_vertical_offset_in": _p("conflict", "plans-1980:p171 W.L. 18.9 at canard", "medium",
+                                    "downwash separation, canard to wing plane; same evidence as canard_le_wl (18.9-17.4 = 1.5); the book drawings put the canard 1.5-2.4 in above the wing plane, 12 had no source"),
+    "wing_span": _p("book", "om-1980:p3 wing span 26.1 ft", "high",
+                    "26.1 ft = 313.2 in; plans tip rib at B.L. 157 (plans-1980:p126) gives 314"),
+    "wing_root_chord": _p("derived", "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157", "medium",
+                          "linear taper through the printed chords, extrapolated to root BL 23.3: 42.7 + (55.5-23.3)*(42.7-20.0)/(157-55.5); taper is straight (31.35 printed at BL 106.25 matches)"),
+    "wing_tip_chord": _p("book", "plans-1980:p126 chord 20.0 at B.L. 157", "high", "wing tip section chord"),
+    "wing_sweep_le": _p("book", "plans-1980:p126 22.98 deg LE sweep", "high",
+                        "CP25 LE 113.9 at BL 58 and tip LE F.S. 156 at BL 157 give 23.0 deg, consistent"),
+    "wing_dihedral": _p("book", "plans-1980:p134 wing flat at 17.4 waterline plane", "medium",
+                        "LE flat at W.L. 17.4 (p126); TE rises with thickness taper; no dihedral angle printed"),
     "fs_nose": _p("book", "plans-1980:p171 nose tip F.S. -6.8", "high",
                   "nose tip callout on the back-cover 3-view; the datum F.S. 0.0 (om-1980:p25) lies 6.8 in aft of the nose tip"),
     "fs_canard_le": _p("book", "plans-1980:p171 F.S. 18.7 at B.L. 71", "high",
@@ -290,7 +298,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "fuselage_length": _p("conflict", note="left at 214 (tail unsourced); manual overall length 201.4 (om-1980:p3); fs_tail - fs_nose = 175.3 with book nose; Block 1 flag"),
     "wing_le_anchor": _p("cp-corrected", "cp-text:p25 LPC 7 wing root LE 113.9", "high",
                          "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)"),
-    "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment"),
+    "wing_root_bl": _p("unsourced", note="root butt line 23.3, carried from the existing config comment; plans p126 TE meets cowl at B.L. 23 F.S. 148.4; not a root chord station"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 

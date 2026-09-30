@@ -33,7 +33,7 @@ def test_provenance_entries_are_well_formed():
         assert set(e) == {"status", "source", "confidence", "note"}, field
         assert e["status"] in PROVENANCE_STATUSES, (field, e["status"])
         assert e["confidence"] in {"high", "medium", "low", "n/a"}, (field, e["confidence"])
-        if e["status"] in {"book", "cp-corrected"}:
+        if e["status"] in {"book", "cp-corrected", "derived"}:
             assert e["source"].strip(), f"{field}: a {e['status']} value needs a source"
 
 
@@ -50,7 +50,7 @@ def test_canard_is_a_book_rectangle():
     g = config.geometry
     assert g.canard_sweep_le == 0.0
     assert g.canard_root_chord == g.canard_tip_chord == g.canard_chord
-    assert g.canard_span == 126.0
+    assert g.canard_span == 141.6
     assert GEOMETRY_PROVENANCE["canard_sweep_le"]["status"] == "book"
     assert GEOMETRY_PROVENANCE["canard_sweep_le"]["source"].startswith("plans-1980:p71")
 
@@ -74,7 +74,7 @@ def test_book_stations():
     assert (fs, bl) == (113.9, 58.0)
     expect = 113.9 - (58.0 - g.wing_root_bl) * math.tan(math.radians(g.wing_sweep_le))
     assert g.fs_wing_le == pytest.approx(expect)
-    assert g.fs_wing_le == pytest.approx(97.72, abs=0.01)  # 25 deg sweep, root BL 23.3
+    assert g.fs_wing_le == pytest.approx(99.19, abs=0.01)  # 22.98 deg sweep, root BL 23.3
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["status"] == "cp-corrected"
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["source"].startswith("cp-text:p25")
 
@@ -120,5 +120,80 @@ def test_weight_arms_shift_uniformly():
 
 def test_sourced_entries_cite_the_registry():  # Review Focus 1
     for field, e in GEOMETRY_PROVENANCE.items():
-        if e["status"] in {"book", "cp-corrected"}:
+        if e["status"] in {"book", "cp-corrected", "derived"}:
             check_citation(e["source"])  # raises on unknown id or bad form
+
+
+def test_wing_planform_is_the_book():  # Task 7
+    g = config.geometry
+    P = GEOMETRY_PROVENANCE
+    assert g.wing_span == 313.2
+    assert g.wing_sweep_le == 22.98
+    assert g.wing_tip_chord == 20.0
+    assert g.wing_dihedral == 0.0
+    assert g.wing_root_bl == 23.3
+    assert (P["wing_span"]["status"], P["wing_span"]["source"]) == ("book", "om-1980:p3 wing span 26.1 ft")
+    assert (P["wing_sweep_le"]["status"], P["wing_sweep_le"]["source"]) == ("book", "plans-1980:p126 22.98 deg LE sweep")
+    assert (P["wing_tip_chord"]["status"], P["wing_tip_chord"]["source"]) == ("book", "plans-1980:p126 chord 20.0 at B.L. 157")
+    assert (P["wing_dihedral"]["status"], P["wing_dihedral"]["source"]) == (
+        "book", "plans-1980:p134 wing flat at 17.4 waterline plane")
+    assert P["wing_root_bl"]["status"] == "unsourced"
+
+
+def test_wing_root_chord_is_derived_from_the_printed_chords():
+    inputs = (42.7, 55.5, 20.0, 157.0, 23.3)  # chord at 55.5, BL, tip chord, tip BL, root BL
+    c1, bl1, c2, bl2, bl0 = inputs
+    root = c1 + (bl1 - bl0) * (c1 - c2) / (bl2 - bl1)
+    assert config.geometry.wing_root_chord == pytest.approx(round(root, 2), abs=1e-9)
+    assert config.geometry.wing_root_chord == 49.90
+    e = GEOMETRY_PROVENANCE["wing_root_chord"]
+    assert e["status"] == "derived"
+    assert e["source"] == "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157"
+    assert "42.7 + (55.5-23.3)*(42.7-20.0)/(157-55.5)" in e["note"]
+    # the printed mid chord (31.35 at BL 106.25) lies on the same straight taper
+    assert c1 + (106.25 - bl1) * (c2 - c1) / (bl2 - bl1) == pytest.approx(31.35, abs=0.01)
+
+
+def test_canard_planform_is_the_gu_planform_flagged_conflict():
+    g = config.geometry
+    P = GEOMETRY_PROVENANCE
+    import config.aircraft_config as ac
+    assert (ac.CHORD, ac.CHORD_STATUS, ac.CHORD_SOURCE) == (13.02, "conflict", "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft")
+    assert g.canard_chord == 13.02
+    assert g.canard_span == 141.6
+    assert P["canard_chord"]["status"] == "conflict"
+    assert P["canard_chord"]["source"] == "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft"
+    assert P["canard_chord"]["note"] == "GU planform (om-1980 p3); Roncz planform unconfirmed; chord = 12.8*144/141.6"
+    assert P["canard_span"]["status"] == "conflict"
+    assert P["canard_span"]["source"] == "om-1980:p3 canard span 11.8 ft"
+    assert 12.8 * 144 / 141.6 == pytest.approx(13.02, abs=0.005)
+    assert P["canard_incidence"]["status"] == "unsourced"
+    assert "CP 47" in P["canard_incidence"]["note"]
+
+
+def test_canard_height_above_the_wing_plane():
+    g = config.geometry
+    P = GEOMETRY_PROVENANCE
+    assert g.wing_le_wl == 0.0
+    assert g.canard_le_wl == 1.5
+    assert g.canard_vertical_offset_in == 1.5
+    for k in ("canard_le_wl", "canard_vertical_offset_in"):
+        assert P[k]["status"] == "conflict", k
+        assert P[k]["source"] == "plans-1980:p171 W.L. 18.9 at canard", k
+    assert 18.9 - 17.4 == pytest.approx(1.5)
+
+
+def test_canard_arm_follows_the_chord():
+    w = StructuralWeightParams()
+    assert w.canard_arm_in == pytest.approx(18.7 + 0.25 * 13.02)
+
+
+def test_canard_area_matches_chord_times_span_and_the_manual():
+    g = config.geometry
+    area = g.canard_area
+    assert area == pytest.approx(g.canard_chord * g.canard_span / 144, abs=0.01)
+    assert area == pytest.approx(12.8, abs=0.01)  # om-1980:p3 GU canard area
+
+
+def test_derived_status_is_recognised():
+    assert "derived" in PROVENANCE_STATUSES
