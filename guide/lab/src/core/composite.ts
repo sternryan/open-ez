@@ -91,6 +91,9 @@ float capFade = 1.0;
 {
   float cyc = cmpFp * uWv.x;
   float fade = (1.0 - smoothstep(0.18, 0.5, cyc)) * cmpOn;
+  #ifdef SURF_CHEAP
+  fade = 0.0; // low tier: the foam skin is its albedo only, no Worley cells
+  #endif
   if (fade > 0.01) {
     vec3 w = worley(vObj * uWv.x);
     float wall = 1.0 - smoothstep(0.0, 0.2, w.y - w.x);
@@ -98,13 +101,20 @@ float capFade = 1.0;
     cmpRough = fade * (0.1 * wall + 0.12 * (w.z - 0.5));
     surfH += fade * uWv.y * (1.0 - smoothstep(0.0, 0.65, w.x)) / cmpFp;
   }
+  #ifndef SURF_CHEAP
   if (cutCap) {
     // the cut face shows finer cells than the skin's relief, the way a clean machined foam face looks
     capW = worley(cutHit * uWv.x * 2.5);
     capFade = 1.0 - smoothstep(0.2, 0.5, max(length(dFdx(cutHit)), length(dFdy(cutHit))) * uWv.x * 2.5);
   }
+  #else
+  capFade = 0.0;
+  #endif
 }
 #elif defined(COMP_UND) || defined(COMP_BID)
+#ifdef SURF_CHEAP
+capFade = 0.0; // low tier: albedo only, no weave relief or tow shading; the cut face keeps its ply lines but drops the fibre dots
+#else
 {
   vec2 q = uWeb > 0.5 ? vObj.zy : vObj.zx;
   float A = dot(q, uAng);                    // along the first tow direction
@@ -156,6 +166,7 @@ float capFade = 1.0;
     capFade = 1.0 - smoothstep(0.16, 0.42, max(length(dFdx(cutHit)), length(dFdy(cutHit))) * 26.0);
   }
 }
+#endif
 #endif
 `
 

@@ -29,6 +29,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .btn { border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
 .btn:hover, .seg button:not([aria-pressed="true"]):hover { background: rgba(238, 233, 225, 0.12); }
 
+#quality .label { text-transform: none; letter-spacing: 0; opacity: 0.75; }
+#quality .seg button { padding: 3px 10px; min-height: 26px; font-size: 12px; }
 #controls .row { display: flex; gap: 8px; align-items: center; }
 #scrub { width: 180px; accent-color: var(--accent); min-height: 32px; }
 .check { display: inline-flex; gap: 8px; align-items: center; min-height: 32px; cursor: pointer; }

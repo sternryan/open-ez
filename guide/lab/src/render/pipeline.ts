@@ -1,5 +1,5 @@
 // Adapted from AirsupHQ/airsup-lab src/render/pipeline.ts (MIT); see NOTICE.
-// Changes: removed the rocket plume pass and its heat-haze input; the composite passes the scene through
+// Changes: removed the rocket plume pass and its heat-haze input; the composite passes the scene through; added configure() so a quality tier can switch AO, bloom, MSAA and buffer sizes at run time (bloom and AO targets are only allocated while on)
 import * as THREE from 'three'
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js'
 import { GTAOShader, generateMagicSquareNoise } from 'three/addons/shaders/GTAOShader.js'
@@ -280,6 +280,7 @@ export class Pipeline {
   aoScale = 0.5
   shadowDirty = true
   aoEnabled: boolean
+  bloomEnabled = true
   msaa: number
 
   constructor(private renderer: THREE.WebGLRenderer, opts: PipelineOpts) {
@@ -313,6 +314,16 @@ export class Pipeline {
     })
   }
 
+  /** Switch the tier-dependent parts. The targets are rebuilt at the current size (setSize is called if it is known). */
+  configure(o: { ao: boolean; aoSamples: number; aoScale: number; msaa: number; bloom: boolean }) {
+    this.aoEnabled = o.ao
+    this.aoScale = o.aoScale
+    this.msaa = o.msaa
+    this.bloomEnabled = o.bloom
+    if (o.ao && this.gtao.defines.SAMPLES !== o.aoSamples) { this.gtao.defines.SAMPLES = o.aoSamples; this.gtao.needsUpdate = true }
+    if (this.w > 1 || this.h > 1) this.setSize(this.w, this.h)
+  }
+
   setSize(w: number, h: number) {
     this.w = w
     this.h = h
@@ -324,8 +335,10 @@ export class Pipeline {
     this.sceneRT.texture.minFilter = THREE.LinearFilter
     const hw = Math.max(1, Math.round(w * this.aoScale)), hh = Math.max(1, Math.round(h * this.aoScale))
     for (const rt of [this.aoRT, this.aoTmp, this.hdrRT, this.dofRT]) rt?.dispose()
-    this.aoRT = new THREE.WebGLRenderTarget(hw, hh, hf)
-    this.aoTmp = new THREE.WebGLRenderTarget(hw, hh, hf)
+    if (this.aoEnabled) {
+      this.aoRT = new THREE.WebGLRenderTarget(hw, hh, hf)
+      this.aoTmp = new THREE.WebGLRenderTarget(hw, hh, hf)
+    }
     this.hdrRT = new THREE.WebGLRenderTarget(w, h, hf)
     this.dofRT = new THREE.WebGLRenderTarget(w, h, hf)
     for (const rt of this.bloom) rt.dispose()
@@ -333,7 +346,7 @@ export class Pipeline {
     this.bloom = []
     this.bloomUp = []
     let bw = Math.max(1, Math.round(w / 2)), bh = Math.max(1, Math.round(h / 2))
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < (this.bloomEnabled ? 7 : 0); i++) {
       this.bloom.push(new THREE.WebGLRenderTarget(bw, bh, hf))
       this.bloomUp.push(new THREE.WebGLRenderTarget(bw, bh, hf))
       bw = Math.max(1, Math.round(bw / 2))
@@ -399,14 +412,18 @@ export class Pipeline {
     r.render(scene, camera)
     camera.layers.set(LAYER_OPAQUE)
 
-    // 5. composite (scene only)
-    const c = this.composite.uniforms
-    c.tScene.value = this.sceneRT.texture
-    c.uTime.value = time
-    c.uHaze.value = P.haze
-    this.pass(this.composite, this.hdrRT)
-
-    let src = this.hdrRT
+    // 5. composite (scene only). The copy only guards against a stray NaN or inf reaching bloom or blur; with neither running
+    // (the low tier) the final pass reads the scene directly and the copy, a whole-frame pass, is skipped.
+    const post = this.bloomEnabled || P.dofAperture > 0.001
+    let src = this.sceneRT
+    if (post) {
+      const c = this.composite.uniforms
+      c.tScene.value = this.sceneRT.texture
+      c.uTime.value = time
+      c.uHaze.value = P.haze
+      this.pass(this.composite, this.hdrRT)
+      src = this.hdrRT
+    }
     // 6. depth of field
     if (P.dofAperture > 0.001) {
       const d = this.dof.uniforms
@@ -423,37 +440,40 @@ export class Pipeline {
       src = this.dofRT
     }
 
-    // 7. bloom
-    const bp = this.bloomPre.uniforms
-    bp.tSrc.value = src.texture
-    bp.uTexel.value.set(0.5 / this.w, 0.5 / this.h)
-    bp.uThreshold.value = P.bloomThreshold
-    bp.uKnee.value = 0.6
-    this.pass(this.bloomPre, this.bloom[0])
-    for (let i = 1; i < this.bloom.length; i++) {
-      const bd = this.bloomDown.uniforms
-      bd.tSrc.value = this.bloom[i - 1].texture
-      bd.uTexel.value.set(1 / this.bloom[i - 1].width, 1 / this.bloom[i - 1].height)
-      this.pass(this.bloomDown, this.bloom[i])
-    }
-    const n = this.bloom.length
-    // upsample chain: bloomUp[i] = up(bloomUp[i+1]) + bloom[i]
-    let prev: THREE.WebGLRenderTarget = this.bloom[n - 1]
-    for (let i = n - 2; i >= 0; i--) {
-      const bu = this.bloomUpM.uniforms
-      bu.tSrc.value = prev.texture
-      bu.tPrev.value = this.bloom[i].texture
-      bu.uTexel.value.set(1 / prev.width, 1 / prev.height)
-      bu.uRadius.value = P.bloomRadius
-      this.pass(this.bloomUpM, this.bloomUp[i])
-      prev = this.bloomUp[i]
+    // 7. bloom (low tier: skipped, and the final pass adds nothing)
+    let prev: THREE.WebGLRenderTarget = src
+    if (this.bloomEnabled) {
+      const bp = this.bloomPre.uniforms
+      bp.tSrc.value = src.texture
+      bp.uTexel.value.set(0.5 / this.w, 0.5 / this.h)
+      bp.uThreshold.value = P.bloomThreshold
+      bp.uKnee.value = 0.6
+      this.pass(this.bloomPre, this.bloom[0])
+      for (let i = 1; i < this.bloom.length; i++) {
+        const bd = this.bloomDown.uniforms
+        bd.tSrc.value = this.bloom[i - 1].texture
+        bd.uTexel.value.set(1 / this.bloom[i - 1].width, 1 / this.bloom[i - 1].height)
+        this.pass(this.bloomDown, this.bloom[i])
+      }
+      const n = this.bloom.length
+      // upsample chain: bloomUp[i] = up(bloomUp[i+1]) + bloom[i]
+      prev = this.bloom[n - 1]
+      for (let i = n - 2; i >= 0; i--) {
+        const bu = this.bloomUpM.uniforms
+        bu.tSrc.value = prev.texture
+        bu.tPrev.value = this.bloom[i].texture
+        bu.uTexel.value.set(1 / prev.width, 1 / prev.height)
+        bu.uRadius.value = P.bloomRadius
+        this.pass(this.bloomUpM, this.bloomUp[i])
+        prev = this.bloomUp[i]
+      }
     }
 
     // 8. final
     const f = this.final.uniforms
     f.tSrc.value = src.texture
     f.tBloom.value = prev.texture
-    f.uBloom.value = P.bloom
+    f.uBloom.value = this.bloomEnabled ? P.bloom : 0
     f.uExposure.value = P.exposure
     f.uTime.value = time
     f.uVignette.value = P.vignette
