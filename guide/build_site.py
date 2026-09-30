@@ -56,7 +56,7 @@ def _plies(models: Path | None) -> dict:
     out: dict = {}
     for node, n in json.loads(lj.read_text())["nodes"].items():
         out.setdefault(n["component"], []).append(
-            {"node": node, "order": n["order"], "cloth": n["cloth"], "where": n["where"],
+            {"node": node, "op": n["op"], "order": n["order"], "cloth": n["cloth"], "where": n["where"],
              "position_verified": n["position_verified"]})
     for rows in out.values():
         rows.sort(key=lambda r: r["order"])

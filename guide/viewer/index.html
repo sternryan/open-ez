@@ -30,7 +30,17 @@
       </figure>
       <div id="glance" hidden></div>
       <div id="isobar" hidden><span id="isotext" aria-live="polite"></span><button id="showall">Show all</button></div>
-      <div id="dockstack"><div id="parts"></div><div id="plydock" hidden></div></div>
+      <div id="dockstack">
+        <div id="buildbar" hidden>
+          <label class="opt"><input type="checkbox" id="ghost"> Show future work</label>
+          <span id="scrubwrap" hidden>
+            <button type="button" id="play" aria-pressed="false">Play</button>
+            <input type="range" id="scrub" min="1" max="1" value="1" step="1" aria-label="Ply">
+            <output id="scrublabel" for="scrub" aria-live="polite"></output>
+          </span>
+        </div>
+        <div id="parts"></div><div id="plydock" hidden></div>
+      </div>
     </section>
     <aside>
       <h2 id="op-title"></h2><p id="op-summary"></p>
