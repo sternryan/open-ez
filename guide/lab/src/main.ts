@@ -18,7 +18,7 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
-import { TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
+import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
 import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './director'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
@@ -47,6 +47,8 @@ interface LabHook {
   /** quality tier in use; setTier picks one by hand (and turns automatic step-down off); feedFrame injects a frame time (ms) into the step-down rule */
   /** the low tier's adaptive resolution: the multiplier on the pixel count it draws (1 = the tier's full budget) */
   resScale(): number
+  /** WebGL context loss (?test=1): whether it is lost now; loseContext/restoreContext drive it through WEBGL_lose_context (false when the browser has no such extension) */
+  contextLost(): boolean; loseContext(): boolean; restoreContext(): boolean
   tier(): Tier; setTier(t: Tier): void; auto(): boolean; setAuto(on: boolean): void; feedFrame(ms: number): void
   ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number; pixels: number }; advance(seconds: number): void
   /** the tour (the film) is running; the tourSteps index it is on */
@@ -108,6 +110,7 @@ const hook: LabHook = {
   material: () => null, setWet: () => {}, meshBox: () => null,
   cut: () => ({ enabled: false, bl: 0, planeConstant: null, keepsOutboard: false, removesInboard: false, cappedNodes: [], capsVisible: 0, capNodesVisible: [], clipped: 0 }),
   plyBox: () => null, setSection: () => {}, labels: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
+  contextLost: () => false, loseContext: () => false, restoreContext: () => false,
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
 }
@@ -202,7 +205,12 @@ async function boot() {
   const coarse = matchMedia('(pointer: coarse)').matches
   // Quality tier (quality.ts): ?q=high|mid|low forces one and turns automatic step-down off; so do ?freeze=1 and ?rec=1, which must be deterministic.
   const forcedTier = parseTier(params.get('q'))
+  // A context loss in this tab's session lowers the start tier for the rest of it (kept across the reload the overlay offers).
+  const CAP_KEY = 'lab.tierCap'
+  let storedCap: Tier | null = null
+  try { storedCap = parseTier(window.sessionStorage.getItem(CAP_KEY)) } catch { /* no storage: no memory */ }
   let tier: Tier = forcedTier ?? (REC ? 'high' : startTier({ coarse, width: window.innerWidth, height: window.innerHeight }))
+  if (!forcedTier && !REC && storedCap && TIER_ORDER.indexOf(storedCap) > TIER_ORDER.indexOf(tier)) tier = storedCap
   let res: ResState = initialRes(3000) // adaptive resolution, low tier only (see quality.ts); off for ?freeze=1 and ?rec=1 like the tier step-down
   const resAdapt = !REC && params.get('freeze') !== '1'
   let autoOn = !forcedTier && !REC && params.get('freeze') !== '1'
@@ -210,7 +218,7 @@ async function boot() {
 
   const scene = new THREE.Scene()
   scene.background = null // a colour background would force-clear on every render() call
-  const envMap = workshopEnvironment(renderer)
+  let envMap = workshopEnvironment(renderer)
   scene.environment = TIERS[tier].cheapShaders ? null : envMap
   scene.environmentIntensity = 1.5
 
@@ -296,11 +304,16 @@ async function boot() {
     controls.update()
     stepLabels(dt)
   }
+  let glLost = false // the WebGL context is gone (see the contextlost handler below)
+  let awaitFrame = false // restored, and the overlay stays until a frame has actually been drawn
+  const glLostEl = document.getElementById('gl-lost')
   const render = () => {
+    if (glLost) return
     pipeline.params.dofFocus = camera.position.distanceTo(controls.target)
     pipeline.params.dofAperture = TIERS[tier].dof ? 9 : 0
     renderer.info.reset()
     pipeline.render(scene, camera, simT)
+    if (awaitFrame && renderer.info.render.calls > 0 && !renderer.getContext().isContextLost()) { awaitFrame = false; if (glLostEl) glLostEl.hidden = true }
   }
   let last = performance.now()
   // ---- quality tier: applying one, and the automatic step-down (driven by real frame times only) ----
@@ -348,11 +361,57 @@ async function boot() {
   let frozen = TEST && params.get('freeze') === '1'
   if (!REC) renderer.setAnimationLoop(() => {
     const t = performance.now(), dt = Math.min((t - last) / 1000, 0.1)
-    if (realFrames && hook.ready && !frozen) feed(t - last)
+    if (realFrames && hook.ready && !frozen && !glLost) feed(t - last)
     last = t
     if (!frozen) step(dt)
     render()
   })
+  // ---- context loss: the iPad can reclaim graphics memory from a tab. Say so, stay usable, and rebuild when the browser gives it back. ----
+  // three.js re-creates buffers, textures and programs by itself on restore; what it cannot is content that was drawn into the GPU once:
+  // the environment map (a PMREM render target), the shadow map and the pipeline's targets. Those are rebuilt here.
+  const reloadBtn = document.getElementById('gl-lost-reload')
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault() // lets the browser restore the context
+    glLost = true
+    awaitFrame = false
+    stepState = initialStep(tier) // no frame time is fed while it is lost; nothing to step down on
+    if (glLostEl) glLostEl.hidden = false
+  })
+  canvas.addEventListener('webglcontextrestored', () => {
+    try {
+      if (NOISE3D.value) NOISE3D.value.needsUpdate = true // uploaded again on next use
+      envMap.dispose()
+      envMap = workshopEnvironment(renderer)
+      scene.environment = TIERS[tier].cheapShaders ? null : envMap
+      key.shadow.dispose()
+      pipeline.shadowDirty = true
+      scene.traverse((o) => { const m = (o as THREE.Mesh).material; if (m) for (const x of Array.isArray(m) ? m : [m]) x.needsUpdate = true })
+      resize() // the pipeline's targets and shaders, at the current size
+      // memory pressure is the likely cause: one tier down, for this session
+      const lower = TIER_ORDER[TIER_ORDER.indexOf(tier) + 1]
+      if (autoOn && lower) {
+        applyTier(lower)
+        try { window.sessionStorage.setItem(CAP_KEY, lower) } catch { /* no storage */ }
+      }
+      stepState = initialStep(tier, 3000)
+      last = performance.now()
+      glLost = false
+      awaitFrame = true // the overlay hides on the first frame that draws
+    } catch (err) {
+      console.error('context restore failed', err)
+    }
+  })
+  reloadBtn?.addEventListener('click', () => {
+    const u = new URL(location.href)
+    const op = hook.selected()
+    if (op) u.searchParams.set('op', op)
+    location.replace(u.toString()) // same page, same step
+  })
+  const loseExtension = renderer.getContext().getExtension('WEBGL_lose_context') // fetched now: a lost context answers null
+  const loseExt = () => loseExtension
+  hook.contextLost = () => glLost
+  hook.loseContext = () => { const x = loseExt(); if (!x) return false; x.loseContext(); return true }
+  hook.restoreContext = () => { const x = loseExt(); if (!x) return false; x.restoreContext(); return true }
   hook.freeze = (on: boolean) => { frozen = on }
   hook.advance = (s: number) => { step(s); render() }
   hook.resScale = () => res.scale

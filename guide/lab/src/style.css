@@ -164,3 +164,10 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
 body.rec * { cursor: none !important; transition: none !important; animation: none !important; }
 /* ?clean=1: the canvas and the film cards only */
 body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, body.clean #labels, body.clean #cursor { display: none !important; }
+
+/* ---- the graphics context was lost: a calm card over the canvas, in the lab's own card style; the other cards stay reachable ---- */
+#gl-lost { left: 50%; top: 42%; transform: translate(-50%, -50%); z-index: 15; width: min(340px, calc(100vw - 2 * var(--gap))); padding: 16px 18px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+#gl-lost b { font-size: 15px; font-weight: 600; }
+#gl-lost p { margin: 0 0 8px; color: var(--ink-soft); line-height: 1.45; }
+#gl-lost .btn { background: var(--ink); color: var(--on-ink); font-weight: 600; padding: 0 18px; }
+#gl-lost .btn:hover { background: var(--ink); }
