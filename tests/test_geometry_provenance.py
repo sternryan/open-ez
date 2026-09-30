@@ -20,7 +20,7 @@ PATTERN = re.compile(r"^(fs_|canard_|wing_(span|root_chord|tip_chord|sweep_le|di
 
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
-TRACKED_PROPERTIES = {"fuselage_length"}
+TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord"}
 
 
 def geometry_fields() -> set[str]:

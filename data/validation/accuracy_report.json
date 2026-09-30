@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T00:38:47.774748+00:00",
+    "generated": "2026-09-30T01:08:13.664841+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -17,19 +17,24 @@
     },
     "checks": {
       "stability": {
-        "np_fs": 105.93816004781637,
+        "np_fs": 108.50068946906737,
         "aft_limit_fs": 103.0,
-        "static_margin_pct": 7.4208,
+        "static_margin_pct": 13.8928,
         "pass": true,
         "mac_in": 39.59374059305345
       },
       "two_method_np": {
-        "status": "not run",
-        "analytic": 105.93816004781637,
-        "vlm": null,
-        "delta": null,
+        "status": "fail",
+        "analytic": 108.50068946906737,
+        "vlm": 111.1258,
+        "delta": 2.6251105309326306,
         "bound_in": 1.0,
-        "reason": "OpenVSP python module not installed; vspaero_native_polars.json holds no neutral point; vspaero_native_polars.json (2026-03-13T11:19:43.890146+00:00) has no geometry marker matching the current wing/canard spans, wing root BL and wing panel span, so it predates the current geometry"
+        "vlm_source": {
+          "file": "data/validation/vspaero_np.json",
+          "vsp_version": "OpenVSP 3.48.2",
+          "timestamp": "2026-09-30T01:06:51.495044+00:00",
+          "method": "VSPAERO vortex lattice (VLM), wing panels + canard, thin surfaces, Mach 0, Y-symmetry"
+        }
       }
     },
     "geometry_basis": "book (planform correction 2026-09-29); NP is a check, not a fit; see docs/geometry-correction-ledger.md",
@@ -47,7 +52,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 105.9382,
+      "computed": 108.5007,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -61,12 +66,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 99.1241,
+      "computed": 101.6866,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 2.124077,
-      "error_pct": 2.18977,
+      "error_abs": 4.686607,
+      "error_pct": 4.831553,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -74,20 +79,20 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 102.9092,
+      "computed": 105.4718,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 0.090761,
-      "error_pct": 0.088118,
-      "grade": "PASS",
+      "error_abs": 2.471768,
+      "error_pct": 2.399775,
+      "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
     },
     {
       "metric_id": "static_margin_pct",
       "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
-      "computed": 7.4208,
+      "computed": 13.8928,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -201,16 +206,16 @@
     {
       "metric_id": "wing_area_sqft",
       "description": "Main wing planform area",
-      "computed": 64.706,
+      "computed": 81.6999,
       "reference": 81.99,
       "tolerance_abs": 2.0,
       "tolerance_pct": null,
-      "error_abs": 17.283958,
-      "error_pct": 21.080569,
-      "grade": "FAIL",
+      "error_abs": 0.290114,
+      "error_pct": 0.353841,
+      "grade": "PASS",
       "source": "reference_data.json:aircraft_specs.wing_area_sqft",
       "units": "square feet",
-      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft). Model area is the trapezoid over both panels from wing_root_bl to wing_span/2 and excludes the centre section."
+      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft). Model area is the gross reference trapezoid: the straight panel taper (plans-1980:p126) extended to BL 0, both sides, tip to tip. Exposed panels alone (wing_root_bl to tip): 64.71 sq ft."
     }
   ]
 }

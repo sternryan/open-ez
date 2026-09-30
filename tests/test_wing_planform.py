@@ -30,21 +30,18 @@ def test_panel_runs_from_the_root_bl_not_span_over_two_outboard_of_it():
     assert G.wing_root_bl + G.wing_span / 2 > 175
 
 
-def test_wing_area_matches_independent_trapezoid_from_config_fields():
+def test_exposed_wing_area_matches_independent_trapezoid_from_config_fields():
     one_panel = _trapezoid_sqin(G.wing_root_bl, G.wing_span / 2, G.wing_root_chord, G.wing_tip_chord)
-    assert G.wing_area_sqft == pytest.approx(2 * one_panel / 144, abs=0.01)
-    assert G.wing_area == G.wing_area_sqft
+    assert G.wing_exposed_area_sqft == pytest.approx(2 * one_panel / 144, abs=0.01)
 
 
-def test_aspect_ratio_pairs_the_panel_span_with_the_panel_area():
-    """AR computed independently from root/tip chord, root BL and span; same planform for b and S."""
-    panel = G.wing_span / 2 - G.wing_root_bl
-    area_sqin = 2 * _trapezoid_sqin(G.wing_root_bl, G.wing_span / 2, G.wing_root_chord, G.wing_tip_chord)
-    expect = (2 * panel) ** 2 / area_sqin
+def test_aspect_ratio_pairs_the_gross_span_with_the_gross_area():
+    """AR computed independently from the gross trapezoid; same planform for b and S."""
+    area_sqin = 2 * _trapezoid_sqin(0.0, G.wing_span / 2, G.wing_centerline_chord, G.wing_tip_chord)
+    expect = G.wing_span**2 / area_sqin
     assert G.wing_aspect_ratio == pytest.approx(expect, rel=1e-9)
-    assert G.wing_aspect_ratio == pytest.approx(7.63, abs=0.02)
-    # guard the retired mixed definition (full tip-to-tip span over the panel-only area)
-    mixed = (G.wing_span / 12) ** 2 / G.wing_area_sqft
+    # guard the retired mixed definition (full tip-to-tip span over the exposed-panel area)
+    mixed = (G.wing_span / 12) ** 2 / G.wing_exposed_area_sqft
     assert abs(G.wing_aspect_ratio - mixed) > 2.0
 
 
@@ -70,8 +67,8 @@ def test_calculate_mac_uses_the_same_planform():
     y_mac = (panel / 3) * (1 + 2 * lam) / (1 + lam)
     x_le_wing = G.fs_wing_le + y_mac * math.tan(math.radians(G.wing_sweep_le))
     s_wing_side = _trapezoid_sqin(G.wing_root_bl, G.wing_tip_bl, cr, ct)
-    # the wing's own area agrees with the config property (both panels)
-    assert 2 * s_wing_side / 144 == pytest.approx(G.wing_area_sqft, abs=0.01)
+    # the wing's own area agrees with the config property (both exposed panels)
+    assert 2 * s_wing_side / 144 == pytest.approx(G.wing_exposed_area_sqft, abs=0.01)
 
     strake = config.strakes
     s_chord_in = strake.fs_trailing_edge - strake.fs_leading_edge
@@ -102,3 +99,47 @@ def test_no_code_uses_a_literal_214_fuselage_length():
             if re.search(r"\b214(\.0)?\b", line) and "fuselage" in line.lower() and "internal 214.0" not in line:
                 offenders.append(f"{path.name}:{i}")
     assert offenders == []
+
+
+# --- Reference area: gross trapezoid to the centreline (Block 1 follow-up) ---
+MANUAL_WING_AREA_SQFT = 81.99  # om-1980:p3
+
+
+def _within_1pct_of_manual(area_sqft):
+    return abs(area_sqft - MANUAL_WING_AREA_SQFT) / MANUAL_WING_AREA_SQFT <= 0.01
+
+
+def _printed_taper_chord_at(bl):
+    """Straight taper through the printed chords 42.7 at BL 55.5 and 20.0 at BL 157 (plans-1980:p126)."""
+    return 42.7 + (55.5 - bl) * (42.7 - 20.0) / (157 - 55.5)
+
+
+def test_centerline_chord_extends_the_printed_taper_to_bl_zero():
+    # the model's own line (root 49.90 at BL 23.3, tip 20.0 at BL 156.6) extended to BL 0
+    own = G.wing_root_chord + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / G.wing_panel_span
+    assert G.wing_centerline_chord == pytest.approx(own, rel=1e-12)
+    # the printed line puts the 20.0 tip at BL 157, not 156.6, so the two differ by ~0.014 in
+    assert G.wing_centerline_chord == pytest.approx(_printed_taper_chord_at(0.0), abs=0.02)
+    # the root chord at BL 23.3 lies on the same line
+    assert G.wing_root_chord == pytest.approx(_printed_taper_chord_at(G.wing_root_bl), abs=0.01)
+
+
+def test_reference_area_is_the_gross_trapezoid_to_the_centerline():
+    gross = 2 * _trapezoid_sqin(0.0, G.wing_tip_bl, G.wing_centerline_chord, G.wing_tip_chord) / 144
+    assert G.wing_area_sqft == pytest.approx(gross, abs=0.01)
+    assert G.wing_area == G.wing_area_sqft
+    assert _within_1pct_of_manual(G.wing_area_sqft)
+
+
+def test_exposed_area_fails_the_1pct_reference_check():
+    """Gate fails first: the exposed-panel area (the old reference) must not pass the 1% check."""
+    exposed = 2 * _trapezoid_sqin(G.wing_root_bl, G.wing_tip_bl, G.wing_root_chord, G.wing_tip_chord) / 144
+    assert G.wing_exposed_area_sqft == pytest.approx(exposed, abs=0.01)
+    assert G.wing_exposed_area_sqft == pytest.approx(64.71, abs=0.01)
+    assert not _within_1pct_of_manual(G.wing_exposed_area_sqft)
+
+
+def test_aspect_ratio_is_span_squared_over_reference_area():
+    expect = (G.wing_span / 12) ** 2 / G.wing_area_sqft
+    assert G.wing_aspect_ratio == pytest.approx(expect, rel=1e-9)
+    assert G.wing_aspect_ratio == pytest.approx(8.34, abs=0.02)

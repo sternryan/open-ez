@@ -79,7 +79,7 @@ class TestLiftCurveSlopeWing:
     """Test wing lift curve slope against Anderson's swept-wing correction."""
 
     # Long-EZ wing parameters from config
-    AR_WING = config.geometry.wing_aspect_ratio  # exposed-panel AR (Block 1 follow-up)
+    AR_WING = config.geometry.wing_aspect_ratio  # reference-trapezoid AR (ledger row 44)
     SWEEP_LE_DEG = config.geometry.wing_sweep_le
     TAPER_RATIO = config.geometry.wing_tip_chord / config.geometry.wing_root_chord
 
@@ -89,7 +89,7 @@ class TestLiftCurveSlopeWing:
             self.SWEEP_LE_DEG, self.AR_WING, self.TAPER_RATIO
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 36; a = 4.682/rad vs ceiling 4.6")
+    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 36 and 47; a = 4.827/rad vs ceiling 4.6")
     def test_anderson_reference_value(self):
         """Verify the Anderson formula gives expected ~4.2/rad for Long-EZ wing."""
         a = _anderson_lift_slope(self.AR_WING, self.sweep_half_chord_deg)
