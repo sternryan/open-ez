@@ -36,7 +36,10 @@ let layIndex = 0, timer = null, cut = null;
 
 // ---- 3D
 const canvas = $("#c");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, stencil: true }); // stencil: section caps
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, stencil: true }); // stencil: section caps
+// No MSAA: a multisampled stencilled target cost ~50 ms/frame in software GL (Task 6 measurement: 16.7 ms without it, on the same scene and cut),
+// and the section's stencil passes are exactly what MSAA multiplies. Edge quality comes from rendering at the device pixel ratio instead (capped at 2).
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 10000);
 const controls = new OrbitControls(camera, canvas);
@@ -197,7 +200,7 @@ $("#paths").onchange = e => {
 // are not built layers) that exist at this station, plus any other solid the plane opens (the foam core). It re-derives on every change of what is visible.
 function refreshReadout() {
   const out = $("#section-readout"), on = graph.layup && $("#section-on").checked, bl = +$("#section-bl").value;
-  if (!on) { out.textContent = ""; return; }
+  if (!on) { out.textContent = ""; out.removeAttribute("title"); return; }
   let layers = layersAt(graph.layup.nodes, bl), parts = [];
   if (meshes.size) {
     const lit = new Set(); for (const m of meshes.keys()) if (m.visible && !m.material.transparent) lit.add(plyNode.get(m) ?? meshes.get(m));
@@ -206,7 +209,7 @@ function refreshReadout() {
     parts = [...lit].filter(n => cut1.has(n) && !graph.layup.nodes[n]).sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(n => graph.components[n]?.label ?? n);
   }
   if (layers.length || !parts.length) parts.push(summarize(graph, layers));
-  out.textContent = `${fmtBl(bl)}: ${parts.join(" · ")}`;
+  out.textContent = `${fmtBl(bl)}: ${parts.join(" · ")}`; out.title = out.textContent; // phone: one ellipsised line; the full text stays in the title
 }
 function syncSection() {
   if (cut) { cut.setStation(+$("#section-bl").value); cut.enable($("#section-on").checked); }
@@ -497,6 +500,11 @@ if (TEST) {
     steps: tour ? tour.steps.map(s => s.op) : [], log: [...tourLog] });
   window.__buildState = () => { const st = buildState(); return st ? Object.fromEntries(st) : {}; };
   window.__cut = () => cut?.info() ?? {};
+  // Frame timing: requestAnimationFrame deltas (ms) between start() and stop(); stats() = what the last frame drew.
+  window.__frames = { _d: [], _on: false, _last: 0,
+    start() { this._d = []; this._on = true; this._last = 0; const tick = t => { if (!this._on) return; if (this._last) this._d.push(t - this._last); this._last = t; requestAnimationFrame(tick); }; requestAnimationFrame(tick); },
+    stop() { this._on = false; return this._d; } };
+  window.__stats = () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles });
   window.__paths = () => paths.map(p => ({ id: p.id, visible: pathsGroup.visible && p.group.visible }));
   // World-space points of a path (through the group rotation), and the world box of a component's meshes: the frame check.
   window.__pathWorld = id => { const p = paths.find(x => x.id === id);

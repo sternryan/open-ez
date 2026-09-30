@@ -1490,3 +1490,138 @@ def test_tour_order_matches_the_graph_and_scrubber_completes_before_each_advance
         assert with_plies >= 1
         b.close()
     s.shutdown()
+
+
+# ---- Block 2 M2.1 Task 6: frame-time budget while cutting; phone-width controls
+FRAME_BUDGET_MS = 33  # the budget; never raised. Default rAF quantises at 16.7 ms, so a median of 33.3 ms FAILS it.
+# Drags #section-bl from 0 to max over `ms`, one input event per animation frame; returns the slider value seen at each frame.
+DRAG_JS = """(ms) => new Promise(res => { const el = document.querySelector('#section-bl'), max = +el.max, step = +el.step || 1, t0 = performance.now(), seen = [];
+    const tick = t => { const k = Math.min(1, (t - t0) / ms); el.value = k < 1 ? Math.round(max * k / step) * step : el.max; seen.push(+el.value);
+        el.dispatchEvent(new Event('input', {bubbles: true})); if (k < 1) requestAnimationFrame(tick); else res(seen); };
+    requestAnimationFrame(tick); })"""
+
+
+EFFECTIVE_MAX_JS = """(() => { const e = document.querySelector('#section-bl'), v = e.value; e.value = e.max; const m = +e.value; e.value = v; return m; })()"""  # max after step snapping (max 70.8, step 0.5 -> 70.5)
+
+
+def _frame_run(pg):
+    pg.evaluate("window.__frames.start()")
+    seen = pg.evaluate(DRAG_JS, 2000)
+    return pg.evaluate("window.__frames.stop()"), seen
+
+
+def _drag_setup(p, url, **page_kw):
+    b = p.chromium.launch(args=GL)
+    pg = b.new_page(**page_kw)
+    pg.goto(url + "?test=1"); pg.wait_for_selector("#ops li[data-op]")
+    pg.select_option("#variant", "roncz")
+    pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=15000)
+    pg.click('#ops li[data-op="r30.top-skin"]')
+    pg.eval_on_selector("#scrub", "e => { e.value = e.max; e.dispatchEvent(new Event('input', {bubbles: true})); }")
+    assert pg.is_checked("#paths") and len([x for x in pg.evaluate("window.__paths()") if x["visible"]]) == 3
+    pg.click("#section-on"); _sec(pg, 0)
+    pg.wait_for_timeout(500)
+    return b
+
+
+def test_frame_time_median_while_dragging_the_section(rsite):
+    # Headless swiftshader (software GL) is a PROXY for the iPad, not a measurement of it: the iPad judgement is the
+    # owner's walk-through (plan Task 7). The budget is a median rAF delta <= 33 ms over a continuous 2 s drag of the
+    # section slider from B.L. 0 to max, top-skin op, all plies, load paths on, at 1180x820, and is never raised.
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b = _drag_setup(p, url, viewport={"width": 1180, "height": 820})
+        pg = b.contexts[0].pages[0]
+        max_bl = pg.evaluate(EFFECTIVE_MAX_JS)
+        before = pg.evaluate("window.__cut()")
+        assert before["enabled"] and before["bl"] == pytest.approx(0, abs=1e-6), before
+        d, seen = _frame_run(pg)
+        pg.wait_for_timeout(150)
+        after = pg.evaluate("window.__cut()")
+        st = pg.evaluate("window.__stats()")
+        d = sorted(d)
+        med = d[len(d) // 2]
+        print("frame stats", st, "n", len(d), "distinct bl", len(set(seen)))
+        print("median frame ms", med)
+        # The cut really moved during the drag (not a frozen view being timed).
+        assert after["enabled"] and after["bl"] == pytest.approx(max_bl), (before["bl"], after["bl"], max_bl)
+        assert seen[0] <= max_bl * 0.05 and seen[-1] == max_bl, (seen[:3], seen[-3:], max_bl)
+        assert all(a <= b_ for a, b_ in zip(seen, seen[1:])), "slider values must be monotonic non-decreasing"
+        assert len(set(seen)) >= 100, len(set(seen))
+        assert st["calls"] > 20, st  # the last frame drew a real scene
+        assert len(d) >= 10, len(d)
+        assert med <= FRAME_BUDGET_MS, (med, len(d), st)
+        b.close()
+    s.shutdown()
+
+
+def test_frame_time_at_dpr2_is_reported_not_asserted(rsite):
+    # INFORMATION ONLY for the owner's iPad walk-through note: same drag at device_scale_factor=2. No assertion on the
+    # median (the one budget lives in the test above); the run only has to complete and move the cut.
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b = _drag_setup(p, url, viewport={"width": 1180, "height": 820}, device_scale_factor=2)
+        pg = b.contexts[0].pages[0]
+        d, seen = _frame_run(pg)
+        d = sorted(d)
+        print("DPR2 median frame ms", d[len(d) // 2], "n", len(d))
+        assert len(d) >= 3 and seen[-1] == pg.evaluate(EFFECTIVE_MAX_JS)
+        b.close()
+    s.shutdown()
+
+
+def test_section_at_dpr2_projection_and_cap_pixels(rsite):
+    import io
+    from PIL import Image
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b = p.chromium.launch(args=GL)
+        pg = b.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=2)
+        pg.goto(url + "?test=1"); pg.wait_for_selector("#ops li[data-op]")
+        pg.select_option("#variant", "roncz")
+        pg.wait_for_function("window.__guide.meshPlies().length > 0", timeout=15000)
+        pg.click('#ops li[data-op="r30.top-skin"]')
+        assert pg.evaluate("window.devicePixelRatio") == 2
+        _sec(pg, 40)
+        assert pg.evaluate("window.__cut()")["enabled"]
+        r = pg.evaluate("window.__cutView()")
+        pg.wait_for_timeout(700)
+        c = pg.eval_on_selector("#c", "e => { const r = e.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width, h: r.height}; }")
+        assert r["x1"] - r["x0"] > 20 and r["y1"] - r["y0"] > 4, r  # the projected cut face has area
+        assert 0 <= r["x0"] and r["x1"] <= c["w"] + 1 and 0 <= r["y0"] and r["y1"] <= c["h"] + 1, (r, c)
+        clip = {"x": c["x"] + r["x0"], "y": c["y"] + r["y0"], "width": r["x1"] - r["x0"], "height": r["y1"] - r["y0"]}
+        im = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+        assert im.width >= 1.9 * clip["width"] - 2, (im.size, clip)  # screenshot pixels are 2x CSS pixels
+        n = {k: _near(im, v) for k, v in {"foam": FOAM, "und": UND, "bid": BID}.items()}
+        print("DPR2 CAPS on", clip, im.size, n)
+        assert n["foam"] > 100 and n["bid"] > 20 and n["und"] > 20, n
+        b.close()
+    s.shutdown()
+
+
+def test_phone_section_readout_one_line_and_controls_reachable(rsite):
+    s, url = serve(rsite)
+    with sync_playwright() as p:
+        b, pg = _sec_open(p, url, width=390)
+        pg.eval_on_selector("#scrub", "e => { e.value = e.max; e.dispatchEvent(new Event('input', {bubbles: true})); }")  # all plies
+        _sec(pg, 5)  # a station every layer reaches: the longest readout this op can produce
+        assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+        m = pg.evaluate(PHONE_READOUT_JS)
+        assert m["scrollWidth"] > m["clientWidth"], m  # truly truncated, not merely short
+        assert m["textOverflow"] == "ellipsis" and m["whiteSpace"] == "nowrap", m
+        assert m["height"] <= m["lineHeight"] * 1.3, m  # one line
+        assert m["title"] == m["text"] and "B.L. 5" in m["text"], m  # the full text stays reachable
+        _sec(pg, 40)
+        for sel in ("#scrub", "#section-bl", "#tour"):
+            pg.evaluate("(s) => document.querySelector(s).scrollIntoView({block: 'center'})", sel)
+            hit = pg.evaluate("""(s) => { const r = document.querySelector(s).getBoundingClientRect();
+                const e = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2); return [r.left >= 0 && r.right <= innerWidth, e && (e.id === s.slice(1) || e.closest(s))]; }""", sel)
+            assert hit[0] and hit[1], (sel, hit)
+        pg.click("#tour"); assert pg.get_attribute("#tour", "aria-pressed") == "true"; pg.click("#tour")
+        b.close()
+    s.shutdown()
+
+
+PHONE_READOUT_JS = """(() => { const e = document.querySelector('#section-readout'), cs = getComputedStyle(e);
+    return {scrollWidth: e.scrollWidth, clientWidth: e.clientWidth, textOverflow: cs.textOverflow, whiteSpace: cs.whiteSpace,
+            height: e.getBoundingClientRect().height, lineHeight: parseFloat(cs.lineHeight), title: e.title, text: e.textContent}; })()"""
