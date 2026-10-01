@@ -140,3 +140,27 @@ the conduct commits (the kernel files were copied into main and fixed there).
   rake, nose outline), or a nose-down weigh-in, for the nose-wheel station; the Roncz planform and
   elevator templates for the contours.
 - **Spec section 5:** the Opus visual review, grading, push, deploy and public republish are the lead's.
+
+## Fix round after the Opus visual review (FAIL, `docs/harness/block2-m24-visual-review.md`)
+
+| Review item | Commit | What changed |
+|---|---|---|
+| 6 (F22/F28 above CP26 prototype weights) | fabd031 | Both are left out of the lower bound ("under review"); prototype numbers not substituted. Correction-ledger row 58; `test_lower_bound_cg_is_the_moment_sum_over_core_sourced_parts` gained `f22`, `f28` in its excluded set. |
+| 1 (elevators inside the canard core) | ebf8510 | Canard materials discard what lies aft of the elevator LE less the 0.2 in slot gap (x_cut 8.914), over |B.L.| <= 65 only, wall capped and labelled "Cove cut for the elevators (fitted shape)". Shader clip, so no solid changes: the canard-only cutaway export is byte-identical (tested), chapter 30 frames are 0 px different. New e2e pixel tests failed on the old tree (elevator 6.5k px at 30 down vs 14k at 15 up; 1.9k px striped after hinge-slots; installed label collapsed) and pass now (86k vs 57k px; 70k; 85k). |
+| 2, 3, 4, 5, 9 | d296412 | NG box on the bench from `f13.strut-reinforce` to `f13.ng3-ng4`, moved to F22 at `f13.ng31-f6`, shots re-aimed (also `f13.pitot-static`, `f13.shock-strut`); door shot and label (checks now require not collapsed and not hidden; failed first); phone `#t-kin` on its own line (failed first); wheel marks hidden once stowed, so no label says F.S. 17 at F.S. 34 (failed first); hang readout "about 94 deg"; hinge and tube labels shortened. |
+
+Gate at d296412: linux 840 passed, 3 skipped, 9 xfailed; mac 204 + 5; local_render 5 passed; lab unit 162/162 and `tsc` clean;
+`guide.check` OK. Existing e2e assertions edited (all in this round, listed by the crew): the placement expectation in
+`test_nose_parts_appear...` now allows the bench; label-presence checks in two M2.4 tests use `_legible` (not collapsed, not
+hidden); the hang readout string and the hinge/tube label strings are pinned to the new wording; `kin.test.ts` `hangText`.
+
+Owner items added or changed:
+- **Tube thicker than the section** (unsourced chord; the R1145MS file is about 6 percent thick): left as is, now labelled
+  "(1 in OD book; section fitted, unresolved)" on the tube and in AGENTS.md known issues. Block 1 airfoil look item.
+- **Weights inside the elevator skin:** the CS-10 and CS-11 lead blocks sit inside the elevator section, so they are labelled but
+  not visible even with the cove open.
+- **Nose door:** a flush 0.08 in panel, so from above only its outline and label read; making it stand out needs a geometry change.
+- **Canard subject cove:** the canard subject draws the right half only, and the cove spans 0 to 65, so a 9.3 in root notch shows
+  with no elevator in it (the left elevator would cross there).
+- **F22/F28 excess** (2.00 vs 1.44 lb, 0.40 vs 0.19 lb): for the ledger-closure test (glass schedule or R250 density).
+- The wheel hidden inside the NB box at the end of the rig op stays (correct end state); only the labels changed.
