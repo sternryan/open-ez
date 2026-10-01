@@ -168,9 +168,17 @@ def fuselage_cg(lower_bound: bool = False) -> tuple[float, float | None, list[st
     inc: list[str] = []
     exc: dict[str, str] = {}
     w = m = 0.0
+    proto = load_ledger().get("prototype_weights", {}).get("rows", {})
     for r in fuselage_ledger():
         if r[key] is None:
             exc[r["part"]] = r["total_mass_reason"] or r["core_mass_reason"] or r["glass_mass_reason"] or _NYC + "mass"
+            continue
+        # A lower bound may not contain a term a cited source contradicts: a part modelled heavier than its CP26 prototype
+        # weight is left out (not replaced by the prototype number) until the excess is understood (ledger-closure test).
+        if lower_bound and r["part"] in proto and r[key] > proto[r["part"]]["weight_lb"]:
+            exc[r["part"]] = (
+                f"modelled {r[key]:.2f} lb is above the CP26 prototype weight {proto[r['part']]['weight_lb']:.2f} lb: under review"
+            )
             continue
         inc.append(r["part"])
         w += r[key]

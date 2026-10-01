@@ -191,12 +191,26 @@ def test_lower_bound_cg_is_the_moment_sum_over_core_sourced_parts():
     # no core source: the three wood parts as before, plus the belt pieces, roll-over inserts and step (wood species / metal not sourced)
     assert set(excluded) == {
         "firewall", "top_longeron_left", "top_longeron_right", "belt_insert", "belt_attach", "rollover_inserts", "step",
+        "f22", "f28",  # modelled above the CP26 prototype weights (see test_lower_bound_leaves_out_parts_heavier_than_their_prototype)
     }
     assert set(included) == _bodies() - set(excluded)
     assert w == pytest.approx(sum(rows[p]["total_mass_lower_bound_lb"] for p in included))
     want = sum(rows[p]["total_mass_lower_bound_lb"] * rows[p]["arm_lower_bound_in"] for p in included) / w
     assert arm == pytest.approx(want)
     assert 22.0 < arm < 125.0
+
+
+def test_lower_bound_leaves_out_parts_heavier_than_their_prototype():
+    rows = _rows_by_part(ledger_mod.fuselage_ledger())
+    proto = ledger_mod.load_ledger()["prototype_weights"]["rows"]
+    _, _, included, excluded = ledger_mod.fuselage_cg(lower_bound=True)
+    for part in ("f22", "f28"):
+        assert rows[part]["total_mass_lower_bound_lb"] > proto[part]["weight_lb"]
+        assert part not in included and "CP26 prototype weight" in excluded[part] and "under review" in excluded[part]
+    # the panel is below its prototype weight, so it stays in; and nothing is replaced by the prototype number
+    assert "panel" in included
+    assert ledger_mod.fuselage_cg(lower_bound=True)[0] == pytest.approx(sum(rows[p]["total_mass_lower_bound_lb"] for p in included))
+    assert "f22" not in ledger_mod.fuselage_ledger_json()["cg_lower_bound"]["included"]
 
 
 @pytest.mark.xfail(strict=True, reason="geometry-correction-ledger row 57: the sourced chapter 7 skin glass takes the lower bound past 30 lb")
