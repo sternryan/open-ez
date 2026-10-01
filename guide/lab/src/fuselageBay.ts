@@ -689,12 +689,13 @@ export class FuselageBay {
   }
 
   /** the close shot of the station cut at `fs`: forward of the plane, a little above, looking aft at the face (world metres; the finished box, right side up) */
-  cutShot(fs: number, fov: number): Shot {
-    const bx = new THREE.Box3()
-    for (const m of this.meshes) if (!m.ply && BOX.has(m.part) && this.placeOf(m, null) === 'jig') bx.union(this.worldBoxAt(m, null))
+  cutShot(fs: number, fov: number, opId: string | null = null, view: { dist?: number; lift?: number } = {}): Shot {
+    const bx = new THREE.Box3() // the box as `opId` leaves it (the chapter's last op: on the jig, not the finished airplane on its gear that `null` now means)
+    for (const m of this.meshes) if (!m.ply && BOX.has(m.part) && this.placeOf(m, opId) === 'jig' && (opId === null || this.isMade(m, opId))) bx.union(this.worldBoxAt(m, opId))
     const target = bx.isEmpty() ? new THREE.Vector3(STATION.jig.x, blockTopY() + 0.25, STATION.jig.z) : bx.getCenter(new THREE.Vector3())
     target.x = fsToX(fs)
-    const off = viewOffset({ focus: 'box', dist: 58, el: 24, az: 72 })
+    target.y += view.lift ?? 0
+    const off = viewOffset({ focus: 'box', dist: view.dist ?? 58, el: 24, az: 72 })
     const pos = target.clone().add(new THREE.Vector3(off[0], off[1], off[2]).multiplyScalar(INCH))
     return { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
   }

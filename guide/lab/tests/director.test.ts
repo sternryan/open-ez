@@ -195,3 +195,82 @@ test('the fuselage Tour button: the selected fuselage op\'s chapter, else all of
   assert.deepEqual(fuselageTourChapters(FG, 'roncz', null), [4, 5, 6, 7, 8, 9])
   assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.s'), [4, 5, 6, 7, 8, 9]) // a stub has no stop
 })
+
+// shaped like chapters 7-9: the skinning rolls (turn ops with plies), the roll-over, the gear positioning (a turn op with no plies)
+const HG: TourGraph = {
+  order: ['f06.tape', 'f07.carve-corners', 'f07.skin-right', 'f07.skin-left', 'f08.roll-over-foam', 'f08.roll-over-bond', 'f08.step', 'f09.strut-stiffen', 'f09.position-gear', 'f09.tab-layup', 'f09.axles-brakes'],
+  ops: [fop('f06.tape', 6), fop('f07.carve-corners', 7), fop('f07.skin-right', 7), fop('f07.skin-left', 7), fop('f08.roll-over-foam', 8), fop('f08.roll-over-bond', 8), fop('f08.step', 8),
+    fop('f09.strut-stiffen', 9), fop('f09.position-gear', 9), fop('f09.tab-layup', 9), fop('f09.axles-brakes', 9)],
+}
+const hplies = (id: string) => (['f07.skin-right', 'f07.skin-left', 'f08.roll-over-bond', 'f09.strut-stiffen', 'f09.tab-layup'].includes(id) ? 4 : 0)
+const cardTitles = (s: Step[]) => s.filter((x) => 'card' in x && x.card).map((x) => (x as { card: { title: string } }).card.title)
+/** seconds from an op's chip click to the next op's chip move (or the step after the last op's last click) */
+const gapAfter = (s: Step[], op: string) => {
+  const chips = s.filter((x) => 'click' in x && x.click.startsWith('#chips')) as { t: number; click: string }[]
+  const i = chips.findIndex((c) => c.click.includes(`"${op}"`))
+  const next = s.find((x) => 'move' in x && x.move.startsWith('#chips') && x.t > chips[i].t) as { t: number }
+  return { from: chips[i].t, gap: next ? next.t - chips[i].t : Infinity }
+}
+
+test('chapter cards for 7-9 carry the owner\'s words, in both the single-chapter and the all-chapters tours', async () => {
+  const { fuselageTour } = await import('../src/director')
+  assert.equal(cardTitles(fuselageTour(HG, 'roncz', hplies, [7]))[0], 'Chapter 7 — Fuselage exterior')
+  assert.equal(cardTitles(fuselageTour(HG, 'roncz', hplies, [8]))[0], 'Chapter 8 — Roll-over structure and seat belts')
+  assert.equal(cardTitles(fuselageTour(HG, 'roncz', hplies, [9]))[0], 'Chapter 9 — Main landing gear')
+  const all = cardTitles(fuselageTour(HG, 'roncz', hplies, [6, 7, 8, 9]))
+  assert.deepEqual(all.slice(0, 5), ['Fuselage box', 'Chapter 7 — Fuselage exterior', 'Chapter 8 — Roll-over structure and seat belts', 'Chapter 9 — Main landing gear', 'Fuselage box'])
+})
+
+test('chapter 7 lets each skinning roll finish (turn delay + turn) before it Plays or moves on', async () => {
+  const { fuselageTour, TURN_SECONDS } = await import('../src/director')
+  const s = fuselageTour(HG, 'roncz', hplies, [7])
+  for (const op of ['f07.skin-right', 'f07.skin-left']) {
+    const { from } = gapAfter(s, op)
+    const play = (clicks(s, '#play').find((c) => c.t > from))!
+    assert.ok(play.t - from >= TURN_SECONDS + 0.5, `${op}: Play follows the click by ${play.t - from} s`)
+  }
+  assert.equal(clicks(s, '#section-on').length, 0, 'chapter 7 has no station cut')
+})
+
+test('the chapter 8 tour ends with a station cut inside the roll-over (FS 79.04-83.55), a close shot, the cursor dragging the slider, then the orbit and end card', async () => {
+  const { fuselageTour, FUSE_ROLL_CUT_FS } = await import('../src/director')
+  const s = fuselageTour(HG, 'roncz', hplies, [8])
+  assert.deepEqual(opsOf(s), ['f08.roll-over-foam', 'f08.roll-over-bond', 'f08.step'])
+  const drags = s.filter((x) => 'drag' in x) as { t: number; to: number }[]
+  assert.equal(drags.at(-1)!.to, FUSE_ROLL_CUT_FS)
+  assert.ok(FUSE_ROLL_CUT_FS > 79.04 && FUSE_ROLL_CUT_FS < 83.55, 'inside the roll-over')
+  const close = s.find((x) => 'act' in x && x.act === 'cutclose') as { t: number; arg: number }
+  assert.equal(close.arg, FUSE_ROLL_CUT_FS, 'the close shot is of this cut')
+  const on = clicks(s, '#section-on')
+  assert.equal(on.length, 1)
+  assert.ok(on[0].t < drags.at(-1)!.t)
+  const orbit = s.find((x) => 'orbit' in x) as { t: number }
+  assert.ok(drags.at(-1)!.t < orbit.t)
+  assert.equal(cardTitles(s).at(-1), 'Fuselage, chapter 8')
+  // the chapter 6 cut is unchanged
+  assert.equal((fuselageTour(FG, 'roncz', fplies, [6]).find((x) => 'act' in x && x.act === 'cutclose') as { arg: number }).arg, 72)
+})
+
+test('the chapter 9 tour holds on the gear positioning at least 3 s after the box has turned over, and has no station cut', async () => {
+  const { fuselageTour, TURN_SECONDS, GEAR_READ_SECONDS } = await import('../src/director')
+  const s = fuselageTour(HG, 'roncz', hplies, [9])
+  assert.deepEqual(opsOf(s), ['f09.strut-stiffen', 'f09.position-gear', 'f09.tab-layup', 'f09.axles-brakes'])
+  const { gap } = gapAfter(s, 'f09.position-gear')
+  assert.ok(GEAR_READ_SECONDS >= 3)
+  assert.ok(gap - 0.6 >= TURN_SECONDS + 3, `held ${gap} s from the click`) // the chip's move leads its click by 0.6 s
+  assert.equal(clicks(s, '#section-on').length, 0)
+  assert.ok(!s.some((x) => 'drag' in x))
+  const play = s.find((x) => 'click' in x && x.click === '#play') as { t: number }
+  assert.ok(play, 'the strut and the tab layup Play their plies')
+  assert.equal(cardTitles(s).at(-1), 'Fuselage, chapter 9')
+  const ts = s.map((x) => x.t)
+  assert.deepEqual(ts, ts.slice().sort((a, b) => a - b))
+})
+
+test('each chapter tour ends its cut in that chapter\'s last op state, never with nothing selected; no cut means the plain finish', async () => {
+  const { fuselageTour } = await import('../src/director')
+  const fin = (s: Step[]) => s.find((x) => 'act' in x && x.act === 'finish') as { op?: string }
+  assert.equal(fin(fuselageTour(FG, 'roncz', fplies, [6])).op, 'f06.tape')
+  assert.equal(fin(fuselageTour(HG, 'roncz', hplies, [8])).op, 'f08.step')
+  assert.equal(fin(fuselageTour(FG, 'roncz', fplies, [4, 5, 6])).op, undefined, 'the all-chapters tour has no cut and finishes as before')
+})

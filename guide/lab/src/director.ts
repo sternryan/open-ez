@@ -2,7 +2,7 @@
 // Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
 import { barOps, visibleOps } from './logic/graph'
-import { fuseBarOps, FUSE_CHAPTERS } from './logic/fuselage'
+import { fuseBarOps, FUSE_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -10,7 +10,7 @@ export type Step =
   | { t: number; move: string; dur: number; dx?: number; dy?: number }
   | { t: number; click: string }
   | { t: number; drag: string; from: number; to: number; dur: number }
-  | { t: number; act: string; arg?: number }
+  | { t: number; act: string; arg?: number; op?: string }
   | { t: number; cursor: 'show' | 'hide' }
   /** turn the camera about the orbit target by `deg` degrees over `dur` seconds */
   | { t: number; orbit: { dur: number; deg: number } }
@@ -21,7 +21,7 @@ export type Step =
 
 export interface DirectorHooks {
   /** a named action of the page (reset, finish, ...) */
-  act(name: string, arg?: number): void
+  act(name: string, arg?: number, op?: string): void
   /** the orbit step, called every frame with progress k in [0, 1]; `first` is true on the frame it starts */
   orbit(k: number, deg: number, first: boolean): void
 }
@@ -134,7 +134,7 @@ export class Director {
         } else if ('drag' in s) {
           const el = document.querySelector<HTMLInputElement>(s.drag)
           if (el) this.drag = { el, from: s.from, to: s.to, t: s.t, dur: s.dur }
-        } else if ('act' in s) this.hooks.act(s.act, s.arg)
+        } else if ('act' in s) this.hooks.act(s.act, s.arg, s.op)
         else if ('cursor' in s) this.cursor.style.opacity = s.cursor === 'show' ? '1' : '0'
         else if ('orbit' in s) this.orbit = { t: s.t, dur: s.orbit.dur, deg: s.orbit.deg, first: true }
         else if ('card' in s) {
@@ -294,10 +294,20 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Exterior skins', 8: 'Roll-over and attachments', 9: 'Main landing gear' }
+const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear' }
 const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72
+/** The roll-over box spans FS 79.04-83.55 (layup.json); the chapter 8 film ends its cut inside that, at this station. */
+export const FUSE_ROLL_CUT_FS = 80
+/** where each single-chapter film ends its station cut: chapter 6 through the front seat bulkhead, chapter 8 through the roll-over */
+export const FUSE_CUTS: Record<number, number> = { 6: FUSE_CUT_FS, 8: FUSE_ROLL_CUT_FS }
+/** where a film's close shot of its cut is framed, when the default (58 in out, aimed at the box's centre) crowds the part: the roll-over stands up off the top of the box */
+export const FUSE_CUT_VIEW: Record<number, { dist?: number; lift?: number }> = { [FUSE_ROLL_CUT_FS]: { dist: 98, lift: 0.2 } }
+/** Seconds the box takes to turn over after its op is picked, in sim time (the turn waits FLIP_DELAY for the camera, then takes FLIP_SECONDS). */
+export const TURN_SECONDS = FLIP_DELAY + FLIP_SECONDS
+/** Seconds the tour holds still on the gear positioning once the box has turned over, so the 15 in dimension and the axle station read. */
+export const GEAR_READ_SECONDS = 3.6
 /** the section slider's first stop, so the drag starts away from the cut and sweeps across the box (the page's own default is FS 70) */
 const FUSE_SWEEP_FS = 110
 
@@ -309,14 +319,16 @@ export function fuselageTourChapters(graph: GraphLite, variant: string, selected
 
 /**
  * The fuselage film: the chapter 4-6 ops asked for, in graph order. The same grammar as a canard chapter (click the chip, Play what
- * has plies); a title card at each chapter change. A chapter 6 tour ends with the station cut at FS 72 (the cursor drags the real
- * slider), then the close orbit and the end card; the longer ch4-6 tour has no section steps. `plies` counts an op's fuselage plies.
+ * has plies); a title card at each chapter change. An op that turns the box (the skinning rolls, the gear positioning) is given time to
+ * finish turning, in sim time, before the next step; the gear positioning then holds GEAR_READ_SECONDS. A chapter 6 or 8 tour ends with the
+ * station cut (FS 72 through the front seat bulkhead, FS 80 through the roll-over; the cursor drags the real slider), then the close
+ * orbit and the end card; the longer all-chapters tour has no section steps. `plies` counts an op's fuselage plies.
  * The page's `closeup` action flies to the fuselage's own home view.
  */
 export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: string) => number, chapters = [4, 5, 6]): Step[] {
   const chs = chapters.filter((ch) => tourSteps(graph, variant, ch).length)
   const single = chs.length === 1
-  const cut = single && chs[0] === 6
+  const cutFs = single ? FUSE_CUTS[chs[0]] : undefined
   const s: Step[] = []
   s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
   s.push({ t: 0, card: single ? { title: chapterCard(chs[0]) } : { title: 'Fuselage box', sub: `Chapters ${chapters[0]}\u2013${chapters[chapters.length - 1]}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
@@ -332,22 +344,26 @@ export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: st
       const chip = `#chips button[data-op="${o.op}"]`
       s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i++ })
       const n = plies(o.op)
-      if (!n) { t += 0.6 + 1.7; continue }
-      t += 0.6 + 1.9
+      const turns = o.op in BANK_DEG || o.op === TURN_GEAR
+      const after = o.op === TURN_GEAR ? TURN_SECONDS + GEAR_READ_SECONDS : turns ? Math.max(n ? 1.9 : 1.7, TURN_SECONDS + 0.9) : n ? 1.9 : 1.7
+      if (!n) { t += 0.6 + after; continue }
+      t += 0.6 + after
       s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
       t += 0.5 + playSeconds(n)
     }
   })
-  s.push({ t, act: 'finish' })
-  if (cut) { // the station cut through the front seat bulkhead, the cursor on the real slider
+  // a chapter that ends on a station cut finishes in its own last op's state (the box as that chapter leaves it), not the finished airplane on its gear
+  const lastOp = cutFs !== undefined ? tourSteps(graph, variant, chs[0]).at(-1)?.op : undefined
+  s.push(lastOp ? { t, act: 'finish', op: lastOp } : { t, act: 'finish' })
+  if (cutFs !== undefined) { // the station cut through the chapter's own part, the cursor on the real slider
     s.push({ t: t + 0.2, move: SEC_ON, dur: 0.4 }, { t: t + 0.7, click: SEC_ON })
-    s.push({ t: t + 0.8, act: 'cutclose' }) // the camera flies in to the face the cut will leave
+    s.push({ t: t + 0.8, act: 'cutclose', arg: cutFs }) // the camera flies in to the face the cut will leave
     s.push({ t: t + 0.9, drag: SEC_BL, from: 70, to: FUSE_SWEEP_FS, dur: 1.0 })
-    s.push({ t: t + 2.0, drag: SEC_BL, from: FUSE_SWEEP_FS, to: FUSE_CUT_FS, dur: 1.2 })
+    s.push({ t: t + 2.0, drag: SEC_BL, from: FUSE_SWEEP_FS, to: cutFs, dur: 1.2 })
     t += 2.0 // hold on the cut
   }
   s.push({ t: t + 1.9, cursor: 'hide' })
-  if (cut) s.push({ t: t + 2.8, orbit: { dur: 10.4, deg: -40 } }) // turn about the cut face itself
+  if (cutFs !== undefined) s.push({ t: t + 2.8, orbit: { dur: 10.4, deg: -40 } }) // turn about the cut face itself
   else {
     s.push({ t: t + 2.0, act: 'closeup' })
     s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })

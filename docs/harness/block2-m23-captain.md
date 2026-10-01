@@ -199,3 +199,25 @@ p50 9-1, p51 9-2, p52 9-3, p53 9-4; p8 is 2-1; p171 is the back cover.
   are small in frame; harness and tab steps show no new geometry (none modelled).
 - Gate: linux 741 passed, 3 skipped, 9 xfailed; mac 156 + 5 passed; local_render 5 passed; lab 129/129,
   typecheck clean; viewer 50/50; guide.check OK. Crew locally: full tests/guide 259 + lab e2e 160 passed.
+
+## Task 6: tour and chapter 9 film
+- Crew: sonnet implementer, then a sonnet fix pass (foreground both).
+- Chapter cards for 7–9; the ch7 tour waits out each roll; ch8 ends on a close station cut at F.S. 80
+  through the roll-over; ch9 holds 3.6 s on position-gear after the turn. `record -- fuselage9` (and
+  `fuselage8`); `canard` and `fuselage6` keep working. The crew ran `git checkout --
+  tests/guide/test_lab_e2e.py` once to undo its own first edit of that file (reported; only its own
+  change was lost).
+- **Regression the crew found and the fix pass closed:** since Task 5, "no op selected" is the finished
+  airplane on its gear, so the ch6 film's closing cut showed the gear, wheels and belt pads. A
+  chapter's closing cut now selects that chapter's last op (`f06.tape`, `f08.step`) and aims the cut
+  shot at the box as that op leaves it. Unit test plus an e2e over the fuselage6 and fuselage8 films
+  (cut frames: chapter's last op selected, not on its gear, no gear label but the box's extrusions).
+- Captain's look: ch9 film frames (`t6/frames/`): the strut on the table with its plies; the inverted
+  box, datum boards, "15 in" and "Axle C.L. F.S. 110.5 (book)" legible; tab layup in the jig; the turn
+  back upright onto its own feet. ch6 re-recorded: the F.S. 72 cut shows the end-of-chapter box on its
+  jig, no gear (`t6/frames6/cut46.png`).
+- Films (scratchpad, not the repo): `t6/film/fuselage-ch9.mp4` 39.4 s, 1920×1080, 60 fps, 68.7 MB,
+  116 s to render; `t6/film/fuselage-ch6.mp4` 60.08 s. Both from fresh export and site builds on the
+  Metal GPU path. Re-render at deploy.
+- Gate: linux 741 passed, 3 skipped, 9 xfailed; mac 160 + 5 passed; local_render 5 passed; lab 134/134,
+  typecheck clean; viewer 50/50; guide.check OK. Crew: lab e2e 164 passed.
