@@ -16,12 +16,13 @@ from config.aircraft_config import (
     config,
 )
 
-PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_)")
+PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_|spar_|ctl_|trim_)")
 
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
 TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord", "fs_main_axle", "fs_static_port", "fs_ng31_min", "fs_ng31_max",
-                      "elevator_inboard_bl_right_in", "elevator_inboard_bl_left_in", "elevator_tube_end_bl_left_in"}
+                      "elevator_inboard_bl_right_in", "elevator_inboard_bl_left_in", "elevator_tube_end_bl_left_in",
+                      "spar_chord_square_outboard_in", "spar_fwd_face_fs_tip", "spar_aft_face_fs_bl_55_5", "trim_pth_leftmost_fs"}
 
 
 def geometry_fields() -> set[str]:
