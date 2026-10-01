@@ -1,0 +1,653 @@
+{
+ "lane": "local-vision",
+ "model": "mlx-community/Qwen3-VL-8B-Instruct-4bit",
+ "date": "2026-10-01",
+ "summary": {
+  "exact": 37,
+  "near": 5,
+  "wrong": 26,
+  "values": 68
+ },
+ "rows": [
+  {
+   "id": "fsb-size",
+   "page": 33,
+   "truth": [
+    28.3,
+    23,
+    0.8
+   ],
+   "verdicts": [
+    "exact",
+    "exact",
+    "exact"
+   ],
+   "secs": 19.9,
+   "numbers_read": [
+    28.3,
+    23.0,
+    0.8
+   ]
+  },
+  {
+   "id": "rsb-bottom",
+   "page": 34,
+   "truth": [
+    20.6
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 13.9,
+   "numbers_read": [
+    16.1
+   ]
+  },
+  {
+   "id": "rsb-top",
+   "page": 34,
+   "truth": [
+    18.7
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 13.9,
+   "numbers_read": [
+    18.7
+   ]
+  },
+  {
+   "id": "rsb-slant",
+   "page": 34,
+   "truth": [
+    16.1
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 13.9,
+   "numbers_read": [
+    20.6
+   ]
+  },
+  {
+   "id": "rsb-taper",
+   "page": 34,
+   "truth": [
+    0.95
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 15.5,
+   "numbers_read": [
+    1.4
+   ]
+  },
+  {
+   "id": "rsb-holes",
+   "page": 34,
+   "truth": [
+    8,
+    7
+   ],
+   "verdicts": [
+    "exact",
+    "exact"
+   ],
+   "secs": 15.2,
+   "numbers_read": [
+    8.0,
+    7.0
+   ]
+  },
+  {
+   "id": "rsb-notch",
+   "page": 34,
+   "truth": [
+    0.7,
+    1.4
+   ],
+   "verdicts": [
+    "exact",
+    "exact"
+   ],
+   "secs": 22.5,
+   "numbers_read": [
+    1.3,
+    1.4,
+    1.9,
+    0.7
+   ]
+  },
+  {
+   "id": "ply-sheet",
+   "page": 35,
+   "truth": [
+    24,
+    30
+   ],
+   "verdicts": [
+    "wrong",
+    "wrong"
+   ],
+   "secs": 22.3,
+   "numbers_read": [
+    48.0,
+    60.0,
+    4.0,
+    48.0,
+    60.0,
+    48.0,
+    60.0
+   ]
+  },
+  {
+   "id": "side-len",
+   "page": 36,
+   "truth": [
+    103
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 14.3,
+   "numbers_read": [
+    103.0
+   ]
+  },
+  {
+   "id": "side-h-0",
+   "page": 36,
+   "truth": [
+    19.8
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 14.6,
+   "numbers_read": [
+    19.8
+   ]
+  },
+  {
+   "id": "side-h-80",
+   "page": 36,
+   "truth": [
+    18.4
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 15.2,
+   "numbers_read": [
+    19.8
+   ]
+  },
+  {
+   "id": "side-h-103",
+   "page": 36,
+   "truth": [
+    16.0
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 14.9,
+   "numbers_read": [
+    16.0
+   ]
+  },
+  {
+   "id": "side-wl",
+   "page": 36,
+   "truth": [
+    23
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 15.5,
+   "numbers_read": [
+    23.0
+   ]
+  },
+  {
+   "id": "panel-x",
+   "page": 36,
+   "truth": [
+    17.75
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 15.7,
+   "numbers_read": [
+    17.75,
+    22.0
+   ]
+  },
+  {
+   "id": "fsb-top-x",
+   "page": 36,
+   "truth": [
+    59.75
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 16.0,
+   "numbers_read": [
+    20.5
+   ]
+  },
+  {
+   "id": "fsb-bot-x",
+   "page": 36,
+   "truth": [
+    41.55
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 16.0,
+   "numbers_read": [
+    17.75,
+    17.75
+   ]
+  },
+  {
+   "id": "rsb-top-x",
+   "page": 36,
+   "truth": [
+    96.5
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 16.5,
+   "numbers_read": [
+    9.15
+   ]
+  },
+  {
+   "id": "spar-cut",
+   "page": 36,
+   "truth": [
+    6.5,
+    8.5
+   ],
+   "verdicts": [
+    "wrong",
+    "wrong"
+   ],
+   "secs": 16.4,
+   "numbers_read": [
+    2.5,
+    2.5,
+    2.5
+   ]
+  },
+  {
+   "id": "longeron",
+   "page": 37,
+   "truth": [
+    1.0,
+    0.7,
+    103.5
+   ],
+   "verdicts": [
+    "exact",
+    "exact",
+    "exact"
+   ],
+   "secs": 16.5,
+   "numbers_read": [
+    1.0,
+    0.7,
+    103.5
+   ]
+  },
+  {
+   "id": "gear-pad",
+   "page": 38,
+   "truth": [
+    15.3,
+    12,
+    6.2,
+    3.2
+   ],
+   "verdicts": [
+    "wrong",
+    "wrong",
+    "near",
+    "wrong"
+   ],
+   "secs": 14.7,
+   "numbers_read": [
+    6.5,
+    8.5
+   ]
+  },
+  {
+   "id": "lmga-tube",
+   "page": 38,
+   "truth": [
+    6.75,
+    0.049
+   ],
+   "verdicts": [
+    "exact",
+    "exact"
+   ],
+   "secs": 14.8,
+   "numbers_read": [
+    6.75,
+    0.049
+   ]
+  },
+  {
+   "id": "f28-pos",
+   "page": 41,
+   "truth": [
+    5.9
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 16.0,
+   "numbers_read": [
+    3.0
+   ]
+  },
+  {
+   "id": "bottom-block",
+   "page": 42,
+   "truth": [
+    1.6,
+    24,
+    96
+   ],
+   "verdicts": [
+    "exact",
+    "wrong",
+    "wrong"
+   ],
+   "secs": 16.4,
+   "numbers_read": [
+    1.6,
+    7.1,
+    1.6,
+    1.6,
+    1.7,
+    1.6
+   ]
+  },
+  {
+   "id": "canard-wl",
+   "page": 45,
+   "truth": [
+    18.9
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 16.5,
+   "numbers_read": [
+    18.9
+   ]
+  },
+  {
+   "id": "gauge-dist",
+   "page": 46,
+   "truth": [
+    21,
+    9.15
+   ],
+   "verdicts": [
+    "exact",
+    "exact"
+   ],
+   "secs": 15.3,
+   "numbers_read": [
+    21.0,
+    9.15
+   ]
+  },
+  {
+   "id": "strip",
+   "page": 46,
+   "truth": [
+    50,
+    15
+   ],
+   "verdicts": [
+    "near",
+    "wrong"
+   ],
+   "secs": 15.7,
+   "numbers_read": [
+    52.0,
+    1.0
+   ]
+  },
+  {
+   "id": "rollover-w",
+   "page": 47,
+   "truth": [
+    23,
+    8.4,
+    7.3,
+    12.6
+   ],
+   "verdicts": [
+    "wrong",
+    "near",
+    "wrong",
+    "exact"
+   ],
+   "secs": 17.1,
+   "numbers_read": [
+    12.7,
+    8.1,
+    12.6
+   ]
+  },
+  {
+   "id": "rollover-side",
+   "page": 47,
+   "truth": [
+    12.7,
+    3,
+    4.5
+   ],
+   "verdicts": [
+    "near",
+    "wrong",
+    "wrong"
+   ],
+   "secs": 19.0,
+   "numbers_read": [
+    23.0,
+    12.6,
+    1.4,
+    1.0,
+    23.0,
+    12.6,
+    1.4
+   ]
+  },
+  {
+   "id": "map-slot",
+   "page": 48,
+   "truth": [
+    1.8,
+    8
+   ],
+   "verdicts": [
+    "exact",
+    "exact"
+   ],
+   "secs": 14.0,
+   "numbers_read": [
+    1.8,
+    8.0
+   ]
+  },
+  {
+   "id": "step",
+   "page": 49,
+   "truth": [
+    1.8,
+    4.5,
+    0.5
+   ],
+   "verdicts": [
+    "exact",
+    "exact",
+    "exact"
+   ],
+   "secs": 16.4,
+   "numbers_read": [
+    1.8,
+    4.5,
+    4.5,
+    2.0,
+    0.5
+   ]
+  },
+  {
+   "id": "axle-fs",
+   "page": 50,
+   "truth": [
+    125.5,
+    15,
+    110.5
+   ],
+   "verdicts": [
+    "exact",
+    "exact",
+    "exact"
+   ],
+   "secs": 20.2,
+   "numbers_read": [
+    125.5,
+    15.0,
+    110.5
+   ]
+  },
+  {
+   "id": "strut-wt",
+   "page": 50,
+   "truth": [
+    22
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 15.4,
+   "numbers_read": [
+    36.0
+   ]
+  },
+  {
+   "id": "toe-in",
+   "page": 52,
+   "truth": [
+    0.2,
+    0.45,
+    24
+   ],
+   "verdicts": [
+    "exact",
+    "exact",
+    "wrong"
+   ],
+   "secs": 22.3,
+   "numbers_read": [
+    0.2,
+    0.45,
+    2.0
+   ]
+  },
+  {
+   "id": "gear-tube",
+   "page": 53,
+   "truth": [
+    0.625,
+    0.049,
+    6.75
+   ],
+   "verdicts": [
+    "wrong",
+    "exact",
+    "exact"
+   ],
+   "secs": 16.0,
+   "numbers_read": [
+    0.413,
+    0.049,
+    6.75
+   ]
+  },
+  {
+   "id": "axle-wl",
+   "page": 171,
+   "truth": [
+    -22
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 15.3,
+   "numbers_read": [
+    -22.0
+   ]
+  },
+  {
+   "id": "axle-fs171",
+   "page": 171,
+   "truth": [
+    110.5
+   ],
+   "verdicts": [
+    "near"
+   ],
+   "secs": 15.8,
+   "numbers_read": [
+    110.0,
+    -5.0
+   ]
+  },
+  {
+   "id": "nose-fs",
+   "page": 171,
+   "truth": [
+    17
+   ],
+   "verdicts": [
+    "exact"
+   ],
+   "secs": 15.8,
+   "numbers_read": [
+    17.0
+   ]
+  },
+  {
+   "id": "tipback",
+   "page": 171,
+   "truth": [
+    12
+   ],
+   "verdicts": [
+    "wrong"
+   ],
+   "secs": 15.9,
+   "numbers_read": [
+    60.0,
+    20.0
+   ]
+  }
+ ]
+}
