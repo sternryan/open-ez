@@ -156,7 +156,7 @@ def _unfold_checklist(pg):
 def _bar_ops(g, variant):
     byid = {o["id"]: o for o in g["ops"]}
     return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
-            and byid[i]["chapter"] not in (0, 3, 4, 5, 6, 7, 8, 9, 13) and not byid[i]["stub"]]
+            and byid[i]["chapter"] not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13) and not byid[i]["stub"]]
 
 
 @pytest.mark.parametrize("w,h", [(1400, 860), (390, 844)])
@@ -1838,6 +1838,7 @@ def test_tour_follows_the_selected_ops_chapter(rsite):  # 2.1: test_tour_follows
         with sync_playwright() as p:
             b, pg, errors = _open_rec(p, url)
             pg.click('#variant button[data-variant="gu"]')
+            pg.click('#subject button[data-subject="fuselage"]')  # chapter 12 (the canard installed) is the fuselage subject's since M2.4; its tour is the same film
             pg.click('#opbar button[data-op="c12.align-canard"]')
             pg.click("#tour")
             assert pg.evaluate("__lab.touring()") is True and pg.evaluate("__lab.tourIndex()") == 0
@@ -1966,7 +1967,7 @@ _BOOK_BOND_ORDER = ("front_seat_bkhd", "panel", "f22", "rear_seat_bkhd", "firewa
 
 def _fuse_ops(g):
     byid = {o["id"]: o for o in g["ops"]}
-    return [i for i in g["order"] if byid[i]["chapter"] in (4, 5, 6, 7, 8, 9) and not byid[i]["stub"]
+    return [i for i in g["order"] if byid[i]["chapter"] in (4, 5, 6, 7, 8, 9, 12, 13) and not byid[i]["stub"]
             and ("both" in byid[i]["variants"] or "roncz" in byid[i]["variants"])]
 
 
@@ -2597,6 +2598,481 @@ def test_the_home_view_names_the_finished_box_by_family_in_ten_labels_or_fewer(r
             pg.evaluate("window.__lab.advance(3)")
             labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
             assert labs["gear.axles"]["opacity"] > 0.5 and labs["gear.wheels"]["opacity"] < 0.05
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.4 Task 5: chapters 11-13 in the lab. The elevators (canard subject, chapter 11), the canard and elevators installed on the
+# airplane (fuselage subject, chapters 12-13), the nose and the nose gear (chapter 13).
+# ======================================================================================================================
+def _run(pg, seconds, dt=0.1):
+    pg.evaluate(f"(() => {{ for (let i = 0; i < {int(round(seconds / dt))}; i++) window.__lab.advance({dt}) }})()")
+
+
+def _roncz_order(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [i for i in g["order"] if "roncz" in byid[i]["variants"] or "both" in byid[i]["variants"]], byid
+
+
+def _first_ops(g):
+    order, byid = _roncz_order(g)
+    first = {}
+    for o in order:
+        for c in byid[o]["components"]:
+            first.setdefault(c, o)
+    return order, byid, first
+
+
+def _elev_component(name):
+    import re
+    name = name.replace("~core", "")
+    return name if name in ("elevator.right", "elevator.left") else re.sub(r"\.(left|right)$", "", name)
+
+
+def _to_fuselage(pg):
+    pg.click('#subject button[data-subject="fuselage"]')
+    assert pg.evaluate("window.__lab.subject()") == "fuselage"
+
+
+def test_ch11_elevators_appear_on_their_ops_are_fitted_shapes_and_never_show_on_a_chapter_30_op(rsite):
+    g = _graph(rsite)
+    order, byid, first = _first_ops(g)
+    ex = g["layup"]["fuselage"]["extras"]["elevators"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1400, 860, query="&freeze=1")
+            ch11 = [o for o in order if byid[o]["chapter"] == 11 and not byid[o]["stub"]]
+            assert len(ch11) >= 15
+            for op in ch11:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.2)
+                st = pg.evaluate("window.__lab.stateAll()")
+                names = [n for n in st if n.startswith("elevator.")]
+                assert names and not any(".left" in n for n in names), names  # the canard subject is the right half
+                for n in names:
+                    i = order.index(first[_elev_component(n)])
+                    want = "hidden" if i > order.index(op) else "current" if i == order.index(op) else "built"
+                    assert st[n] == want, (op, n, st[n], want)
+            # the chapter 30 ops keep the canard alone, as before: the ones that follow chapter 11 in the book too
+            for op in ("r30.top-skin", "r30.install-pins", "r30.align-canard", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.2)
+                st = pg.evaluate("window.__lab.stateAll()")
+                assert {st[n] for n in st if n.startswith("elevator.")} == {"hidden"}, op
+                assert pg.evaluate("window.__lab.elevators()")["boxes"] == {}, op
+            # every elevator part is a fitted shape: striped, said so in its label
+            pg.evaluate("window.__lab.select('r30.elev-mass-balance')")
+            _run(pg, 4)
+            st = pg.evaluate("window.__lab.stateAll()")
+            for n in [n for n in st if n.startswith("elevator.")]:
+                m = pg.evaluate(f"window.__lab.material('{n}')")
+                assert m["hatch"] and m["fidelity"] == "representational", (n, m)
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}  # labels() keeps the canard's own set
+            for cid, row in ex["parts"].items():
+                if cid in ("elevator.left",):
+                    continue
+                assert labs[cid]["text"] == row["label"] and labs[cid]["text"].endswith("(fitted shape)"), (cid, labs[cid])
+            assert any(labs[c]["opacity"] > 0.5 for c in ("elevator.right", "elevator.tube", "elevator.balance_weight"))
+            # bond cores: the tube held clear of the bench on its two jigs, the cores bare (no skin yet); the skin op skins them
+            pg.evaluate("window.__lab.select('r30.elev-bond-cores')")
+            _run(pg, 4)
+            e = pg.evaluate("window.__lab.elevators()")
+            assert e["mode"] == "apart" and e["jigs"] and e["slide"] == pytest.approx(10.0)
+            assert "elevator.tube.right" in e["boxes"] and "elevator.right~core" in e["boxes"] and "elevator.right" not in e["boxes"]
+            assert "elevator.hinges.right" not in e["boxes"]
+            assert pg.evaluate("window.__lab.material('elevator.right~core')")["hatch"]
+            pg.evaluate("window.__lab.select('r30.elev-skin-bottom')")
+            _run(pg, 0.5)
+            e = pg.evaluate("window.__lab.elevators()")
+            assert "elevator.right" in e["boxes"] and "elevator.right~core" not in e["boxes"]
+            # the hinges join the tube and the elevators come home onto the canard
+            pg.evaluate("window.__lab.select('r30.elev-hinges')")
+            _run(pg, 6)
+            e = pg.evaluate("window.__lab.elevators()")
+            assert e["mode"] == "none" and e["slide"] == 0 and not e["jigs"] and "elevator.hinges.right" in e["boxes"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ch11_travel_checks_run_30_down_then_15_up_with_the_live_readout(rsite):
+    from core import elevators_kin as ek
+    hinge = _graph(rsite)["layup"]["fuselage"]["extras"]["elevators"]["hinge_xz"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1400, 860, query="&freeze=1")
+            pg.evaluate("window.__lab.select('r30.top-skin')")  # an upright canard: the travel op does not turn it over, so its boxes read steady
+            _run(pg, 3)
+            for op in ("r30.elev-travel-check", "r30.elev-uptravel-test"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 1.0)
+                box0 = pg.evaluate("window.__lab.meshBox('elevator.tube.right')")
+                assert pg.evaluate("window.__lab.kin()")["value"] == "Neutral" and pg.evaluate("window.__lab.elevators()")["mode"] == "travel"
+                degs, texts, boxes = [], [], {}
+                for _ in range(80):
+                    _run(pg, 0.1)
+                    e = pg.evaluate("window.__lab.elevators()")
+                    degs.append(e["degDown"])
+                    texts.append(pg.evaluate("window.__lab.kin()")["value"])
+                    if abs(e["degDown"] - 30) < 1e-6: boxes[30.0] = pg.evaluate("window.__lab.meshBox('elevator.tube.right')")
+                    if abs(e["degDown"] + 15) < 1e-6: boxes[-15.0] = pg.evaluate("window.__lab.meshBox('elevator.tube.right')")
+                assert max(degs) == pytest.approx(30.0) and min(degs) == pytest.approx(-15.0)
+                assert degs.index(max(degs)) < degs.index(min(degs))  # 30 down first, then 15 up
+                assert "Down 30.0 deg  (limit 30)" in texts
+                assert texts[-1] == "Up 15.0 deg  (target 15, floor 12.5)"
+                assert pg.text_content("#ro-kin") == texts[-1] and pg.is_visible("#t-kin")  # the live row on the page, in the plan's words
+                assert pg.inner_text("#ro-kin-label") == "Elevator travel"
+                assert ek.classify_up_travel(15.0) == "target" and ek.classify_up_travel(12.5) == "floor only"
+                # the part really turns about the hinge line, by the kernel's rotation: the torque tube's centre (a cylinder along the span
+                # turns into itself, so its box centre is a point of the elevator) moves where core.elevators_kin.rotate_about_hinge puts it
+                inch = 0.0254
+                tb = pg.evaluate("window.__lab.plyBox('elevator.tube.right')")  # the tube's own frame (inches: x chord, y up)
+                c0 = ((tb["min"][0] + tb["max"][0]) / 2, (tb["min"][1] + tb["max"][1]) / 2)
+                for deg, bx in boxes.items():
+                    ex_, ez_ = ek.rotate_about_hinge(c0, tuple(hinge), deg)
+                    got = ((bx[0][0] + bx[1][0]) / 2 - (box0[0][0] + box0[1][0]) / 2, (bx[0][1] + bx[1][1]) / 2 - (box0[0][1] + box0[1][1]) / 2)
+                    assert got[0] == pytest.approx((ex_ - c0[0]) * inch, abs=2e-6) and got[1] == pytest.approx((ez_ - c0[1]) * inch, abs=2e-6), (deg, got, ex_ - c0[0], ez_ - c0[1])
+                assert set(boxes) == {30.0, -15.0}
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ch11_balance_check_hangs_each_elevator_nose_down_with_the_cg_labelled_illustrative(rsite):
+    from core import elevators_kin as ek
+    g = _graph(rsite)
+    ex = g["layup"]["fuselage"]["extras"]["elevators"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1400, 860, query="&freeze=1")
+            pg.evaluate("window.__lab.select('r30.elev-balance-check')")
+            _run(pg, 0.5)
+            assert pg.evaluate("window.__lab.elevators()")["degDown"] == 0
+            _run(pg, 15)
+            e = pg.evaluate("window.__lab.elevators()")
+            want = ek.hang_pitch_deg(ex["hang_cg"]["dx"], ex["hang_cg"]["dz"])  # the kernel's pitch for the fitted CG
+            assert e["mode"] == "hang" and e["noseDown"] and 0 < e["hangPitch"] < 180
+            assert e["hangPitch"] == pytest.approx(want, abs=1e-9) and e["degDown"] == pytest.approx(-want, abs=0.01)
+            assert e["jigs"] and e["slide"] == pytest.approx(10.0)  # hung clear of the canard on its hinge line
+            k = pg.evaluate("window.__lab.kin()")
+            assert k["label"] == "Elevator hang" and "Hangs nose down" in k["value"] and "illustrative CG: masses not sourced" in k["value"], k
+            # nose down in the world: the leading-edge weights hang below the hinge line, the trailing edge goes up
+            hx, hz = ex["hinge_xz"]
+            hinge_y = pg.evaluate(f"window.__lab.toWorld([{hx}, {hz}, -30])")[1]
+            w = pg.evaluate("window.__lab.meshBox('elevator.balance_weight.right')")
+            body = pg.evaluate("window.__lab.meshBox('elevator.right')")
+            assert (w[0][1] + w[1][1]) / 2 < hinge_y - 0.5 * 0.0254, (w, hinge_y)
+            assert body[1][1] > hinge_y + 1.0 * 0.0254  # the trailing edge swung up over the hinge line
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_canard_and_elevators_stand_installed_on_a_chapter_12_or_13_op_and_not_on_a_chapter_4_9_op(rsite):
+    g = _graph(rsite)
+    ci = g["layup"]["fuselage"]["extras"]["canard_install"]
+    inch = 0.0254
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ("r30.f22-drill-tabs", "r30.elev-fuselage-clearance", "r30.lift-tab-bushings", "r30.f28-pins-permanent", "f13.strut-reinforce", "f13.nose-door"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 4)
+                ic = pg.evaluate("window.__lab.installedCanard()")
+                assert ic["shown"] and ic["nodes"] >= 20, (op, ic["nodes"])
+                assert {"installed:canard.core", "installed:canard.core:left", "installed:elevator.right", "installed:elevator.left"} <= set(ic["boxes"]), op
+            # the airplane stays as it was for chapters 4-9, and for the finished chapter 4-9 box
+            for op in ("f04.front-seat-bkhd-front", "f06.trial-fit", "f07.canard-cutout", "f07.skin-right", "f08.step", "f09.brake-lines", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 1)
+                assert not pg.evaluate("window.__lab.installedCanard()")["shown"], op
+            # where it stands: leading edge at F.S. 18.7 and the canard's height, zero incidence (no rotation), the left half the right mirrored
+            pg.evaluate("window.__lab.select('f13.nose-door')")
+            _run(pg, 4)
+            ic = pg.evaluate("window.__lab.installedCanard()")
+            assert ic["at"][:2] == [ci["fs_le"], ci["z_le"]] and ci["incidence_deg"] == 0.0
+            pb = pg.evaluate("window.__lab.plyBox('canard.core')")  # the canard's own frame (inches)
+            r, l = ic["boxes"]["installed:canard.core"], ic["boxes"]["installed:canard.core:left"]
+            lo = pg.evaluate(f"window.__lab.fuseToWorld([{ci['fs_le'] + pb['min'][0]}, {ci['z_le'] + pb['min'][1]}, 0])")
+            assert r[0][0] == pytest.approx(lo[0], abs=1e-6) and r[0][1] == pytest.approx(lo[1], abs=1e-6)
+            assert (r[1][1] - r[0][1]) == pytest.approx((pb["max"][1] - pb["min"][1]) * inch, abs=1e-6)  # no tilt: the height is the section's own
+            assert (r[1][0] - r[0][0]) == pytest.approx((pb["max"][0] - pb["min"][0]) * inch, abs=1e-6)
+            zc = pg.evaluate("window.__lab.fuseToWorld([0, 0, 0])")[2]
+            assert l[0][2] == pytest.approx(2 * zc - r[1][2], abs=1e-6) and l[1][2] == pytest.approx(2 * zc - r[0][2], abs=1e-6)
+            assert (r[1][2] - r[0][2]) == pytest.approx(70.8 * inch, abs=1e-3)  # a whole canard: both halves of the 141.6 in span
+            re_, le_ = ic["boxes"]["installed:elevator.right"], ic["boxes"]["installed:elevator.left"]
+            # the right elevator is on the right of the centre line, the left one reaches out on the left (and, per cobelu figure C-1's 72.7 in length,
+            # 7.7 in past the centre line: the config's span, not a lab choice)
+            assert re_[0][2] > zc - 70 * inch and re_[1][2] < zc and le_[1][2] > zc + 60 * inch and le_[1][2] < zc + 70 * inch
+            # no gross interpenetration with the box: the canard stays inside the airplane's width and off the bench
+            bench = pg.evaluate("window.__lab.fuseFloor()")["bench"]
+            for bx in (r, l, re_, le_):
+                assert not _boxes_overlap(bx, bench)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_nose_parts_appear_on_the_op_that_lists_them_and_never_before_chapter_13(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    rows = fz["extras"]["nose_parts"]
+    order, byid, first = _first_ops(g)
+    ch13 = [o for o in order if byid[o]["chapter"] == 13 and not byid[o]["stub"]]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            assert set(_chips(pg)) >= set(ch13) and "r30.f22-drill-tabs" in _chips(pg)
+            for op in ch13:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.2)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    due = order.index(first[row["component"]]) <= order.index(op)
+                    if name == "gear_nose_strut":  # drawn from the op that lowers it into the box
+                        due = due and order.index(op) >= order.index("f13.lower-gear")
+                    assert pl[name] == ("jig" if due else "none"), (op, name, pl[name])
+                    assert (pg.evaluate(f"window.__lab.meshBox('{row['node']}')") is not None) == due, (op, name)
+            # the first op of each nose component is a real chapter 13 op (not a stub, not a later chapter)
+            assert all(byid[first[r["component"]]]["chapter"] == 13 for r in rows.values())
+            # nothing of the nose before chapter 13, nor on the finished chapter 4-9 box
+            for op in ("f09.brake-lines", "r30.f22-drill-tabs", "r30.f28-pins-permanent", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.5)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (op, {n: pl[n] for n in rows if pl[n] != "none"})
+            # a fitted shape, every one: striped and labelled so; the nose runs to the tip
+            pg.evaluate("window.__lab.select('f13.nose-door')")
+            _run(pg, 4)
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            for name, row in rows.items():
+                m = pg.evaluate(f"window.__lab.material('{row['node']}')")
+                assert m["hatch"] and m["fidelity"] == "representational", (name, m)
+                assert labs[row["node"]]["text"] == row["label"] and labs[row["node"]]["text"].endswith("(fitted shape)"), name
+            assert labs["nose.door"]["opacity"] > 0.5
+            assert min(r["fs_min"] for r in rows.values()) == pytest.approx(-6.8, abs=0.01)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_chapter_12_and_13_ops_show_at_most_ten_labels_and_keep_the_conflict_and_the_new_parts(rsite):
+    g = _graph(rsite)
+    order, byid, first = _first_ops(g)
+    ops = [o for o in order if byid[o]["chapter"] in (12, 13) and not byid[o]["stub"]]
+    assert "f13.rig-nose-gear" in ops and "r30.f28-pins-permanent" in ops and len(ops) == 24, ops
+    rows = g["layup"]["fuselage"]["extras"]["nose_parts"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 3)
+                on = [x["id"] for x in pg.evaluate("window.__lab.labelsAll()") if x["opacity"] > 0.5]
+                assert len(on) <= 10, (op, on)  # dots count: nothing beyond ten is on screen, readable or collapsed
+                ng = pg.evaluate("window.__lab.noseGear()")
+                if ng["shown"] and ng["t"] < 1:  # the nose wheel is down and in view: its two candidates (conflict) always stay
+                    assert {"mark.nose-plans", "mark.nose-manual"} <= set(on), (op, on)
+            # the parts new on an op keep their fitted-shape label, whatever else is dropped for the budget
+            for op, node in (("f13.nose-door", "nose.door"), ("f13.carve-glass-nose", "nose.skin"), ("f13.pitot-static", "nose.pitot"), ("f13.top-foam", "nose.top_block")):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 3)
+                on = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()") if x["opacity"] > 0.5}
+                assert node in on and "fitted shape" in on[node]["text"], (op, list(on))
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_nose_gear_is_down_until_the_rig_op_cranks_it_up_in_six_seconds_and_it_ends_in_the_nb_box(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    ng = fz["extras"]["nose_gear"]
+    panel = fz["parts"]["panel"]["fs_min"]
+    nb = fz["extras"]["nose_parts"]["nose_nb_box"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            # before the gear is lowered into the box it is not drawn and the nose stands on its stand; from lower-gear it is down on the floor
+            pg.evaluate("window.__lab.select('f13.ng-box-assemble')")
+            _run(pg, 0.3)
+            n = pg.evaluate("window.__lab.noseGear()")
+            assert not n["shown"] and n["stand"] and not pg.evaluate("window.__lab.kin()")
+            pg.evaluate("window.__lab.select('f13.lower-gear')")
+            _run(pg, 0.3)
+            n = pg.evaluate("window.__lab.noseGear()")
+            assert n["shown"] and n["t"] == 0 and not n["stand"] and n["crank"] == "Crank 0.0 of 10.8 turns (gear down)"
+            assert n["wheel"]["plans"][0] == pytest.approx(17.0) and n["wheel"]["manual"][0] == pytest.approx(20.0) and n["ghostShown"]
+            # the rig op: the crank turns in sim time (frozen: wall time moves nothing), six seconds inside the book's five to seven
+            pg.evaluate("window.__lab.select('f13.rig-nose-gear')")
+            _run(pg, 0.3)
+            time.sleep(0.3)
+            assert pg.evaluate("window.__lab.noseGear()")["t"] == 0 and pg.text_content("#ro-kin") == "Crank 0.0 of 10.8 turns (gear down)"
+            started = ended = None
+            xs = []
+            for i in range(1, 120):
+                _run(pg, 0.1)
+                n = pg.evaluate("window.__lab.noseGear()")
+                xs.append(n["wheel"]["plans"][0])
+                if started is None and n["t"] > 0:
+                    started = i
+                if ended is None and n["t"] >= 1:
+                    ended = i
+                    break
+            secs = (ended - started + 1) * 0.1
+            assert ng["book_seconds"][0] <= secs <= ng["book_seconds"][1] and abs(secs - ng["retract_seconds"]) < 0.25, secs
+            assert max(xs) - xs[0] > 15 and max(xs) - xs[-1] < 1.0  # the wheel swings aft (to the strut's horizontal, F.S. 34, and a little past it)
+            assert all(a <= b_ + 1e-9 for a, b_ in zip(xs[: xs.index(max(xs))], xs[1 : xs.index(max(xs)) + 1]))
+            _run(pg, 1)
+            n = pg.evaluate("window.__lab.noseGear()")
+            assert n["t"] == 1 and n["crank"] == "Crank 10.8 of 10.8 turns (retracted)" and pg.text_content("#ro-kin") == n["crank"]
+            # the wheel ends inside the NB box, forward of the panel; the other candidate's ghost ends there too
+            for c in ("plans", "manual"):
+                assert nb["fs_min"] < n["wheel"][c][0] < panel, (c, n["wheel"][c], nb["fs_min"], panel)
+            assert n["wheel"]["plans"][1] > -17.4 - 22 + 4.5  # up off the floor: the wheel centre is well above its gear-down height
+            # the ops after it keep it retracted; the nose stands on its stand again
+            pg.evaluate("window.__lab.select('f13.pitot-static')")
+            _run(pg, 0.3)
+            n = pg.evaluate("window.__lab.noseGear()")
+            assert n["t"] == 1 and n["stand"] and pg.evaluate("window.__lab.kin()")["value"] == "Crank 10.8 of 10.8 turns (retracted)"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_both_nose_wheel_axle_candidates_show_with_the_word_conflict_and_the_station_is_never_a_bare_fact(rsite):
+    import re
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1400, 900, query="&freeze=1&op=f13.rig-nose-gear")
+            _run(pg, 4)
+            pg.click("#fuse-more")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert "conflict" in labs["mark.nose-plans"]["text"] and "17" in labs["mark.nose-plans"]["text"] and "plans" in labs["mark.nose-plans"]["text"]
+            assert "conflict" in labs["mark.nose-manual"]["text"] and "20" in labs["mark.nose-manual"]["text"] and "manual" in labs["mark.nose-manual"]["text"]
+            n = pg.evaluate("window.__lab.noseGear()")
+            assert n["ghostShown"] and 0 < n["t"] < 1, n  # 4 s into the rig op the crank is turning
+            sub = pg.inner_text("#ro-cg-sub")
+            assert "Nose wheel arm: F.S. 17 (plans) / about 20 (manual): conflict" in sub, sub
+            assert sub.split("·")[-1].strip().startswith("≥") and "lower bound" in sub.split("·")[-1]  # the lower bound keeps its sourced rows, last
+            assert pg.inner_text("#ro-cg") == "not yet computed"  # the CG stays not computed while a row is unsourced
+            g = pg.inner_text("#ro-ground-sub")
+            assert "nose wheel W.L. -22 (CP25 LPC 24)" in g, g
+            assert not re.search(r"tip-over[^·]*\d", g, re.I) and "tip-over check: not yet computed" in g
+            assert "conflict" in pg.inner_text("#ro-kin-sub")
+            # no label or readout states the nose wheel's F.S. as a bare fact
+            texts = [x["text"] for x in pg.evaluate("window.__lab.labels()")]
+            texts += [pg.inner_text(i) for i in ("#ro-cg", "#ro-cg-sub", "#ro-ground", "#ro-ground-sub", "#ro-kin", "#ro-kin-sub")]
+            seen = 0
+            for t in texts:
+                for seg in re.split(r"·", t):
+                    if re.search(r"(nose wheel|nose gear|ghost|axle station)[^·]{0,90}(F\.S\. ?\d|about \d)", seg, re.I):
+                        seen += 1
+                        assert "conflict" in seg.lower(), seg
+            assert seen >= 3
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_station_cut_works_through_the_nose_and_the_elevators_and_keeps_the_old_range_for_chapters_4_9(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f09.brake-lines')")
+            assert pg.get_attribute("#section-bl", "min") == "22" and pg.get_attribute("#section-bl", "max") == "125.5"
+            pg.evaluate("window.__lab.setSection(true, 5)")  # the old range clamps: nothing forward of F22 on a chapter 9 op
+            assert pg.evaluate("window.__lab.cut()")["fs"] == 22
+            pg.evaluate("window.__lab.setSection(false, 22)")
+            pg.evaluate("window.__lab.select('f13.nose-door')")
+            _run(pg, 3)
+            assert pg.get_attribute("#section-bl", "min") == "-6.8"
+            pg.evaluate("window.__lab.setSection(true, -3)")
+            _run(pg, 3)
+            c = pg.evaluate("window.__lab.cut()")
+            assert c["enabled"] and c["fs"] == -3 and c["keepsAft"] and c["removesForward"], c
+            assert {"nose.skin", "nose.pitot"} <= set(c["capNodesVisible"]) and c["capsVisible"] == len(c["cappedNodes"]), c["capNodesVisible"]
+            assert "Nose skin" in pg.inner_text("#ro-layers") and pg.inner_text("#ro-station") == "FS -3"
+            pg.evaluate("window.__lab.setSection(true, 12)")
+            _run(pg, 3)
+            c = pg.evaluate("window.__lab.cut()")
+            assert {"nose.skin", "nose.floor_blocks", "nose.ng30_plates", "nose.side_blocks"} <= set(c["capNodesVisible"]), c["capNodesVisible"]
+            pg.evaluate("window.__lab.setSection(true, -6.8)")  # the nose tip itself
+            assert pg.evaluate("window.__lab.cut()")["fs"] == -6.8
+            assert "nose.skin" in pg.evaluate("window.__lab.cut()")["capNodesVisible"]  # the tip cut still has the skin's cap
+            # leaving the nose: the slider is the box's again, and the cut stays where it fits
+            pg.evaluate("window.__lab.select('r30.f28-pins-permanent')")
+            assert pg.get_attribute("#section-bl", "min") == "22" and pg.evaluate("window.__lab.cut()")["fs"] == 22
+            # the elevators, at a buttock-line cut on the canard (the right half): the body and the tube are capped inside their span, not outboard of it
+            pg.click('#subject button[data-subject="canard"]')
+            pg.evaluate("window.__lab.select('r30.elev-travel-check')")
+            _run(pg, 8)
+            pg.evaluate("window.__lab.setSection(true, 30)")
+            _run(pg, 2)
+            c = pg.evaluate("window.__lab.cut()")
+            assert c["enabled"] and c["keepsOutboard"] and c["removesInboard"] and c["capsVisible"] == len(c["cappedNodes"])
+            assert {"elevator.right", "elevator.tube.right"} <= set(c["capNodesVisible"]), c["capNodesVisible"]
+            pg.evaluate("window.__lab.setSection(true, 67)")  # past the elevators' outboard end (B.L. 65)
+            _run(pg, 2)
+            assert not {n for n in pg.evaluate("window.__lab.cut()")["cappedNodes"] if n.startswith("elevator.")}
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_canard_bar_follows_chapter_11_and_the_fuselage_bar_takes_chapters_12_and_13_and_the_canard_frame_is_its_own(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1400, 860, query="&freeze=1")
+            canard_bar = _chips(pg)
+            assert canard_bar == _bar_ops(g, "roncz")
+            assert "r30.elev-bond-cores" in canard_bar and "r30.canard-tips" in canard_bar and "r30.install-pins" in canard_bar and "r30.align-canard" in canard_bar
+            assert not [o for o in canard_bar if o.startswith("f13.")] and "r30.f22-drill-tabs" not in canard_bar and "r30.lift-tab-bushings" not in canard_bar
+            assert canard_bar.index("r30.top-skin") < canard_bar.index("r30.elev-bond-cores") < canard_bar.index("r30.install-pins")  # the chapter 11 ops follow the ones they follow in the book
+            # the canard's home frame is the canard's box alone: the elevators, hung beside it for some ops, never move it
+            pg.evaluate("window.__lab.select(null)")
+            _run(pg, 4)
+            boxes = [pg.evaluate(f"window.__lab.meshBox('{n}')") for n in pg.evaluate("window.__lab.meshNames()") if n.startswith("canard.") and not n.endswith(tuple(f".p{i}" for i in range(1, 9)))]
+            lo = [min(bx[0][i] for bx in boxes) for i in range(3)]
+            hi = [max(bx[1][i] for bx in boxes) for i in range(3)]
+            cam = pg.evaluate("window.__lab.camera()")
+            ctr = [(lo[i] + hi[i]) / 2 for i in range(3)]
+            assert cam["target"][0] == pytest.approx(ctr[0], abs=0.02) and cam["target"][2] == pytest.approx(ctr[2], abs=0.02)
+            pg.click('#subject button[data-subject="fuselage"]')
+            chips = _chips(pg)
+            assert chips == _fuse_ops(g) and "r30.f22-drill-tabs" in chips and "f13.nose-door" in chips and "r30.elev-bond-cores" not in chips
+            assert chips.index("f09.brake-lines") < chips.index("r30.f22-drill-tabs") < chips.index("f13.strut-reinforce")
+            shots = pg.evaluate("window.__lab.fuseShots()")
+            assert all(shots[o] for o in chips)  # every chapter 12 and 13 op has its own lab shot
             assert not errors, errors
             b.close()
     finally:

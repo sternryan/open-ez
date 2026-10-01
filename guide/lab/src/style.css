@@ -141,6 +141,11 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
 /* the ground-handling note opens with the CG's detail; closed, the dock stays one line */
 #fuse-rows[data-open="false"] > #t-ground { display: none; }
 #fuse-rows[data-open="true"] > #t-ground { flex-wrap: wrap; }
+/* the motion row: the elevator's travel and hang, the nose gear's crank (live, in sim time); the double space in "Up 15.0 deg  (target ...)" is kept */
+#readout .tile[data-k="kin"] { flex-wrap: wrap; }
+#ro-kin { font-weight: 600 !important; font-size: 12px !important; color: var(--ink-soft); white-space: pre-wrap; font-variant-numeric: tabular-nums; }
+#ro-kin-sub { flex-basis: 100%; font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
+#ro-kin-sub:empty { display: none; }
 #ro-ground { font-weight: 600 !important; font-size: 12px !important; color: var(--ink-soft); }
 #ro-ground-sub { flex-basis: 100%; font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
 #fuse-rows[data-open="true"] #t-cg { padding-right: calc(var(--hit) + 4px); }

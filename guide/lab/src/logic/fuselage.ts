@@ -18,13 +18,20 @@
  *              longerons (the roll-over hangs through an opening in it) and stays so to the end of the chapter (plans-1980:p50).
  */
 import { visibleOps, type GraphLite, type Op } from './graph'
+import { noseArmText } from './kin'
 
 export type Subject = 'canard' | 'fuselage'
 export const SUBJECTS: Subject[] = ['canard', 'fuselage']
 export const SUBJECT_KEY = 'longez.subject'
 export const parseSubject = (s: string | null | undefined): Subject => (s === 'fuselage' ? 'fuselage' : 'canard')
 
-export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9])
+/** Chapters 4-9 are the box and the main gear; 12 (the canard installed: F22 drilled, bushings, F28 pins) and 13 (the nose and nose gear) join them. */
+export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13])
+/** The chapters the all-chapters fuselage tour covers: the whole bar (12 and 13 have no film of their own yet). */
+export const FUSE_TOUR_CHAPTERS = [4, 5, 6, 7, 8, 9, 12, 13]
+/** From these chapters on (12, 13) the canard and its elevators are shown installed on the airplane; the nose parts are the chapter 13 ops'. */
+export const CANARD_INSTALLED_CHAPTERS = new Set([12, 13])
+export const NOSE_CHAPTER = 13
 
 export type Fidelity = 'book' | 'derived' | 'representational'
 /** When a part is shown besides its component's build state: from an op on, until one (exclusive), or at one op only (logic: shownAt) */
@@ -50,6 +57,18 @@ export interface FusePlyRow {
   cloth: string; orientation_deg: number | null; where: string; region: string; fidelity: Fidelity; lower_bound: boolean; area_in2: number
   fs_min: number; fs_max: number
 }
+/** layup.json "fuselage"."extras" (guide/fuselage_export.py extras_section): chapters 11-13 */
+export interface FuseExtras {
+  nose_parts: Record<string, FusePartRow>
+  elevators: { parts: Record<string, { node: string; fidelity: Fidelity; label: string }>; hinge_xz: [number, number]; tube_le_x: number; travel: { up_target_deg: number; up_floor_deg: number; down_deg: number }; hang_cg: { dx: number; dz: number; note: string; fitted: boolean }; jig_label: string }
+  canard_install: { fs_le: number; z_le: number; z_le_status: string; incidence_deg: number; incidence_note: string }
+  nose_gear: NoseGearKinLite
+}
+export interface NoseGearKinLite {
+  strut_length: number; axle_wl: number; pivot_wl: number; clearance_wl: number; wl_zero: number; crank_turns: number; retract_seconds: number
+  book_seconds: [number, number]; tire_od: number; tire_width: number; status: string
+  candidates: Record<'plans' | 'manual', { axle_fs: number; cite: string }>
+}
 export interface FuseLayup {
   chapters: number[]; ops: string[]; parts: Record<string, FusePartRow>; nodes: Record<string, FusePlyRow>
   excluded: { op: string; where: string; reason: string; parts: string[] }[]
@@ -57,6 +76,7 @@ export interface FuseLayup {
   stages?: Record<string, FuseStage[]>
   bank_deg?: Record<string, number>
   gear_marks?: GearMarks
+  extras?: FuseExtras
 }
 
 /** The ops the bottom bar shows for the fuselage: chapters 4-9, not stubs, in graph order. The variant only changes the canard. */
@@ -91,10 +111,28 @@ export const INSTALL: Record<string, string> = {
   'gear.strut': 'f09.position-gear', // stiffened on the table first
   'gear.datum_board': 'f09.position-gear',
   'gear.axles': 'f09.axles-brakes',
+  // chapter 13: each nose part is in place from the first op that lists it (tests/lab e2e checks this against the graph)
+  'gear.nose_strut': 'f13.strut-reinforce',
+  'nose.ng30_plates': 'f13.ng30-plates',
+  'nose.ng_hardware': 'f13.ng-box-assemble',
+  'nose.ng31': 'f13.ng31-f6',
+  'nose.floor_blocks': 'f13.floor-blocks',
+  'nose.pivot_blocks': 'f13.pedal-pivot-blocks',
+  'nose.side_blocks': 'f13.side-pieces',
+  'nose.pedals': 'f13.rudder-pedals',
+  'nose.strut_cover': 'f13.strut-slot-sc',
+  'nose.nb_box': 'f13.nb-box',
+  'nose.pitot': 'f13.pitot-static',
+  'nose.static_port': 'f13.pitot-static',
+  'nose.top_block': 'f13.top-foam',
+  'nose.skin': 'f13.carve-glass-nose',
+  'nose.door': 'f13.nose-door',
 }
+/** the nose and nose-gear components (chapter 13): the fuselage subject's chapter 13 meshes, in the jig only */
+export const NOSE_COMPONENTS = Object.keys(INSTALL).filter((c) => c.startsWith('nose.') || c === 'gear.nose_strut')
 /** Components with no place on the layup table: before their install op they are not shown (the extrusions go on the flat sides in
  * chapter 5, which the lab does not draw). */
-export const JIG_ONLY = new Set(['fuselage.gear_extrusions', 'fuselage.canard_cutout', 'fuselage.belt_insert', 'fuselage.belt_attach', 'fuselage.step', 'gear.jig_blocks', 'gear.datum_board', 'gear.axles'])
+export const JIG_ONLY = new Set(['fuselage.gear_extrusions', 'fuselage.canard_cutout', 'fuselage.belt_insert', 'fuselage.belt_attach', 'fuselage.step', 'gear.jig_blocks', 'gear.datum_board', 'gear.axles', ...NOSE_COMPONENTS])
 /** The dry fit: the components it lists stand in the jig for that op only, then go back out to be bonded one by one. */
 export const TRIAL_FIT = 'f06.trial-fit'
 /** Ops during which an installed component is off the box, on the table (the bottom's inside glass, before it is bonded). */
@@ -295,10 +333,15 @@ export function planHalfWidth(bend: [number, number][], fs: number): number {
 }
 
 // ---- the station cut ----
-/** The fuselage CutState's range: its plane constant is depth + (extent - depth) * (1 - amount) (core/cut.ts), normal +X. */
-export const STATION_CUT = { extent: 0, depth: -200 }
+/** The fuselage CutState's range: its plane constant is depth + (extent - depth) * (1 - amount) (core/cut.ts), normal +X. The extent is
+ * +10 so a station forward of F.S. 0 (the nose goes to -6.8) still has a positive amount: the cut treats an amount of 0 as "closed". */
+export const STATION_CUT = { extent: 10, depth: -200 }
 /** The CutState amount that puts the plane at x = fs (constant -fs): the forward side is removed, the aft side kept. */
-export const stationAmount = (fs: number): number => fs / (STATION_CUT.extent - STATION_CUT.depth)
+export const stationAmount = (fs: number): number => (fs + STATION_CUT.extent) / (STATION_CUT.extent - STATION_CUT.depth)
+/** The section slider's range in F.S.: the box's (22 to 125.5) for chapters 4-9, forward to the nose tip once a chapter 12-13 op is selected. */
+export const FUSE_CUT_RANGE = { min: 22, max: 125.5 }
+export const NOSE_CUT_RANGE = { min: -6.8, max: 125.5 }
+export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : FUSE_CUT_RANGE)
 export const fmtFs = (fs: number): string => `FS ${Math.round(fs * 10) / 10}`
 /** tolerance on a ply's FS extent, as the canard's EPS on B.L. */
 export const FS_EPS = 1e-3
@@ -346,8 +389,13 @@ export interface GearRowLite { name: string; label: string; weight_lb: number; a
 export interface GroundLite {
   main_axle_fs: number; main_axle_wl: number; tip_back_line_deg: number; cite: Record<string, string>
   tip_back_check: string; tip_over_check: string
+  /** the nose wheel's W.L. (cp-corrected, CP25 LPC 24); no tip-over number goes with it */
+  nose_wheel_wl?: number
 }
-export interface LedgerLite { cg: CgLite; cg_lower_bound: CgLite; gear?: { rows: GearRowLite[]; sourced_lb: number; ground_handling?: GroundLite } }
+export interface LedgerLite {
+  cg: CgLite; cg_lower_bound: CgLite
+  gear?: { rows: GearRowLite[]; sourced_lb: number; ground_handling?: GroundLite; nose_arm_candidates?: number[]; nose_arm_candidates_status?: string }
+}
 
 const r1 = (x: number) => (Math.round(x * 10) / 10).toFixed(1)
 /**
@@ -380,7 +428,9 @@ export function cgRow(ledger: LedgerLite | null): { value: string; sub: string |
   const ranked = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
   const listed = ranked.slice(0, 2).map(([k, n]) => `${k} (${n})`).join('; ') + (ranked.length > 2 ? `; ${ranked.length - 2} more` : '')
   const why = `${ex.length} of ${total} parts have no sourced mass${listed ? `: ${listed}` : ''}`
-  const segs = [why, ...unsourced, ...(lower ? [lower] : [])]
+  // the nose wheel's arm is the p171 / Owner's Manual conflict: both candidates, never one as the arm (before the lower bound, which stays last)
+  const arm = noseArmText(ledger.gear?.nose_arm_candidates, ledger.gear?.nose_arm_candidates_status)
+  const segs = [why, ...unsourced, ...(arm ? [arm] : []), ...(lower ? [lower] : [])]
   return { value: 'not yet computed', sub: segs.join(' · ') }
 }
 
@@ -399,8 +449,9 @@ const checkText = (s: string | undefined): string => {
 export function groundRow(ledger: LedgerLite | null): { value: string; sub: string } | null {
   const g = ledger?.gear?.ground_handling
   if (!g) return null
+  const nose = g.nose_wheel_wl !== undefined ? [`nose wheel W.L. ${g.nose_wheel_wl} (CP25 LPC 24)`] : []
   return {
     value: `Main axle F.S. ${g.main_axle_fs} (book)`,
-    sub: [`${g.tip_back_line_deg}° tip-back line from the main tyre contact (p171)`, `tip-back check: ${checkText(g.tip_back_check)}`, `tip-over check: ${checkText(g.tip_over_check)}`].join(' · '),
+    sub: [`${g.tip_back_line_deg}° tip-back line from the main tyre contact (p171)`, ...nose, `tip-back check: ${checkText(g.tip_back_check)}`, `tip-over check: ${checkText(g.tip_over_check)}`].join(' · '),
   }
 }

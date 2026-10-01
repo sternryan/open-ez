@@ -11,3 +11,23 @@ shots:
   # The upper surface faces the home camera's side, so these two only need a straight-down, span-filling view.
   r30.top-spar-cap: {target: [5, 0.6, -27], position: [8, 55, 25]}
   r30.top-skin: {target: [6, 0.8, -33], position: [10, 75, 28]}
+  # Chapter 11, the elevators. Built apart, aft of the canard on two tube jigs (x about 19 to 23), seen from aft and above; on the canard's trailing
+  # edge for the travel check, seen along the span from the root so the deflection reads in profile; the hang test likewise.
+  r30.elev-bond-cores: {target: [20.5, 0.2, -36], position: [32, 40, 20]}
+  r30.elev-uptravel-test: {target: [11.5, 0.2, -13], position: [12, 8, 40]}
+  r30.elev-balance-check: {target: [19.8, -0.5, -13], position: [20, 8, 40]}
+  r30.elev-travel-check: {target: [11.5, 0.2, -13], position: [12, 8, 40]}
+  # the rest of chapter 11: the elevators still apart on their jigs, then on the canard's trailing edge, seen from aft and above
+  r30.elev-nc2-inserts: {target: [20.5, 0.2, -36], position: [32, 40, 20]}
+  r30.elev-skin-bottom: {target: [20.5, 0.2, -36], position: [32, 40, 20]}
+  r30.elev-skin-top: {target: [20.5, 0.2, -36], position: [32, 40, 20]}
+  r30.elev-trim-ends: {target: [20.5, 0.2, -36], position: [32, 40, 20]}
+  r30.elev-hinges: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-hinge-slots: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-flox-hinges: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-nc12a: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.canard-tips: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-trim-belcrank: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-mass-balance: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-balance-pockets: {target: [11.5, 0.3, -36], position: [20, 40, 20]}
+  r30.elev-cs11: {target: [11.5, 0.3, -36], position: [20, 40, 20]}

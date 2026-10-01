@@ -242,6 +242,16 @@ export function initUI(h: UIHandlers, store: Store) {
       $('ro-cg-sub').textContent = cg.sub ?? ''
       $('t-cg').title = cg.sub ? `${cg.value}. ${cg.sub}` : cg.value
     },
+    /** the motion readout (the elevator's travel and hang, the nose gear's crank): a label, the live value and a note; null hides it */
+    setKin(k: { label: string; value: string; sub: string } | null) {
+      const t = $('t-kin')
+      if (!k) { t.hidden = true; return }
+      t.hidden = false
+      if ($('ro-kin-label').textContent !== k.label) $('ro-kin-label').textContent = k.label
+      if ($('ro-kin').textContent !== k.value) $('ro-kin').textContent = k.value
+      if ($('ro-kin-sub').textContent !== k.sub) $('ro-kin-sub').textContent = k.sub
+      t.title = `${k.value}. ${k.sub}`
+    },
     /** the ground-handling note (book axle station and tip-back line; the checks "not yet computed"); it shows with the CG's detail */
     setGround(g: { value: string; sub: string } | null) {
       $('t-ground').hidden = g === null

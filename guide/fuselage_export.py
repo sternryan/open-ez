@@ -371,6 +371,107 @@ def _ch9_excluded() -> list[dict]:
             for op_id, op in g.ops.items() if op.chapter == 9 for m in op.materials]
 
 
+# ---- chapters 11-13 in the lab (M2.4 Task 5): the elevators, the nose, the nose gear --------------------------------------------------
+NOSE_GEAR_RETRACT_SECONDS = 6.0  # fitted: the lab's crank takes this long, inside the book's 5-7 s (plans-1980:p73)
+HANG_CG = (-1.5, 0.1)  # fitted (dx, dz) in from the hinge line, in: forward of the hinge. The elevator masses are NOT sourced, so the hang test
+# is illustrative: the kernel (core.elevators_kin.hang_pitch_deg) gives the pitch for whatever CG it is handed
+CANARD_INCIDENCE_DEG = 0.0  # book: the canard is set level to the top longerons (plans-1980:p72 template G); config canard_incidence is unsourced, not used
+_CH13_NOSE_CITE = ("plans-1980:p73",)
+
+
+def _labelled(cid: str, fidelity: str) -> str:
+    from pathlib import Path
+
+    from guide.schema import load_graph
+
+    label = load_graph(Path(__file__).parent / "graph").components[cid].label
+    return label + (" (fitted shape)" if fidelity == "representational" else "")
+
+
+def _extent(shapes) -> tuple[float, float]:
+    bb = cq.Compound.makeCompound([s.val() if hasattr(s, "val") else s for s in shapes]).BoundingBox()
+    return round(bb.xmin, 4), round(bb.xmax, 4)
+
+
+def extras_section() -> dict:
+    """layup.json["fuselage"]["extras"]: what the lab needs for the elevators (canard subject, and installed on the airplane), the nose and
+    the nose gear (fuselage subject, chapter 13): part rows, the elevator kernel's inputs and the nose-gear kinematics' inputs. The lab
+    re-implements core.elevators_kin and core.nose_gear_kin from these inputs (guide/lab/src/logic/kin.ts; parity fixture in
+    guide/lab/tests/fixtures/kernels.json)."""
+    from core import elevators_kin as ek
+    from core import landing_gear_book as lgb
+    from core import nose_gear_kin as ngk
+    from core.elevators_book import build_elevators, hinge_axis_xz, x_tube_le
+    from core.nose_book import COMPONENT_PARTS, build_nose
+
+    nose = build_nose()
+    gear = lgb.build_nose_gear("plans")
+    rows: dict[str, dict] = {}
+
+    def add(cid: str, parts: list[FusePart]) -> None:
+        fid = "representational" if any(p.fidelity == "representational" for p in parts) else parts[0].fidelity
+        lo, hi = _extent([p.solid for p in parts])
+        rows[cid.replace(".", "_")] = {
+            "node": cid, "component": cid, "fidelity": fid, "label": _labelled(cid, fid),
+            "cite": sorted({c for p in parts for c in p.cite}), "fs_min": lo, "fs_max": hi, "fwd_normal": None,
+        }
+
+    for cid, names in COMPONENT_PARTS.items():
+        add(cid, [nose[n] for n in names])
+    add("nose.ng_hardware", [gear["ng6_block"]])
+    add("gear.nose_strut", [gear[n] for n in ("strut", "fork", "wheel")])
+    # the strut group is built on the bench (chapter 13's first ops show no geometry for it): it is drawn from the op that lowers it into the box
+    rows["gear_nose_strut"]["show"] = {"from": "f13.lower-gear"}
+
+    el = build_elevators()
+    elev_rows = {}
+    for cid, keys in (("elevator.right", ("elevator_right",)), ("elevator.left", ("elevator_left",)),
+                      ("elevator.tube", ("elevator_tube_right", "elevator_tube_left")), ("elevator.hinges", ("hinges_right", "hinges_left")),
+                      ("elevator.balance_weight", ("balance_weight_right", "balance_weight_left")),
+                      ("elevator.cs11_weight", ("cs11_weight_right", "cs11_weight_left"))):
+        fid = "representational" if any(el[k].fidelity == "representational" for k in keys) else el[keys[0]].fidelity
+        label = _labelled(cid, fid)
+        if cid == "elevator.hinges":  # the stations are placed from the text and the figure at low confidence (core.elevators_book)
+            label = label.replace(" (fitted shape)", " (positioned from text, low confidence) (fitted shape)")
+        elev_rows[cid] = {"node": cid, "fidelity": fid, "label": label}
+    hx, hz = hinge_axis_xz()
+    G_ = config.geometry
+    up_t, down = ek.travel_range_deg()
+    pts = lgb.nose_gear_points("plans")
+    return {
+        "frame": "canard frame as exported for the elevators (x chord aft, y up, z = -B.L., inches); the box frame for the nose",
+        "nose_parts": rows,
+        "elevators": {
+            "parts": elev_rows,
+            "hinge_xz": [round(hx, 6), round(hz, 6)],
+            "tube_le_x": round(x_tube_le(), 6),
+            "travel": {"up_target_deg": up_t, "up_floor_deg": G_.elevator_travel_up_floor_deg, "down_deg": down},
+            "hang_cg": {"dx": HANG_CG[0], "dz": HANG_CG[1], "note": "illustrative CG: masses not sourced", "fitted": True},
+            "jig_label": "NC-7 tube jig (fitted shape)",
+        },
+        "canard_install": {
+            "fs_le": G_.fs_canard_le, "z_le": G_.canard_le_wl, "z_le_status": "conflict", "incidence_deg": CANARD_INCIDENCE_DEG,
+            "incidence_note": "zero to the longerons (book, p72 template G); config canard_incidence is unsourced and is not used",
+        },
+        "nose_gear": {
+            "strut_length": G_.nose_strut_pivot_to_pivot_in,
+            "axle_wl": G_.wl_nose_wheel, "pivot_wl": ngk.default_pivot_wl(),
+            "clearance_wl": G_.wl_fuselage_bottom_3view + lgb.FITTED_TIRE_OD / 2,
+            "wl_zero": -fb.z_of_wl(0.0),  # model z = W.L. - wl_zero
+            "crank_turns": G_.nose_crank_turns, "retract_seconds": NOSE_GEAR_RETRACT_SECONDS,
+            "book_seconds": list(ngk.crank_seconds_range()),
+            "tire_od": lgb.FITTED_TIRE_OD, "tire_width": lgb.FITTED_TIRE_WIDTH,
+            "candidates": {
+                "plans": {"axle_fs": lgb.NOSE_CANDIDATES["plans"], "cite": "plans-1980:p171"},
+                "manual": {"axle_fs": lgb.NOSE_CANDIDATES["manual"], "cite": "om-1980:p35"},
+            },
+            "status": "conflict",
+            "theta_down_deg": round(pts["theta_down_deg"], 6),
+            "theta_up_deg": round(lgb.nose_retracted_theta_deg("plans"), 6),
+        },
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -430,5 +531,6 @@ def layup_section() -> dict:
         "bank_note": "positive = left bank, the right side up (core.landing_gear_book.bank_pose); plans-1980:p46",
         "gear_marks": gh,
         "excluded": excluded + _ch9_excluded(),
+        "extras": extras_section(),
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

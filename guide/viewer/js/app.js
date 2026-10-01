@@ -119,8 +119,8 @@ new GLTFLoader().load(DATA + cfg.model, gltf => {
     if (!o.isMesh) return;
     // GLTFLoader strips dots from node names (canard.core -> canardcore); the original is kept in userData.name.
     const nm = x => x.userData?.name ?? x.name;
-    // the glb also carries the fuselage box and main gear (chapters 4-9), which only the lab shows: this viewer stays the canard's
-    for (let f = o; f; f = f.parent) if (nm(f).startsWith("fuselage.") || nm(f).startsWith("gear.")) return;
+    // the glb also carries the fuselage box, the gear and nose (chapters 4-9, 13) and the elevators (chapter 11), which only the lab shows: this viewer stays the canard's
+    for (let f = o; f; f = f.parent) if (["fuselage.", "gear.", "nose.", "elevator."].some(p => nm(f).startsWith(p))) return;
     let n = o; while (n && !graph.components[nm(n)] && n.parent) n = n.parent;
     const cid = graph.components[nm(n)] ? nm(n) : nm(o);
     let q = o; while (q && !/\.p\d+$/.test(nm(q)) && q.parent) q = q.parent;

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { barOps, type GraphLite, type Op } from '../src/logic/graph'
 import {
   fuseBarOps, parseSubject, placement, jigPose, upFace, planHalfWidth, stationLayers, stationSummary, fmtFs, stationAmount,
-  STATION_CUT, cgRow, INSTALL, FUSE_CHAPTERS, turnPose, FLIP_SECONDS, hatchSoftness, labelPriority, crossedByStationCut,
+  STATION_CUT, cgRow, INSTALL, FUSE_CHAPTERS, turnPose, FLIP_SECONDS, hatchSoftness, labelPriority, crossedByStationCut, cutRangeFor, NOSE_COMPONENTS, JIG_ONLY,
   type FusePlyRow, type FusePartRow, type LedgerLite,
 } from '../src/logic/fuselage'
 import { FUSE_VIEWS, fuseView } from '../src/fuseShots'
@@ -27,12 +27,12 @@ const G: GraphLite = {
 }
 const ORDER = G.order
 
-test('the fuselage bar is the chapter 4-9 ops that are not stubs, in graph order, whatever the variant', () => {
+test('the fuselage bar is the chapter 4-9, 12 and 13 ops that are not stubs, in graph order, whatever the variant', () => {
   const want = ['f04.front-seat-bkhd-front', 'f04.panel-f22-f28-aft', 'f04.front-seat-bkhd-back', 'f05.side-blank', 'f06.trial-fit', 'f06.jig-check', 'f06.bond-front-seat',
     'f06.bond-panel', 'f06.bond-f22', 'f06.bottom-foam-fit', 'f06.bottom-glass', 'f06.bottom-bond']
   assert.deepEqual(fuseBarOps(G, 'roncz').map((o) => o.id), want)
   assert.deepEqual(fuseBarOps(G, 'gu').map((o) => o.id), want)
-  assert.deepEqual([...FUSE_CHAPTERS].sort(), [4, 5, 6, 7, 8, 9])
+  assert.deepEqual([...FUSE_CHAPTERS].sort((a, b) => a - b), [4, 5, 6, 7, 8, 9, 12, 13])
   assert.deepEqual(barOps(G, 'roncz').map((o) => o.id), ['r30.a']) // the canard bar is untouched
 })
 
@@ -449,4 +449,67 @@ test('the ground note: the book axle station and tip-back line, and both checks 
     assert.ok(!/check: [^·]*\d/.test(b.sub), b.sub)
   }
   assert.ok(!/track\D{0,12}\d/i.test(g.sub + g.value), 'no track number')
+})
+
+// ---- M2.4 Task 5: chapters 12 and 13 in the fuselage subject, the nose arm and the nose wheel W.L. in the readout ----
+test('the fuselage bar takes the chapter 12 and 13 ops, in graph order, after the chapter 9 ones', () => {
+  const G2: GraphLite = {
+    ops: [...G.ops, op('f09.brake-lines', 9), op('r30.elev-a', 11, [], false, ['roncz']), op('r30.f22-drill-tabs', 12, [], false, ['roncz']), op('f13.nose', 13), op('f13.stub', 13, [], true), op('c12.pins', 12, [], false, ['gu'])],
+    order: [...G.order, 'f09.brake-lines', 'r30.elev-a', 'r30.f22-drill-tabs', 'f13.nose', 'f13.stub', 'c12.pins'],
+  }
+  assert.deepEqual(fuseBarOps(G2, 'roncz').slice(-3).map((o) => o.id), ['f09.brake-lines', 'r30.f22-drill-tabs', 'f13.nose'])
+  assert.ok(fuseBarOps(G2, 'gu').some((o) => o.id === 'c12.pins')) // the GU variant's chapter 12 is the fuselage subject's too
+  assert.deepEqual(barOps(G2, 'roncz').map((o) => o.id), ['r30.a', 'r30.elev-a']) // the elevators stay on the canard's bar; chapter 12 is off it
+})
+
+test('the station cut reaches the nose tip: F.S. -6.8 has a positive amount and the plane constant is -FS, as for the box', () => {
+  for (const fs of [-6.8, -3, 0, 10, 22, 70, 125.5]) {
+    const a = stationAmount(fs)
+    const e = STATION_CUT.depth + (STATION_CUT.extent - STATION_CUT.depth) * (1 - a)
+    assert.ok(Math.abs(e + fs) < 1e-9, `${fs}: ${e}`)
+    assert.ok(a > 0.0005 && a < 1, `${fs}: ${a}`)
+  }
+  assert.deepEqual(cutRangeFor(null), { min: 22, max: 125.5 }) // chapters 4-9 keep the box's range
+  assert.deepEqual(cutRangeFor(9), { min: 22, max: 125.5 })
+  assert.deepEqual(cutRangeFor(12), { min: 22, max: 125.5 })
+  assert.deepEqual(cutRangeFor(13), { min: -6.8, max: 125.5 })
+})
+
+test('every nose component is installed by the first chapter 13 op that lists it (the real graph)', () => {
+  const y = readFileSync(fileURLToPath(new URL('../../graph/ch13.yaml', import.meta.url)), 'utf8')
+  const first = new Map<string, string>()
+  for (const blk of y.split(/^- id: /m).slice(1)) {
+    const id = blk.split('\n')[0].trim()
+    const m = /^ {2}components: \[(.*)\]/m.exec(blk)
+    for (const c of (m?.[1] ?? '').split(',').map((s) => s.trim()).filter(Boolean)) if (!first.has(c)) first.set(c, id)
+  }
+  for (const c of NOSE_COMPONENTS) assert.equal(INSTALL[c], first.get(c), c)
+  assert.ok(NOSE_COMPONENTS.includes('gear.nose_strut') && NOSE_COMPONENTS.length >= 14)
+  for (const c of NOSE_COMPONENTS) assert.ok(JIG_ONLY.has(c), c) // they have no place on the layup table
+})
+
+test('the CG row names both nose-wheel arm candidates as a conflict, before the lower bound, and never as one number', () => {
+  const L: LedgerLite = { ...LG, gear: { ...GEAR!, nose_arm_candidates: [17, 20], nose_arm_candidates_status: 'conflict' } }
+  const r = cgRow(L)
+  const segs = r.sub!.split(' · ')
+  assert.ok(segs.includes('Nose wheel arm: F.S. 17 (plans) / about 20 (manual): conflict'), r.sub!)
+  assert.ok(segs[segs.length - 1].includes('lower bound'), 'the lower bound stays the last segment')
+  assert.ok(segs.includes('Wheels and brakes: excluded, no source'))
+  assert.ok(!cgRow(LG).sub!.includes('Nose wheel arm')) // no candidates in the ledger: no row (never a guess)
+})
+
+test('the ground note adds the nose wheel W.L. (CP25 LPC 24) and no tip-over number', async () => {
+  const { groundRow } = await import('../src/logic/fuselage')
+  const L: LedgerLite = { ...LG, gear: { ...GEAR!, ground_handling: { ...GEAR!.ground_handling!, nose_wheel_wl: -22 } } }
+  const g = groundRow(L)!
+  assert.ok(g.sub.includes('nose wheel W.L. -22 (CP25 LPC 24)'), g.sub)
+  assert.ok(g.sub.includes('tip-over check: not yet computed (the track has no source)'))
+  assert.ok(!/tip-over[^·]*\d/i.test(g.sub), g.sub)
+  assert.ok(!groundRow(LG)!.sub.includes('nose wheel')) // without the field: unchanged
+})
+
+test('the chapter 12-13 views are authored and keep FUSE_VIEWS the chapter 4-9 set', () => {
+  assert.ok(!('f13.nose-door' in FUSE_VIEWS))
+  for (const id of ['r30.f22-drill-tabs', 'f13.ng30-plates', 'f13.rig-nose-gear', 'f13.nose-door']) assert.notDeepEqual(fuseView(id), fuseView('f13.unknown'), id)
+  assert.deepEqual(fuseView('f13.unknown'), fuseView('f99.unknown'))
 })

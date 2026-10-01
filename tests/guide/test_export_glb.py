@@ -296,3 +296,62 @@ def test_gear_parts_are_gear_nodes_with_their_fidelity_and_the_axle_marks_are_bo
     # the track has no source: it appears nowhere in what the lab reads
     txt = json.dumps(fz)
     assert not re.search(r"track\D{0,20}\d", txt, re.I) and "84" not in json.dumps({k: v for k, v in fz.items() if k in ("gear_marks", "bank_deg")})
+
+
+# ---- Block 2 M2.4 Task 5: chapters 11-13 in the lab export ----
+def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_stays_canard_alone(fuse_export, tmp_path):
+    from guide.export_glb import canard_components, default_components
+
+    comps = default_components()
+    fam = ("canard.", "elevator.", "fuselage.", "gear.", "nose.")
+    assert all(k.startswith(fam) for k in comps), [k for k in comps if not k.startswith(fam)]
+    for f in fam:
+        assert any(k.startswith(f) for k in comps), f
+    assert all(k.startswith("canard.") for k in canard_components())
+    names = set(read_glb_node_names(fuse_export))
+    assert {"elevator.right", "elevator.left", "nose.skin", "nose.nb_box", "gear.nose_strut", "nose.ng_hardware"} <= names
+    j = _glb_json(fuse_export)
+    parent = _parents(j)
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    assert parent[idx["elevator.tube.right"]] == "elevator.tube"  # the lab splits an elevator part into its right and left by name
+    assert parent[idx["elevator.hinges.left"]] == "elevator.hinges"
+
+
+def test_layup_extras_carry_the_nose_the_elevators_the_install_and_the_nose_gear_inputs(fuse_export):
+    import json as _json
+    import re as _re
+
+    from core import elevators_kin as ek
+
+    fz = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"]
+    ex = fz["extras"]
+    g = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    comps = {c.id for c in g.components.values()}
+    names = set(read_glb_node_names(fuse_export))
+    # the chapter 4-9 part rows are unchanged (the lab's existing contract); the nose has rows of its own
+    assert not any(k.startswith(("nose_", "gear_nose")) for k in fz["parts"])
+    assert len(ex["nose_parts"]) == 15  # 13 nose components, the NG hardware, the nose strut group (nose.worm_drive has no geometry)
+    for name, row in ex["nose_parts"].items():
+        assert row["node"] in names and row["component"] in comps and row["node"] == row["component"], name
+        assert row["fidelity"] == "representational" and row["label"].endswith("(fitted shape)"), name
+        assert row["fs_min"] <= row["fs_max"]
+    nose_x = [r["fs_min"] for r in ex["nose_parts"].values()]
+    assert min(nose_x) < 0 and min(nose_x) == pytest.approx(-6.8, abs=0.01)  # the model runs to the nose tip
+    assert ex["nose_parts"]["gear_nose_strut"]["show"] == {"from": "f13.lower-gear"}
+    el = ex["elevators"]
+    assert set(el["parts"]) == {"elevator.right", "elevator.left", "elevator.tube", "elevator.hinges", "elevator.balance_weight", "elevator.cs11_weight"}
+    assert all(p["node"] in names and p["fidelity"] == "representational" and p["label"].endswith("(fitted shape)") for p in el["parts"].values())
+    assert "positioned from text, low confidence" in el["parts"]["elevator.hinges"]["label"]  # the hinge plates say how well placed they are
+    assert el["travel"] == {"up_target_deg": 15.0, "up_floor_deg": 12.5, "down_deg": 30.0}
+    assert ek.travel_range_deg() == (15.0, 30.0)
+    assert "masses not sourced" in el["hang_cg"]["note"] and el["hang_cg"]["fitted"] is True and el["hang_cg"]["dx"] < 0  # forward of the hinge
+    ci = ex["canard_install"]
+    assert ci["fs_le"] == 18.7 and ci["z_le"] == 1.5 and ci["incidence_deg"] == 0.0 and "unsourced" in ci["incidence_note"]
+    ng = ex["nose_gear"]
+    assert ng["status"] == "conflict" and {c["axle_fs"] for c in ng["candidates"].values()} == {17.0, 20.0}
+    assert ng["book_seconds"][0] <= ng["retract_seconds"] <= ng["book_seconds"][1] and ng["crank_turns"] == 10.8
+    # the nose wheel's F.S. is never stated alone: nothing in the extras words one candidate as the station
+    assert not _re.search(r"nose wheel[^\"]{0,30}F\.S\. ?\d", _json.dumps(ex), _re.I)
+    led = json.loads((fuse_export.parent / "ledger.json").read_text())["gear"]
+    assert led["ground_handling"]["nose_wheel_wl"] == -22.0 and "CP25 LPC 24" in led["ground_handling"]["cite"]["nose_wheel_wl"]
+    assert led["nose_arm_candidates"] == [17.0, 20.0] and led["nose_arm_candidates_status"] == "conflict"

@@ -29,10 +29,16 @@ test('barOps leaves out chapters 7-9 until the lab adds them', () => {
   assert.deepEqual(barOps(f, 'gu').map((o) => o.id), ['c10.a'])
 })
 
-test('barOps leaves out chapter 13 (nose) until the lab adds it', () => {
-  const f: GraphLite = { ops: [op('f13.a', 13, ['both']), ...g.ops], order: ['f13.a', ...g.order] }
+test('barOps leaves out chapter 13 (nose) and chapter 12 (the canard installed, the fuselage subject\'s)', () => {
+  const f: GraphLite = { ops: [op('f13.a', 13, ['both']), op('r30.i', 12, ['roncz']), op('c12.i', 12, ['gu']), ...g.ops], order: ['f13.a', 'r30.i', 'c12.i', ...g.order] }
   assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b'])
   assert.deepEqual(barOps(f, 'gu').map((o) => o.id), ['c10.a'])
+})
+
+test('barOps keeps chapter 11 (the elevators) on the canard bar, after the chapter 30 ops they follow, in graph order', () => {
+  const f: GraphLite = { ops: [...g.ops, op('r30.elev-a', 11, ['roncz']), op('r30.elev-b', 11, ['roncz']), op('r30.install', 30, ['roncz']), op('r30.drill', 12, ['roncz'])],
+    order: [...g.order, 'r30.elev-a', 'r30.elev-b', 'r30.install', 'r30.drill'] }
+  assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b', 'r30.elev-a', 'r30.elev-b', 'r30.install'])
 })
 
 test('makeStore toggles, and survives storage that throws', () => {

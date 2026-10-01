@@ -118,7 +118,10 @@ def test_elevator_components_have_the_six_ids_and_canard_only_does_not():
         "elevator.balance_weight",
         "elevator.cs11_weight",
     }
-    assert ids == set(eg.elevator_components())  # not yet in default_components: the lab takes them in Task 5
+    assert ids == set(eg.elevator_components())
+    import inspect
+
+    assert "elevator_components()" in inspect.getsource(eg.default_components)  # in the default export: the lab sorts them into the canard subject by prefix (tests/guide/test_export_glb.py builds it)
     assert not any(k.startswith("elevator.") for k in eg.canard_components())
 
 
