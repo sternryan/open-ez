@@ -222,6 +222,52 @@ class GeometricParams:
     gear_tab_pads: Tuple[Tuple[float, float], ...] = ((2.5, 12.0), (2.5, 3.5), (2.5, 2.5))
     gear_extrusion: Tuple[float, float, float] = (0.25, 2.0, 2.0)  # 6061-T6
 
+    # === NOSE, NOSE GEAR BOX AND ROUND-NOSE ELEVATORS (chapters 11-13) ===
+    # nose box and nose gear (plans-1980 pdf pages p73-p82). No strut rake, NG6 position, fork offset or trail:
+    # they live on the A6/A7 sheets the owner does not hold.
+    fs_nose_wheel_manual: float = 20.0  # conflict: om-1980:p35 nose arm "about 20" (sample 19.6); pair with fs_nose_wheel
+    ng6_width_in: float = 2.75  # book: p73
+    ng6_bore_height_in: float = 1.25  # book: p73
+    ng7_length_in: float = 2.75  # book: p73
+    ng30_thickness_in: float = 0.2  # book: p77
+    ng30_gap_in: float = 3.0  # book: p77 inside gap between the plates
+    ng3_to_ng7_in: float = 6.71  # book: p78 (tolerance 0.05)
+    nose_strut_pivot_to_pivot_in: float = 25.5  # book, medium: p81
+    floor_block_length_in: float = 20.9  # book, medium: p79
+    floor_block_width_in: float = 8.2  # book, medium: p79 (which end is 8.2 vs 1.6 is a reading)
+    floor_block_thickness_in: float = 1.6  # book, medium: p79
+    side_block_length_in: float = 21.9  # book, medium: p79
+    side_block_height_f22_in: float = 15.6  # book, medium: p79
+    side_block_height_ng31_above_in: float = 5.5  # book, medium: p79
+    side_block_height_ng31_below_in: float = 2.8  # book, medium: p79
+    top_block_length_in: float = 19.3  # book, medium: p82
+    top_block_width_aft_in: float = 19.6  # book, medium: p82
+    top_block_width_fwd_in: float = 7.0  # book, medium: p82
+    pedal_block_from_ng30_in: float = 6.1  # book: p79
+    static_port_fwd_of_panel_in: float = 8.0  # book: p82; static port is on the LEFT side
+    wl_static_port: float = 13.0  # book: p82 (10 below the top longerons)
+    # Roncz elevators (cobelu ch30 text and figures; the owner holds no scan of them)
+    elevator_length_right_in: float = 55.7  # cobelu fig C-1
+    elevator_length_left_in: float = 72.7  # cobelu fig C-1
+    elevator_travel_up_target_deg: float = 15.0  # cobelu ch30
+    elevator_travel_up_floor_deg: float = 12.5  # cobelu ch30, absolute floor
+    elevator_travel_down_deg: float = 30.0  # cobelu ch30
+    elevator_hinge_bl_in: Tuple[float, float, float] = (9.2, 34.1, 59.0)  # positioned-from-text, low
+    elevator_hinge_bl_right_first_drawn_in: float = 7.8  # the right side draws the first hinge here
+    elevator_slot_gap_in: float = 0.2
+    elevator_hinge_offset_in: float = 0.55
+    elevator_tube_od_in: float = 1.0
+    elevator_pin_right_in: float = 36.0
+    elevator_pin_left_in: float = 61.0
+    cs11_lead_dims: Tuple[float, float, float] = (2.0, 0.6, 0.8)
+    cs10_inboard_from_end_in: float = 7.5
+    balance_pocket_clearance_in: float = 0.06
+    elevator_fuselage_gap_in: float = 0.0625  # 1/16 to the fuselage side
+    elevator_fuselage_round_tube_gap_in: float = 0.1  # clearance round the tubes at full travel
+    # check bounds from the Owner's Manual, NOT masses of any part
+    elevator_weight_ceiling_left_lb: float = 3.9
+    elevator_weight_ceiling_right_lb: float = 3.6
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -247,6 +293,21 @@ class GeometricParams:
     def fs_main_axle(self) -> float:
         """Derived: spar aft face minus 15 in (p50). A property so it cannot drift."""
         return self.fs_spar_aft_face - self.main_axle_fwd_of_spar
+
+    @property
+    def fs_static_port(self) -> float:
+        """Derived: instrument panel station minus 8 in (p82)."""
+        return self.fs_panel - self.static_port_fwd_of_panel_in
+
+    @property
+    def fs_ng31_min(self) -> float:
+        """Derived: F22 minus the side block length (p79); with fs_ng31_max a range, not a point."""
+        return self.fs_f22 - self.side_block_length_in
+
+    @property
+    def fs_ng31_max(self) -> float:
+        """Derived: F22 minus the floor block length (p79)."""
+        return self.fs_f22 - self.floor_block_length_in
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -386,7 +447,8 @@ class GeometricParams:
 
 
 PROVENANCE_STATUSES = frozenset(
-    {"book", "cp-corrected", "derived", "derived-unsourced", "converted-unsourced", "unsourced", "conflict"}
+    {"book", "cp-corrected", "derived", "derived-unsourced", "converted-unsourced", "unsourced", "conflict",
+     "positioned-from-text"}
 )
 
 
@@ -397,7 +459,8 @@ def _p(status: str, source: str = "", confidence: str = "n/a", note: str = "") -
 # Where each planform/station value comes from. Statuses: book (plans page), cp-corrected (a
 # Canard Pusher correction), derived (computed from book/cp-corrected values; the formula is in the
 # note and the source cites the input pages), derived-unsourced (computed from an unverified input),
-# converted-unsourced (shifted between frames, never checked), unsourced, conflict.
+# converted-unsourced (shifted between frames, never checked), unsourced, conflict, positioned-from-text
+# (a value the text places but no page dimensions on its own; always low confidence).
 # tests/test_geometry_provenance.py fails if a matching GeometricParams field lacks an entry.
 GEOMETRY_PROVENANCE: dict[str, dict] = {
     "canard_span": _p("conflict", "om-1980:p3 canard span 11.8 ft", "medium",
@@ -420,8 +483,9 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
                         "CP25 LE 113.9 at BL 58 and tip LE F.S. 156 at BL 157 give 23.0 deg, consistent"),
     "wing_dihedral": _p("book", "plans-1980:p134 wing flat at 17.4 waterline plane", "medium",
                         "LE flat at W.L. 17.4 (p126); TE rises with thickness taper; no dihedral angle printed"),
-    "fs_nose": _p("book", "plans-1980:p171 nose tip F.S. -6.8", "high",
-                  "nose tip callout on the back-cover 3-view; the datum F.S. 0.0 (om-1980:p25) lies 6.8 in aft of the nose tip"),
+    "fs_nose": _p("book", "plans-1980:p171 nose tip F.S. -6.8", "medium",
+                  "nose tip callout on the back-cover 3-view; the datum F.S. 0.0 (om-1980:p25) lies 6.8 in aft of the nose tip; "
+                  "p171 label read at 500 dpi; first digit closer to 6 than 4, not crisp"),
     "fs_canard_le": _p("book", "plans-1980:p171 F.S. 18.7 at B.L. 71", "high",
                         "back-cover 3-view, canard tip LE; owner check (2026-09-29 by-eye read, recorded in docs/geometry-correction-ledger.md); zero sweep makes the tip LE station the LE station everywhere"),
     "fs_pilot_seat": _p("book", "om-1980:p25 pilot moment = weight x 59", "high",
@@ -565,6 +629,69 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "also p53"),
     "gear_tab_pads": _p("book", "plans-1980:p53 pads 2.5 by 12, 2.5 by 3.5, 2.5 by 2.5", "high"),
     "gear_extrusion": _p("book", "plans-1980:p52 extrusion 1/4 by 2 by 2, 6061-T6", "high"),
+    "fs_nose_wheel_manual": _p("conflict", "om-1980:p35 nose arm about 20.0 (sample table 19.6)", "medium",
+        "pair with fs_nose_wheel 17 (p171); sample table prints 19.6; the manual's figure comes from an owner weigh-in method, not a build dimension; unresolved without the A6/A7 side view"),
+    "ng6_width_in": _p("book", "plans-1980:p73 NG6 assembly width 2.75", "high", "CP11 hint and CP10 LPC agree"),
+    "ng6_bore_height_in": _p("book", "plans-1980:p73 NG6 bore centre 1.25 above the base", "high"),
+    "ng7_length_in": _p("book", "plans-1980:p73 NG7 spacer 2.75 long", "high"),
+    "ng30_thickness_in": _p("book", "plans-1980:p77 NG30 foam 0.2 thick", "high"),
+    "ng30_gap_in": _p("book", "plans-1980:p77 3.0 inside between the NG30 plates", "high"),
+    "ng3_to_ng7_in": _p("book", "plans-1980:p78 NG3 bolt to NG7 centre 6.71", "high", "tolerance 0.05 in"),
+    "nose_strut_pivot_to_pivot_in": _p("book", "plans-1980:p81 strut pivot to pivot 25.5", "medium", "thin decimal in the retracted sketch"),
+    "floor_block_length_in": _p("book", "plans-1980:p79 floor block length 20.9", "medium", "hand-dimensioned"),
+    "floor_block_width_in": _p("book", "plans-1980:p79 floor block 8.2 at one end", "medium",
+        "which end is 1.6 and which is 8.2 is the captain's reading of the page"),
+    "floor_block_thickness_in": _p("book", "plans-1980:p79 floor block 1.6 at the shallow end", "medium",
+        "which end is 1.6 and which is 8.2 is the captain's reading of the page"),
+    "side_block_length_in": _p("book", "plans-1980:p79 side block length 21.9", "medium", "hand digits"),
+    "side_block_height_f22_in": _p("book", "plans-1980:p79 side block 15.6 high at F22", "medium", "hand digits"),
+    "side_block_height_ng31_above_in": _p("book", "plans-1980:p79 side block 5.5 above the NG31 end", "medium", "hand digits"),
+    "side_block_height_ng31_below_in": _p("book", "plans-1980:p79 side block 2.8 below the NG31 end", "medium", "hand digits"),
+    "top_block_length_in": _p("book", "plans-1980:p82 top block length 19.3", "medium", "top view; orientation is a reading"),
+    "top_block_width_aft_in": _p("book", "plans-1980:p82 top block 19.6 on the aft edge", "medium", "top view; orientation is a reading"),
+    "top_block_width_fwd_in": _p("book", "plans-1980:p82 top block 7.0 on the forward edge", "medium", "top view; orientation is a reading"),
+    "pedal_block_from_ng30_in": _p("book", "plans-1980:p79 pedal pivot block 6.1 from NG30", "high"),
+    "static_port_fwd_of_panel_in": _p("book", "plans-1980:p82 static port 8 forward of the panel", "high", "static port is on the left side"),
+    "fs_static_port": _p("derived", "plans-1980:p82 static port 8 forward of the panel", "medium",
+        "fs_panel minus static_port_fwd_of_panel_in (8.0); left side; fs_panel itself is 39.75 against the manual's 40; property, cannot drift"),
+    "wl_static_port": _p("book", "plans-1980:p82 static port 10 below the top longerons, W.L. 13", "high", "left side"),
+    "fs_ng31_min": _p("derived", "plans-1980:p79 side block length 21.9 back from F22", "medium",
+        "fs_f22 minus side_block_length_in; block lengths hand-dimensioned, may not share a line, so a range with fs_ng31_max, never one value"),
+    "fs_ng31_max": _p("derived", "plans-1980:p79 floor block length 20.9 back from F22", "medium",
+        "fs_f22 minus floor_block_length_in; block lengths hand-dimensioned, may not share a line, so a range with fs_ng31_min, never one value"),
+    "elevator_length_right_in": _p("book", "cobelu:pC-1 ch30 figure C-1 right elevator 55.7", "medium",
+        "stock tube 57; trim 1.3 agrees with the left side; owner holds no scan of this figure"),
+    "elevator_length_left_in": _p("book", "cobelu:pC-1 ch30 figure C-1 left elevator 72.7", "medium",
+        "stock tube 74; trim 1.3 agrees with the right side; owner holds no scan of this figure"),
+    "elevator_travel_up_target_deg": _p("book", "cobelu:pch30 ch30 text up-travel at least 15 deg", "medium",
+        "Roncz elevator; the GU 20/22 deg and the manual's 22 +/-2 are different airplanes' numbers and must not be used"),
+    "elevator_travel_up_floor_deg": _p("book", "cobelu:pch30 ch30 text 12.5 deg up is the absolute floor", "medium",
+        "Roncz elevator; the GU 20/22 deg and the manual's 22 +/-2 are different airplanes' numbers and must not be used"),
+    "elevator_travel_down_deg": _p("book", "cobelu:pch30 ch30 text 30 deg trailing edge down", "medium",
+        "Roncz elevator; the GU 20/22 deg and the manual's 22 +/-2 are different airplanes' numbers and must not be used"),
+    "elevator_hinge_bl_in": _p("positioned-from-text", "cobelu:pch30 ch30 figure 30-33 hinge stations", "low",
+        "BL 9.2, 34.1, 59 as the text places them; fig C-1 shows 57.0 near the outer CS-10, so 59 vs 57.0 is unverified; the right side draws the first as 7.8"),
+    "elevator_hinge_bl_right_first_drawn_in": _p("positioned-from-text", "cobelu:pch30 ch30 figure 30-33 right first hinge as drawn", "low",
+        "right side draws 7.8 where the left reads 9.2; unresolved"),
+    "elevator_slot_gap_in": _p("book", "cobelu:pch30 ch30 text hinge slot gap about 0.2", "medium"),
+    "elevator_hinge_offset_in": _p("book", "cobelu:pch30 ch30 figure 30-46 hinge pivot 0.55 aft of tube leading edge", "medium"),
+    "elevator_tube_od_in": _p("book", "cobelu:pch30 ch30 text 1 in OD torque tube", "medium"),
+    "elevator_pin_right_in": _p("book", "cobelu:pch30 ch30 text right hinge pin trimmed to 36", "medium",
+        "the parts list shows two 61 in pins; the trim step is followed"),
+    "elevator_pin_left_in": _p("book", "cobelu:pch30 ch30 text left hinge pin trimmed to 61", "medium"),
+    "cs11_lead_dims": _p("book", "cobelu:pch30 ch30 figure 30-59 CS-11 lead block 2 x 0.6 x 0.8", "medium",
+        "which edge is which is not page-read; no mass is sourced, lead density is not from a plans source"),
+    "cs10_inboard_from_end_in": _p("book", "cobelu:pch30 ch30 figure 30-53 CS-10 inboard side 7.5 from the elevator end", "medium",
+        "the CS-10 profile is not dimensioned"),
+    "balance_pocket_clearance_in": _p("book", "cobelu:pch30 ch30 text balance weight clears the pocket by 0.06", "medium"),
+    "elevator_fuselage_gap_in": _p("book", "plans-1980:p72 elevator 1/16 from the fuselage side", "medium",
+        "cobelu ch30 agrees; this is a fit gap, not a travel value"),
+    "elevator_fuselage_round_tube_gap_in": _p("book", "cobelu:pch30 ch30 text 0.1 clearance round the tubes at 15 up and 30 down", "medium",
+        "plans-1980:p72 gives the same 0.1 for round tubes"),
+    "elevator_weight_ceiling_left_lb": _p("book", "om-1980:p30 left elevator ceiling with balance installed 3.9", "high",
+        "check bound, not a mass of any part"),
+    "elevator_weight_ceiling_right_lb": _p("book", "om-1980:p30 right elevator ceiling with balance installed 3.6", "high",
+        "check bound, not a mass of any part"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 
