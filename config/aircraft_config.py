@@ -179,6 +179,11 @@ class GeometricParams:
     wl_main_axle: float = -22.0  # book: p171
     fs_nose_wheel: float = 17.0  # conflict: p171 prints 17, the Owner's Manual says about 20
     wl_nose_wheel: float = -22.0  # cp-corrected: CP25 LPC 24
+    ng50_travel_deg: float = 156.0  # book: p73 NG50 arms travel 156 deg
+    nose_crank_turns: float = 10.8  # book: p73 full travel
+    nose_crank_seconds_min: float = 5.0  # book: p73 five to seven seconds
+    nose_crank_seconds_max: float = 7.0
+    wl_fuselage_bottom_3view: float = 0.9  # book, medium: p171 side view label at the fuselage bottom line
     gear_tip_back_deg: float = 12.0  # book: p171 line from the main contact
     gear_toe_in_b_minus_a: Tuple[float, float] = (0.2, 0.45)  # book: p52, over gear_toe_in_square_in
     gear_toe_in_square_in: float = 24.0
@@ -590,6 +595,12 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "wl_main_axle": _p("book", "plans-1980:p171 main axle W.L. -22", "high"),
     "fs_nose_wheel": _p("conflict", "plans-1980:p171 back cover prints nose wheel F.S. 17", "medium",
         "Owner's Manual says about 20 (sample 19.6); conflict kept; nose gear is chapter 13"),
+    "ng50_travel_deg": _p("book", "plans-1980:p73 NG50 arms travel 156 deg between the NG14 spacers", "high"),
+    "nose_crank_turns": _p("book", "plans-1980:p73 the pilot's crank uses 10.8 turns for full travel", "high"),
+    "nose_crank_seconds_min": _p("book", "plans-1980:p73 retraction takes five to seven seconds", "high"),
+    "nose_crank_seconds_max": _p("book", "plans-1980:p73 retraction takes five to seven seconds", "high"),
+    "wl_fuselage_bottom_3view": _p("book", "plans-1980:p171 back-cover side view W.L. 0.9 at the fuselage bottom", "medium",
+        "captain read of the label on the 200 dpi page; the model's own bottom_z is a fitted outline, this is the printed height"),
     "wl_nose_wheel": _p("cp-corrected", "cp-text:p25 LPC 24 nose gear CL at W.L. -22 not -23", "medium",
         "printed label struck through on p171, struck digit unclear at 400 dpi (-23 or -25); the owner's note and CP25 LPC 24 say -22"),
     "gear_tip_back_deg": _p("book", "plans-1980:p171 12 deg line from the main contact", "high",
