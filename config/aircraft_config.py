@@ -252,6 +252,7 @@ class GeometricParams:
     elevator_travel_up_target_deg: float = 15.0  # cobelu ch30
     elevator_travel_up_floor_deg: float = 12.5  # cobelu ch30, absolute floor
     elevator_travel_down_deg: float = 30.0  # cobelu ch30
+    elevator_outboard_end_bl_in: float = 65.0  # cobelu fig C-1 plan dimension from B.L. 0; both elevators end here (left on -B.L.)
     elevator_hinge_bl_in: Tuple[float, float, float] = (9.2, 34.1, 59.0)  # positioned-from-text, low
     elevator_hinge_bl_right_first_drawn_in: float = 7.8  # the right side draws the first hinge here
     elevator_slot_gap_in: float = 0.2
@@ -298,6 +299,16 @@ class GeometricParams:
     def fs_static_port(self) -> float:
         """Derived: instrument panel station minus 8 in (p82)."""
         return self.fs_panel - self.static_port_fwd_of_panel_in
+
+    @property
+    def elevator_inboard_bl_right_in(self) -> float:
+        """Derived: right elevator inboard end, B.L. +(65.0 - 55.7) = +9.3 (C-1 labels 9.3)."""
+        return self.elevator_outboard_end_bl_in - self.elevator_length_right_in
+
+    @property
+    def elevator_inboard_bl_left_in(self) -> float:
+        """Derived: left elevator inboard end, B.L. +(72.7 - 65.0) = +7.7 (C-1 labels 7.7), on the RIGHT of the centreline: the left elevator crosses it."""
+        return self.elevator_length_left_in - self.elevator_outboard_end_bl_in
 
     @property
     def fs_ng31_min(self) -> float:
@@ -659,6 +670,12 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "fs_f22 minus side_block_length_in; block lengths hand-dimensioned, may not share a line, so a range with fs_ng31_max, never one value"),
     "fs_ng31_max": _p("derived", "plans-1980:p79 floor block length 20.9 back from F22", "medium",
         "fs_f22 minus floor_block_length_in; block lengths hand-dimensioned, may not share a line, so a range with fs_ng31_min, never one value"),
+    "elevator_outboard_end_bl_in": _p("book", "cobelu:pC-1 ch30 figure C-1 plan dimension 65 from B.L. 0 to the elevators' outer ends", "medium",
+        "captain read of the rotated figure; both elevators end at this |B.L.|; 65.0 - 55.7 = 9.3 and 72.7 - 65.0 = 7.7 match the inboard labels on the figure"),
+    "elevator_inboard_bl_right_in": _p("derived", "cobelu:pC-1 outboard end 65.0 minus right length 55.7", "medium",
+        "figure labels the right inboard end B.L. 9.3; property, cannot drift"),
+    "elevator_inboard_bl_left_in": _p("derived", "cobelu:pC-1 left length 72.7 minus outboard end 65.0", "medium",
+        "figure labels B.L. 7.7 (right) at the left elevator's inboard end: the left elevator crosses the centreline; property, cannot drift"),
     "elevator_length_right_in": _p("book", "cobelu:pC-1 ch30 figure C-1 right elevator 55.7", "medium",
         "stock tube 57; trim 1.3 agrees with the left side; owner holds no scan of this figure"),
     "elevator_length_left_in": _p("book", "cobelu:pC-1 ch30 figure C-1 left elevator 72.7", "medium",
