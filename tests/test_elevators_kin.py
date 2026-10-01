@@ -14,25 +14,30 @@ from core import elevators_kin as ek
 G = config.geometry
 
 
-def test_spans_match_the_figure_and_the_lengths():
+def test_foam_spans_mirror_and_tube_span_crosses():
     assert ek.elevator_span("right") == pytest.approx((9.3, 65.0))
-    assert ek.elevator_span("left") == pytest.approx((-65.0, 7.7))
-    for side, length in (
-        ("right", G.elevator_length_right_in),
-        ("left", G.elevator_length_left_in),
-    ):
+    assert ek.elevator_span("left") == pytest.approx((-65.0, -9.3))
+    assert ek.tube_span("right") == pytest.approx((9.3, 65.0))
+    assert ek.tube_span("left") == pytest.approx((-65.0, 7.7))
+    # foam spans are the same length on both sides (55.7); the left TUBE is the 72.7 in length
+    for side, length in (("right", G.elevator_length_right_in), ("left", G.elevator_length_right_in)):
         lo, hi = ek.elevator_span(side)
         assert hi - lo == pytest.approx(length)
+    lo, hi = ek.tube_span("left")
+    assert hi - lo == pytest.approx(G.elevator_length_left_in)
+    assert G.elevator_tube_end_bl_left_in == pytest.approx(7.7)
 
 
-def test_left_elevator_crosses_the_centreline_and_right_does_not():
-    assert ek.elevator_span("left")[0] < 0 < ek.elevator_span("left")[1]
+def test_left_tube_crosses_the_centreline_foam_does_not():
+    assert ek.tube_span("left")[0] < 0 < ek.tube_span("left")[1]
+    assert ek.elevator_span("left")[1] < 0
     assert ek.elevator_span("right")[0] > 0
 
 
 def test_bad_side_is_rejected():
     for f in (
         ek.elevator_span,
+        ek.tube_span,
         ek.hinge_stations,
         ek.unplaced_hinge_stations,
         ek.pin_length,
@@ -41,12 +46,12 @@ def test_bad_side_is_rejected():
             f("middle")
 
 
-def test_hinge_stations_are_the_drawn_ones_that_fall_on_the_elevator():
-    assert ek.hinge_stations("left") == pytest.approx([-59.0, -34.1, -9.2])
+def test_hinge_stations_are_the_drawn_ones_that_fall_on_the_foam():
+    assert ek.hinge_stations("left") == pytest.approx([-59.0, -34.1])
     assert ek.hinge_stations("right") == pytest.approx([34.1, 59.0])
-    # 9.2 on the right lies 0.1 in off the inboard end (9.3): carried as unplaced, never moved
+    # 9.2 lies 0.1 in inboard of the foam end (9.3) on BOTH sides: carried as unplaced, never moved
     assert ek.unplaced_hinge_stations("right") == pytest.approx([9.2])
-    assert ek.unplaced_hinge_stations("left") == []
+    assert ek.unplaced_hinge_stations("left") == pytest.approx([-9.2])
     for side in ("left", "right"):
         lo, hi = ek.elevator_span(side)
         assert all(lo <= b <= hi for b in ek.hinge_stations(side))
@@ -55,7 +60,7 @@ def test_hinge_stations_are_the_drawn_ones_that_fall_on_the_elevator():
 def test_hinge_count_note_says_the_text_and_the_figure_disagree():
     n = ek.hinge_count_note()
     assert n["slots_in_text"] == 7
-    assert n["stations_placed"] == 5
+    assert n["stations_placed"] == 4
     assert n["stations_placed"] < n["slots_in_text"]
 
 

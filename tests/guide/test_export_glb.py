@@ -370,6 +370,9 @@ def test_the_cove_is_the_elevator_leading_edge_less_the_slot_gap_over_the_elevat
     cove = ex["cove"]
     assert cove["x_cut"] == pytest.approx(eb.x_tube_le() - G.elevator_slot_gap_in, abs=1e-6)  # read from the book numbers, never hard-coded
     assert cove["slot_gap"] == G.elevator_slot_gap_in == 0.2 and cove["bl_end"] == G.elevator_outboard_end_bl_in == 65.0
+    # M2.4 fix 3: the cove is the FOAM span only (inner bound read from the book spans, not a literal), so the canard keeps its root
+    assert cove["bl_start"] == pytest.approx(G.elevator_inboard_bl_right_in) == pytest.approx(-G.elevator_inboard_bl_left_in) == pytest.approx(9.3)
+    assert ex["installed_label"] == "Elevators (fitted shape; span vs fuselage sides unresolved)"
     assert cove["x_cut"] == pytest.approx(ex["tube_le_x"] - 0.2, abs=1e-6) and cove["label"].endswith("(fitted shape)")  # the cove is a fitted shape
     # the Blender cutaway's canard-only export does not know the cove: same nodes, same bytes as an export of the canard's own components,
     # and no cove or elevator key in its layup.json

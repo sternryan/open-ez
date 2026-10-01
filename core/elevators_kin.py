@@ -14,15 +14,27 @@ def _validate_side(side: str) -> None:
 
 
 def elevator_span(side: str) -> tuple[float, float]:
-    """Return the span of the elevator for the given side."""
+    """Return the FOAM span (B.L.) of the elevator for the given side.
+
+    Mirror image: right (9.3, 65.0), left (-65.0, -9.3). The inboard ends are the drawn stock ends (cobelu C-1
+    says trim to fit the fuselage); span vs the fuselage sides is unresolved (provenance status conflict).
+    """
     _validate_side(side)
     if side == "right":
         return (G.elevator_inboard_bl_right_in, G.elevator_outboard_end_bl_in)
     return (-G.elevator_outboard_end_bl_in, G.elevator_inboard_bl_left_in)
 
 
+def tube_span(side: str) -> tuple[float, float]:
+    """Return the torque-tube span (B.L.): the foam span on the right; on the left (-65.0, +7.7), crossing the fuselage."""
+    _validate_side(side)
+    if side == "right":
+        return elevator_span("right")
+    return (-G.elevator_outboard_end_bl_in, G.elevator_tube_end_bl_left_in)
+
+
 def hinge_stations(side: str) -> list[float]:
-    """Return the list of hinge stations on the elevator for the given side."""
+    """Return the hinge stations that fall on the elevator FOAM for the given side (9.2 is 0.1 in outside on both sides)."""
     _validate_side(side)
     lo, hi = elevator_span(side)
     if side == "right":
@@ -34,7 +46,7 @@ def hinge_stations(side: str) -> list[float]:
 
 
 def unplaced_hinge_stations(side: str) -> list[float]:
-    """Return the hinge stations that fall outside the elevator span."""
+    """Return the hinge stations that fall outside the foam span (the 9.2 station, both sides; never moved)."""
     _validate_side(side)
     lo, hi = elevator_span(side)
     if side == "right":

@@ -307,12 +307,17 @@ class GeometricParams:
 
     @property
     def elevator_inboard_bl_right_in(self) -> float:
-        """Derived: right elevator inboard end, B.L. +(65.0 - 55.7) = +9.3 (C-1 labels 9.3)."""
+        """Derived: right elevator FOAM inboard end (drawn stock end), B.L. +(65.0 - 55.7) = +9.3 (C-1 labels 9.3)."""
         return self.elevator_outboard_end_bl_in - self.elevator_length_right_in
 
     @property
     def elevator_inboard_bl_left_in(self) -> float:
-        """Derived: left elevator inboard end, B.L. +(72.7 - 65.0) = +7.7 (C-1 labels 7.7), on the RIGHT of the centreline: the left elevator crosses it."""
+        """Derived: left elevator FOAM inboard end, the mirror of the right, B.L. -(65.0 - 55.7) = -9.3 (C-1 labels 9.2 (left); 0.1 in apart)."""
+        return -(self.elevator_outboard_end_bl_in - self.elevator_length_right_in)
+
+    @property
+    def elevator_tube_end_bl_left_in(self) -> float:
+        """Derived: left elevator TUBE end, B.L. +(72.7 - 65.0) = +7.7 (C-1): the bare 1 in tube crosses the fuselage and the centreline."""
         return self.elevator_length_left_in - self.elevator_outboard_end_bl_in
 
     @property
@@ -683,10 +688,13 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "fs_f22 minus floor_block_length_in; block lengths hand-dimensioned, may not share a line, so a range with fs_ng31_min, never one value"),
     "elevator_outboard_end_bl_in": _p("book", "cobelu:pC-1 ch30 figure C-1 plan dimension 65 from B.L. 0 to the elevators' outer ends", "medium",
         "captain read of the rotated figure; both elevators end at this |B.L.|; 65.0 - 55.7 = 9.3 and 72.7 - 65.0 = 7.7 match the inboard labels on the figure"),
-    "elevator_inboard_bl_right_in": _p("derived", "cobelu:pC-1 outboard end 65.0 minus right length 55.7", "medium",
-        "figure labels the right inboard end B.L. 9.3; property, cannot drift"),
-    "elevator_inboard_bl_left_in": _p("derived", "cobelu:pC-1 left length 72.7 minus outboard end 65.0", "medium",
-        "figure labels B.L. 7.7 (right) at the left elevator's inboard end: the left elevator crosses the centreline; property, cannot drift"),
+    "elevator_inboard_bl_right_in": _p("conflict", "cobelu:pC-1 outboard end 65.0 minus right length 55.7", "medium",
+        "foam inboard end; figure labels B.L. 9.3; property, cannot drift. drawn stock end; the figure says trim to fit the fuselage and the 1/16 in clearance puts the trimmed end at the fuselage side (about +/-11.5): span vs fuselage sides unresolved; do not move"),
+    "elevator_inboard_bl_left_in": _p("conflict", "cobelu:pC-1 mirror of the right foam end, -(65.0 - 55.7)", "medium",
+        "left foam inboard end, derived as the mirror of the right (figure labels 9.2 (left); 0.1 in difference noted); property, cannot drift. drawn stock end; the figure says trim to fit the fuselage and the 1/16 in clearance puts the trimmed end at the fuselage side (about +/-11.5): span vs fuselage sides unresolved; do not move"),
+    "elevator_tube_end_bl_left_in": _p("derived", "cobelu:pC-1 left length 72.7 minus outboard end 65.0", "medium",
+        "figure labels B.L. 7.7 at the left TUBE end: the bare 1 in tube (16.9 in dimension, NC-5A trim belcrank at B.L. 0, CS-11/NC-12A at this end) "
+        "crosses the fuselage and the centreline; the foam does not; property, cannot drift"),
     "elevator_length_right_in": _p("book", "cobelu:pC-1 ch30 figure C-1 right elevator 55.7", "medium",
         "stock tube 57; trim 1.3 agrees with the left side; owner holds no scan of this figure"),
     "elevator_length_left_in": _p("book", "cobelu:pC-1 ch30 figure C-1 left elevator 72.7", "medium",

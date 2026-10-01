@@ -125,7 +125,7 @@ interface LabHook {
   kin(): { label: string; value: string; sub: string } | null
   /** the elevators now (canard subject): the mode the op puts them in, their trailing-edge-down angle, how far aft of the canard they are held, the hang pitch, and each part's world box */
   /** the elevators' cove (canard model frame, inches): where the canard's own meshes stop aft of, over what half span, whether it is open now (canard subject) and on the installed canard */
-  cove(): { xCut: number; blEnd: number; open: boolean; installed: boolean } | null
+  cove(): { xCut: number; blEnd: number; blIn: number; open: boolean; installed: boolean } | null
   elevators(): { mode: string; degDown: number; slide: number; hangPitch: number; noseDown: boolean; jigs: boolean; installed: boolean; boxes: Record<string, number[][]> } | null
   /** the nose gear now (fuselage subject): retraction progress, crank text, whether the strut is drawn, both candidates' wheel centres (box frame, inches) and world boxes */
   noseGear(): { t: number; crank: string; shown: boolean; wheel: Record<string, number[]>; ghostShown: boolean; stand: boolean } | null
@@ -616,7 +616,7 @@ async function boot() {
     const ELEV = fuseRaw?.extras?.elevators ?? null
     // the elevators' cove: the canard's own core and skins are not drawn aft of the elevators' leading edge less the hinge slot gap, over the
     // elevators' span (everything from the export: logic/cove.ts). Open while any elevator part is on screen in the canard subject.
-    const COVE = ELEV?.cove ? coveFrom(ELEV.tube_le_x, ELEV.cove.slot_gap, ELEV.cove.bl_end) : null
+    const COVE = ELEV?.cove ? coveFrom(ELEV.tube_le_x, ELEV.cove.slot_gap, ELEV.cove.bl_end, ELEV.cove.bl_start) : null
     let coveOpen = false
     const elevMeshes: Merged[] = []
     const elevMat = (cid: string, c: CutState, core = false): THREE.Material => {
@@ -1255,13 +1255,13 @@ async function boot() {
       const ies = ['installed:elevator.right', 'installed:elevator.left'].map((n) => bay.installedMeshes().find((m) => m.name === n)).filter((m): m is THREE.Mesh => !!m)
       const ndc = new THREE.Vector3()
       flabels.add({
-        id: 'elevator.installed', text: 'Elevators (fitted shape)', color: hex(HATCH_COLOR), cls: 'fitted',
+        id: 'elevator.installed', text: ELEV.installed_label, color: hex(HATCH_COLOR), cls: 'fitted',
         // above the middle of the right elevator, or of the left one, or a quarter along either, whichever is first well inside the frame (the
-        // pill is centred on its anchor, and a chapter 12 camera often has one of the two near the edge)
+        // pill is centred on its anchor, and a chapter 12 camera often has one of the two near the edge; 0.08 is the last resort, near the root, now that the foam stops short of the centre line)
         at: () => {
           if (!ies.length || !bay.installed.visible) return null
           let first: THREE.Vector3 | null = null
-          for (const f of [0.5, 0.25, 0.75]) for (const ie of ies) {
+          for (const f of [0.5, 0.25, 0.75, 0.08]) for (const ie of ies) {
             fbox.setFromObject(ie)
             fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, fbox.min.z + (fbox.max.z - fbox.min.z) * f)
             first ??= fwp.clone()
@@ -1616,7 +1616,7 @@ async function boot() {
     hook.state = () => Object.fromEntries([...bstate].filter(([k]) => (subject === 'canard' ? k.startsWith('canard.') : fuseLegacy.has(k))))
     hook.stateAll = () => Object.fromEntries(bstate)
     hook.kin = () => kinNow()
-    hook.cove = () => (COVE ? { xCut: COVE.xCut, blEnd: COVE.blEnd, open: coveOpen, installed: !!bay && bay.cut.coveOn } : null)
+    hook.cove = () => (COVE ? { xCut: COVE.xCut, blEnd: COVE.blEnd, blIn: COVE.blIn, open: coveOpen, installed: !!bay && bay.cut.coveOn } : null)
     hook.elevators = () => {
       if (!ELEV) return null
       const boxes: Record<string, number[][]> = {}

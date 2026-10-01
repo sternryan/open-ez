@@ -28,7 +28,7 @@ export class CutState {
   wedge = 0
   readonly uGlow = { value: 0 }
   /**
-   * The elevators' cove (see logic/cove.ts): (x cut, half span, enabled, 0), in the owner's model frame. Materials that opt in
+   * The elevators' cove (see logic/cove.ts): (x cut, outer |B.L.|, enabled, inner |B.L.|), in the owner's model frame. Materials that opt in
    * (materials.ts markCove) discard everything aft of x cut within the half span, and the cap pass closes the wall it leaves.
    */
   readonly uCove = { value: new THREE.Vector4(0, 0, 0, 0) }
@@ -73,9 +73,9 @@ export class CutState {
   }
 
   /** Open or close the cove (null closes it): its meshes (userData.cove) draw the cap pass while it is open, whatever the section cut does. */
-  setCove(c: { xCut: number; blEnd: number } | null) {
+  setCove(c: { xCut: number; blEnd: number; blIn: number } | null) {
     this.coveOn = !!c
-    if (c) this.uCove.value.set(c.xCut, c.blEnd, 1, 0)
+    if (c) this.uCove.value.set(c.xCut, c.blEnd, 1, c.blIn)
     else this.uCove.value.z = 0
     this.applyCaps()
   }

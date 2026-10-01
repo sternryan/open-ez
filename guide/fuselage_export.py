@@ -451,12 +451,15 @@ def extras_section() -> dict:
             # and the canard-only cutaway export are untouched): the elevators' leading edge (the fitted tube LE) less the book's hinge slot gap
             "cove": {
                 "x_cut": round(x_tube_le() - G_.elevator_slot_gap_in, 6), "slot_gap": G_.elevator_slot_gap_in,
+                # the cove is limited to the FOAM span: |B.L.| from the foam inboard end (the drawn stock end, span vs fuselage sides unresolved) to the outboard end
+                "bl_start": round(min(ek.elevator_span("right")[0], -ek.elevator_span("left")[1]), 6),
                 "bl_end": G_.elevator_outboard_end_bl_in,
                 "label": "Cove cut for the elevators (fitted shape)",
             },
             "travel": {"up_target_deg": up_t, "up_floor_deg": G_.elevator_travel_up_floor_deg, "down_deg": down},
             "hang_cg": {"dx": HANG_CG[0], "dz": HANG_CG[1], "note": "illustrative CG: masses not sourced", "fitted": True},
             "jig_label": "NC-7 tube jig (fitted shape)",
+            "installed_label": "Elevators (fitted shape; span vs fuselage sides unresolved)",
         },
         "canard_install": {
             "fs_le": G_.fs_canard_le, "z_le": G_.canard_le_wl, "z_le_status": "conflict", "incidence_deg": CANARD_INCIDENCE_DEG,

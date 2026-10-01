@@ -71,7 +71,7 @@ export interface SurfHooks {
 
 /**
  * The elevators' cove (logic/cove.ts is the same maths in TypeScript, under test). A material that opts in (markCove) discards what lies
- * aft of uCove.x within |z| < uCove.y of its own model frame, and its cap pass closes the wall that leaves: a back face seen through the
+ * aft of uCove.x within uCove.w < |z| < uCove.y of its own model frame, and its cap pass closes the wall that leaves: a back face seen through the
  * removed box is a cap where the ray left the box before reaching it (the section cut's trick, with a three-sided box in place of its planes).
  * The wall is a fitted shape, so it carries the same amber stripes as the other fitted shapes.
  */
@@ -93,7 +93,7 @@ void coveClip(vec3 n, float c, vec3 ro, vec3 rd, inout float t0, inout float t1,
 const GLSL_COVE = /* glsl */ `
 bool coveCap = false;
 if (uCoveMat > 0.5 && uCove.z > 0.5) {
-  if (vObj.x > uCove.x && abs(vObj.z) < uCove.y) discard;
+  if (vObj.x > uCove.x && abs(vObj.z) < uCove.y && abs(vObj.z) >= uCove.w) discard;
   #ifdef CAPS
   {
     #ifdef FLIP_SIDED
@@ -106,12 +106,24 @@ if (uCoveMat > 0.5 && uCove.z > 0.5) {
       vec3 toF = vObj - ro;
       float tf = length(toF);
       vec3 rd = toF / max(tf, 1e-6);
-      float t0 = 0.0, t1 = 1e9;
+      float bt1 = 1e9;
       int exitId = -1;
-      coveClip(vec3(1.0, 0.0, 0.0), -uCove.x, ro, rd, t0, t1, exitId, 0);
-      coveClip(vec3(0.0, 0.0, 1.0), uCove.y, ro, rd, t0, t1, exitId, 1);
-      coveClip(vec3(0.0, 0.0, -1.0), uCove.y, ro, rd, t0, t1, exitId, 2);
-      if (exitId >= 0 && t0 < t1 && t1 > 0.0 && t1 < tf) {
+      // two boxes (z > 0 and z < 0), uCove.w < |z| < uCove.y: the earliest exit of the two
+      for (int k = 0; k < 2; k++) {
+        float t0 = 0.0, t1 = 1e9;
+        int eid = -1;
+        coveClip(vec3(1.0, 0.0, 0.0), -uCove.x, ro, rd, t0, t1, eid, 0);
+        if (k == 0) {
+          coveClip(vec3(0.0, 0.0, 1.0), -uCove.w, ro, rd, t0, t1, eid, 1);
+          coveClip(vec3(0.0, 0.0, -1.0), uCove.y, ro, rd, t0, t1, eid, 2);
+        } else {
+          coveClip(vec3(0.0, 0.0, 1.0), uCove.y, ro, rd, t0, t1, eid, 1);
+          coveClip(vec3(0.0, 0.0, -1.0), -uCove.w, ro, rd, t0, t1, eid, 2);
+        }
+        if (eid >= 0 && t0 < t1 && t1 > 0.0 && t1 < bt1) { bt1 = t1; exitId = eid; }
+      }
+      float t1 = bt1;
+      if (exitId >= 0 && t1 < tf) {
         coveCap = true;
         cutCap = true;
         cutHit = ro + rd * t1;
@@ -140,7 +152,7 @@ export function coveDepthMaterial(cut: CutState): THREE.MeshDepthMaterial {
       .replace('#include <project_vertex>', '#include <project_vertex>\nvCoveP = transformed;')
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform vec4 uCove;\nvarying vec3 vCoveP;')
-      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (uCove.z > 0.5 && vCoveP.x > uCove.x && abs(vCoveP.z) < uCove.y) discard;')
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (uCove.z > 0.5 && vCoveP.x > uCove.x && abs(vCoveP.z) < uCove.y && abs(vCoveP.z) >= uCove.w) discard;')
   }
   m.customProgramCacheKey = () => 'cove-depth'
   return m
