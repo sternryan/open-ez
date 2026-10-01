@@ -1,0 +1,43 @@
+# Vision bake-off ground truth (Block 2, 2026-10-01).
+# Values come from docs/harness/m22-fuselage-research.md and m23-ch7-9-research.md as
+# corrected by the m22/m23 captain reports (captain re-read every model-bound value on the image).
+# Each item is one question about one page; `truth` is the verified number as printed.
+items:
+  - {id: fsb-size, page: 33, truth: [28.3, 23, 0.8], q: "The front seat bulkhead foam blank: what are its overall width, height and foam thickness in inches?"}
+  - {id: rsb-bottom, page: 34, truth: [20.6], q: "Rear seat bulkhead: what is the printed width of its bottom edge in inches?"}
+  - {id: rsb-top, page: 34, truth: [18.7], q: "Rear seat bulkhead: what is the printed width of its top edge in inches?"}
+  - {id: rsb-slant, page: 34, truth: [16.1], q: "Rear seat bulkhead: what is the printed slant length (side edge) in inches?"}
+  - {id: rsb-taper, page: 34, truth: [0.95], q: "Rear seat bulkhead: what taper dimension (inches) is printed for its sides?"}
+  - {id: rsb-holes, page: 34, truth: [8, 7], q: "Rear seat bulkhead: what are the diameters (inches) of the foam circle removed and the access hole?"}
+  - {id: rsb-notch, page: 34, truth: [0.7, 1.4], q: "Rear seat bulkhead: what are the corner notch dimensions in inches?"}
+  - {id: ply-sheet, page: 35, truth: [24, 30], q: "Firewall: what size birch plywood sheet (inches) is called for?"}
+  - {id: side-len, page: 36, truth: [103], q: "Fuselage side foam: what is its overall length in inches?"}
+  - {id: side-h-0, page: 36, truth: [19.8], q: "Fuselage side profile: what height (inches) is printed at the forward end, station 0?"}
+  - {id: side-h-80, page: 36, truth: [18.4], q: "Fuselage side profile: what height (inches) is printed at station 80?"}
+  - {id: side-h-103, page: 36, truth: [16.0], q: "Fuselage side profile: what height (inches) is printed at the aft end, station 103?"}
+  - {id: side-wl, page: 36, truth: [23], q: "Fuselage side: what waterline (W.L.) is printed for the top edge?"}
+  - {id: panel-x, page: 36, truth: [17.75], q: "Fuselage side layout: how far aft of F22 (inches) is the instrument panel line?"}
+  - {id: fsb-top-x, page: 36, truth: [59.75], q: "Fuselage side layout: at what distance from the forward end (inches) does the front seat bulkhead's top meet the side?"}
+  - {id: fsb-bot-x, page: 36, truth: [41.55], q: "Fuselage side layout: at what distance from the forward end (inches) does the front seat bulkhead's bottom meet the side?"}
+  - {id: rsb-top-x, page: 36, truth: [96.5], q: "Fuselage side layout: at what distance from the forward end (inches) does the rear seat bulkhead's top meet the side?"}
+  - {id: spar-cut, page: 36, truth: [6.5, 8.5], q: "Fuselage side: what are the dimensions (inches) of the spar cutout at the aft end?"}
+  - {id: longeron, page: 37, truth: [1.0, 0.7, 103.5], q: "Top longeron: what are its cross-section dimensions and length in inches?"}
+  - {id: gear-pad, page: 38, truth: [15.3, 12, 6.2, 3.2], q: "Gear pad on the fuselage side: list the printed dimensions in inches."}
+  - {id: lmga-tube, page: 38, truth: [6.75, 0.049], q: "LMGA tube: what are its length and wall thickness in inches?"}
+  - {id: f28-pos, page: 41, truth: [5.9], q: "F28 bulkhead: how far (inches) from F22's face is it positioned?"}
+  - {id: bottom-block, page: 42, truth: [1.6, 24, 96], q: "Fuselage bottom foam block: what are its thickness, width and length in inches?"}
+  - {id: canard-wl, page: 45, truth: [18.9], q: "Canard cutout: what waterline (W.L.) is printed for the cutout floor?"}
+  - {id: gauge-dist, page: 46, truth: [21, 9.15], q: "Fuel sight gauge: how far forward of the firewall, and how far down from the top (inches)?"}
+  - {id: strip, page: 46, truth: [50, 15], q: "Third UND ply strip: how long is it (inches), and how far forward of the firewall station does it end?"}
+  - {id: rollover-w, page: 47, truth: [23, 8.4, 7.3, 12.6], q: "Roll-over front wall piece: give the overall width, top flat, shoulder length and peak height in inches."}
+  - {id: rollover-side, page: 47, truth: [12.7, 3, 4.5], q: "Roll-over side pieces: give the length and the two end heights in inches."}
+  - {id: map-slot, page: 48, truth: [1.8, 8], q: "Map case slot: what are its dimensions in inches?"}
+  - {id: step, page: 49, truth: [1.8, 4.5, 0.5], q: "Aluminium step: give its width, leg length and minimum bend radius in inches."}
+  - {id: axle-fs, page: 50, truth: [125.5, 15, 110.5], q: "Main gear position: what F.S. is the reference straight edge at, how far forward of it is the axle, and what F.S. results?"}
+  - {id: strut-wt, page: 50, truth: [22], q: "Main gear strut: what weight in pounds is given?"}
+  - {id: toe-in, page: 52, truth: [0.2, 0.45, 24], q: "Toe-in check: what range (B minus A) in inches is allowed, and over what square size?"}
+  - {id: gear-tube, page: 53, truth: [0.625, 0.049, 6.75], q: "Gear attach tube: give the outside diameter, wall thickness and length in inches."}
+  - {id: axle-wl, page: 171, truth: [-22], q: "Back cover side view: what waterline is printed at the main wheel axle?"}
+  - {id: axle-fs171, page: 171, truth: [110.5], q: "Back cover side view: what fuselage station is printed at the main wheel axle?"}
+  - {id: nose-fs, page: 171, truth: [17], q: "Back cover side view: what fuselage station is printed at the nose wheel?"}
+  - {id: tipback, page: 171, truth: [12], q: "Back cover side view: what angle (degrees) is drawn from the main wheel contact (tip-back line)?"}
