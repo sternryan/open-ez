@@ -627,6 +627,7 @@
    "cove": {
     "x_cut": 8.914,
     "slot_gap": 0.2,
+    "bl_start": 9.3,
     "bl_end": 65.0,
     "label": "Cove cut for the elevators (fitted shape)"
    },
@@ -641,7 +642,8 @@
     "note": "illustrative CG: masses not sourced",
     "fitted": true
    },
-   "jig_label": "NC-7 tube jig (fitted shape)"
+   "jig_label": "NC-7 tube jig (fitted shape)",
+   "installed_label": "Elevators (fitted shape; span vs fuselage sides unresolved)"
   },
   "nose_gear": {
    "strut_length": 25.5,

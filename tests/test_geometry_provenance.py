@@ -21,7 +21,7 @@ PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inn
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
 TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord", "fs_main_axle", "fs_static_port", "fs_ng31_min", "fs_ng31_max",
-                      "elevator_inboard_bl_right_in", "elevator_inboard_bl_left_in"}
+                      "elevator_inboard_bl_right_in", "elevator_inboard_bl_left_in", "elevator_tube_end_bl_left_in"}
 
 
 def geometry_fields() -> set[str]:

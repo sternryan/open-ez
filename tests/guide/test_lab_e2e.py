@@ -2919,7 +2919,7 @@ def test_ch12_installed_elevators_read_on_screen_with_a_fitted_shape_label(rsite
                 _run(pg, 5)
                 labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
                 lab = labs["elevator.installed"]
-                assert lab["text"] == "Elevators (fitted shape)" and lab["opacity"] > 0.5 and not lab.get("hidden") and not lab.get("collapsed"), (op, lab)
+                assert lab["text"] == "Elevators (fitted shape; span vs fuselage sides unresolved)" and lab["opacity"] > 0.5 and not lab.get("hidden") and not lab.get("collapsed"), (op, lab)
             assert pg.evaluate("window.__lab.cove()")["installed"]
             b.close()
             bs, pg, pgh, errors = _pair(p, url, "installed:elevator.", query="&op=r30.f22-drill-tabs")
@@ -2959,6 +2959,7 @@ def test_the_canards_cove_is_open_exactly_while_an_elevator_part_shows_and_alway
                 cv = pg.evaluate("window.__lab.cove()")
                 assert cv["open"] == shown, (op, cv, shown)  # the canard keeps its full chord wherever no elevator is on screen (chapter 30's frames)
                 assert cv["xCut"] == pytest.approx(ex["tube_le_x"] - ex["cove"]["slot_gap"], abs=1e-6) and cv["blEnd"] == ex["cove"]["bl_end"]
+                assert cv["blIn"] == ex["cove"]["bl_start"] == pytest.approx(9.3)  # M2.4 fix 3: the cove is the FOAM span, not the whole half span
             _to_fuselage(pg)
             for op in ("r30.f22-drill-tabs", "r30.elev-fuselage-clearance", "f13.nose-door"):
                 pg.evaluate(f"window.__lab.select('{op}')")
@@ -3005,9 +3006,11 @@ def test_the_canard_and_elevators_stand_installed_on_a_chapter_12_or_13_op_and_n
             assert l[0][2] == pytest.approx(2 * zc - r[1][2], abs=1e-6) and l[1][2] == pytest.approx(2 * zc - r[0][2], abs=1e-6)
             assert (r[1][2] - r[0][2]) == pytest.approx(70.8 * inch, abs=1e-3)  # a whole canard: both halves of the 141.6 in span
             re_, le_ = ic["boxes"]["installed:elevator.right"], ic["boxes"]["installed:elevator.left"]
-            # the right elevator is on the right of the centre line, the left one reaches out on the left (and, per cobelu figure C-1's 72.7 in length,
-            # 7.7 in past the centre line: the config's span, not a lab choice)
+            # the right elevator is on the right of the centre line, the left one reaches out on the left; the FOAMS mirror and neither crosses the
+            # centre line (M2.4 fix 3: cobelu figure C-1's 72.7 in is the left TUBE, which crosses; the foam is 55.7 in on both sides)
             assert re_[0][2] > zc - 70 * inch and re_[1][2] < zc and le_[1][2] > zc + 60 * inch and le_[1][2] < zc + 70 * inch
+            assert le_[0][2] > zc and re_[1][2] < zc  # the left foam stays on its side of the centre line
+            assert (le_[1][2] - le_[0][2]) == pytest.approx(55.7 * inch, abs=0.002) and (re_[1][2] - re_[0][2]) == pytest.approx(55.7 * inch, abs=0.002)
             # no gross interpenetration with the box: the canard stays inside the airplane's width and off the bench
             bench = pg.evaluate("window.__lab.fuseFloor()")["bench"]
             for bx in (r, l, re_, le_):
@@ -3599,6 +3602,59 @@ def test_the_stowed_nose_wheel_carries_no_f_s_17_or_20_mark_and_the_marks_stay_w
                 assert "conflict" in pg.inner_text("#ro-kin-sub"), op
             pg.click("#fuse-more")
             assert "conflict" in pg.inner_text("#ro-cg-sub")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_root_notch_is_gone_the_cove_is_the_foam_span_only(rsite):
+    """M2.4 fix 3: with the elevators left out of the scene, the canard subject shows canard material (not the table behind) inboard of
+    |B.L.| 9.3, and an empty cove outboard of it; the installed canard carries the same cove."""
+    ex = _graph(rsite)["layup"]["fuselage"]["extras"]["elevators"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pgh, errors = _open(p, url, 1180, 820, query="&freeze=1&hide=elevator.")
+            _bare_view(pgh)
+            pgh.evaluate("window.__lab.select('r30.top-skin')")
+            _run(pgh, 3)
+            pgh.evaluate("window.__lab.select('r30.elev-hinge-slots')")
+            _run(pgh, 6)
+            cv = pgh.evaluate("window.__lab.cove()")
+            assert cv["open"] and cv["blIn"] == pytest.approx(ex["cove"]["bl_start"]) and cv["blIn"] > 9.0
+            xc = ex["cove"]["x_cut"]
+            xa = xc + 1.5  # in the cove's depth, aft of the cut
+            w = lambda x, bl: pgh.evaluate(f"window.__lab.toWorld([{x}, 0.2, {-bl}])")
+            c = w(xa, 5)
+            pgh.evaluate(f"window.__lab.setCamera({[c[0], c[1] + 2.2, c[2] + 0.0001]}, {c})")
+            _run(pgh, 0.3)
+
+            def px(bl, x=xa):
+                sx, sy = pgh.evaluate(f"window.__lab.project({w(x, bl)})")[:2]
+                im = _shot_clip(pgh, {"x": max(0, sx - 2), "y": max(0, sy - 2), "width": 4, "height": 4})
+                d = list(im.getdata())
+                return tuple(sum(c[i] for c in d) / len(d) for i in range(3))
+
+            dist = lambda a, b: sum(abs(i - j) for i, j in zip(a, b))
+            empty = px(30.0)  # inside the foam span: the cove is open, nothing behind the cut
+            inner = [px(bl) for bl in (1.0, 3.0, 6.0, 8.5)]  # (the canard subject shows the right half only) inboard of the foam end: canard material
+            fwd = px(3.0, x=xc - 1.5)
+            print(f"empty cove {empty}, forward of the cut {fwd}, root samples {inner}")
+            assert dist(fwd, empty) > 60, "the view does not tell canard from empty cove"
+            for q in inner:
+                assert dist(q, empty) > 40 and dist(q, fwd) < 0.6 * dist(fwd, empty), (q, empty, fwd)
+            # |B.L.| just inside 9.3 is still material, just outside is the cove
+            assert dist(px(9.0), empty) > 40
+            assert dist(px(10.2), empty) < 40
+            assert not errors, errors
+            b.close()
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('r30.elev-fuselage-clearance')")
+            _run(pg, 4)
+            cv = pg.evaluate("window.__lab.cove()")
+            assert cv["installed"] and cv["blIn"] == pytest.approx(ex["cove"]["bl_start"])
             assert not errors, errors
             b.close()
     finally:

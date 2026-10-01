@@ -40,15 +40,15 @@ Per task:
 - **`fs_nose` was never -45.5.** The tree already carried -6.8 as book (set in the datum retirement).
   Nothing to reconcile, no physics test moved, no `fs_nose_tip` added. Confidence lowered high to
   medium: on the 500 dpi crop the first digit reads closer to 6 than 4 but is not crisp.
-- **Elevator placement (cobelu figure C-1, read by the captain, drawing rotated 90 degrees).** Both
-  elevators end at |B.L.| 65.0. The right one runs +9.3 to +65.0 (55.7), the left one -65.0 to +7.7
-  (72.7), so the left elevator crosses the centreline. 65.0 + 7.7 = 72.7 and 65.0 - 9.3 = 55.7 both
-  check against the figure's labels. The research had left the placement open. This also explains the
+- **Elevator placement (cobelu figure C-1, read by the captain, drawing rotated 90 degrees; corrected on a re-read).** Both
+  elevators end at |B.L.| 65.0. The FOAM is 55.7 in on both sides: right +9.3 to +65.0, left -65.0 to -9.3 (figure labels 9.2 on the
+  left). The left TUBE is 72.7 in (-65.0 to +7.7) and alone crosses the fuselage and the centreline (NC-5A trim belcrank at B.L. 0,
+  CS-11/NC-12A at the +7.7 end). The inboard foam ends are the drawn stock ends ("trim to fit fuselage or root fairing"); whether the
+  trimmed ends sit at 9.3 or at the fuselage sides (about +/-11.5) is unresolved and flagged `conflict`. This also explains the
   "57.0 near the outer CS-10": the weight's inboard face is at 65.0 - 7.5 = 57.5.
-- **Hinge stations.** Text says seven slots; the stations 9.2 / 34.1 / 59.0 place five on the figure's
-  elevator spans (left -59.0, -34.1, -9.2; right +34.1, +59.0). The right 9.2 lies 0.1 in outside the
-  right elevator (inboard end 9.3) and is carried as unplaced, not moved. The research's "7.8 right"
-  matched nothing on the figure; the review crew reworded it.
+- **Hinge stations.** Text says seven slots; the stations 9.2 / 34.1 / 59.0 place four on the foam spans (left -59.0, -34.1; right
+  +34.1, +59.0). The 9.2 station lies 0.1 in outside the foam on both sides (inboard ends +/-9.3) and is carried as unplaced, not
+  moved. The research's "7.8 right" matched nothing on the figure; the review crew reworded it.
 - **Page reads confirmed:** p81 25.5 (thin decimal, medium), p77 pads 2.8/1.2 (representational
   anyway), p79 floor and side block orientation, p82 static port 8 / 10 / W.L. 13 and the top block,
   p73 156 deg, 10.8 turns, five to seven seconds, p171 W.L. 0.9 at the fuselage bottom.
@@ -114,8 +114,8 @@ the conduct commits (the kernel files were copied into main and fixed there).
   at 13 in chord (about 6 percent); the elevator tube is 1.0 in OD, so in every render the tube sticks out
   of the elevator section. Either the airfoil file or the chord is off. Not touched here; worth a Block 1
   look before printed plugs.
-- **Hinge count:** five placed against the text's seven; the unplaced right 9.2 stands.
-- **Elevator placement** now follows C-1 (left crosses the centreline); the canard planform itself is
+- **Hinge count:** four placed against the text's seven; the unplaced 9.2 (both sides) stands.
+- **Elevator placement** now follows C-1 (the left foam mirrors the right; only the left tube crosses the centreline); the canard planform itself is
   still the GU-sized rectangle (existing conflict flag), so the 65.0 ends sit inside a 70.8 half span.
 - **Fitted values, all flagged representational:** elevator chord fraction 0.70 and sleeve 0.03, hinge
   plate 2.0 x 1.5 x 0.125, CS-10/11 positions, NG31 at 0.6 (midpoint of the range), nose envelope (10.9 in
@@ -161,6 +161,9 @@ Owner items added or changed:
   not visible even with the cove open.
 - **Nose door:** a flush 0.08 in panel, so from above only its outline and label read; making it stand out needs a geometry change.
 - **Canard subject cove:** the canard subject draws the right half only, and the cove spans 0 to 65, so a 9.3 in root notch shows
-  with no elevator in it (the left elevator would cross there).
+  with no elevator in it (the left elevator would cross there). Superseded in round 3: the cove is now the foam span, 9.3 to 65.
 - **F22/F28 excess** (2.00 vs 1.44 lb, 0.40 vs 0.19 lb): for the ledger-closure test (glass schedule or R250 density).
 - The wheel hidden inside the NB box at the end of the rig op stays (correct end state); only the labels changed.
+- **Elevator foam inboard span vs the fuselage sides unresolved (conflict flag, labelled).** The drawn stock ends are +/-9.3; the 1/16 in
+  clearance puts the trimmed ends at the fuselage sides (about +/-11.5). Fix round 3 limits the cove to the foam span (no root notch) and labels
+  the installed elevators "span vs fuselage sides unresolved"; nothing is moved until the owner or a page settles it.

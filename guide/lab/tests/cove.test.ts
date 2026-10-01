@@ -45,3 +45,29 @@ test('the cap: a back face seen through the box is a cap at the wall, facing int
   // a ray that does not cross the box (a tip seen from outboard) shows no cap
   assert.equal(coveCap(c, [30, 0.3, -80], [0.1, 0.3, -70]), null)
 })
+
+// M2.4 fix 3: the cove is limited to the foam span, two boxes blIn < |z| < blEnd; the canard keeps its full chord inboard of the foam
+const f = coveFrom(9.11, 0.2, 65, 9.3)
+
+test('inboard of the foam end the canard is not removed (no empty root notch), either side of the centre line', () => {
+  assert.equal(f.blIn, 9.3)
+  assert.ok(!inCove(f, [12, 0.3, 0]))
+  assert.ok(!inCove(f, [12, 0.3, 9.2]) && !inCove(f, [12, 0.3, -9.2]))
+  assert.ok(inCove(f, [12, 0.3, 9.4]) && inCove(f, [12, 0.3, -9.4]))
+  assert.ok(!inCove(f, [12, 0.3, 65.1]))
+  // default keeps the old single box
+  assert.ok(inCove(c, [12, 0.3, 0]))
+})
+
+test('rays: the inner wall of each box faces away from the centre, the outer wall faces it; a ray through the root notch crosses nothing', () => {
+  assert.equal(coveExit(f, [20, 0.3, 0], [-1, 0, 0]), null)
+  // travelling outboard (+z) inside the right-hand box (z > 0) leaves through the outer wall at 65 (inward normal -z)
+  const r = coveExit(f, [11, 0.3, 20], [0, 0, 1])
+  assert.ok(r && r.face === 'z-' && Math.abs(r.t - 45) < 1e-9)
+  // travelling inboard (-z) inside it leaves through the inner wall at 9.3 (inward normal +z)
+  const i = coveExit(f, [11, 0.3, 20], [0, 0, -1])
+  assert.ok(i && i.face === 'z+' && Math.abs(i.t - (20 - 9.3)) < 1e-9)
+  // the mirrored box
+  const m = coveExit(f, [11, 0.3, -20], [0, 0, 1])
+  assert.ok(m && m.face === 'z-' && Math.abs(m.t - (20 - 9.3)) < 1e-9)
+})

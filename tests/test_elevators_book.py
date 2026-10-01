@@ -45,14 +45,18 @@ def test_elevator_spans_match_the_kernel_and_sides(parts):
         assert bb.ymin == pytest.approx(lo, abs=0.1) and bb.ymax == pytest.approx(
             hi, abs=0.1
         )
+        tlo, thi = ek.tube_span(side)
         tb = _bb(parts[f"elevator_tube_{side}"])
-        assert tb.ymax - tb.ymin == pytest.approx(hi - lo, abs=1e-6)
+        assert tb.ymin == pytest.approx(tlo, abs=1e-6) and tb.ymax == pytest.approx(thi, abs=1e-6)
         assert (
             tb.zmax - tb.zmin
             == pytest.approx(G.elevator_tube_od_in)
             == pytest.approx(1.0)
         )
-    assert _bb(parts["elevator_left"]).ymin < 0 < _bb(parts["elevator_left"]).ymax
+    # the left FOAM no longer crosses Y=0; the left TUBE does (cobelu C-1: 72.7 in tube, 55.7 in foam)
+    assert _bb(parts["elevator_left"]).ymax < 0
+    assert _bb(parts["elevator_tube_left"]).ymin < 0 < _bb(parts["elevator_tube_left"]).ymax
+    assert _bb(parts["elevator_tube_left"]).ymax == pytest.approx(7.7, abs=1e-6)
     assert _bb(parts["elevator_right"]).ymin > 0
     assert eb.FITTED_ELEV_LE_XC == 0.70 and eb.FITTED_SLEEVE == 0.03
 
@@ -75,8 +79,9 @@ def test_balance_weight_spans_7_5_and_ends_at_the_outboard_end(parts):
 
 
 def test_cs11_at_inboard_end(parts):
+    # right: at the foam inboard end; left: at the TUBE end (+7.7), where the figure puts CS-11/NC-12A
     for side in ("right", "left"):
-        lo, hi = ek.elevator_span(side)
+        lo, hi = ek.tube_span(side)
         bb = _bb(parts[f"cs11_weight_{side}"])
         assert bb.ymax - bb.ymin == pytest.approx(2.0)
         assert (bb.ymin if side == "right" else bb.ymax) == pytest.approx(
@@ -86,7 +91,7 @@ def test_cs11_at_inboard_end(parts):
 
 def test_hinge_plate_counts_and_stations(parts):
     assert len(parts["hinges_right"].solid.val().Solids()) == 2
-    assert len(parts["hinges_left"].solid.val().Solids()) == 3
+    assert len(parts["hinges_left"].solid.val().Solids()) == 2
     for side in ("right", "left"):
         ys = sorted(s.Center().y for s in parts[f"hinges_{side}"].solid.val().Solids())
         assert ys == pytest.approx(ek.hinge_stations(side))

@@ -7,37 +7,48 @@
  * Pure: the same maths the shader (core/materials.ts GLSL_COVE) runs, so the clip and the cap it closes are under test. The box is
  * open in y (a through cut): x > xCut and |z| < blEnd, in the canard's model frame (x chord aft, y up, z = -B.L., inches).
  */
-export interface Cove { xCut: number; blEnd: number }
+export interface Cove { xCut: number; blEnd: number; blIn: number }
 
-/** the cove from the export's numbers: the elevators' leading edge x, the hinge slot gap, and the elevators' outboard end (B.L.) */
-export function coveFrom(elevLeX: number, slotGap: number, blEnd: number): Cove {
-  return { xCut: elevLeX - slotGap, blEnd }
+/**
+ * the cove from the export's numbers: the elevators' leading edge x, the hinge slot gap, the foam's outboard end and (M2.4 fix 3) the foam's
+ * inboard end (B.L.): the cove is two boxes, blIn < |z| < blEnd, so the canard keeps its full chord inboard of the foam (default 0: one box through the centre)
+ */
+export function coveFrom(elevLeX: number, slotGap: number, blEnd: number, blIn = 0): Cove {
+  return { xCut: elevLeX - slotGap, blEnd, blIn }
 }
 
 /** a point of the canard's own meshes is removed (not drawn) */
 export function inCove(c: Cove, p: readonly number[]): boolean {
-  return p[0] > c.xCut && Math.abs(p[2]) < c.blEnd
+  return p[0] > c.xCut && Math.abs(p[2]) < c.blEnd && Math.abs(p[2]) >= c.blIn
 }
 
 export type CoveFace = 'x' | 'z+' | 'z-'
 /** inward normals of the box's three faces (the cap faces into the removed box) */
 export const COVE_NORMAL: Record<CoveFace, [number, number, number]> = { x: [1, 0, 0], 'z+': [0, 0, 1], 'z-': [0, 0, -1] }
 
-/** where a ray leaves the removed box (into the kept solid): the distance along it (rd is a unit vector) and the face it leaves through; null if it never crosses the box */
+/**
+ * where a ray leaves the removed box (into the kept solid): the distance along it (rd is a unit vector) and the face it leaves through; null if it never crosses the box.
+ * Two boxes (the right half blIn < z < blEnd... in the model frame z = -B.L., so either sign of z): the earliest exit of the two wins.
+ */
 export function coveExit(c: Cove, ro: readonly number[], rd: readonly number[]): { t: number; face: CoveFace } | null {
-  let t0 = 0, t1 = Infinity
-  let face: CoveFace | null = null
-  const clip = (n: readonly number[], k: number, id: CoveFace) => {
-    const dn = n[0] * rd[0] + n[1] * rd[1] + n[2] * rd[2]
-    const d0 = n[0] * ro[0] + n[1] * ro[1] + n[2] * ro[2] + k
-    if (Math.abs(dn) < 1e-9) { if (d0 <= 0) { t0 = 1; t1 = 0 } return }
-    const th = -d0 / dn
-    if (dn < 0) { if (th < t1) { t1 = th; face = id } } else t0 = Math.max(t0, th)
+  let best: { t: number; face: CoveFace } | null = null
+  for (const sgn of [1, -1]) {
+    let t0 = 0, t1 = Infinity
+    let face: CoveFace | null = null
+    const clip = (n: readonly number[], k: number, id: CoveFace) => {
+      const dn = n[0] * rd[0] + n[1] * rd[1] + n[2] * rd[2]
+      const d0 = n[0] * ro[0] + n[1] * ro[1] + n[2] * ro[2] + k
+      if (Math.abs(dn) < 1e-9) { if (d0 <= 0) { t0 = 1; t1 = 0 } return }
+      const th = -d0 / dn
+      if (dn < 0) { if (th < t1) { t1 = th; face = id } } else t0 = Math.max(t0, th)
+    }
+    clip(COVE_NORMAL.x, -c.xCut, 'x')
+    // box with z in (sgn*blIn, sgn*blEnd) ordered: the wall at the smaller z faces +z ('z+'), the one at the larger z faces -z ('z-')
+    if (sgn > 0) { clip(COVE_NORMAL['z+'], -c.blIn, 'z+'); clip(COVE_NORMAL['z-'], c.blEnd, 'z-') }
+    else { clip(COVE_NORMAL['z+'], c.blEnd, 'z+'); clip(COVE_NORMAL['z-'], -c.blIn, 'z-') }
+    if (face && t0 < t1 && t1 > 0 && (!best || t1 < best.t)) best = { t: t1, face }
   }
-  clip(COVE_NORMAL.x, -c.xCut, 'x')
-  clip(COVE_NORMAL['z+'], c.blEnd, 'z+')
-  clip(COVE_NORMAL['z-'], c.blEnd, 'z-')
-  return face && t0 < t1 && t1 > 0 ? { t: t1, face } : null
+  return best
 }
 
 /**

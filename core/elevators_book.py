@@ -4,7 +4,7 @@ Open-EZ PDE: Roncz elevators as fitted shapes (cobelu ch30, figure C-1)
 
 Every part is ``representational``: the elevator contour is template-only (G, H, I, J, E; not held) and
 the elevator chord fraction is fitted. What IS dimensioned (via ``config.geometry`` and
-``core.elevators_kin``): the span ends (cobelu fig C-1), the tube OD (ch30), the CS-10 and CS-11
+``core.elevators_kin``): the span ends (cobelu fig C-1; foam inboard ends flagged conflict vs the fuselage sides, left tube crosses to +7.7), the tube OD (ch30), the CS-10 and CS-11
 lead sizes and positions along the span. Spans, hinge stations, pins and travel come from
 ``core.elevators_kin``; nothing is re-derived here.
 
@@ -131,14 +131,16 @@ def build_elevators() -> dict[str, FusePart]:
             f"fraction ({FITTED_ELEV_LE_XC}) is fitted; the span ends ARE dimensioned (cobelu:pC-1 figure C-1, via config)",
         )
         tz = _z_mid(x0 + r)
+        tlo, thi = ek.tube_span(side)
         tube = cq.Solid.makeCylinder(
-            r, hi - lo, cq.Vector(x0 + r, lo, tz), cq.Vector(0, 1, 0)
+            r, thi - tlo, cq.Vector(x0 + r, tlo, tz), cq.Vector(0, 1, 0)
         )
         parts[f"elevator_tube_{side}"] = FusePart(
             f"elevator_tube_{side}",
             _wp(tube),
             "representational",
-            note="fitted position (centre at the tube leading edge + OD/2, mid-height of the section); the 1.0 in OD is book (cobelu ch30)",
+            note="fitted position (centre at the tube leading edge + OD/2, mid-height of the section); the 1.0 in OD is book (cobelu ch30); "
+            "the left tube is 72.7 in (B.L. -65.0 to +7.7, cobelu C-1) and crosses the fuselage and the centreline, the foam does not",
         )
         hz = hinge_axis_xz()[1]
         px, py, pz = FITTED_PLATE
@@ -157,8 +159,8 @@ def build_elevators() -> dict[str, FusePart]:
             f"hinges_{side}",
             _wp(cq.Compound.makeCompound(plates)),
             "representational",
-            note="stations positioned from text and figure at LOW confidence; text says seven slots, the figure stations place five "
-            "(right 9.2 is 0.1 in outside the right elevator and is NOT moved: see elevators_kin.unplaced_hinge_stations); "
+            note="stations positioned from text and figure at LOW confidence; text says seven slots, the figure stations place four "
+            "(9.2 is 0.1 in outside the foam on BOTH sides and is NOT moved: see elevators_kin.unplaced_hinge_stations); "
             "plate size 2.0 x 1.5 x 0.125 from C-1 at medium confidence",
         )
         bx, bz = CS10_SECTION
@@ -175,11 +177,13 @@ def build_elevators() -> dict[str, FusePart]:
         )
         dy, dx, dz = G.cs11_lead_dims
         cz = _z_mid(x0 - gap - dx / 2)
-        c0, c1 = (lo, lo + dy) if side == "right" else (hi - dy, hi)
+        # right: at the foam inboard end; left: at the TUBE end (+7.7), where the figure puts CS-11/NC-12A
+        c0, c1 = (lo, lo + dy) if side == "right" else (thi - dy, thi)
         parts[f"cs11_weight_{side}"] = FusePart(
             f"cs11_weight_{side}",
             _wp(_box(x0 - gap - dx, x0 - gap, c0, c1, cz - dz / 2, cz + dz / 2)),
             "representational",
-            note="CS-11 lead 2.0 x 0.6 x 0.8 (2.0 along the span) abutting the inboard end at the leading edge; position not dimensioned",
+            note="CS-11 lead 2.0 x 0.6 x 0.8 (2.0 along the span) abutting the inboard end at the leading edge (right: foam end; left: tube end +7.7, "
+            "where C-1 puts CS-11/NC-12A); position not dimensioned",
         )
     return parts
