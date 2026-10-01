@@ -2248,3 +2248,26 @@ def test_the_station_cut_hides_the_labels_of_parts_it_removes_and_labels_the_fac
             b.close()
     finally:
         s.shutdown()
+
+
+@pytest.mark.parametrize("film", ["canard", "fuselage6"])
+def test_recorder_url_exposes_rec_and_both_films_start(rsite, film):
+    """The recorder opens the page with a bare ?rec=1 (no test hooks, the high tier, no frame loop) and waits for window.__rec.
+    It must appear within a bound; each film must report a positive length and step a frame."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 960, "height": 540})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?rec=1")
+            pg.wait_for_function("typeof window.__rec === 'object'", timeout=30000, polling=250)
+            dur = pg.evaluate(f"window.__rec.start('{film}')")
+            assert isinstance(dur, (int, float)) and dur > 0
+            r = pg.evaluate("window.__rec.frame(1 / 60, true)")
+            assert r["active"] is True
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
