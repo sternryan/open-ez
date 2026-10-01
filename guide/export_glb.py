@@ -84,6 +84,28 @@ def elevator_components() -> dict:
     return out
 
 
+def nose_components() -> dict:
+    """The nose structure and the nose gear (gear down), one glb component per graph id. Not part of default_components() or the
+    canard-only cutaway export until the lab work (M2.4 Task 5). nose.worm_drive has no geometry and is absent."""
+    from core.landing_gear_book import build_nose_gear
+    from core.nose_book import COMPONENT_PARTS, build_nose
+
+    parts = {n: p.solid.val().copy() for n, p in build_nose().items()}
+    gear = {n: p.solid.val().copy() for n, p in build_nose_gear("plans").items()}
+    out: dict = {}
+    for cid, names in COMPONENT_PARTS.items():
+        out[cid] = (
+            parts[names[0]]
+            if len(names) == 1
+            else {f"{cid}.{n}": parts[n] for n in names}
+        )
+    out["nose.ng_hardware"] = gear["ng6_block"]
+    out["gear.nose_strut"] = {
+        f"gear.nose_strut.{n}": gear[n] for n in ("strut", "fork", "wheel")
+    }
+    return out
+
+
 def _canard_layup(graph) -> dict:
     from core.structures import CanardGenerator
     from guide import layup

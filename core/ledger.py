@@ -218,9 +218,24 @@ def gear_cg(sourced_only: bool = False) -> tuple[float, float | None]:
 
 def gear_json() -> dict:
     from .landing_gear_book import ground_handling  # lazy: landing_gear_book pulls in CadQuery
+    from .nose_gear_kin import AXLE_FS_CANDIDATES
 
+
+    cand = load_ledger()["gear"]["nose_arm_candidates"]
+    values = [float(v) for v in cand["values_in"]]
+    if values != [float(v) for v in AXLE_FS_CANDIDATES]:
+        raise ValueError(f"nose_arm_candidates {values} disagree with config {AXLE_FS_CANDIDATES}")
+    rows = []
+    for r in gear_rows():
+        d = r._asdict() | {"cite": list(r.cite)}
+        if r.name == "nose_strut":
+            d["nose_arm_candidates"] = values
+            d["nose_arm_candidates_status"] = cand["status"]
+        rows.append(d)
     return {
-        "rows": [r._asdict() | {"cite": list(r.cite)} for r in gear_rows()],
+        "rows": rows,
+        "nose_arm_candidates": values,
+        "nose_arm_candidates_status": cand["status"],
         "total_lb": gear_cg()[0],
         "sourced_lb": gear_cg(sourced_only=True)[0],
         "ground_handling": ground_handling(),

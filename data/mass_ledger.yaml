@@ -89,6 +89,13 @@ gear:
       arm_status: unsourced
       cite: []
       note: "the remainder of the retired 45 lb lump (45 - 22 - 2.8); no source for the weight or the arm; placed at the main axle station only so the empty weight does not silently drop"
+  # M2.4 Task 4: the nose-wheel arm is a conflict PAIR (p171 F.S. 17, Owner's Manual about 20). The nose_strut row keeps 17
+  # (so no sum moves); the pair is carried here and read out beside the row. No mass is added.
+  nose_arm_candidates:
+    values_in: [17.0, 20.0]
+    status: conflict
+    cite: ["plans-1980:p171 nose wheel F.S. 17", "om-1980:p35 nose arm about 20"]
+    note: "fs_nose_wheel and fs_nose_wheel_manual; unresolved without the A6/A7 side view; every nose part's mass stays unsourced"
 
 # Block 2 M2.4 Task 1: prototype weights as cited REFERENCE values. They are never added to any sum:
 # the computed core-plus-glass rows in `materials` stay the model's masses. page_basis: issue (cp-text),

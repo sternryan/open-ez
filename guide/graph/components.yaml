@@ -43,7 +43,7 @@
 - {id: gear.tabs, label: Gear attach tabs and pads, fidelity: no-geometry}
 - {id: gear.axles, label: Axles and brake calipers, fidelity: unvalidated}
 - {id: gear.brake_lines, label: Brake lines, fidelity: no-geometry}
-# Elevators (chapter 11, Roncz path), chapter 12 gap ops and the nose and nose gear (chapter 13). The six elevator shapes are fitted (unvalidated); the rest have no geometry yet.
+# Elevators (chapter 11, Roncz path), chapter 12 gap ops and the nose and nose gear (chapter 13). The six elevator shapes and the nose and nose-gear shapes (all but the worm drive) are fitted (unvalidated); the rest have no geometry yet.
 # Elevator and nose shapes are templates or A-sheet outlines the owner does not hold, so they will be fitted (representational) shapes.
 - {id: canard.tips, label: Canard tips (foam with glass skin), fidelity: no-geometry}
 - {id: elevator.right, label: Right elevator, fidelity: unvalidated}
@@ -53,19 +53,19 @@
 - {id: elevator.balance_weight, label: Elevator outboard mass balance weights (CS-10), fidelity: unvalidated}
 - {id: elevator.cs11_weight, label: Elevator CS-11 lead weights, fidelity: unvalidated}
 - {id: elevator.ice_shield, label: Elevator ice shields (optional), fidelity: no-geometry}
-- {id: gear.nose_strut, label: Nose gear strut (NG-1L), fidelity: no-geometry}
+- {id: gear.nose_strut, label: Nose gear strut (NG-1L), fidelity: unvalidated}
 - {id: nose.worm_drive, label: Nose gear worm drive and crank, fidelity: no-geometry}
-- {id: nose.ng_hardware, label: Nose gear castings and brackets (NG6 NG7 NG3 and others), fidelity: no-geometry}
-- {id: nose.ng30_plates, label: NG30 plates, fidelity: no-geometry}
-- {id: nose.ng31, label: NG31 bulkhead disc and F6 wrap, fidelity: no-geometry}
-- {id: nose.floor_blocks, label: Floor blocks, fidelity: no-geometry}
-- {id: nose.pivot_blocks, label: Rudder pedal pivot blocks, fidelity: no-geometry}
-- {id: nose.side_blocks, label: Nose side blocks, fidelity: no-geometry}
-- {id: nose.pedals, label: Rudder pedals, fidelity: no-geometry}
-- {id: nose.pitot, label: Pitot tube, fidelity: no-geometry}
-- {id: nose.static_port, label: Static port, fidelity: no-geometry}
-- {id: nose.top_block, label: Nose top block, fidelity: no-geometry}
-- {id: nose.strut_cover, label: SC strut cover, fidelity: no-geometry}
-- {id: nose.nb_box, label: NB nose gear box, fidelity: no-geometry}
-- {id: nose.skin, label: Nose skin, fidelity: no-geometry}
-- {id: nose.door, label: Nose door, fidelity: no-geometry}
+- {id: nose.ng_hardware, label: Nose gear castings and brackets (NG6 NG7 NG3 and others), fidelity: unvalidated}
+- {id: nose.ng30_plates, label: NG30 plates, fidelity: unvalidated}
+- {id: nose.ng31, label: NG31 bulkhead disc and F6 wrap, fidelity: unvalidated}
+- {id: nose.floor_blocks, label: Floor blocks, fidelity: unvalidated}
+- {id: nose.pivot_blocks, label: Rudder pedal pivot blocks, fidelity: unvalidated}
+- {id: nose.side_blocks, label: Nose side blocks, fidelity: unvalidated}
+- {id: nose.pedals, label: Rudder pedals, fidelity: unvalidated}
+- {id: nose.pitot, label: Pitot tube, fidelity: unvalidated}
+- {id: nose.static_port, label: Static port, fidelity: unvalidated}
+- {id: nose.top_block, label: Nose top block, fidelity: unvalidated}
+- {id: nose.strut_cover, label: SC strut cover, fidelity: unvalidated}
+- {id: nose.nb_box, label: NB nose gear box, fidelity: unvalidated}
+- {id: nose.skin, label: Nose skin, fidelity: unvalidated}
+- {id: nose.door, label: Nose door, fidelity: unvalidated}

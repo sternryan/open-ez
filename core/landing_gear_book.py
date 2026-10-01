@@ -29,6 +29,7 @@ from typing import NamedTuple
 import cadquery as cq
 import numpy as np
 
+from . import nose_gear_kin as ngk
 from .fuselage_book import (
     FusePart,
     G,
@@ -378,3 +379,204 @@ def ground_handling() -> dict:
         "tip_back_check": "not yet computed: no source for the CG height",
         "tip_over_check": "not yet computed: the track has no source",
     }
+
+
+# --- nose gear (chapter 13), forward of F22 ----------------------------------------------------------
+# Fitted, not book. The strut rake, fork offset, NG6 position and trail appear in no config or provenance field.
+FITTED_NG6_BLOCK = (
+    2.5,
+    2.5,
+)  # fitted, not book: (x length, height) of the NG6 casting block; the 2.75 width and the 1.25 bore height are book (p73)
+FITTED_NG6_BORE_R = 0.3  # fitted, not book: pivot bore radius
+FITTED_NG_STRUT = (
+    20.3,
+    1.0,
+    1.8,
+)  # fitted, not book: (length from the pivot, depth along F.S., width across) of the NG-1L box section
+FITTED_NG_FORK = (
+    6.6,
+    2.0,
+    3.8,
+    3.0,
+)  # fitted, not book: (length, depth, width, slot width) of the lower fork block, below the strut end
+FITTED_NG_FORK_SLOT_TOP = (
+    0.55  # fitted, not book: the fork's bridge is this thick at its top
+)
+FITTED_TIRE_OD = 9.0  # fitted, not book: 2.80/2.50-4 tire OD is NOT printed
+FITTED_RIM_OD = 4.0  # the 4 in wheel rim (a size name, not a drawn dimension)
+FITTED_TIRE_WIDTH = 2.8  # the 2.80 of 2.80/2.50-4, a section width
+FITTED_RIM_WIDTH = 2.2  # fitted, not book
+
+NOSE_CANDIDATES = {
+    "plans": G.fs_nose_wheel,
+    "manual": G.fs_nose_wheel_manual,
+}  # the p171 / Owner's Manual conflict pair
+assert tuple(NOSE_CANDIDATES.values()) == ngk.AXLE_FS_CANDIDATES
+
+_NOSE_CONFLICT = (
+    "the axle station is the p171 (F.S. 17) versus Owner's Manual (about 20) conflict, so the pivot F.S. is SOLVED by "
+    "core.nose_gear_kin from the candidate, a derived-from-assumption position, not a measurement. Assumptions: strut "
+    f"pivot to axle exactly {G.nose_strut_pivot_to_pivot_in:g} (p81) with zero fork offset, pivot W.L. = skin line "
+    f"{G.wl_fuselage_bottom_3view:g} + bore height {G.ng6_bore_height_in:g}. No strut rake, fork offset, trail or NG6 position is printed."
+)
+
+
+def nose_gear_points(candidate: str = "plans") -> dict:
+    """Pivot and axle centre (model frame), the strut's lean from vertical, for one axle candidate."""
+    if candidate not in NOSE_CANDIDATES:
+        raise ValueError(f"candidate must be one of {sorted(NOSE_CANDIDATES)}")
+    axle_fs = NOSE_CANDIDATES[candidate]
+    length = G.nose_strut_pivot_to_pivot_in
+    pivot_wl = ngk.default_pivot_wl()
+    pivot_fs, _ = ngk.ng6_pivot_for_axle(axle_fs, G.wl_nose_wheel, pivot_wl, length)
+    return {
+        "candidate": candidate,
+        "pivot": (pivot_fs, 0.0, z_of_wl(pivot_wl)),
+        "axle": (axle_fs, 0.0, z_of_wl(G.wl_nose_wheel)),
+        "strut_length": length,
+        "theta_down_deg": ngk.theta_down_deg(pivot_wl, G.wl_nose_wheel, length),
+    }
+
+
+def _strut_frame(solid: cq.Workplane, pts: dict) -> cq.Workplane:
+    """Move a solid built hanging straight down from the origin (local -z along the strut) to the gear-down strut."""
+    px, _, pz = pts["pivot"]
+    return solid.rotate((0, 0, 0), (0, 1, 0), -pts["theta_down_deg"]).translate(
+        (px, 0.0, pz)
+    )
+
+
+def _ng6_block(pts: dict) -> cq.Workplane:
+    lx, h = FITTED_NG6_BLOCK
+    w = G.ng6_width_in
+    px, _, pz = pts["pivot"]
+    base = (
+        pz - G.ng6_bore_height_in
+    )  # the bore centre is 1.25 above the plate base (p73)
+    blk = _box(px - lx / 2, px + lx / 2, -w / 2, w / 2, base, base + h)
+    return blk.cut(
+        cq.Workplane(
+            obj=cq.Solid.makeCylinder(
+                FITTED_NG6_BORE_R,
+                w + 1,
+                cq.Vector(px, -w / 2 - 0.5, pz),
+                cq.Vector(0, 1, 0),
+            )
+        )
+    )
+
+
+def _strut_box(pts: dict) -> cq.Workplane:
+    ln, dep, wid = FITTED_NG_STRUT
+    return _strut_frame(_box(-dep / 2, dep / 2, -wid / 2, wid / 2, -ln, 0.0), pts)
+
+
+def _fork_block(pts: dict) -> cq.Workplane:
+    ln, dep, wid, slot = FITTED_NG_FORK
+    top = -FITTED_NG_STRUT[0]
+    blk = _box(-dep / 2, dep / 2, -wid / 2, wid / 2, top - ln, top)
+    cut = _box(
+        -dep / 2 - 1,
+        dep / 2 + 1,
+        -slot / 2,
+        slot / 2,
+        top - ln - 1,
+        top - FITTED_NG_FORK_SLOT_TOP,
+    )
+    return _strut_frame(blk.cut(cut), pts)
+
+
+def _wheel(pts: dict) -> cq.Workplane:
+    ax = pts["axle"]
+    d = cq.Vector(0, 1, 0)
+
+    def cyl(r, w):
+        return cq.Solid.makeCylinder(r, w, cq.Vector(ax[0], ax[1] - w / 2, ax[2]), d)
+
+    tire = cq.Workplane(obj=cyl(FITTED_TIRE_OD / 2, FITTED_TIRE_WIDTH)).cut(
+        cq.Workplane(obj=cyl(FITTED_RIM_OD / 2, FITTED_TIRE_WIDTH + 1))
+    )
+    rim = cq.Workplane(obj=cyl(FITTED_RIM_OD / 2, FITTED_RIM_WIDTH))
+    return _compound([tire, rim])
+
+
+@lru_cache(maxsize=2)
+def build_nose_gear(candidate: str = "plans") -> dict[str, FusePart]:
+    """The retracting nose gear in the gear-down pose, for one axle candidate ("plans" F.S. 17 or "manual" F.S. 20)."""
+    pts = nose_gear_points(candidate)
+    ax, pv = pts["axle"], pts["pivot"]
+    fs = f"axle F.S. {ax[0]:g} ({candidate} candidate), W.L. {G.wl_nose_wheel:g}"
+    rep = "representational"
+    return {
+        "ng6_block": FusePart(
+            "ng6_block",
+            _ng6_block(pts),
+            rep,
+            ("plans-1980:p73",),
+            note=(
+                f"NG6 casting block {G.ng6_width_in:g} wide, centred between the NG30 plates, bore centre {G.ng6_bore_height_in:g} above "
+                f"the plate base (p73); block length and height fitted. Pivot F.S. {pv[0]:.2f} is SOLVED, not measured: "
+                + _NOSE_CONFLICT
+            ),
+        ),
+        "strut": FusePart(
+            "strut",
+            _strut_box(pts),
+            rep,
+            ("plans-1980:p81",),
+            note=(
+                f"NG-1L as a fitted box section ({FITTED_NG_STRUT[1]:g} x {FITTED_NG_STRUT[2]:g}) from the pivot toward the lower pivot; the "
+                f"pivot-to-axle length is the printed {pts['strut_length']:g} (p81, medium) with the fork's drop folded in. "
+                f"Lean from vertical {pts['theta_down_deg']:.1f} deg is derived, not printed. "
+                + _NOSE_CONFLICT
+            ),
+        ),
+        "fork": FusePart(
+            "fork",
+            _fork_block(pts),
+            rep,
+            (),
+            note=(
+                f"fitted lower fork block, {FITTED_NG_FORK[1]:g} x {FITTED_NG_FORK[2]:g} with a {FITTED_NG_FORK[3]:g} slot for the wheel; "
+                f"no fork offset is modelled (axle centred on the strut line). Axle: {fs}."
+            ),
+        ),
+        "wheel": FusePart(
+            "wheel",
+            _wheel(pts),
+            rep,
+            (),
+            note=(
+                f"4 in rim, 2.80/2.50-4 tire drawn {FITTED_TIRE_WIDTH:g} wide at OD {FITTED_TIRE_OD:g} (tire OD is NOT printed: fitted); "
+                f"centre at {fs}, which is the conflict pair p171 / Owner's Manual: "
+                + _NOSE_CONFLICT
+            ),
+        ),
+    }
+
+
+def nose_retracted_theta_deg(candidate: str = "plans") -> float:
+    """Fitted retracted strut angle: the tire's lowest point clears the skin line W.L. 0.9 (the retracted angle is not printed)."""
+    pts = nose_gear_points(candidate)
+    pivot_wl = G.wl_fuselage_bottom_3view + G.ng6_bore_height_in
+    clear = G.wl_fuselage_bottom_3view + FITTED_TIRE_OD / 2
+    return ngk.theta_up_for_clearance_deg(pivot_wl, G.nose_strut_pivot_to_pivot_in, clear)
+
+
+def nose_gear_pose(t: float, candidate: str = "plans") -> np.ndarray:
+    """4x4 homogeneous matrix taking the gear-down solids to retraction progress t in [0, 1].
+
+    Rotation about the NG6 axis (along Y through the pivot): t=0 is the identity (gear down), t=1 has the strut
+    pointing aft and slightly up (theta from nose_retracted_theta_deg, fitted so the tire clears the skin line).
+    """
+    pts = nose_gear_points(candidate)
+    delta = ngk.retraction_theta_deg(t, pts["theta_down_deg"], nose_retracted_theta_deg(candidate)) - pts["theta_down_deg"]
+    c, s = math.cos(math.radians(-delta)), math.sin(math.radians(-delta))
+    rot = np.array(
+        [[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=float
+    )  # R_y(-delta): sweeps the lower end aft
+    pivot = np.array(pts["pivot"], dtype=float)
+    m = np.eye(4)
+    m[:3, :3] = rot
+    m[:3, 3] = pivot - rot @ pivot
+    return m
