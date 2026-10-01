@@ -99,6 +99,7 @@ CANARD_ORDER = [
     "c11.elevators", "c12.alignment-pins", "c12.align-canard", "r30.install-pins", "r30.align-canard",
 ]
 
+# The chapter 14-17 ops (2.5) are checked in test_ch1417_graph.py and excluded from CANARD_ORDER above.
 # The chapter 11 / 12 Roncz ops added in 2.4 (r30.* ids, chapters 11 and 12) are checked in test_ch1113_graph.py.
 NEW_R30 = {"r30.f22-drill-tabs", "r30.elev-fuselage-clearance", "r30.lift-tab-bushings", "r30.f28-pins-permanent",
            "r30.canard-tips"}
@@ -109,7 +110,7 @@ def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
 
     g = load_graph(GRAPH)
     order = topo_order(g)
-    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6, 7, 8, 9, 13) and i not in NEW_R30 and not i.startswith('r30.elev-')] == CANARD_ORDER
+    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17) and i not in NEW_R30 and i not in ('c19.wings', 'c20.winglets') and not i.startswith('r30.elev-')] == CANARD_ORDER
     # plans pp 4-1 to 4-3: front seat, rear seat, panel/F22/F28, firewall
     assert [i for i in order if g.ops[i].chapter == 4] == [
         "f04.front-seat-bkhd-front", "f04.front-seat-bkhd-back", "f04.rear-seat-bkhd-foam",

@@ -40,7 +40,7 @@
   title: Set the gear leg
   summary: Invert the fuselage and level it on the top longerons, centre the leg, and set the axle 15 in forward of the straight board at the spar's aft face (F.S. 110.5). Fix with Bondo, scribe the tube marks, then remove the leg.
   variants: [both]
-  requires: [f09.jig-blocks, f09.strut-stiffen]
+  requires: [f09.jig-blocks, f09.strut-stiffen, f14.fit-fuselage]
   components: [gear.strut, gear.jig_blocks, gear.datum_board, fuselage.gear_extrusions]
   geometry_visible: true
   sources:

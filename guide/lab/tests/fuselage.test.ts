@@ -62,10 +62,10 @@ test('a part goes into the jig at its install op, in the book order, and stays o
   assert.equal(at('fuselage.f22', null), 'jig') // nothing selected: the finished box
 })
 
-test('the install table names the book bonding order: front seat, panel, F22, rear seat, firewall, then F28', () => {
+test('the install table names the book bonding order: front seat, panel, F22, rear seat, then F28, then the firewall (moved after the spar fit, CP25 hint)', () => {
   const ch6 = readFileSync(fileURLToPath(new URL('../../graph/ch06.yaml', import.meta.url)), 'utf8')
   const ids = [...ch6.matchAll(/^- id: (\S+)/gm)].map((m) => m[1])
-  const bonds = ['fuselage.front_seat_bkhd', 'fuselage.panel', 'fuselage.f22', 'fuselage.rear_seat_bkhd', 'fuselage.firewall', 'fuselage.f28'].map((c) => INSTALL[c])
+  const bonds = ['fuselage.front_seat_bkhd', 'fuselage.panel', 'fuselage.f22', 'fuselage.rear_seat_bkhd', 'fuselage.f28', 'fuselage.firewall'].map((c) => INSTALL[c])
   for (const b of bonds) assert.ok(ids.includes(b), b)
   const pos = bonds.map((b) => ids.indexOf(b))
   assert.deepEqual([...pos].sort((a, b) => a - b), pos)

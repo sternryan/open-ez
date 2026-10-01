@@ -1,0 +1,304 @@
+# Chapter 14 — centre-section spar (plans pp. 14-1 to 14-11; scan pages 84-94). Built in a jig, then slid into the fuselage from the side.
+# Template-only parts (cap trough templates on A11) are representational. The wing attach bolt stations are not printed; they come with chapter 19.
+- id: f14.jig
+  chapter: 14
+  title: Build the spar jig
+  summary: Cut a particle-board upright, lay out the swept top view on it, Bondo it true to the bench, and set the three shelf parts square to it.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [spar.jig]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 84}
+    - {doc: scan-1980, scan_pp: 89}
+  completion:
+    - Upright 112.92 in long and 12.5 in wide, swept top view drawn on it
+    - Upright fixed to the bench with Bondo and checked straight
+    - Shelf parts A, B and C on supports E, F and G, square to the upright
+- id: f14.foam-box
+  chapter: 14
+  title: Foam box in the jig
+  summary: Cut all the spar foam, tape the aft-face PVC sheet to the shelf, then bond the two urethane cores to it. Fit the end bulkheads a quarter inch proud of the jig and carve dishes at the outboard attach points.
+  variants: [both]
+  requires: [f14.jig]
+  components: [spar.box, spar.jig, spar.bulkheads]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 84}
+    - {doc: scan-1980, scan_pp: 90}
+  completion:
+    - CS1 laid release-taped on the shelf; CS2 and CS3 sized flush to the jig
+    - CS2 and CS3 bonded with micro, nailed and pine-stick held
+    - End bulkheads CS5 and CS8 fitted 1/4 in proud of the jig
+    - Clearance dishes carved at the outboard attach points
+- id: f14.cs4-forward
+  chapter: 14
+  title: Forward-face skin pieces
+  summary: Glass three PVC pieces that will become the forward face, one BID ply at 45 degrees each, with a peel-ply border, then knife-trim them.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [spar.box]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "CS4 forward face pieces, 45 deg, layup 1"}
+  sources:
+    - {doc: scan-1980, scan_pp: 84}
+  completion:
+    - Three CS4 PVC pieces cut
+    - One BID ply at 45 degrees on each, peel-ply border about 1 in
+    - Knife-trimmed after the first cure
+- id: f14.lwa-fabricate
+  chapter: 14
+  title: Fabricate the LWA fittings
+  summary: Cut the five wing-attach aluminium fittings, LWA1 to LWA5, from the printed patterns, clean and sand them dull, and round their corners. LWA4 and LWA5 take the enlarged heights from the newsletter correction.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [spar.lwa]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 85}
+    - {doc: scan-1980, scan_pp: 90}
+  changes:
+    - {cp: 43, lpc: 119, class: "?", status: verified, kind: official, note: "LWA4 grows to 1.75 by 2 in and LWA5 to 2.25 by 2 in, leaving more room when drilling the wing bolt holes."}
+  completion:
+    - LWA1 (6), LWA2 (4), LWA3 (4), LWA4 (8) and LWA5 (2) cut from 2024-T3
+    - LWA4 and LWA5 cut to the CP43 LPC 119 sizes, not the printed ones
+    - Edges cleaned and sanded dull, corners radiused
+- id: f14.interior-layups
+  chapter: 14
+  title: Interior layups 2, 3 and 4
+  summary: One wet session. Pull the nails, glass the box inside, set the two interior bulkheads 27 in from centre, then lay the inboard and outboard UND strips with their LWA1 fittings and a BID over each. Weight each stack under plastic.
+  variants: [both]
+  requires: [f14.foam-box, f14.cs4-forward, f14.lwa-fabricate]
+  components: [spar.box, spar.bulkheads, spar.lwa]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside of box, all faces and bulkheads, 45 deg, layup 2"}
+    - {cloth: BID, plies: 1, where: "over interior bulkheads CS6 and CS7, 1 in lap (5 in at attach points), layup 3"}
+    - {cloth: UND, plies: 3, where: "inboard attach, 4 in wide, strips 10, 8 and 6 in, layup 3"}
+    - {cloth: BID, plies: 1, where: "over inboard LWA1, 1 in lap"}
+    - {cloth: BID, plies: 1, where: "over outboard bulkheads, 5 in inboard lap, layup 4"}
+    - {cloth: UND, plies: 3, where: "outboard attach, 4 in wide, strips 15, 13 and 11 in, layup 4"}
+    - {cloth: BID, plies: 1, where: "final over outboard LWA1, lapping onto the bulkhead"}
+  sources:
+    - {doc: scan-1980, scan_pp: 84}
+    - {doc: scan-1980, scan_pp: 85}
+    - {doc: scan-1980, scan_pp: 92}
+    - {doc: scan-1980, scan_pp: 93}
+    - {doc: scan-1980, scan_pp: 94}
+  changes:
+    - {cp: 25, lpc: 28, class: MEO, status: verified, kind: official, note: "The outboard LWA1 setback is measured outside the end bulkhead, and the printed inside figure becomes 0.75 in. Flox-transition the edges of every metal part."}
+    - {cp: 32, lpc: 99, class: DES, status: verified, kind: official, note: "UND layups 3 and 4 lie on CS2 and CS3 in the E and F sections and on CS1 only in G and H; they do not lap onto the interior bulkheads."}
+  completion:
+    - Nails pulled, inside slurried, one BID ply at 45 degrees over all faces and bulkheads
+    - CS6 and CS7 set 27 in from centre with wet micro
+    - Inboard UND strips of 10, 8 and 6 in with LWA1, then BID over
+    - Outboard UND strips of 15, 13 and 11 in with LWA1 set back 0.75 in, then BID over
+    - About 5 lb weight on each stack under plastic
+- id: f14.close-box
+  chapter: 14
+  title: Close the box
+  summary: Wet-micro the three CS4 pieces onto the forward face with butt joints, let the box cure two to three days, then pull it from the jig.
+  variants: [both]
+  requires: [f14.interior-layups]
+  components: [spar.box]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 84}
+  completion:
+    - Three CS4 pieces bonded with butt joints
+    - Cured two to three days
+    - Box lifted from the jig undamaged
+- id: f14.cap-troughs
+  chapter: 14
+  title: Carve the cap troughs
+  summary: Lay the box forward face down, mark the five trough points on the aft face, slice off the foam skin there, and sand eight shallow troughs using the A11 templates. Chamfer the forward edges. Do not cut deep.
+  variants: [both]
+  requires: [f14.close-box]
+  components: [spar.box]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 85}
+    - {doc: scan-1980, scan_pp: 88}
+  completion:
+    - Five trough points marked on the aft face
+    - Eight troughs sanded to the A11 templates (templates not in the owner's set, so the trough shape is representational)
+    - Forward edges chamfered 1/4 by 1 in
+    - Troughs left shallow, per the Canard Pusher caution
+- id: f14.shearweb-lwa45
+  chapter: 14
+  title: Aft shear web and LWA4, LWA5
+  summary: Pocket the aft face and flox in four LWA4 and two LWA5 flush with it, round the foam corners, then lay the aft shear web across both cap positions and peel-ply it.
+  variants: [both]
+  requires: [f14.cap-troughs]
+  components: [spar.box, spar.lwa]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "aft-face shear web, 45 deg, full span, layup 5 (or UND at +45 and -45)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 85}
+    - {doc: scan-1980, scan_pp: 86}
+  changes:
+    - {cp: 25, lpc: 26, class: OPT, status: verified, kind: official, note: "Optional: use UND in place of BID for spar layups 5, 6 and 8, which saves about 3.5 lb. The BID layup is the baseline here."}
+  completion:
+    - Pockets cut and four LWA4 and two LWA5 floxed flush with the aft face
+    - Foam corners radiused
+    - Three BID plies at 45 degrees full span under both caps (or the UND option)
+    - Peel-ply on
+- id: f14.spar-caps
+  chapter: 14
+  title: Lay the spar caps
+  summary: Dam the aft face and lay the UND caps in the troughs. The top cap has twelve plies and the bottom nine, each stepping in along the span. Round the trailing edge and sand to depth.
+  variants: [both]
+  requires: [f14.shearweb-lwa45]
+  components: [spar.cap_top, spar.cap_bottom]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 12, where: "top spar cap, 3 in wide, 4 full span then 5 in taper per side"}
+    - {cloth: UND, plies: 9, where: "bottom spar cap, 3 in wide, 3 full span then 7 in taper per side"}
+  sources:
+    - {doc: scan-1980, scan_pp: 85}
+    - {doc: scan-1980, scan_pp: 86}
+  completion:
+    - Aft face dammed with grey-tape release; peel ply pulled from the trough first
+    - Top cap 12 plies, four full length, then each ply 5 in shorter per side
+    - Bottom cap 9 plies, three full length strips, then each ply 7 in shorter per side
+    - Trailing edge rounded about 3/16 in; sanded depth no more than 0.04 in
+- id: f14.spruce-layup6
+  chapter: 14
+  title: Spruce blocks and layup 6
+  summary: Micro four small spruce blocks flush, two each side of centre, top and bottom, then wrap the spar in layup 6 and flox LWA2 and LWA3 over the remaining metal.
+  variants: [both]
+  requires: [f14.spar-caps]
+  components: [spar.spruce_blocks, spar.lwa, spar.box]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "around three sides, leading edge to leading edge, 45 deg, layup 6 (or UND, four plies at +45 and -45)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 86}
+  changes:
+    - {cp: 25, lpc: 26, class: OPT, status: verified, kind: official, note: "Optional UND substitution for layup 6 as well as layups 5 and 8."}
+  completion:
+    - Four 1 by 1 by 3 spruce blocks at BL plus and minus 7.5, flush
+    - Layup 6 around three sides at 45 degrees
+    - LWA2 (two) and LWA3 (two) floxed in place
+- id: f14.lwa23-layup7
+  chapter: 14
+  title: LWA2 and LWA3 layup 7
+  summary: Radius the LWA2 and LWA3 corners, glass three UND plies over them, then lay a single wide BID at 45 degrees over the UND on the aft face only.
+  variants: [both]
+  requires: [f14.spruce-layup6]
+  components: [spar.lwa]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 3, where: "3 in wide over each LWA2 and LWA3, layup 7"}
+    - {cloth: BID, plies: 1, where: "5 in wide at 45 deg over layup 7, aft face only"}
+  sources:
+    - {doc: scan-1980, scan_pp: 86}
+    - {doc: scan-1980, scan_pp: 87}
+  completion:
+    - LWA2 and LWA3 corners radiused 1/8 in
+    - Three 3 in UND plies over top and bottom outboard and top inboard
+    - One 5 in BID at 45 degrees over the UND, aft face only; edges peel-plied
+- id: f14.baggage-hole
+  chapter: 14
+  title: Baggage access hole
+  summary: Cut a rounded access panel in the forward face, centred on the spar, then sand the foam edges to glass-to-glass and lay layup 8 across it.
+  variants: [both]
+  requires: [f14.lwa23-layup7]
+  components: [spar.box]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "full span at the baggage hole, glass to glass, layup 8 (or UND, two plies)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+    - {doc: scan-1980, scan_pp: 88}
+  changes:
+    - {cp: 25, lpc: 26, class: OPT, status: verified, kind: official, note: "Optional UND substitution for layup 8 (two plies instead of three BID)."}
+  completion:
+    - Hole about 5 in high and 14 in long, centred, outboard corners rounded
+    - Foam edges sanded glass to glass
+    - Layup 8 full span, lapping 1 in onto top and bottom
+- id: f14.end-bulkhead-layup9
+  chapter: 14
+  title: End bulkhead layup 9
+  summary: Flox the corners round at both outboard end bulkheads, then glass one BID at 45 degrees over each.
+  variants: [both]
+  requires: [f14.baggage-hole]
+  components: [spar.bulkheads]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "over each outboard bulkhead CS5 and CS8, layup 9"}
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+  completion:
+    - Corners floxed round on CS5 and CS8
+    - One BID ply at 45 degrees over each outboard bulkhead
+- id: f14.nut-access-hole
+  chapter: 14
+  title: Wing-nut access hole
+  summary: Cut a 2 1/4 in hole through the bottom at BL 53.5 so a wing nut can be reached, and seal the foam edge with dry micro.
+  variants: [both]
+  requires: [f14.end-bulkhead-layup9]
+  components: [spar.box]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+    - {doc: scan-1980, scan_pp: 92}
+  completion:
+    - Hole 2 1/4 in across through the bottom at BL 53.5
+    - Foam edge sealed with dry micro
+- id: f14.fit-fuselage
+  chapter: 14
+  title: Fit the spar to the fuselage
+  summary: Slide the spar in from one side, centre it on a firewall centreline, check skew from the tips to the nose, and level the outboard fittings against level longerons. Shim as needed. The plywood firewall is still loose at this point.
+  variants: [both]
+  requires: [f14.nut-access-hole, f05.spar-cutout, f07.skin-left]
+  components: [spar.box]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+    - {doc: scan-1980, scan_pp: 88}
+  changes:
+    - {cp: 25, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Newsletter hint: the swept kink fouls the aft seat bulkhead. Saw a shallow wedge from it, then re-bond it with wet micro once the spar is in."}
+  completion:
+    - Spar slid in from the side and centred on the firewall centreline
+    - Skew checked from the tips to the nose
+    - Outboard fittings levelled with level longerons, shimmed if needed
+    - Wedge cut from the aft seat bulkhead to clear the kink, kept to re-bond
+- id: f14.bond-spar
+  chapter: 14
+  title: Bond the spar in
+  summary: Pull the spar back two inches, epoxy and flox, and slide it home. Tape it round at the skin and to the firewall inside, bond four spruce wedges, bridge the spar to the longerons with BID, and bolt the engine-mount angles on.
+  variants: [both]
+  requires: [f14.fit-fuselage, f04.firewall-fwd, f06.bond-firewall]
+  components: [spar.box, spar.em12]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "round the spar at the fuselage skin, 2 in wide, 45 deg"}
+    - {cloth: BID, plies: 1, where: "spar to firewall tape, inside"}
+    - {cloth: BID, plies: 10, where: "spar to longeron reinforcement at each of four W16 places; first two lap over the longeron"}
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+    - {doc: scan-1980, scan_pp: 88}
+  changes:
+    - {cp: 25, lpc: 19, class: MEO, status: verified, kind: official, note: "The engine-mount extrusions refer to chapter 14, not chapter 6, in two places."}
+  completion:
+    - Spar floxed and slid home against the firewall
+    - Two BID plies round the spar at the skin and one BID tape to the firewall inside
+    - Four W16 spruce wedges epoxied; ten BID plies bridging spar to longerons at each
+    - EM12 angles wet-installed about 1.6 in aft of the firewall, sixteen bolts through
+- id: f14.sh1-tabs
+  chapter: 14
+  title: Aft harness tabs (SH1)
+  summary: Bolt two SH1 plates to the forward bolts on top of the spar. They carry the aft shoulder harness.
+  variants: [both]
+  requires: [f14.bond-spar]
+  components: [spar.sh1]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 87}
+    - {doc: scan-1980, scan_pp: 48}
+  completion:
+    - Two SH1 plates bolted on with AN4-17A bolts
+    - Plates sit where the aft harness attaches (see the shoulder harness step in chapter 8)
