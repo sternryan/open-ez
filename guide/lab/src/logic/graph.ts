@@ -26,8 +26,8 @@ export function visibleOps(graph: GraphLite, variant: string): Op[] {
     .filter((o): o is Op => !!o && (o.variants.includes('both') || o.variants.includes(variant)))
 }
 
-/** Reference chapters (the plans' cover, layup skills) and the fuselage chapters (4-6) are not part of the canard build. */
-const NON_CANARD = new Set([0, 3, 4, 5, 6])
+/** Reference chapters (the plans' cover, layup skills) and the fuselage and gear chapters (4-9) are not part of the canard build. */
+const NON_CANARD = new Set([0, 3, 4, 5, 6, 7, 8, 9])
 
 /**
  * The ops the bottom bar shows: the variant's canard build chapters, in graph order.

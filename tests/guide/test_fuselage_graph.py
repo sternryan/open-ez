@@ -104,7 +104,7 @@ def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
 
     g = load_graph(GRAPH)
     order = topo_order(g)
-    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6)] == CANARD_ORDER
+    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6, 7, 8, 9)] == CANARD_ORDER
     # plans pp 4-1 to 4-3: front seat, rear seat, panel/F22/F28, firewall
     assert [i for i in order if g.ops[i].chapter == 4] == [
         "f04.front-seat-bkhd-front", "f04.front-seat-bkhd-back", "f04.rear-seat-bkhd-foam",

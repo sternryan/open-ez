@@ -1,0 +1,132 @@
+# Chapter 8 — roll-over structure, harness and belt attachments, step (plans pp. 8-1 to 8-3; scan pages 47-49). The aft shoulder harness
+# bolts to the spar tabs in chapter 14, so only the front harness is built here. The box's tilt on the seat back is "bevel as required" in the book.
+- id: f08.roll-over-foam
+  chapter: 8
+  title: Roll-over box foam pieces
+  summary: Cut the roll-over foam to the printed shapes, trial-fit the front piece and both sides against the rear face of the front seat bulkhead, then chamfer the joints.
+  variants: [both]
+  requires: [f04.front-seat-bkhd-back]
+  components: [fuselage.rollover, fuselage.front_seat_bkhd]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 47}
+  changes:
+    - {cp: 26, lpc: 37, class: MEO, status: verified, kind: official, note: "The roll-over sides are 13 in long, not the 12.7 printed.", annotation_pp: 47}
+  completion:
+    - Front piece cut 23 wide with the shoulders and peak marked
+    - Side pieces cut 13 long, plus the small piece and the triangle
+    - Pieces dry-fitted on the seat bulkhead and edges chamfered
+- id: f08.roll-over-inside
+  chapter: 8
+  title: Inserts and inside glass
+  summary: Cut the three small plywood inserts, set them flush with the inside faces of the foam, and lay one BID ply over the inside. Cure, then trim the edges.
+  variants: [both]
+  requires: [f08.roll-over-foam]
+  components: [fuselage.rollover]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 1, where: "inside faces"}
+  sources:
+    - {doc: scan-1980, scan_pp: 47}
+    - {doc: scan-1980, scan_pp: 48}
+  changes:
+    - {cp: 27, lpc: 52, class: MEO, status: verified, kind: official, note: "The harness insert spacing is 4.0 in, not 4.5, which moves the shoulder-harness insert outboard half an inch.", annotation_pp: 47}
+  completion:
+    - Three inserts, each 1.25 square, set flush inside
+    - Harness insert spacing set at 4.0 in
+    - One BID ply cured and trimmed
+- id: f08.roll-over-bond
+  chapter: 8
+  title: Bond the box in place
+  summary: Sand the cured fuselage skins where the box lands, then micro-bond the box to the seat bulkhead and to both sides.
+  variants: [both]
+  requires: [f08.roll-over-inside, f07.skin-left]
+  components: [fuselage.rollover, fuselage.front_seat_bkhd]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 48}
+  completion:
+    - Skin sanded dull where the box sits
+    - Box micro-bonded to the bulkhead and both sides
+    - Joints filled with no gaps
+- id: f08.roll-over-outside
+  chapter: 8
+  title: Outside glass and buildups
+  summary: Round the peak, then glass the outside with two BID plies lapping an inch onto the seat bulkhead and sides. Build up twelve plies over each insert and three more over the peak.
+  variants: [both]
+  requires: [f08.roll-over-bond]
+  components: [fuselage.rollover]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 2, where: "outside skin, 1 in overlap onto seat bulkhead and sides"}
+    - {cloth: BID, plies: 2, where: "local reinforcement"}
+    - {cloth: BID, plies: 12, where: "buildup over each of 3 inserts"}
+    - {cloth: BID, plies: 3, where: "over the peak"}
+  sources:
+    - {doc: scan-1980, scan_pp: 48}
+  completion:
+    - Peak radiused before glassing
+    - Outside skin laps an inch onto bulkhead and sides
+    - Twelve-ply buildup over each of the three inserts
+    - Three extra plies over the peak
+- id: f08.access-holes
+  chapter: 8
+  title: Map slot and baggage hole
+  summary: After cure, cut the map-case slot in the right side only and the small baggage hole at the rear only.
+  variants: [both]
+  requires: [f08.roll-over-outside]
+  components: [fuselage.access_holes]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 48}
+  completion:
+    - Map slot cut in the right side only
+    - Baggage hole cut in the rear only, 3.75 in across
+    - Cut edges smooth and sealed
+- id: f08.shoulder-harness
+  chapter: 8
+  title: Front shoulder harness
+  summary: Build up the harness pads, drill the quarter-inch holes through the roll-over structure, and bolt the front harness on. The aft harness goes on the spar tabs in chapter 14.
+  variants: [both]
+  requires: [f08.roll-over-outside]
+  components: [fuselage.harness_attach, fuselage.rollover]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 2, where: "over the shoulder-harness pads"}
+  sources:
+    - {doc: scan-1980, scan_pp: 48}
+  completion:
+    - Two BID plies over each harness pad
+    - Quarter-inch holes drilled at the insert locations
+    - Front harness bolted on
+- id: f08.belt-attach
+  chapter: 8
+  title: Seat-belt attachments
+  summary: At four places, press a rough plywood insert into wet flox, glass it with seven BID plies, drill a quarter-inch hole and bolt the aluminium angle on. Front belts sit forward of the front seat bulkhead and rear belts forward of the rear one.
+  variants: [both]
+  requires: [f07.belt-insert, f07.skin-left]
+  components: [fuselage.belt_attach, fuselage.belt_insert]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 7, where: "each of 4 belt-attach pads"}
+  sources:
+    - {doc: scan-1980, scan_pp: 49}
+  completion:
+    - Four inserts bedded in wet flox
+    - Seven BID plies over each, lapping an inch all round
+    - Holes drilled quarter inch and angles bolted on
+    - Positions taken from the side-view sketch, which is not to scale
+- id: f08.step
+  chapter: 8
+  title: Fuselage step
+  summary: Cut and bend the aluminium step to its outline, drill the four countersunk holes, and mount it on the side.
+  variants: [both]
+  requires: [f08.belt-attach]
+  components: [fuselage.step]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 49}
+  completion:
+    - Step bent with the printed minimum radius
+    - Four quarter-inch countersunk holes drilled
+    - Step mounted and tight

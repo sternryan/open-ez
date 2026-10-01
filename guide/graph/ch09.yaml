@@ -1,0 +1,144 @@
+# Chapter 9 — main landing gear (plans pp. 9-1 to 9-4; scan pages 50-53; axle height and the 12 degree tip-back line are on the back cover, p171).
+# The strut and the extrusion outlines are fitted shapes: the book prints no strut outline and the extrusion sheet is not in hand. The axle station is book.
+- id: f09.strut-stiffen
+  chapter: 9
+  title: Stiffen the gear strut
+  summary: Sand the prefabricated strut dull, glue three nails on as stops, coat it with epoxy, and wrap eight UND plies around it at 30 to 40 degrees. Do this before the tabs and axles go on.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [gear.strut]
+  geometry_visible: false
+  materials:
+    - {cloth: UND, plies: 8, where: "gear strut at 30-40 degrees, 4 each face"}
+  sources:
+    - {doc: scan-1980, scan_pp: 50}
+  changes:
+    - {cp: 26, lpc: 35, class: MEO, status: verified, kind: official, note: "The landing-brake paragraph on this page should also mention the other important landing-brake details.", annotation_pp: 50}
+  completion:
+    - Strut sanded dull, nails glued on
+    - Epoxy coat applied
+    - Eight UND plies laid at 30 to 40 degrees, four on each face
+    - Strut stiffened before any tab or axle work
+- id: f09.jig-blocks
+  chapter: 9
+  title: Gear jig blocks
+  summary: Make four plywood blocks with a rounded top and a sharp bevelled edge, then bolt the gear tubes between the aluminium angles so they stand in the blocks.
+  variants: [both]
+  requires: [f05.gear-extrusions]
+  components: [gear.jig_blocks, fuselage.gear_extrusions]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 50}
+    - {doc: scan-1980, scan_pp: 53}
+  completion:
+    - Four blocks cut from quarter-inch ply, 5/8 hole bored in each
+    - Edges bevelled sharp, about 0.65 in of tube showing each side
+    - Tubes bolted between the angles
+    - Strut and extrusion shapes in the model are fitted, not printed; only the block dimensions are book
+- id: f09.position-gear
+  chapter: 9
+  title: Set the gear leg
+  summary: Invert the fuselage and level it on the top longerons, centre the leg, and set the axle 15 in forward of the straight board at the spar's aft face (F.S. 110.5). Fix with Bondo, scribe the tube marks, then remove the leg.
+  variants: [both]
+  requires: [f09.jig-blocks, f09.strut-stiffen]
+  components: [gear.strut, gear.jig_blocks, gear.datum_board, fuselage.gear_extrusions]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 50}
+    - {doc: scan-1980, scan_pp: 51}
+    - {doc: scan-1980, scan_pp: 171}
+  changes:
+    - {cp: 36, lpc: 112, class: MEO, status: verified, kind: official, note: "A reference on this page to Chapter 8 should read Chapter 14. The datum board sits at the spar's aft face, which is built in chapter 14.", annotation_pp: 50}
+  completion:
+    - Fuselage upside down and levelled on the top longerons
+    - Datum board straight and square at the spar's aft face (B.L. 26.75, F.S. 125.5)
+    - Leg centred side to side
+    - Axle centreline 15 in forward of the board, F.S. 110.5 (book); axle height W.L. -22 and the 12 degree tip-back line are from the back-cover three-view
+    - Strut and extrusion shapes are fitted, not printed; the axle station is book
+    - Tube positions scribed on the Bondo, leg removed
+- id: f09.tab-layup
+  chapter: 9
+  title: Layup of the attach tabs
+  summary: Wet out and clamp the UND and BID pads on each of the four tabs, trim them flush, then bore the 5/8 holes through.
+  variants: [both]
+  requires: [f09.position-gear]
+  components: [gear.tabs]
+  geometry_visible: false
+  materials:
+    - {cloth: UND, plies: 18, where: "per attach tab, pad 2.5 x 12 in, 4 tabs"}
+    - {cloth: BID, plies: 18, where: "per tab, 2.5 x 3.5 over the leading edge"}
+    - {cloth: BID, plies: 18, where: "per tab, 2.5 x 2.5 pad"}
+  sources:
+    - {doc: scan-1980, scan_pp: 51}
+    - {doc: scan-1980, scan_pp: 53}
+  completion:
+    - Eighteen plies of each pad cut for each of the four tabs
+    - Pads wet out and clamped on every tab
+    - Edges trimmed flush
+    - 5/8 holes bored through
+- id: f09.tab-assembly
+  chapter: 9
+  title: Tubes into the tabs
+  summary: Put the tubes back in at the scribed marks, flox fillets round them, and add UND and BID pads in the corners. Wrap each tube with two BID plies over a foam block, then add washers and plugs.
+  variants: [both]
+  requires: [f09.tab-layup]
+  components: [gear.tabs, fuselage.gear_extrusions]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 2, where: "45 degree wrap round each tube"}
+    - {cloth: BID, plies: 2, where: "over each washer"}
+  sources:
+    - {doc: scan-1980, scan_pp: 51}
+    - {doc: scan-1980, scan_pp: 53}
+  changes:
+    - {cp: 30, lpc: 83, class: "?", status: verified, kind: official, note: "The washers are AN960-1016, not the 1018 printed, and four more are needed on top of the two called out.", annotation_pp: 53}
+  completion:
+    - Tubes seated at the scribed marks
+    - Flox fillets and corner pads laid
+    - Two BID plies wrapped round each tube at 45 degrees
+    - Washers and plugs fitted, two BID plies over each washer
+- id: f09.axles-brakes
+  chapter: 9
+  title: Axles, toe-in and brakes
+  summary: Fit the axle plates, set the toe-in with squares, glass three BID plies over each face of the lower leg, bolt each axle on with four bolts, and mount the brake calipers.
+  variants: [both]
+  requires: [f09.tab-assembly]
+  components: [gear.axles]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 3, where: "inside and outside of lower leg at the axle"}
+  sources:
+    - {doc: scan-1980, scan_pp: 52}
+    - {doc: scan-1980, scan_pp: 53}
+  changes:
+    - {cp: 27, lpc: 45, class: OPT, status: verified, kind: official, note: "Optional: move the 3/8 holes in the four extrusions up 0.4 in, keeping the edge distances; the whole gear sits 0.4 in higher.", annotation_pp: 52}
+    - {cp: 30, lpc: 75, class: "?", status: verified, kind: official, note: "The axle bolt position in the lower-left sketch is not accurate. Keep a mandatory 1/16 in between strut and caliper.", annotation_pp: 51}
+    - {cp: 30, lpc: 80, class: MEO, status: verified, kind: official, note: "The extrusion shown full size on the A sheet refers to page 9-3.", annotation_pp: 52}
+    - {cp: 30, lpc: 85, class: MEO, status: verified, kind: official, note: "The A5 sheet's full-size reference should point to page 9-3.", annotation_pp: 52}
+  completion:
+    - Toe-in B minus A between 0.2 and 0.45 in over 24 in squares
+    - Three BID plies on each face of the lower leg
+    - Four bolts per axle
+    - Calipers fitted with 1/16 in clear of the strut
+    - Axle station held at F.S. 110.5 (book), height W.L. -22
+- id: f09.brake-lines
+  chapter: 9
+  title: Brake lines
+  summary: Run the plastic brake line up the trailing edge of the strut round its inboard face, tape it down with one BID ply, drill the firewall hole and pot the line through with RTV.
+  variants: [both]
+  requires: [f09.axles-brakes, f04.firewall-fwd]
+  components: [gear.brake_lines]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 1, where: "45 degree tape over the brake line, 1 in lap"}
+  sources:
+    - {doc: scan-1980, scan_pp: 52}
+    - {doc: scan-1980, scan_pp: 53}
+  changes:
+    - {cp: 31, lpc: 89, class: MEO, status: verified, kind: official, note: "The sketch is wrong: the brake line goes round the inboard face of the strut, so the strut sits between disc and line.", annotation_pp: 52}
+    - {cp: 48, lpc: 127, class: "?", status: verified, kind: official, note: "An inspection item, not a build step: check nylon brake lines for heat or sunlight damage and replace if exposed."}
+  completion:
+    - About 72 in of line each side run along the trailing edge
+    - Line routed round the inboard face of the strut
+    - One BID tape ply over the line, an inch lap each side
+    - Firewall hole drilled and the line potted with RTV

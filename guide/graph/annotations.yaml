@@ -12,3 +12,10 @@
 - {scan_pp: 34, cp: 25, lpc: 17, class: MEO, text: "Both sides means left and right, forward face only (note written as LCP #7)", confirmed: true}
 - {scan_pp: 35, cp: 25, lpc: 25, class: DES, text: "Aluminium firewall allowed; fit the insulation later", confirmed: true}
 - {scan_pp: 36, cp: 25, lpc: 5, class: MEO, text: "Side heights are 10 in apart, the last interval 3 in", confirmed: true}
+# Read by the captain on the page images 2026-10-01; these await the owner's look.
+- {scan_pp: 45, cp: 27, lpc: 46, class: OPT, text: "F28 longeron notch: lower it a quarter inch (the CP entry names no page, so the linker cannot score it)", confirmed: false}
+- {scan_pp: 45, cp: 27, lpc: 50, class: MEO, text: "Section A-A is not accurate; use the A2 sheet", confirmed: true}
+- {scan_pp: 47, cp: 26, lpc: 37, class: MEO, text: "Roll-over sides are 13, not 12.7", confirmed: true}
+- {scan_pp: 47, cp: 27, lpc: 52, class: MEO, text: "Roll-over insert spacing 4.5 becomes 4.0", confirmed: true}
+- {scan_pp: 50, cp: 26, lpc: 35, class: MEO, text: "Landing brake paragraph: add the other important landing brake details", confirmed: true}
+- {scan_pp: 52, cp: 27, lpc: 45, class: OPT, text: "Move the 3/8 extrusion holes up 0.4", confirmed: true}
