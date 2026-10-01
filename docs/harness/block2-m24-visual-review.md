@@ -132,3 +132,74 @@ as book, nothing invented. Visual bar: the earlier milestones' lab.
 Re-shoot and re-review only these frames: chapter 11 from `r30.elev-hinges` to `r30.elev-cs11`, plus
 `r30.elev-fuselage-clearance`, `f13.strut-reinforce` to `f13.ng31-f6`, `f13.rig-nose-gear` (end), `f13.nose-door`, and the
 390-wide readout. Do this in WebKit at 1180x820 and 390x844. Nothing else in the milestone needs another look.
+
+---
+
+# Re-review (fix round: fabd031, ebf8510, d296412, bfa261c)
+
+VERDICT: PASS WITH FIXES (one cheap trust fix, R1, before push; the rest are notes)
+
+Method: the same as round 1, with fresh evidence and none of the captain's shots used. I rebuilt the site at bfa261c into the
+scratchpad and drove it through `window.__lab` in WebKit at 1180x820 and 390x844. Screenshots are under
+`.../scratchpad/m24rev/shots2/`. To check for regressions I built c6a0ce1 in a scratch worktree (since removed) and
+compared fresh-page captures pixel by pixel, the same op on both trees. No page errors on either tree.
+
+## The six fixes, checked
+
+1. **Elevators visible: pass.** From `r30.elev-hinge-slots` on, the elevator sits in its cove behind the canard and is
+   labelled "Cove cut for the elevators (fitted shape)" (`webkit-1180-hinge-slots.png`, `-hinges.png`, `-pockets.png`,
+   `-cs11.png`). At exactly 30 down and 15 up, the trailing edge visibly drops and rises, matching the readout ("Down 30.0
+   deg (limit 30)" / "Up 15.0 deg (target 15, floor 12.5)"; `travel-pair.png`). The chapter 12 installed views now show
+   the elevators and the striped tube with a legible "Elevators (fitted shape)" label (`-drill-tabs.png`,
+   `-clearance.png`). The tube label reads "1 in OD book; section fitted, unresolved", which is my item 7 handled honestly.
+2. **Bench and box: pass.** `f13.strut-reinforce` and `f13.worm-drive-bench` show the NG-1L strut on the bench. NG30 and
+   the castings build up on the bench through `f13.ng3-ng4`, then the box sits on F22 at `f13.ng31-f6` (`C.png`, `D.png`).
+3. **Nose door: pass.** The shot is from above and the "Nose door (fitted shape)" label is legible (not collapsed, not
+   hidden). The panel itself reads only as an outline, because it is a flush 0.08 in panel (`-door.png`).
+4. **Phone readout: pass.** At 390 the motion row has its own line, with no overlap or truncation (`G.png`).
+5. **Stowed-wheel labels: pass.** After retraction both wheel marks have opacity 0, so nothing reads "F.S. 17" at
+   F.S. 34 (`-rig-end.png`). Mid-rig, both conflict marks are legible (`-rig-mid.png`), and the readout keeps the conflict
+   row throughout.
+6. **Lower bound: pass.** `cg_lower_bound.included` no longer contains `f22` or `f28`. Both are excluded with "modelled …
+   above the CP26 prototype weight …: under review". The readout reads "≥ 55.6 lb at FS 82.3, lower bound, 7 parts …";
+   prototype numbers were not substituted.
+
+**Regression spot-check: pass, 0 px different.** I compared fresh-page captures at c6a0ce1 and bfa261c of
+`r30.top-skin`, `r30.align-canard`, `r30.install-pins`, `f07.canard-cutout`, `f06.trial-fit` and `f09.brake-lines`.
+Every one diffs to `None` (`cmp-old-*.png` against `cmp-new-*.png`).
+
+## New finding, made visible by the cove
+
+**R1. Fix before push (cheap). The installed elevators run through the fuselage, on the op that checks they clear it.**
+The placement comes from the captain's reading of cobelu C-1: right elevator B.L. +9.3 to +65, left -65 to +7.7. But the
+fuselage's inner width at F22 is 23 in (`cockpit_width`, book), so its sides stand at about B.L. ±11.5 to ±12. Both
+elevators therefore pass inside the fuselage sides, and the left one crosses the cockpit. The top view of
+`r30.elev-fuselage-clearance` shows the striped elevator band continuous across the box between the sides
+(`webkit-1180-installed-top-centreline.png`). The op's own text is "elevator-to-fuselage clearance 1/16 in", which this
+geometry contradicts. Nothing here is invented: it is a figure-datum reading that a book clearance contradicts. That
+makes it a conflict, and the lab currently draws it as settled.
+
+Fix:
+- Flag the elevator span placement (inboard ends 9.3 / 7.7) as `conflict` in provenance, citing both C-1 and the 1/16 in
+  side clearance.
+- Extend the installed label: "Elevators (fitted shape; span vs fuselage sides unresolved)".
+- Add an owner item to re-read C-1's datum.
+
+Do not move the elevators to make the picture tidy.
+
+## Rulings on the captain's new owner items
+
+- **The 9.3 in root notch with no elevator in it (canard subject, right half only): owner-visible note; optional cheap
+  fix.** The notch is the inboard end of the same span question as R1. Once R1 flags the span, the empty notch says the
+  same thing and needs nothing more. If it is cheap, limit the canard-subject clip to the right elevator's own span
+  (9.3 to 65) so the canard frames show no empty slot. Not blocking.
+- **CS-10/CS-11 lead hidden inside the elevator skin: ignore (correct).** Lead set into the foam under the skin is the
+  real state, and the labels mark where it is. If wanted, the skin could be ghosted on `r30.elev-balance-pockets` and
+  `r30.elev-cs11` only.
+
+## Small notes (no action needed to push)
+
+- At 390 wide, the `f13.worm-drive-bench` frame shows the strut small at the top while "Instrument panel" and "Bottom
+  foam" labels take the foreground (`webkit-390-worm-drive.png`). iPad is fine.
+- The CG sub-line hides the new "under review" reasons behind "4 more". That is acceptable, because the ledger carries
+  them.
