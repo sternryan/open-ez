@@ -668,3 +668,45 @@ F22 1.44 lb, F28 0.19 lb and the instrument panel 2.13 lb, from CP26 page 2, pro
 | CP11 and CP10 hints | NG6 and NG7 sizes agree with p73 |
 
 These rows come from the research and were not re-checked by the captain.
+
+## Centre-section spar, firewall, controls, trim (M2.5)
+
+Page numbers are plans-1980 scan pages (p84 to p94 are chapter 14, p95 and p96 chapter 15, p97 to p104 chapter 16, p105 to p107 chapter 17). The captain read the spar values on the page images; the control and trim rows are the research's. The NC-5A trim belcrank and the extra spacer come from the cobelu ch30 transcription; the owner holds no scan of them. Paraphrases are our own words, 10 words or fewer. No plans text is reproduced.
+
+### Geometry table
+
+| value | citation | what the page says | status |
+|---|---|---|---|
+| spar forward face FS 118.5, aft face FS 125.0 (BL 0 to 23), kink BL 23, sweep 8.57, half span 56.46 | plans-1980:p88 | planform, chord 6.50 at the centreline | book, high |
+| spar_chord_square_outboard_in 6.43, spar_fwd_face_fs_tip 123.54, spar_aft_face_fs_bl_55_5 129.9 | plans-1980:p88 | chord times cos sweep; faces run out along the sweep | derived (aft: p88 hand digits agree to 0.01) |
+| face lengths outboard 33.834 forward, 32.865 aft; hard-point spacing 28.82 | plans-1980:p88 | lengths along the swept faces | book, high |
+| depth 8.50, top WL 22.0, bottom WL 13.5, bottom rises to WL 15.15, top flat to BL 25 | plans-1980:p88 | side elevation; bottom flat to about BL 9 and WL 21.7 label are medium | book, high and medium |
+| hard points: BL 25.0 WL 20.25 (one bolt), BL 53.5 WL 20.5 and 16.3 (two bolts) | plans-1980:p88 | per wing | book, high |
+| end bulkheads 6.30 by 6.83; CS1 foam 8.41, 7.94 at BL 23, 6.83 at ends | plans-1980:p90 | parts sheet | book, high |
+| cap tape 3.0 wide; ply 0.0375 laid (stock 0.035) | plans-1980:p85 | text | book, high |
+| top cap 12 plies (sum 972), bottom cap 9 plies (sum 705), total 1677; ply end BLs; full plies end at BL 55.5 | plans-1980:p86 | strip table | book, high |
+| spruce blocks 1x1x3 at BL +/-7.5; EM12 8.0 long, four off | plans-1980:p86, p87 | blocks and angle | book, high |
+| LWA1 to LWA5 sizes | plans-1980:p90, cp-text:p43 | all 2 wide, 2024-T3; LWA4 and LWA5 heights corrected to 1.75 and 2.25 | cp-corrected (CP43 LPC 119) |
+| LWA1 outboard setback 0.75 | cp-text:p25 | p85 printed 1.0 | cp-corrected (CP25 LPC 28) |
+| baggage hole 14 by 5 on the forward face; nut access hole 2.25 at BL 53.5 | plans-1980:p87, p88, p92 | top of the baggage hole near WL 20 is a hand tick | book, medium and high |
+| firewall FS 125; torque-tube hole 1 dia at BL 6.2R, WL 12.3 | plans-1980:p98, p101 | BL 6.2 from text; p101 ticks 4.8 and 9.2 are low | book |
+| rudder conduits at WL 8, 82 long | plans-1980:p103 | | book, high |
+| stick pivot planes FS 45.5 and 89.7 | plans-1980:p100 | hand digits | book, medium |
+| stick cant 5 inboard and 5 forward; roll 20 each way from the cant | plans-1980:p97, p98, p102 | | book, high |
+| CS103 6.1, CS110 39.2, CS105 42.9, CS106 3.8, CS115 4.2, CS116 4.4, CS121 29.5 | plans-1980:p98, p99, p102 | CS110, CS105, CS121 trim to fit | book, high |
+| CS119 4.1 | cp-text:p26 | plans printed 3.1 (CP26 LPC 29) | cp-corrected |
+| elevator arm 1.9 | plans-1980:p102 | GU CS12 schematic only | book, medium |
+| trim handle pivot WL 8.6, friction bolt WL 7.1, swages 5.6 and 6.2 | plans-1980:p106 | | book, high |
+| PTH leftmost end FS 49.5 derived, 49.8 label | plans-1980:p106 | panel face 40 plus 9.5; label differs by 0.3 | conflict, both carried |
+| sleeve BL 9.5, WL 9.6 and 8.3 | cp-text:p25 | CP25 addendum, not on the scan | cp-corrected, medium |
+| springs PTS 6.0/9.0, RTS 2.0/3.0, CS 0.5/0.25 | plans-1980:p105 | free and installed | book, high |
+| NC-5A trim belcrank at BL 9.2 on the left tube | cobelu:pC-1 | inboard end of the left tube | positioned-from-text, low |
+| extra 0.4 CS-202 spacer at the elevator-end rod end | cobelu:pch30 | GU lists two CS202, Roncz three | book, medium |
+
+### Ledger (data/mass_ledger.yaml `prototype_weights`)
+
+Centre-section spar 29.3 lb (29 lb 5 oz), CP26 page 2, a prototype BID layup of layups 5, 6 and 8. Reference only: there is no sourced spar CG, and `fuselage_cg` matches prototype rows by fuselage part name, so the row is in no moment sum and the overall CG stays "not yet computed". The UND option saves about 3.5 lb (CP25 LPC 26), derived about 25.8 lb, a note and not a row. Foam, metal and cap-cloth arithmetic stays a derived lower bound in the research, not a row.
+
+### Corrections and open points
+
+The old note on `fs_spar_aft_face` said the 118.5 forward face implied a 7 in spar; that was wrong. The spar is 6.50 deep fore-aft, its centreline aft face is FS 125.0 (the firewall line), and 125.5 is the swept aft face at BL 26.75 (125 + 3.75 tan 8.57 = 125.57). The value and `bl_gear_datum` did not change. The bottom cap has three full strips, not the four in the cobelu text: only three sums to 1677. LWA4 and LWA5 use the CP43 heights, with the printed sizes kept in the note. The NC-5A belcrank sits at BL 9.2 on the left tube, not BL 0 (BL 0 is the drawing's dimension datum). The p85 hand figure 29.84 is unresolved and unused (29.84 minus 28.82 is 1.02, close to the 1.0 setback, but unproven). The PTH end is carried as a 49.5 / 49.8 conflict. Not in config on purpose: the spar attach-bolt station (not printed; it comes with chapter 19), any pitch stop (none printed; stops are representational), spar-cap trough outlines, the firewall outline, console and stick positions beyond the two pivot planes, master-cylinder and bracket stations, and belcrank height. Roncz elevator travel stays the M2.4 value; the GU 20 and 22 appear only as a schematic note.
