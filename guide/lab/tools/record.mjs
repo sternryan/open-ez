@@ -29,7 +29,23 @@ const browser = await chromium.launch({ args: process.env.LAB_SWIFTSHADER === '1
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 })
 page.on('pageerror', (e) => console.error('page error:', e.message))
 await page.goto(`${url}${url.includes('?') ? '&' : '?'}rec=1`)
-await page.waitForFunction(() => window.__rec, null, { timeout: 180000 })
+// Poll on a timer, not on animation frames: a ?rec=1 page runs no frame loop. On a timeout, say what the page was doing.
+const logs = []
+page.on('console', (m) => logs.push(`${m.type()}: ${m.text()}`))
+try {
+  await page.waitForFunction(() => typeof window.__rec === 'object', null, { timeout: 120000, polling: 250 })
+} catch (e) {
+  const state = await page.evaluate(() => ({
+    readyState: document.readyState,
+    status: document.getElementById('status')?.textContent ?? null,
+    glLostShown: document.getElementById('gl-lost') ? !document.getElementById('gl-lost').hidden : null,
+    canvases: document.querySelectorAll('canvas').length,
+  })).catch((err) => ({ evaluateFailed: String(err) }))
+  console.error('window.__rec never appeared:', JSON.stringify(state))
+  for (const l of logs.slice(-20)) console.error('  console', l)
+  await browser.close()
+  process.exit(3)
+}
 const duration = await page.evaluate((t) => window.__rec.start(t), film)
 const ff = spawn('ffmpeg', ['-y', '-f', 'image2pipe', '-framerate', fps, '-c:v', 'mjpeg', '-i', '-', '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out], { stdio: ['pipe', 'ignore', 'inherit'] })
 const n = Math.ceil(duration * Number(fps))
