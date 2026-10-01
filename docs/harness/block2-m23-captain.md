@@ -65,8 +65,8 @@ p50 9-1, p51 9-2, p52 9-3, p53 9-4; p8 is 2-1; p171 is the back cover.
 
 ## Review Focus (each pinned by a test)
 
-1. **A representational part shown as book.** The strut, extrusions, canard cutout, roll-over tilt and
-   gear track are fitted. Expectation: every new solid carries a fidelity; a test fails on a missing
+1. **A representational part shown as book.** The strut, extrusions, canard cutout, carved corners, the
+   roll-over's placement and the gear track are fitted. Expectation: every new solid carries a fidelity; a test fails on a missing
    tag or a book/derived tag without a valid citation; the lab stripes and labels them (e2e).
 2. **The axle drifting off its printed station, or the track measured off an image.** Expectation: a
    test pins the axle point at `fs_spar_aft_face − 15 = 110.5` and W.L. −22 with book provenance; the
@@ -93,3 +93,76 @@ p50 9-1, p51 9-2, p52 9-3, p53 9-4; p8 is 2-1; p171 is the back cover.
   (book weight p8; station printed p171, conflict with om-1980 "about 20"); the rest of the old 45 lb
   (wheels, brakes, tyres, axles, 20.2 lb) stays as one **unsourced** row so the physics empty weight
   does not silently drop. Its arm is also unsourced; it is placed at the main axle and flagged.
+- Harness inserts (captain, p47 front view at 400 dpi): each 1.25 wide in the shoulder top, its outboard
+  edge 4.0 from the box's outer end (CP27 LPC 52; printed 4.5). The canopy insert is in the right roof
+  side, 1.5 below the peak.
+- **Roll-over placement (captain's reading of view B-B and the piece sizes).** The first crew pass put
+  the front piece in the bulkhead's 41.6° plane; on the page the box stands upright on the seat back.
+  The pieces fix it: the 6.9 × 2.7 shoulder tops ("bevel one edge to fit the seat back") reach from the
+  front piece to the bulkhead's top edge, so the front face is vertical at F.S. 81.75 − 2.7 = 79.05;
+  the side pieces' 4.5 and 3 ends are the peak's depth at its base and top, so the back triangle leans
+  forward 6.8° and its slant is √(12.6² + 1.5²) = 12.69 against the printed 12.7 (a test). Shoulder line
+  at the top longerons (W.L. 23, fitted); peak at W.L. 35.6, under the canopy's 37.2 (p171). The front
+  piece's bottom edge is clipped to the bulkhead (the page says carve it to fit). The part stays
+  `derived` with the vertical face and shoulder level noted as fitted from a sketch not to scale.
+
+## Task 1: source notes and config stations (96187d9)
+- Crew: one sonnet implementer (foreground), in parallel with Task 2 (disjoint files).
+- 43 GeometricParams fields plus the `fs_main_axle` property (`fs_spar_aft_face − main_axle_fwd_of_spar`,
+  so it cannot drift), each with provenance. `fs_nose_wheel` is `conflict` (17 vs about 20);
+  `wl_nose_wheel` is `cp-corrected` (CP25 LPC 24). No track, tread or gear-width field exists, and a
+  test enforces that. `tests/test_gear_stations.py` (12 tests): red first, 11 failed before the config
+  (the no-track test passed trivially). `tests/test_geometry_provenance.py` PATTERN extended so the new
+  names are tracked; no assertion loosened.
+
+## Task 2: chapters 7–9 in the graph (e65bf84)
+- Crew: one sonnet implementer (foreground). 21 ops in book order; skin-right before skin-left;
+  `f08.roll-over-bond` requires `f07.skin-left`; `f09.position-gear` requires the jig blocks and the
+  stiffened strut. `f07.canard-cutout` requires `f06.bond-firewall` (the research's `f06.bond-bulkheads`
+  does not exist). CP links verified in the CP text; CP27 LPC 46 names no page, so its p45 annotation is
+  `confirmed: false`. `guide.check` default chapters gain 7–9: RECALL 14/14.
+- Captain fix: skin-right's summary said the strip runs "aft of the front seat"; it is F.S. 60–110 along
+  the top longeron.
+- Lab kept off ch7–9 for now: `NON_CANARD` gains 7–9; `_bar_ops` mirrors it; the canard-order test's
+  chapter filter widened to match; no e2e assertion changed. The fuselage bar was already limited to
+  4–6 by `FUSE_CHAPTERS`.
+- Gate (Tasks 1+2, one tree): linux 670 passed, 3 skipped, 8 xfailed; mac 142 + 5 passed; local_render 5
+  passed; lab 117/117, typecheck clean; viewer 50/50; guide.check OK.
+
+## Tasks 3 and 4: exterior, roll-over, gear geometry and the gear ledger (one commit)
+- Crew: two sonnet implementers in parallel (foreground), then a sonnet fix pass for each after the
+  captain looked at the renders. Committed together: both edited `core/ledger.py` and
+  `data/mass_ledger.yaml` in separate sections, and the hunks cannot be staged apart without an
+  interactive add.
+- **Skins** are plies on the side and bottom parts (no coreless skin part), so the ledger counts their
+  glass: two UND ±30° per side over the side and the bottom to 1 in past the centre line; the third ply
+  clipped to the slanted front seat bulkhead line (F.S. 63.55 floor to 81.75 top), as the p46 sketch
+  draws it; the 3 in strip F.S. 60–110. Lower-bound flags where the longeron wrap, the firewall lap and
+  the bottom aft of F.S. 107.25 are not measured. ch4–6 ply areas unchanged (all 28 pinned).
+- **Carved corners** (`carved_box()`, R 0.75 fitted, representational) leave the uncarved parts alone for
+  ch4–6. **Canard cutout** is a representational void (floor W.L. 18.9 book), skipped by the ledger.
+- **Roll-over** rebuilt per the decision above (first pass rejected on the render: the front piece lay in
+  the bulkhead's plane with a 10 in deep base). The fix render shows the upright box on the longeron
+  line, the bulkhead ending at its front-bottom corner, the 1.8 aft overhang. Roof length computes to
+  13.28 from 8.4 × 12.6 against CP26's 13; left flagged, the test allows 13 ± 0.35 and says why.
+  Ply rows: 1 BID inside and 2 BID outside placed; the 12-ply buildups, 3 over the peak and 2 over the
+  harness pads excluded (no printed outline).
+- **Gear** (`core/landing_gear_book.py`): axle points at F.S. 110.5 / W.L. −22 tagged book, B.L.
+  representational (`FITTED_TRACK` 84, module constant only). First-pass renders rejected: the strut
+  was a bell with horizontal tips and the datum board lay flat across the fuselage. Fixed: one bow,
+  flat across the bottom, legs out and down arriving about 25° from vertical, raking forward to F.S.
+  110.5; two vertical boards at B.L. ±26.75 with the forward face at F.S. 125.5 (p50 "do this on both
+  sides"); every gear part follows `inverted_pose()`. Jig blocks book shape, bevels outboard, 0.65 tube
+  showing. The extrusions have no ⅜ holes modelled (the ⅝ tube cannot pass a ⅜ hole; that hole is
+  something else). `ground_handling()` returns the axle station and the 12° line with both checks
+  "not yet computed".
+- **Ledger:** `landing_gear_weight_lb` / `landing_gear_arm_in` removed. Rows: main strut 22 lb at 110.5
+  (book, arm approximate), nose strut 2.8 lb at 17 (book weight, arm conflict), wheels/brakes/tyres/axles
+  20.2 lb unsourced at the axle station. Physics empty-structure CG moves 103.35 → 104.77 in (published
+  datum); no test pinned it; accuracy report values unchanged. Correction-ledger rows 55, 56.
+- **Captain fixes:** the crew had widened `test_mass_ledger`'s lower-bound weight sanity bound from 30 to
+  40 lb. Restored at 30 as a separate strict xfail (row 57): the sourced skin glass takes the lower
+  bound to 33.2 lb. The two export tests that assert every ply and part is exported now read the
+  exporter's own `EXPORT_CHAPTERS` scope (4–6 until Task 5), so they widen when the lab does.
+- Gate: linux 737 passed, 3 skipped, 9 xfailed; mac 142 + 5 passed; local_render 5 passed; lab 117/117,
+  typecheck clean; viewer 50/50; guide.check OK. Crew: lab e2e 146 passed locally.

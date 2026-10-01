@@ -26,11 +26,24 @@ from core.fuselage_book import (
 )
 
 CHAPTERS = (4, 5, 6)
+EXPORT_CHAPTERS = CHAPTERS  # the lab shows chapters 4-6 only; the ch7-9 lab is the next task (ply regions of other types are skipped)
+# Parts the chapter 7-8 model added (core.fuselage_book); the lab does not export them yet.
+_LATER_PARTS = frozenset({"canard_cutout", "belt_insert", "rollover", "rollover_inserts", "belt_attach", "step"})
 BULKHEADS = ("front_seat_bkhd", "rear_seat_bkhd", "f22", "f28", "panel", "firewall")
 PLY_T = 0.06  # in, VISUAL: thick enough to read in the section cut; not the cured thickness
 
 # The graph's component for a part (guide/graph/components.yaml). Both top longerons belong to one component.
 _COMPONENT = {"top_longeron_left": "fuselage.longerons", "top_longeron_right": "fuselage.longerons"}
+
+
+def _plies() -> list[fp.FusePly]:
+    """The plies of the exported chapters (a chapter 4-6 ply's op id starts f04, f05 or f06)."""
+    keep = tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS)
+    return [p for p in fp.plies() if p.op.startswith(keep)]
+
+
+def _parts() -> dict[str, FusePart]:
+    return {n: p for n, p in build_fuselage().items() if n not in _LATER_PARTS}
 
 
 def part_label(name: str, part: FusePart) -> str:
@@ -81,7 +94,7 @@ def _tape_shell(part_name: str, tape: fp.CornerTape, stack: int) -> cq.Workplane
 def _shells() -> tuple[tuple[str, cq.Workplane, int], ...]:
     out = []
     seen: dict[tuple[str, str], int] = {}
-    for p in fp.plies():
+    for p in _plies():
         reg = fp.region_of(p)
         base = reg.name if isinstance(reg, fp.Face) else "upper"  # a corner tape lies over the bottom's glass
         k = seen[(p.part, base)] = seen.get((p.part, base), 0) + 1
@@ -101,10 +114,10 @@ def components() -> dict:
     # bounding boxes (BoundingBox uses it) for anything that measures them later in the same process.
     shells = ply_shells()
     by_part: dict[str, dict] = {}
-    for p in fp.plies():
+    for p in _plies():
         by_part.setdefault(p.part, {})[p.node] = shells[p.node].val().copy()
     return {f"fuselage.{name}": ((part.solid.val().copy(), by_part[name]) if name in by_part else part.solid.val().copy())
-            for name, part in build_fuselage().items()}
+            for name, part in _parts().items()}
 
 
 def _xrange(wp: cq.Workplane) -> tuple[float, float]:
@@ -114,8 +127,8 @@ def _xrange(wp: cq.Workplane) -> tuple[float, float]:
 
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-6 plies."""
-    parts = build_fuselage()
-    pl = fp.plies()
+    parts = _parts()
+    pl = _plies()
     stack = {node: k for node, _, k in _shells()}
     shells = ply_shells()
     ops: list[str] = []
@@ -145,7 +158,8 @@ def layup_section() -> dict:
             "fwd_normal": fwd,
         }
     excluded = [{"op": op, "where": where, "reason": reason, "parts": list(affected)}
-                for (op, where), (reason, affected) in fp.EXCLUDED.items()]
+                for (op, where), (reason, affected) in fp.EXCLUDED.items()
+                if op.startswith(tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS))]
     return {
         "chapters": list(CHAPTERS),
         "frame": "inches as exported: x = FS, y = B.L., z = W.L. - 17.4",

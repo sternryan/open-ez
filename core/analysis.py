@@ -169,9 +169,19 @@ class PhysicsEngine:
         self._weight_balance.add_item(
             "Fuselage", sw.fuselage_weight_lb, sw.fuselage_arm_in, "fixed"
         )
-        self._weight_balance.add_item(
-            "Landing Gear", sw.landing_gear_weight_lb, sw.landing_gear_arm_in, "fixed"
-        )
+        # Landing gear: the ledger's decomposed rows (the 45 lb lump is retired); the unsourced
+        # remainder keeps the empty weight whole and is named as such.
+        from .ledger import gear_rows
+
+        gear_names = {
+            "main_strut": "Main Gear Strut",
+            "nose_strut": "Nose Gear Strut",
+            "wheels_brakes_tyres_axles": "Wheels and Brakes (unsourced)",
+        }
+        for row in gear_rows():
+            self._weight_balance.add_item(
+                gear_names[row.name], row.weight_lb, row.arm_in, "fixed"
+            )
         self._weight_balance.add_item(
             "Electrical", sw.electrical_weight_lb, sw.electrical_arm_in, "fixed"
         )

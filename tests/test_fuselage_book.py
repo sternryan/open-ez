@@ -125,6 +125,13 @@ def test_fidelity_classes(fuse):
         "panel",
         "firewall",
         "bottom",
+        # chapters 7-8 (their own checks are in test_fuselage_exterior.py)
+        "canard_cutout",
+        "belt_insert",
+        "rollover",
+        "rollover_inserts",
+        "belt_attach",
+        "step",
     }
     for n in ("f22", "f28", "panel", "firewall", "bottom"):
         assert "full-size sheet" in fuse[n].note or n == "bottom"
@@ -163,7 +170,9 @@ def test_every_solid_is_valid_and_closed(fuse):
         v = p.solid.val()
         assert v.isValid(), name
         assert v.Volume() > 0, name
-        assert len(p.solid.solids().vals()) == 1, name
+        # the roll-over is one fused shell; the inserts and the belt pads are several small solids
+        want = {"rollover_inserts": 3, "belt_attach": 4}.get(name, 1)
+        assert len(p.solid.solids().vals()) == want, name
 
 
 def test_right_side_is_lighter_than_left_by_the_dish(fuse):
@@ -309,7 +318,8 @@ def test_book_fuselage_component_exports_dxf(tmp_path):
     for f in plan["sheet_templates"]["paths"]:
         assert f.exists()
     assert len(plan["sheet_templates"]["paths"]) == 4
-    assert len(comp.generate_geometry().solids().vals()) == 11
+    # every body except the canard cutout (a void): 11 box parts + belt insert + roll-over (1) + inserts (3) + pads (4) + step
+    assert len(comp.generate_geometry().solids().vals()) == 21
 
 
 # --- longerons bonded to the inside face (p37) ------------------------------------------------------

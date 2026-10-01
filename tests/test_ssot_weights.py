@@ -23,6 +23,7 @@ sys.modules.setdefault("cadquery", MagicMock())
 sys.modules.setdefault("OCP", MagicMock())
 
 from core.analysis import PhysicsEngine  # noqa: E402
+from core.ledger import gear_rows  # noqa: E402
 from core.atmosphere import density, viscosity, temperature, pressure, speed_of_sound  # noqa: E402
 from config.aircraft_config import AircraftConfig  # noqa: E402
 
@@ -111,7 +112,13 @@ class TestWeightBalanceSSoT:
         assert items_by_name["Wing Structure"].arm == sw.wing_arm_in
         assert items_by_name["Canard"].weight == sw.canard_weight_lb
         assert items_by_name["Fuselage"].weight == sw.fuselage_weight_lb
-        assert items_by_name["Landing Gear"].weight == sw.landing_gear_weight_lb
+        gear = {r.name: r for r in gear_rows()}
+        assert items_by_name["Main Gear Strut"].weight == gear["main_strut"].weight_lb
+        assert items_by_name["Nose Gear Strut"].weight == gear["nose_strut"].weight_lb
+        assert (
+            items_by_name["Wheels and Brakes (unsourced)"].weight
+            == gear["wheels_brakes_tyres_axles"].weight_lb
+        )
         assert items_by_name["Electrical"].weight == sw.electrical_weight_lb
         assert items_by_name["Instruments"].weight == sw.instruments_weight_lb
         assert items_by_name["Interior"].weight == sw.interior_weight_lb

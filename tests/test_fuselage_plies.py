@@ -26,9 +26,9 @@ def parts():
     return build_fuselage()
 
 
-def test_material_rows_cover_chapters_4_to_6():
-    assert len(ROWS) == 25
-    assert {op.split(".")[0] for op, _ in ROWS} == {"f04", "f05", "f06"}
+def test_material_rows_cover_chapters_4_to_8():
+    assert len(ROWS) == 38  # 25 in chapters 4-6, 6 skin rows in chapter 7, 7 in chapter 8
+    assert {op.split(".")[0] for op, _ in ROWS} == {"f04", "f05", "f06", "f07", "f08"}
 
 
 def test_every_row_is_mapped_or_excluded():
@@ -175,7 +175,7 @@ def test_bottom_corner_tape_is_length_times_stated_width(plies):
 def test_ply_count_per_op_matches_rows(plies):
     want: dict[str, int] = {}
     for op_id, op in GRAPH.ops.items():
-        if op.chapter not in (4, 5, 6):
+        if op.chapter not in fp.CHAPTERS:
             continue
         for m in op.materials:
             key = (op_id, m["where"])
@@ -261,7 +261,7 @@ def test_region_faces_are_the_faces_the_area_is_measured_on(plies, parts):
         reg = fp.region_of(p)
         if not isinstance(reg, fp.Face):
             continue
-        faces = fp.region_faces(p.part, reg.name)
+        faces = fp.region_shape_faces(p)  # clipped for a ClipFace, the plain named faces otherwise
         area = sum(f.Area() for f in faces)
         if reg.less_circle_dia:
             area -= math.pi / 4 * reg.less_circle_dia**2
