@@ -50,3 +50,10 @@ test('makeStore toggles, and survives storage that throws', () => {
   bad.toggle('y', 2)
   assert.ok(bad.get('y').has(2))
 })
+
+test('barOps leaves out chapters 14-17 (spar, firewall, controls, trim) until the lab adds them', () => {
+  const f: GraphLite = { ops: [op('f14.a', 14, ['both']), op('f15.a', 15, ['both']), op('f16.a', 16, ['both']), op('f17.a', 17, ['both']), ...g.ops],
+    order: ['f14.a', 'f15.a', 'f16.a', 'f17.a', ...g.order] }
+  assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b'])
+  assert.deepEqual(barOps(f, 'gu').map((o) => o.id), ['c10.a'])
+})

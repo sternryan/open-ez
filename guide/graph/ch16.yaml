@@ -1,0 +1,181 @@
+# Chapter 16 — control system (plans pp. 16-1 to 16-8; scan pages 97-104). Only two stick pivot planes (FS 45.5 and 89.7, medium confidence) are printed;
+# console and stick fore-aft positions, the master cylinder stations and the pitch stops are not, so those are representational. No pitch stop is printed.
+# Roncz elevator travel is 15 up and 30 down only.
+- id: f16.side-consoles
+  chapter: 16
+  title: Right-hand consoles
+  summary: Build the right front and rear consoles from thin foam, glass them inside, and bond them to the side, bulkheads and panel. Leave a large stick opening in the front console.
+  variants: [both]
+  requires: [f07.skin-left, f06.bond-panel, f06.bond-rear-seat]
+  components: [controls.consoles]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside of each console"}
+    - {cloth: BID, plies: 2, where: "outside of each console, 1/2 in lap"}
+  sources:
+    - {doc: scan-1980, scan_pp: 97}
+  completion:
+    - Foam consoles cut and glassed inside with one BID ply
+    - Bonded to the side, bulkheads and panel with micro
+    - Two BID plies outside with a 1/2 in lap
+    - Stick opening left in the front console; console shapes are fitted (representational)
+- id: f16.pivot-bulkheads
+  chapter: 16
+  title: Stick pivot bulkheads
+  summary: Flox the CS109 front and CS118 rear plywood pivot bulkheads to the consoles and sides, then glass round them.
+  variants: [both]
+  requires: [f16.side-consoles]
+  components: [controls.consoles]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "round CS109 and CS118 pivot bulkheads"}
+  sources:
+    - {doc: scan-1980, scan_pp: 97}
+    - {doc: scan-1980, scan_pp: 100}
+  completion:
+    - CS109 and CS118 bonded with flox
+    - Two BID plies all round each
+    - Pivot planes at FS 45.5 and FS 89.7 (medium confidence, read from leaders)
+- id: f16.firewall-bearing
+  chapter: 16
+  title: Firewall torque-tube bearing
+  summary: Cut a one-inch hole through the firewall right of centre and dimple the flanged bronze bearing so flox can grip it. Do not flox it yet; the torque tube goes in first.
+  variants: [both]
+  requires: [f15.stainless-firewall]
+  components: [controls.torque_tube]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 98}
+    - {doc: scan-1980, scan_pp: 101}
+  completion:
+    - 1 in hole at BL 6.2 right, WL 12.3
+    - Flanged bronze bearing dimpled in eight places with a 1/4 drill, not drilled through
+    - Bearing left unfloxed until the torque tube is through the firewall (next step)
+- id: f16.torque-tubes
+  chapter: 16
+  title: Torque tubes
+  summary: Build the tube inserts, pilot-drill both stick pivots in one plane, ream the press fit, and run the tube through the firewall. Fit the phenolic bearings and bolt them to the pivot bulkheads.
+  variants: [both]
+  requires: [f16.pivot-bulkheads, f16.firewall-bearing]
+  components: [controls.torque_tube]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 98}
+    - {doc: scan-1980, scan_pp: 99}
+    - {doc: scan-1980, scan_pp: 100}
+  changes:
+    - {cp: 32, lpc: 95, class: DES, status: verified, kind: official, note: "Open the pivot holes with a letter U drill, then a 3/8 press-fit reamer, for a better interference fit."}
+    - {cp: 36, lpc: 111, class: MEO, status: verified, kind: official, note: "The CS120 universal joint is MS20271-B10, not AN271-B10."}
+  completion:
+    - CS105, CS106, CS115 and CS112 inserts built
+    - Both stick pivots drilled in one plane; press fit reamed
+    - Tube installed through the firewall; CS108 and CS117 bearings bolted to CS109 and CS118
+    - CS120 on CS121, then the CS123 bearing floxed into the firewall hole with the tube in place; left undisturbed to cure
+- id: f16.sticks-pushrods
+  chapter: 16
+  title: Sticks and roll pushrod
+  summary: Fit the front and rear sticks on tight bolts and make a pushrod so both stay parallel. Hold the sticks 5 degrees inboard, drill the torque-tube link, fit rod ends and grease the five pivots.
+  variants: [both]
+  requires: [f16.torque-tubes]
+  components: [controls.sticks]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 98}
+    - {doc: scan-1980, scan_pp: 99}
+    - {doc: scan-1980, scan_pp: 102}
+  changes:
+    - {cp: 26, lpc: 29, class: MEO, status: verified, kind: official, note: "The CS119 tube is 4.1 in long, not 3.1 in."}
+    - {cp: 26, lpc: 40, class: MEO, status: verified, kind: official, note: "The jam nut shown is not in the bill of materials; a tapped MS21042-3 nut will do."}
+  completion:
+    - CS103 front and CS119 rear sticks on tight 1/4 bolts
+    - CS110 fitted so both sticks stay parallel
+    - Sticks 5 degrees inboard when the link to CS120 is drilled
+    - Rod-end thread depth checked; five pivots greased
+    - Stick fore-aft positions are not printed (representational)
+- id: f16.pitch-pushrod
+  chapter: 16
+  title: Pitch pushrod
+  summary: Make the two-piece pitch pushrod with rod ends and a quick disconnect. On the Roncz canard one extra 0.4 in spacer offsets the elevator-end rod end outboard.
+  variants: [roncz]
+  requires: [f16.sticks-pushrods, r30.elev-nc12a, r30.align-canard]
+  components: [controls.pitch_pushrod]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 99}
+    - {doc: scan-1980, scan_pp: 100}
+    - {doc: cobelu, heading: "Step 10: Connection to control system (useful in Chapter 16)"}
+  completion:
+    - CS102 and CS136 pushrods made with HM4 ends and the quick disconnect
+    - One extra 0.4 in CS-202 spacer at the elevator-end rod end (Roncz only)
+    - Elevator travel on the Roncz canard is 15 degrees up and 30 down; no pitch stop is printed in the plans
+- id: f16.aileron-linkage
+  chapter: 16
+  title: Aileron linkage (after the wing)
+  summary: This waits on the wing from chapter 19. Join the stick to the aileron with the two 90-degree angles held, ailerons neutral, and protect the rod-end threads.
+  variants: [both]
+  requires: [f16.sticks-pushrods, c19.wings]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 98}
+  completion:
+    - Wing built and in place (chapter 19, not in this graph)
+    - CS125L and CS126L joined by quick disconnects
+    - Both 90-degree angles held with ailerons neutral; rod-end threads not bent
+- id: f16.rudder-conduit
+  chapter: 16
+  title: Rudder cable conduits
+  summary: Run two long nylon conduits along the sides at WL 8, through the four bulkhead holes, floxed at intervals. Thimble a cable to CS15 and slot the firewall.
+  variants: [both]
+  requires: [f13.rudder-pedals, f16.firewall-bearing, f15.belcrank-brackets, f04.rear-seat-bkhd-hole]
+  components: [controls.rudder_conduit]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 103}
+  completion:
+    - Two 82 in nylon conduits at WL 8 through the four bulkhead holes
+    - Flox about every 6 in; conduits pass over the brake LB17 block
+    - 3/32 cable thimbled to CS15; firewall slotted
+- id: f16.rudder-cable-rig
+  chapter: 16
+  title: Rudder cable rigging (after the winglet)
+  summary: This waits on the winglet from chapter 20. With the pedal vertical at full rudder, set the sleeve 0.7 in off the firewall, run the pulley and 1/16 cable, and set the rudder travel with 0.7 in of overtravel at each end.
+  variants: [both]
+  requires: [f16.rudder-conduit, f15.belcrank-brackets, c20.winglets]
+  components: [controls.rudder_conduit, firewall.belcrank]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 103}
+    - {doc: scan-1980, scan_pp: 104}
+  completion:
+    - Winglet and rudder built and in place (chapter 20, not in this graph)
+    - CS15 sleeve 0.7 in off the firewall with the pedal vertical at full rudder
+    - Rudder top trailing edge about 6 in out (30 degrees), wedge fitted, cable swaged
+    - 0.7 in overtravel at both ends
+- id: f16.brake-cables
+  chapter: 16
+  title: Brake cables
+  summary: Run 3/32 cable from CS15 to the master cylinder arm with a rubber sleeve, slack until full rudder. The cylinder acts as the rudder stop. Check it returns smoothly.
+  variants: [both]
+  requires: [f16.rudder-cable-rig, f15.master-cylinders]
+  components: [firewall.master_cylinders]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 104}
+  completion:
+    - Cable from CS15 to the master cylinder arm with rubber sleeve
+    - Slack until full rudder is reached
+    - Pedals return smoothly
+- id: f16.adjustable-pedals
+  chapter: 16
+  title: Adjustable pedals (optional)
+  summary: Optional adjustable pedal hardware, positioned about 8 in forward of the panel.
+  variants: [both]
+  requires: [f16.rudder-conduit]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 104}
+  completion:
+    - Optional hardware fitted about 8 in forward of the panel
+    - Pedal travel still checked against the rudder cable rig

@@ -86,9 +86,9 @@
 - id: f08.shoulder-harness
   chapter: 8
   title: Front shoulder harness
-  summary: Build up the harness pads, drill the quarter-inch holes through the roll-over structure, and bolt the front harness on. The aft harness goes on the spar tabs in chapter 14.
+  summary: Build up the harness pads, drill the quarter-inch holes through the roll-over structure, and bolt the front harness on. The aft harness bolts to the SH1 spar tabs, so this step is only signed off once those are in (chapter 14).
   variants: [both]
-  requires: [f08.roll-over-outside]
+  requires: [f08.roll-over-outside, f14.sh1-tabs]
   components: [fuselage.harness_attach, fuselage.rollover]
   geometry_visible: true
   materials:

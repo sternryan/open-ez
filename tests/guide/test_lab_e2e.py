@@ -156,7 +156,7 @@ def _unfold_checklist(pg):
 def _bar_ops(g, variant):
     byid = {o["id"]: o for o in g["ops"]}
     return [i for i in g["order"] if variant in byid[i]["variants"] + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
-            and byid[i]["chapter"] not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13) and not byid[i]["stub"]]
+            and byid[i]["chapter"] not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17) and not byid[i]["stub"]]
 
 
 @pytest.mark.parametrize("w,h", [(1400, 860), (390, 844)])
@@ -1971,6 +1971,12 @@ def _fuse_ops(g):
             and ("both" in byid[i]["variants"] or "roncz" in byid[i]["variants"])]
 
 
+def _by_chapter(g, ops):
+    """The all-chapters tour walks chapter by chapter; the bar is in graph order, which since 2.5 puts f06.bond-firewall after chapter 7."""
+    ch = {o["id"]: o["chapter"] for o in g["ops"]}
+    return sorted(ops, key=lambda i: ch[i])
+
+
 def _chips(pg):
     return pg.eval_on_selector_all("#opbar button[data-op]", "els => els.map(e => e.dataset.op)")
 
@@ -1998,7 +2004,8 @@ def test_fuselage_subject_bar_bond_order_fidelity_labels_cg_and_back_to_the_cana
                 pg.click(f'#opbar button[data-op="{op}"]')
                 pl = pg.evaluate("window.__lab.placement()")
                 assert [k for k in _BOOK_BOND_ORDER if pl[k] == "jig"] == list(_BOOK_BOND_ORDER[: i + 1]), (op, pl)
-                assert pl["side_left"] == pl["side_right"] == "jig" and pl["bottom"] == "none"
+                # the firewall bond moved after the spar fit (2.5, CP25 hint), long after the bottom went on; the bottom is only checked unbonded before it
+                assert pl["side_left"] == pl["side_right"] == "jig" and ((pl["bottom"] != "none") if op == "f06.bond-firewall" else (pl["bottom"] == "none"))
             pg.click('#opbar button[data-op="f06.bond-panel"]')
             pl = pg.evaluate("window.__lab.placement()")
             assert pl["front_seat_bkhd"] == pl["panel"] == "jig" and pl["f22"] == "table", pl
@@ -2127,7 +2134,7 @@ def test_fuselage_tour_button_follows_the_selected_chapter_and_the_ch6_film_ends
             pg.click("#tour")
             pg.evaluate("__lab.select(null)")
             pg.click("#tour")  # nothing selected: all of chapters 4-6
-            assert _tour_seen(pg, len(_fuse_ops(g))) == _fuse_ops(g) and len(_fuse_ops(g)) >= 31
+            assert _tour_seen(pg, len(_fuse_ops(g))) == _by_chapter(g, _fuse_ops(g)) and len(_fuse_ops(g)) >= 31
             pg.click("#tour")
             b.close()
             # the recorder's chapter 6 film: the ch6 ops in order, then the cut on inside the front seat bulkhead (FS 63.55-81.75)

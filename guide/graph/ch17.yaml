@@ -1,0 +1,82 @@
+# Chapter 17 — pitch trim and roll trim (plans pp. 17-1 to 17-3; scan pages 105-107). The trim handle fore-aft station is a conflict in the plans (a dimension and a label
+# differ by 0.3 in), so no op states a single station. Station numbers for the roll trim parts are not printed (representational).
+- id: f17.mount-blocks
+  chapter: 17
+  title: Trim mount blocks
+  summary: Make the two birch mounting blocks, bond the pitch-trim one to the left side, and notch the right console and bond the roll-trim one there, each with a BID ply over it.
+  variants: [both]
+  requires: [f16.side-consoles]
+  components: [trim.pitch_handle, trim.roll_trim]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "over PT1 on the left fuselage side, 1/2 in lap"}
+    - {cloth: BID, plies: 1, where: "over RT3 on the right console and side, 1/2 in lap"}
+  sources:
+    - {doc: scan-1980, scan_pp: 105}
+    - {doc: scan-1980, scan_pp: 106}
+    - {doc: scan-1980, scan_pp: 107}
+  completion:
+    - PT1 and RT3 cut from 1/4 birch
+    - Skin dremelled for the AN3 bolts; PT1 floxed to the left side, one BID ply over
+    - Right console notched 1/4 by 1 in; RT3 bonded, one BID ply over
+- id: f17.parts
+  chapter: 17
+  title: Trim parts and springs
+  summary: Make the pitch handle, the roll-trim levers and the phenolic washers, and cut the springs to their free lengths.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 105}
+    - {doc: scan-1980, scan_pp: 107}
+  completion:
+    - PTH, RT1, two RT2 and four PW made
+    - "Springs cut to free length: PTS 6.0 in, RTS 2.0 in, CS 0.5 in"
+- id: f17.pitch-trim
+  chapter: 17
+  title: Pitch trim
+  summary: Swage two cables to the pitch handle, set them with the trim neutral, and spring the handle to the elevator belcrank. On the Roncz canard that belcrank is the NC-5A on the left tube. Set the friction and cut the slot.
+  variants: [roncz]
+  requires: [f17.mount-blocks, f17.parts, r30.elev-trim-belcrank, r30.align-canard]
+  components: [trim.pitch_handle]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 105}
+    - {doc: scan-1980, scan_pp: 106}
+    - {doc: cobelu, heading: "Install Pitch Trim Belcrank"}
+  completion:
+    - Two 20 in cables swaged to the handle, nylon sleeves in the panel holes
+    - Swages set with neutral trim, 5.6 and 6.2 in from the panel sleeve
+    - PTS springs to the NC-5A on the left tube (about BL 9.2 left, medium confidence), safety-wired
+    - Elevator at zero at neutral trim; friction set and slot cut
+    - Handle fore-aft station is a conflict in the plans, so none is stated here
+- id: f17.roll-trim
+  chapter: 17
+  title: Roll trim
+  summary: Sew the roll springs to their levers, bolt two levers to the stick torque tube, and mount the third on its block with friction hardware. The friction should just hold full right trim against full left stick.
+  variants: [both]
+  requires: [f17.mount-blocks, f17.parts, f16.torque-tubes]
+  components: [trim.roll_trim]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 105}
+    - {doc: scan-1980, scan_pp: 107}
+  completion:
+    - RTS springs sewn to RT2 and RT1
+    - Two RT2 levers bolted on CS105; RT1 on RT3 with friction hardware
+    - Friction holds full right trim against full left stick
+    - Slot left for the cosmetic cover (chapter 24)
+- id: f17.fixed-trim-tab
+  chapter: 17
+  title: Fixed trim tab (optional)
+  summary: Only if shortening the pitch spring is not enough, add a small aluminium tab on the elevator.
+  variants: [both]
+  requires: [f17.pitch-trim]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 105}
+  completion:
+    - Tab of 1.2 by 10 by 0.02 in aluminium fitted only if needed
+    - Left out if shortening the spring already centres the trim

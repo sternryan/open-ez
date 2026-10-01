@@ -112,8 +112,8 @@
     - Instrument-panel holes opened only after all glass is cured
 - id: f04.firewall-aft
   chapter: 4
-  title: "Firewall: plywood, insulation and aft glass"
-  summary: Cut the firewall from quarter-inch birch plywood, put one BID ply on its aft face, then lay in the heat insulation and stainless sheet and drill the six pulley holes.
+  title: "Firewall: plywood and aft glass"
+  summary: Cut the firewall from quarter-inch birch plywood, put one BID ply on its aft face and drill the six pulley holes. The rest of the firewall build-up is fitted in chapter 15.
   variants: [both]
   requires: [c03.layup-skills]
   components: [fuselage.firewall]
@@ -128,7 +128,7 @@
     - {cp: 27, lpc: 47, class: DES, status: verified, kind: official, note: "The left rudder pulley bracket should sit 0.6 higher, to keep the cable off the aileron pushrod."}
   completion:
     - Plywood cut to the A4 template, aft BID ply cured
-    - Insulation and metal sheet fitted (or deferred, if aluminium is chosen)
+    - Remaining firewall build-up left for chapter 15
     - Six pulley holes drilled at the marked points
 - id: f04.firewall-fwd
   chapter: 4
