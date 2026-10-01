@@ -603,3 +603,68 @@ The captain re-read CP25 LPC 24, CP26 LPC 37, CP27 LPC 52 and CP30 LPC 83. The o
 ### Not in the book
 
 Canard cutout outline (A3), extrusion placement (A5), strut mold, track, and wheel, brake and tyre weights. The roll-over tilt is "bevel as required" on p47.
+
+## Chapters 11-13: elevators, canard fit, nose (Block 2 M2.4)
+
+Page numbers are plans-1980 scan pages (p65 is 11-1, p71 and p72 are 12-1 and 12-2, p73 to p83 are 13-1 to 13-11, p171 is the back cover). Roncz elevator values come from the cobelu ch30 transcription (text and figures C-1, 30-33, 30-46, 30-53, 30-59); the owner holds no scan of those. The captain read p77, p79, p81, p82, p83 and p171 on page images; the other rows are the research's and were not re-read. Paraphrases are our own words, 10 words or fewer. No plans text is reproduced.
+
+### Geometry table
+
+| value | citation | what the page says | status |
+|---|---|---|---|
+| fs_nose -6.8 | plans-1980:p171 | nose tip callout; first digit not crisp at 500 dpi | book, medium (was high) |
+| fs_nose_wheel 17 and fs_nose_wheel_manual 20 | plans-1980:p171, om-1980:p35 | back cover versus the manual's weigh-in arm (sample 19.6) | conflict, both |
+| ng6_width_in 2.75, ng6_bore_height_in 1.25, ng7_length_in 2.75 | plans-1980:p73 | worm-drive bracket and spacer sizes | book, high |
+| ng30_thickness_in 0.2, ng30_gap_in 3.0 | plans-1980:p77 | plate foam and inside gap | book, high |
+| ng3_to_ng7_in 6.71 (+/-0.05) | plans-1980:p78 | bolt to spacer centre | book, high |
+| nose_strut_pivot_to_pivot_in 25.5 | plans-1980:p81 | strut length in the retracted sketch | book, medium (thin decimal) |
+| floor block 20.9 long, 8.2 wide, 1.6 thick | plans-1980:p79 | which end is which is the captain's reading | book, medium |
+| side block 21.9 long, 15.6 at F22, 5.5 above and 2.8 below the NG31 end | plans-1980:p79 | hand digits | book, medium |
+| top block 19.3 long, 19.6 aft, 7.0 forward | plans-1980:p82 | top view, orientation is a reading | book, medium |
+| pedal_block_from_ng30_in 6.1 | plans-1980:p79 | pivot block set off NG30 | book, high |
+| fs_static_port = fs_panel - 8.0, wl_static_port 13 | plans-1980:p82 | left side port forward of panel, 10 below longerons | derived medium; book high |
+| fs_ng31_min 0.1, fs_ng31_max 1.1 | plans-1980:p79 | F22 minus side block and floor block lengths | derived, medium, a range |
+| elevator lengths right 55.7, left 72.7 | cobelu fig C-1 | stock tubes 57 and 74, trim 1.3 on both | book, medium |
+| travel up 15 (floor 12.5), down 30 | cobelu ch30 | Roncz elevator only | book, medium |
+| elevator_hinge_bl_in (9.2, 34.1, 59.0) | cobelu fig 30-33 | right side draws the first as 7.8; 59 against 57.0 on C-1 unverified | positioned-from-text, low |
+| slot gap 0.2, hinge offset 0.55, tube OD 1.0, pins 36 right and 61 left | cobelu ch30 | hinge and tube numbers | book, medium |
+| cs11_lead_dims (2, 0.6, 0.8), cs10 7.5 from end, pocket clearance 0.06 | cobelu ch30 | counterweight sizes and clearance | book, medium |
+| elevator fuselage gap 1/16, 0.1 round the tubes | plans-1980:p72, cobelu ch30 | fit gaps, not travel | book, medium |
+| elevator weight ceilings 3.9 left, 3.6 right | om-1980:p30 | check bound with balance installed, not a mass | book, high |
+
+Status vocabulary: `positioned-from-text` is new, added to the one status set in config. It means the text places the value but no page dimensions it on its own. It is always low confidence.
+
+Not in config on purpose: strut rake, NG6 position on the plate, fork offset, trail (A6/A7 sheets), the NG31 and F6 outlines, the elevator contour templates, and the door's edge assignments (p83 dimension lines are loose).
+
+### Ledger references (data/mass_ledger.yaml `prototype_weights`)
+
+F22 1.44 lb, F28 0.19 lb and the instrument panel 2.13 lb, from CP26 page 2, prototype with an uncured finish. They sit beside the computed rows, never in a sum. The complete fuselage at 183 lb is a reference for a later ledger-closure test. NG-1L stays 2.8 lb at F.S. 17; CP23 says 2.6. The CS-11 lead mass is not a row, because its density is not from a plans source.
+
+### Conflicts
+
+- Nose wheel F.S. 17 against about 20: the plans do not decide it; the unprinted fork and pivot numbers swamp the 2.6 in gap.
+- Elevator travel: the GU 20 and 22 and the manual's 22 +/-2 belong to other airplanes. The Roncz canard has its own row.
+- Hinge station 59 (fig 30-33) against 57.0 (fig C-1): probably different items, unverified.
+- Pin lengths: the parts list shows two 61 in pins; the trim step says 36 and 61.
+- NG30 pad plies: 15 per pad on p77 against 30 for bolt-hole circles in a CP20 hint. Unresolved.
+- NG-1L weight: 2.8 lb (p8) against 2.6 lb (CP23).
+
+### Canard Pusher changes
+
+| issue | change |
+|---|---|
+| CP25 LPC 23 | NG31 foam is a thinner red type; F28 may be cut from the panel sheet |
+| CP25 LPC 24 | nose gear centre line height corrected to W.L. -22 |
+| CP25 LPC 27 | spring assembly replaces two parts for rough fields |
+| CP26 LPC 33 | GU elevator text: two strips, not three |
+| CP27 LPC 51 | winglet chapter reference corrected |
+| CP30 LPC 76 | GU detail reference points to page 11-4 |
+| CP30 LPC 79 | strut cover listed twice in the chapter 13 parts list |
+| CP30 LPC 86 | reinforce the rudder pedal top tab |
+| CP30 LPC 87 | pedal-spring part wall and wire sizes changed |
+| CP57-8 (CP69) | mandatory ground list: elevator weight, stiffness, shape |
+| CP66-9 | mandatory check of elevator torque tubes for corrosion |
+| CP13 hint | nose bumper under the NG31 bulkhead, extra cloth |
+| CP11 and CP10 hints | NG6 and NG7 sizes agree with p73 |
+
+These rows come from the research and were not re-checked by the captain.

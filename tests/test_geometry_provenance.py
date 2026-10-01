@@ -16,11 +16,11 @@ from config.aircraft_config import (
     config,
 )
 
-PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_)")
+PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_)")
 
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
-TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord", "fs_main_axle"}
+TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord", "fs_main_axle", "fs_static_port", "fs_ng31_min", "fs_ng31_max"}
 
 
 def geometry_fields() -> set[str]:

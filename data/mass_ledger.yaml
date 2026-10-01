@@ -80,7 +80,7 @@ gear:
       status: book
       arm_status: conflict
       cite: ["plans-1980:p8 NG-1L nose gear strut 2.8 lb S-glass", "plans-1980:p171 nose wheel F.S. 17"]
-      note: "weight is book; station conflicts: p171 prints F.S. 17, the Owner's Manual says about 20 (fs_nose_wheel); nose gear is chapter 13"
+      note: "weight is book; station conflicts: p171 prints F.S. 17, the Owner's Manual says about 20 (fs_nose_wheel); nose gear is chapter 13. CP23 page 2 gives 2.6 lb for the RAF-made part; the scan's 2.8 is kept until the part is weighed"
     - name: wheels_brakes_tyres_axles
       label: "Wheels and brakes (unsourced)"
       weight_lb: 20.2
@@ -89,3 +89,16 @@ gear:
       arm_status: unsourced
       cite: []
       note: "the remainder of the retired 45 lb lump (45 - 22 - 2.8); no source for the weight or the arm; placed at the main axle station only so the empty weight does not silently drop"
+
+# Block 2 M2.4 Task 1: prototype weights as cited REFERENCE values. They are never added to any sum:
+# the computed core-plus-glass rows in `materials` stay the model's masses. page_basis: issue (cp-text),
+# printed page 2 of CP26.
+prototype_weights:
+  rows:
+    f22:   {weight_lb: 1.44, cite: "cp-text:p26 CP26 page 2 F22 bulkhead 1 lb 7 oz", note: "prototype, uncured finish"}
+    f28:   {weight_lb: 0.19, cite: "cp-text:p26 CP26 page 2 F28 bulkhead 3 oz", note: "prototype, uncured finish"}
+    panel: {weight_lb: 2.13, cite: "cp-text:p26 CP26 page 2 instrument panel 2 lb 2 oz", note: "prototype, uncured finish"}
+  complete_fuselage_lb:
+    weight_lb: 183.0
+    cite: "cp-text:p26 CP26 page 2 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"
+    note: "reference only, for the later ledger-closure test; not used in any sum"
