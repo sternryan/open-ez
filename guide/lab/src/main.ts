@@ -25,7 +25,7 @@ import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { STATION, fsToX } from './scene/fuselageStation'
-import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS } from './director'
+import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
 import './style.css'
 
 const INCH = 0.0254
@@ -592,14 +592,17 @@ async function boot() {
     }
     // the fuselage's shots: one per chapter 4-6 op, aimed where its parts are for that op (src/fuseShots.ts), and its own home view
     const fuseOpIds = graph.order.filter((id) => FUSE_CHAPTERS.has(graph.ops.find((o) => o.id === id)?.chapter ?? -1))
-    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut', 'ffinal'] : [])
+    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut', 'ffinal', ...Object.values(FUSE_CUTS).map((fs) => `fcut${fs}`)] : [])
     // what the canard subject shows of the fuselage corner: the box as chapter 6 leaves it, on the jig (FuselageBay.paint `backdrop`)
     const canardBackdrop = fuseOpIds.filter((id) => graph.ops.find((o) => o.id === id)?.chapter === 6).at(-1) ?? null
     if (bay) {
       Object.assign(rig.shots, bay.shots(fuseOpIds, LAB_FOV))
       const hb = bay.homeBox()
       // aimed a little toward the nose end: the dock covers the frame's left third
-      rig.shots.fcut = bay.cutShot(FUSE_CUT_FS, LAB_FOV)
+      // each close shot is of the box as its chapter leaves it (that chapter's last op), never the finished airplane on its gear
+      const chapterEnd = (ch: number) => fuseOpIds.filter((id) => graph.ops.find((o) => o.id === id)?.chapter === ch).at(-1) ?? null
+      rig.shots.fcut = bay.cutShot(FUSE_CUT_FS, LAB_FOV, chapterEnd(6))
+      for (const [ch, fs] of Object.entries(FUSE_CUTS)) rig.shots[`fcut${fs}`] = bay.cutShot(fs, LAB_FOV, chapterEnd(Number(ch)), FUSE_CUT_VIEW[fs]) // one close shot per film that ends on a station cut
       rig.shots.fhome = fitShot(hb, hb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(-0.22, -0.05, 0)), new THREE.Vector3(-0.22, 0.6, 0.77).normalize(), 30, 1.6, 0.62)
       // the finished box on its own feet on the floor beside the bench: from the room side and a little aft, the nose kept clear of the dock
       const fb = bay.finishedBox()
@@ -1059,10 +1062,10 @@ async function boot() {
     // director.busy; anything a person does (op chip, variant, scrubber, Play, the camera, Escape, Tour again) ends the tour where it stands. ----
     let orb: { r: number; y: number; a0: number } | null = null
     const director = new Director({
-      act(name) {
+      act(name, arg, op) {
         if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
-        else if (name === 'finish') { stopPlay(); select(null, true) }
-        else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : 'fcut', true)
+        else if (name === 'finish') { stopPlay(); select(op ?? null, true) }
+        else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : arg !== undefined && rig.shots[`fcut${arg}`] ? `fcut${arg}` : 'fcut', true)
         else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : homeShot(), true)
       },
       orbit(k, deg, first) {
@@ -1313,10 +1316,11 @@ async function boot() {
     hook.ready = true
     if (REC) {
       ;(window as unknown as Record<string, unknown>).__rec = {
-        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6` the fuselage's chapter 6 */
+        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6`, `fuselage8` and `fuselage9` the fuselage's chapters 6, 8 and 9 */
         start(name: string) {
-          if (name !== 'canard' && name !== 'fuselage6') throw new Error(`no film called ${name}`)
-          if (name === 'fuselage6') { setSubject('fuselage', false, false); startTour(6) } // the box's own subject (never saved), its chapter 6 tour
+          const fuse = /^fuselage([689])$/.exec(name)
+          if (name !== 'canard' && !fuse) throw new Error(`no film called ${name}`)
+          if (fuse) { setSubject('fuselage', false, false); startTour(Number(fuse[1])) } // the box's own subject (never saved), its chapter tour
           else startTour(CHAPTER)
           return director.duration
         },

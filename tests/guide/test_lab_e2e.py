@@ -2149,6 +2149,33 @@ def test_fuselage_tour_button_follows_the_selected_chapter_and_the_ch6_film_ends
         s.shutdown()
 
 
+def test_chapter_6_and_8_films_close_in_the_state_at_the_end_of_their_chapter_not_the_finished_airplane(rsite):
+    """M2.3 Task 6 fix: with the station cut on, the film shows the box as its chapter leaves it (last op selected, the jig pose),
+    never the finished airplane on its gear (no wheel, strut or axle label, no floor pose)."""
+    g = _graph(rsite)
+    last = {6: [o for o in _fuse_ops(g) if o.startswith("f06.")][-1], 8: [o for o in _fuse_ops(g) if o.startswith("f08.")][-1]}
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            for ch, film in ((6, "fuselage6"), (8, "fuselage8")):
+                b, pg, errors = _open_rec(p, url, query="&clean=1")
+                assert pg.evaluate(f"window.__rec.start('{film}')") > 30
+                active, cut_frames = True, 0
+                while active:
+                    active = pg.evaluate("window.__rec.frame(1 / 15, false)")["active"]
+                    if active and pg.evaluate("__lab.cut().enabled"):
+                        cut_frames += 1
+                        assert pg.evaluate("__lab.selected()") == last[ch]
+                        assert pg.evaluate("__lab.jigPose()") != "on-gear"
+                        # the fitted gear extrusions are part of the box in both chapters; the wheels, strut, axles and tubes are chapter 9's
+                        shown = [x["id"] for x in pg.evaluate("__lab.labels()") if x["id"].startswith("gear.") and x["opacity"] > 0.05]
+                        assert not [i for i in shown if i != "gear.extrusions"], shown
+                assert cut_frames > 20 and not errors, (cut_frames, errors)
+                b.close()
+    finally:
+        s.shutdown()
+
+
 # ======================================================================================================================
 # Block 2 M2.2 Task 7 polish: the dock's CG and legend rows fold away, the box turns over in sim time, the cut hides the labels it removes.
 # ======================================================================================================================
@@ -2264,6 +2291,27 @@ def test_recorder_url_exposes_rec_and_both_films_start(rsite, film):
             pg.goto(url + "?rec=1")
             pg.wait_for_function("typeof window.__rec === 'object'", timeout=30000, polling=250)
             dur = pg.evaluate(f"window.__rec.start('{film}')")
+            assert isinstance(dur, (int, float)) and dur > 0
+            r = pg.evaluate("window.__rec.frame(1 / 60, true)")
+            assert r["active"] is True
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_recorder_chapter_9_film_starts_and_steps_a_frame(rsite):
+    """The recorder's fuselage9 film (M2.3 Task 6): a bare ?rec=1 page reports a positive length, then steps an active frame."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 960, "height": 540})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?rec=1")
+            pg.wait_for_function("typeof window.__rec === 'object'", timeout=30000, polling=250)
+            dur = pg.evaluate("window.__rec.start('fuselage9')")
             assert isinstance(dur, (int, float)) and dur > 0
             r = pg.evaluate("window.__rec.frame(1 / 60, true)")
             assert r["active"] is True
