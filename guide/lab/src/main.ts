@@ -23,7 +23,8 @@ import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
-import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
+import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, type NoseGearKin } from './logic/kin'
 import { STATION, fsToX } from './scene/fuselageStation'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
 import './style.css'
@@ -93,6 +94,8 @@ interface LabHook {
   setCamera(pos: number[], target: number[]): void
   /** the part labels: what each shows right now */
   labels(): { id: string; text: string; opacity: number; x: number; y: number; collapsed?: boolean; hidden?: boolean }[]
+  /** every label the subject has, the chapter 11 elevators' (and tube jigs') included: labels() keeps the canard's original set */
+  labelsAll(): { id: string; text: string; opacity: number; x: number; y: number; collapsed?: boolean; hidden?: boolean }[]
   /** the load paths: visible = its parts exist in the build; drawn = visible and the toggle is on; worldPoints in metres, every segment's points in order, after the canard's pose; clipped = a point is on the removed side of the section plane */
   paths(): { id: string; kind: string; visible: boolean; drawn: boolean; color: number[]; worldPoints: number[][]; clipped: boolean }[]
   /** world metres -> canvas CSS pixels [x, y] with the camera as it is now */
@@ -113,6 +116,16 @@ interface LabHook {
   gearMarks(): { shown: boolean; axleFs: number; boardFs: number; dimText: string; axleText: string; dimModel: number[]; axleModel: number[]; dimWorld: number[]; axleWorld: number[] } | null
   /** the ground-handling note as the readout shows it */
   ground(): { value: string; sub: string } | null
+  /** every mesh's build state, the chapter 11-13 meshes (elevators, nose) included; state() is the subject's original set (canard.* / chapters 4-9) */
+  stateAll(): Record<string, BuildState>
+  /** the motion readout: label, live value, note (null when hidden) */
+  kin(): { label: string; value: string; sub: string } | null
+  /** the elevators now (canard subject): the mode the op puts them in, their trailing-edge-down angle, how far aft of the canard they are held, the hang pitch, and each part's world box */
+  elevators(): { mode: string; degDown: number; slide: number; hangPitch: number; noseDown: boolean; jigs: boolean; installed: boolean; boxes: Record<string, number[][]> } | null
+  /** the nose gear now (fuselage subject): retraction progress, crank text, whether the strut is drawn, both candidates' wheel centres (box frame, inches) and world boxes */
+  noseGear(): { t: number; crank: string; shown: boolean; wheel: Record<string, number[]>; ghostShown: boolean; stand: boolean } | null
+  /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
+  installedCanard(): { shown: boolean; at: number[]; nodes: number; boxes: Record<string, number[][]> } | null
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
@@ -131,12 +144,13 @@ const hook: LabHook = {
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
   cut: () => ({ enabled: false, bl: 0, planeConstant: null, keepsOutboard: false, removesInboard: false, cappedNodes: [], capsVisible: 0, capNodesVisible: [], clipped: 0 }),
-  plyBox: () => null, setSection: () => {}, labels: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
+  plyBox: () => null, setSection: () => {}, labels: () => [], labelsAll: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
   contextLost: () => false, loseContext: () => false, restoreContext: () => false,
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
+  stateAll: () => ({}), kin: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -181,7 +195,13 @@ function mergeModel(scene: THREE.Object3D, graph: Graph, parts: Set<string> = ne
     const cid = group(n) ? nm(n) : nm(o)
     let q: THREE.Object3D = o
     while (q && !/\.p\d+$/.test(nm(q)) && q.parent) q = q.parent
-    const node = q && /\.p\d+$/.test(nm(q)) ? nm(q) : null
+    let node = q && /\.p\d+$/.test(nm(q)) ? nm(q) : null
+    // the elevators' parts come as a right and a left (`elevator.tube.right`): one mesh each, so the canard subject can show the right half alone
+    if (!node && cid.startsWith('elevator.')) {
+      let e: THREE.Object3D = o
+      while (e && !/\.(left|right)$/.test(nm(e)) && e.parent) e = e.parent
+      if (e && nm(e).startsWith('elevator.') && /\.(left|right)$/.test(nm(e))) node = nm(e)
+    }
     const key = `${cid}|${node ?? ''}`
     if (!groups.has(key)) groups.set(key, { cid, node, geos: [] })
     groups.get(key)!.geos.push(bake(mesh, mesh.matrixWorld.determinant() < 0))
@@ -325,12 +345,14 @@ async function boot() {
   let stepCut: (dt: number) => void = () => {}
   let stepLabels: (dt: number) => void = () => {}
   let stepFlows: (dt: number) => void = () => {}
+  let stepKin: (dt: number) => void = () => {} // the elevators' and nose gear's poses and the motion readout
   let stepDirector: (t: number) => void = () => {}
   const step = (dt: number) => {
     simT += dt
     GLOW_TIME.value = simT
     stepDirector(simT)
     stepPose(dt)
+    stepKin(dt)
     stepBuild(dt)
     stepCut(dt)
     stepFlows(dt)
@@ -477,13 +499,20 @@ async function boot() {
     // the fuselage mass ledger (core.ledger.fuselage_ledger_json) ships beside graph.json; a site without one says so in the CG row
     const ledgerP: Promise<LedgerLite | null> = fetch(DATA + 'ledger.json').then((r) => (r.ok ? (r.json() as Promise<LedgerLite>) : null)).catch(() => null)
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
-    const fuseData = graph.layup?.fuselage ?? null
+    const fuseRaw = graph.layup?.fuselage ?? null
+    // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}) } } : null
+    // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
+    const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
     const fuseNodes = new Set([...Object.values(fuseData?.parts ?? {}).map((r) => r.node), ...Object.values(fuseData?.stages ?? {}).flat().map((st) => st.node)])
     const allParts = mergeModel(gltf.scene, graph, fuseNodes)
-    // the canard, the fuselage box and the main gear share the glb; everything below `root` is the canard, exactly as before the fuselage came
-    const isFuse = (cid: string) => cid.startsWith('fuselage.') || cid.startsWith('gear.')
-    const parts = allParts.filter((p) => !isFuse(p.cid))
+    // the glb holds three families: canard.* and elevator.* (the canard subject), fuselage.*, gear.* and nose.* (the fuselage subject). Everything below
+    // `root` is the canard, exactly as before the fuselage came; the elevators join it after the canard's box is measured, so its framing is unchanged.
+    const isFuse = (cid: string) => cid.startsWith('fuselage.') || cid.startsWith('gear.') || cid.startsWith('nose.')
+    const isElev = (cid: string) => cid.startsWith('elevator.')
+    const parts = allParts.filter((p) => !isFuse(p.cid) && !isElev(p.cid))
+    const elevParts = allParts.filter((p) => isElev(p.cid))
     const fuseParts = allParts.filter((p) => isFuse(p.cid)).map((p) => ({ ...p, name: p.node ?? p.cid }))
     const ledger = await ledgerP
     // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
@@ -494,9 +523,13 @@ async function boot() {
     const layupNodes = graph.layup?.nodes ?? null
     const plyRefs = new Map<string, PlyRef>()
     for (const list of Object.values(graph.plies ?? {})) for (const r of list) plyRefs.set(r.node, r)
-    for (const p of parts) {
+    // the material a canard mesh gets for a cut (the canard's own, and the installed canard's against the fuselage's station cut)
+    const canardMat = (p: (typeof parts)[number], c: CutState): { spec: MaterialSpec; mat: THREE.Material } => {
       const spec = materialFor(p.node, p.cid, layupNodes)
-      const mat = spec.kind === 'part' ? partMaterial(cut) : compositeMaterial(spec, cut, plyPlane(p.geo), plySpan(p.geo))
+      return { spec, mat: spec.kind === 'part' ? partMaterial(c) : compositeMaterial(spec, c, plyPlane(p.geo), plySpan(p.geo)) }
+    }
+    for (const p of parts) {
+      const { spec, mat } = canardMat(p, cut)
       const mesh = new THREE.Mesh(p.geo, mat)
       mesh.name = p.node ?? p.cid
       mesh.castShadow = true
@@ -565,6 +598,82 @@ async function boot() {
     key.target.position.copy(centre)
     key.target.updateMatrixWorld()
     pipeline.shadowDirty = true
+
+    // ---- the elevators (chapter 11): the right half joins the canard subject now that its box is measured (its framing is the canard's alone) ----
+    // Every elevator part is a fitted shape (striped). The body shows as bare foam cores from the op that bonds them, and skinned from the
+    // bottom skin on (one solid stands for both). Poses run on sim time (stepElev): the cores, skins and tube are built clear of the canard,
+    // aft of it on two tube jigs; they sit on its hinges for the travel check, and hang on their hinge line for the balance check.
+    const ELEV = fuseRaw?.extras?.elevators ?? null
+    const elevMeshes: Merged[] = []
+    const elevMat = (cid: string, c: CutState, core = false): THREE.Material => {
+      if (cid === 'elevator.right' || cid === 'elevator.left') return core ? compositeMaterial({ kind: 'foam', angles: [] }, c, 0, undefined, { hatch: true }) : partMaterial(c, { color: COLORS.und, hatch: true, name: 'elevator-skin', roughness: 0.55 })
+      if (cid === 'elevator.tube') return partMaterial(c, { color: 0x8d939a, metalness: 0.9, roughness: 0.3, hatch: true, name: 'elevator-tube' })
+      if (cid === 'elevator.hinges') return partMaterial(c, { color: 0xb9bec4, metalness: 0.85, roughness: 0.35, hatch: true, name: 'elevator-hinges' })
+      return partMaterial(c, { color: 0x5d6168, metalness: 0.7, roughness: 0.5, hatch: true, name: 'elevator-weight' })
+    }
+    const isLeftElev = (p: { cid: string; node: string | null }) => p.cid === 'elevator.left' || (p.node ?? '').endsWith('.left')
+    for (const p of elevParts.filter((e) => !isLeftElev(e))) {
+      const addElev = (name: string, core: boolean) => {
+        const mat = elevMat(p.cid, cut, core)
+        const mesh = new THREE.Mesh(core ? p.geo.clone() : p.geo, mat)
+        mesh.name = name
+        mesh.castShadow = true
+        mesh.receiveShadow = true
+        mesh.matrixAutoUpdate = false
+        root.add(mesh)
+        const m: Merged = { cid: p.cid, node: name, mesh, mat, spec: { kind: core ? 'foam' : 'part', angles: [] }, ply: null }
+        merged.push(m)
+        elevMeshes.push(m)
+      }
+      addElev(p.node ?? p.cid, false)
+      if (p.cid === 'elevator.right') addElev((p.node ?? p.cid) + '~core', true) // the bare cores, until the skins go on
+    }
+    // the two tube jigs (the book's NC-7 jigs): posts from the table to the tube's ends, aft of the canard, shown while the elevators are built apart
+    // and while one hangs on its hinge line. REPRESENTATIONAL furniture: striped and labelled like every fitted part.
+    const jigs = new THREE.Group()
+    jigs.name = 'tubeJigs'
+    jigs.visible = false
+    const jigPosts: THREE.Vector3[] = []
+    {
+      const tube = elevParts.find((e) => e.node === 'elevator.tube.right')
+      if (tube && ELEV) {
+        tube.geo.computeBoundingBox()
+        const tb = tube.geo.boundingBox!
+        const tableY = (TABLE_TOP_Y - restY - root.position.y) / INCH // the table top, in the canard's frame (inches)
+        const topY = tb.min.y, h = topY - tableY
+        const jm = partMaterial(cut, { color: 0xb98f5c, hatch: true, name: 'nc7-jig' })
+        for (const z of [tb.min.z + 5, tb.max.z - 5]) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(2.4, h, 1.6), jm)
+          post.position.set((tb.min.x + tb.max.x) / 2, topY - h / 2, z)
+          post.castShadow = true; post.receiveShadow = true
+          jigs.add(post)
+          jigPosts.push(new THREE.Vector3((tb.min.x + tb.max.x) / 2, topY, z)) // the post's top, where its label hangs
+        }
+        root.add(jigs)
+      }
+    }
+    cut.collect(root)
+    cut.update()
+    // the canard and the elevators, installed on the airplane for chapters 12-13: copies with materials that follow the fuselage's station cut
+    // (geometry copied too: a cut rewrites its meshes' draw groups). The left half is the right canard mirrored; the left elevator is its own part.
+    if (bay && fuseRaw?.extras) {
+      const items: { mesh: THREE.Mesh; mirror: boolean }[] = []
+      for (const p of parts) {
+        const geo = p.geo.clone()
+        const { mat } = canardMat({ ...p, geo }, bay.cut)
+        for (const mirror of [false, true]) {
+          const mesh = new THREE.Mesh(geo, mat)
+          mesh.name = `installed:${p.node ?? p.cid}${mirror ? ':left' : ''}`
+          items.push({ mesh, mirror })
+        }
+      }
+      for (const p of elevParts) {
+        const mesh = new THREE.Mesh(p.geo.clone(), elevMat(p.cid, bay.cut))
+        mesh.name = `installed:${p.node ?? p.cid}`
+        items.push({ mesh, mirror: false })
+      }
+      bay.attachInstalled(items)
+    }
 
     // ---- shots: home is fitted to the canard's box; each op's lab shot is authored in the canard's frame (src/shots.ts) and
     // carried through the pose the canard will be in for that op ----
@@ -643,12 +752,94 @@ async function boot() {
     let bayFsig = ''
     // ?hide=<name prefix>[,..] keeps those meshes out of the scene (for close-ups of work hidden inside the core)
     const hide = (params.get('hide') ?? '').split(',').filter(Boolean)
+
+    // ---- the elevators' and the nose gear's motion, in sim time since the op was picked (opT) ----
+    const chapterOf = (id: string | null): number => (id ? graph.ops.find((o) => o.id === id)?.chapter ?? -1 : -1)
+    const orderIdx = (id: string | null) => (id ? graph.order.indexOf(id) : -1)
+    const TRAVEL_SET = new Set(TRAVEL_OPS)
+    const APART_OPS = new Set(['r30.elev-nc2-inserts', 'r30.elev-bond-cores', 'r30.elev-skin-bottom', 'r30.elev-skin-top', 'r30.elev-trim-ends'])
+    const SKIN_OP = 'r30.elev-skin-bottom'
+    /** The elevators are shown on chapter 11's ops only: the chapter 30 ops that follow them in the book (pins, alignment) keep the canard alone, as before. */
+    const elevHidden = () => chapterOf(selected) !== 11
+    type ElevMode = 'travel' | 'hang' | 'apart' | 'none'
+    const elevMode = (): ElevMode => (subject !== 'canard' || !selected ? 'none' : TRAVEL_SET.has(selected) ? 'travel' : selected === HANG_OP ? 'hang' : APART_OPS.has(selected) ? 'apart' : 'none')
+    const hingeXZ: [number, number] = ELEV?.hinge_xz ?? [0, 0]
+    const hangPitch = ELEV ? hangPitchDeg(ELEV.hang_cg.dx, ELEV.hang_cg.dz) : 0
+    const hangNose = ELEV ? hangsNoseDown(ELEV.hang_cg.dx, ELEV.hang_cg.dz) : false
+    let opT = 0, elevDx = 0, elevDeg = 0
+    const eM = new THREE.Matrix4(), eA = new THREE.Matrix4(), eB = new THREE.Matrix4()
+    /** put every elevator part where its mode has it: slid aft by elevDx, turned about the hinge line by elevDeg (TE down), the body as cores or skinned */
+    const applyElev = () => {
+      if (!ELEV) return
+      const mode = elevMode()
+      const skinned = orderIdx(selected) >= orderIdx(SKIN_OP)
+      const [hx, hz] = hingeXZ
+      for (const m of elevMeshes) {
+        const core = m.node!.endsWith('~core')
+        if (core ? skinned : m.cid === 'elevator.right' && !skinned) m.mesh.visible = false
+        // the hinge plates stay on the canard until the elevator hangs from them
+        const turn = m.cid !== 'elevator.hinges' || mode === 'hang'
+        eM.makeTranslation(elevDx, 0, 0)
+        if (turn) eM.multiply(eA.makeTranslation(hx, hz, 0)).multiply(eB.makeRotationZ((-elevDeg * Math.PI) / 180)).multiply(eA.makeTranslation(-hx, -hz, 0))
+        m.mesh.matrix.copy(eM)
+        m.mesh.matrixWorldNeedsUpdate = true
+      }
+      jigs.visible = subject === 'canard' && (mode === 'apart' || mode === 'hang') && ['built', 'current'].includes(bstate.get('elevator.tube.right') ?? '')
+      jigs.position.x = mode === 'hang' ? elevDx : APART_IN
+      root.updateMatrixWorld(true)
+    }
+    const noseGear = fuseRaw?.extras?.nose_gear ?? null
+    /** the nose gear's retraction progress for the selected op: down until the rig op, cranking up during it (RETRACT seconds, after the camera comes round), up after */
+    const noseTNow = (): number => {
+      if (subject !== 'fuselage' || !selected || !noseGear) return 0
+      if (selected === RIG_OP) return retractProgress(opT, noseGear.retract_seconds)
+      return orderIdx(selected) > orderIdx(RIG_OP) ? 1 : 0
+    }
+    /** the motion readout for what is selected now */
+    const kinNow = (): { label: string; value: string; sub: string } | null => {
+      if (subject === 'canard' && ELEV) {
+        const mode = elevMode()
+        if (mode === 'travel') return { label: 'Elevator travel', value: travelText(elevDeg, ELEV.travel), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
+        if (mode === 'hang') return { label: 'Elevator hang', value: hangText(hangPitch, hangNose, opT > hangDuration()), sub: `Hung on its hinge line; ${ELEV.hang_cg.note}` }
+        return null
+      }
+      if (subject === 'fuselage' && bay && noseGear && bay.nosePresent) {
+        const c = noseGear.candidates
+        return { label: 'Nose gear', value: crankText(bay.noseProgress, noseGear.crank_turns), sub: `Axle station is a conflict: F.S. ${c.plans.axle_fs} (plans, drawn) or about ${c.manual.axle_fs} (manual, ghost)` }
+      }
+      return null
+    }
+    const updateKin = () => ui.setKin(kinNow())
+    const snapKin = () => { // a page opened on an op (no flight): the elevators start where the op has them
+      elevDx = elevMode() === 'apart' ? APART_IN : 0
+      elevDeg = 0
+      applyElev()
+    }
+    stepKin = (dt) => {
+      opT += dt
+      if (subject === 'canard' && ELEV) {
+        const mode = elevMode(), k = 1 - Math.exp(-dt * 3.5)
+        let dx = elevDx, deg = elevDeg
+        if (mode === 'travel') { deg = travelAngle(opT, ELEV.travel); dx += (0 - dx) * k }
+        else if (mode === 'hang') { const h = hangState(opT, hangPitch); deg = h.degDown; dx = h.slide }
+        else { dx += ((mode === 'apart' ? APART_IN : 0) - dx) * k; deg += (0 - deg) * k }
+        if (mode !== 'hang') { if (Math.abs(dx - (mode === 'apart' ? APART_IN : 0)) < 1e-3) dx = mode === 'apart' ? APART_IN : 0; if (Math.abs(deg) < 1e-3 && mode !== 'travel') deg = 0 }
+        if (dx !== elevDx || deg !== elevDeg) { elevDx = dx; elevDeg = deg; applyElev(); pipeline.shadowDirty = true }
+      }
+      if (subject === 'fuselage' && bay) {
+        const t = noseTNow()
+        if (t !== bay.noseProgress) { bay.setNose(t); pipeline.shadowDirty = true }
+      }
+      updateKin()
+    }
+
     const recompute = () => {
       opIdx = new Map(visibleOps(graph, variant).map((o, i) => [o.id, i]))
       const mine = subject === 'canard' ? infos : bay?.infos ?? []
       bstate = selected && opIdx.has(selected)
         ? visibleSet(graph, variant, selected, lay, mine)
         : new Map<string, BuildState>(mine.map((i) => [i.name, 'built']))
+      if (subject === 'canard' && elevHidden()) for (const m of elevMeshes) bstate.set(m.node!, 'hidden')
     }
     const paint = () => {
       const cur = selected ? opIdx.get(selected) : undefined, count = opCount(selected)
@@ -664,6 +855,7 @@ async function boot() {
         setPlyLook(m.mat, { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' })
         sig += m.mesh.visible && m.mesh.castShadow ? '1' : '0'
       }
+      applyElev() // after the build state set each mesh's visibility: the body as cores or skinned, the jigs
       // the fuselage: its own build state in its subject; the finished box on its jig while the canard is the subject
       if (bay && (subject === 'fuselage' || bayStale)) {
         bayFsig = subject === 'fuselage' ? bay.paint(bstate, selected, lay, layT, ghost, opIdx) : bay.paint(null, null, lay, layT, ghost, opIdx, canardBackdrop)
@@ -799,7 +991,8 @@ async function boot() {
       if (bay && fsecOn) { bay.setStation(true, fsecFs, fglow); if (dt > 0 && fglow > 0) pipeline.shadowDirty = true }
     }
     // the fuselage's station cut (a constant-FS plane in the box's frame; forward removed, aft kept), with its own glow and state
-    const FS_MIN = 22, FS_MAX = 125.5
+    // the slider's range: the box's (F.S. 22 to 125.5) for chapters 4-9 and 12, forward to the nose tip (-6.8) for a chapter 13 op
+    let FS_MIN = 22, FS_MAX = 125.5
     let fsecOn = false, fsecFs = 70, fglow = 0
     const setFuseSection = (on: boolean, fs: number) => {
       const was = fsecOn
@@ -847,6 +1040,7 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
+      updateKin()
     }
     const updateReadout = () => {
       if (subject === 'fuselage') { updateFuseReadout(); return }
@@ -872,6 +1066,7 @@ async function boot() {
         layers = parts.join(' · ')
       }
       ui.setReadout({ station: secOn ? fmtBl(secBl) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
+      updateKin()
     }
 
     // ---- part labels: one per part group that has geometry ----
@@ -901,7 +1096,23 @@ async function boot() {
       return null
     }
     const wp = new THREE.Vector3(), wn = new THREE.Vector3(), cp = new THREE.Vector3()
+    const eb = new THREE.Box3(), ep = new THREE.Vector3()
     for (const cid of Object.keys(graph.components)) {
+      if (cid.startsWith('elevator.')) {
+        // an elevator part (a fitted shape): the label rides the part where it is now (it slides aft and turns), above the middle of what is drawn
+        const mine = merged.filter((m) => m.cid === cid)
+        if (!mine.length) continue
+        labels.add({
+          id: cid, text: ELEV?.parts[cid]?.label ?? `${graph.components[cid]?.label ?? cid} (fitted shape)`, color: hex(HATCH_COLOR), cls: 'fitted',
+          at: () => {
+            eb.makeEmpty()
+            for (const m of mine) if (m.mesh.visible) eb.union(new THREE.Box3().setFromObject(m.mesh))
+            return eb.isEmpty() ? null : ep.set((eb.min.x + eb.max.x) / 2, eb.max.y + 0.015, eb.min.z + (eb.max.z - eb.min.z) * 0.3)
+          },
+          vis: () => (subject !== 'canard' || !(tourOv.labels ?? labelsOn) || !mine.some(isBuilt) ? 0 : 1),
+        })
+        continue
+      }
       // candidate anchors along the span: with the section off the label sits near B.L. 25; with it on it rides the nearest one that is on the kept (outboard) side
       // each part has its own preferred station, so the pills spread along the span instead of stacking on one point
       const prefer = cid.includes('skin') ? 40 : cid.includes('shear_web') ? 14 : cid.includes('spar_cap') ? 26 : 32
@@ -936,6 +1147,20 @@ async function boot() {
         .concat([{ l: -far, t: -far, r: 0, b: far }, { l: W, t: -far, r: far, b: far }, { l: -far, t: -far, r: far, b: 0 }, { l: -far, t: H, r: far, b: far }])
     }
     const flabels = new Labels(document.getElementById('labels') as HTMLElement, camera, { obstacles: cardRects })
+    // chapters 12-13 (the nose, the gear and the canard on the airplane) carry many parts at once: at most LABEL_BUDGET labels are on in any
+    // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
+    const LABEL_BUDGET = 10
+    const cands: { id: string; wants: () => boolean; score: () => number }[] = []
+    const budgetOn = () => subject === 'fuselage' && [12, 13].includes(chapterOf(selected))
+    const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
+      cands.push({ id, wants, score })
+      return () => {
+        if (!wants()) return 0
+        if (!budgetOn()) return 1
+        const ranked = cands.map((c, i) => ({ c, i })).filter((x) => x.c.wants()).sort((a, b) => b.c.score() - a.c.score() || a.i - b.i)
+        return ranked.slice(0, LABEL_BUDGET).some((x) => x.c.id === id) ? 1 : 0
+      }
+    }
     const fwp = new THREE.Vector3(), fbox = new THREE.Box3()
     if (bay) {
       const byPart = new Map<string, typeof bay.meshes[number]>()
@@ -957,19 +1182,25 @@ async function boot() {
           if (fsecOn && inJig()) x = Math.max(x, fsToX(fsecFs) + 0.5 * INCH) // on the kept side of the cut, never over the gap
           return fwp.set(x, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)
         }
+        const wants = () => {
+          if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return false
+          const st = bstate.get(m.name)
+          if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return false
+          if (fsecOn && inJig() && removedByStationCut(row, fsecFs)) return false // the cut took this part away: its label must not hover over the gap
+          const o = op()
+          // the home view (nothing selected): one label per family of parts (logic/fuselage.ts LABEL_FAMILY); the cut's face keeps its words
+          if (!o) return homeLabel(part, present) || cutHere()
+          return m.hatch || o.components.includes(m.cid) || cutHere()
+        }
+        // chapters 12-13 budget: parts new on the op, then the op's parts, then the cut's face, then other fitted shapes; the book's
+        // F22/F28/panel names and the duplicates (pivot blocks, castings) give way first when the op is not theirs
+        const score = () => (bay.isNewOn(m.cid, selected) ? 90 : op()?.components.includes(m.cid) ? 80 : cutHere() ? 70
+          : part.startsWith('nose_') || part.startsWith('gear_') ? (part === 'nose_pivot_blocks' || part === 'nose_ng_hardware' ? 5 : 20) : 10)
+        const vis = budgeted(m.name, wants, score)
         flabels.add({
           id: m.name, text: row.label, color: bay.labelColor(m), cls: m.hatch ? 'fitted' : '',
           at,
-          vis: () => {
-            if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return 0
-            const st = bstate.get(m.name)
-            if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return 0
-            if (fsecOn && inJig() && removedByStationCut(row, fsecFs)) return 0 // the cut took this part away: its label must not hover over the gap
-            const o = op()
-            // the home view (nothing selected): one label per family of parts (logic/fuselage.ts LABEL_FAMILY); the cut's face keeps its words
-            if (!o) return homeLabel(part, present) || cutHere() ? 1 : 0
-            return m.hatch || o.components.includes(m.cid) || cutHere() ? 1 : 0
-          },
+          vis,
           priority: () => labelPriority({ inOp: !!op()?.components.includes(m.cid), cut: cutHere(), fitted: m.hatch }),
           tie: () => row.fs_max - row.fs_min, // equal priority: the more specific (shorter) part keeps its words
         })
@@ -981,10 +1212,32 @@ async function boot() {
       flabels.add({
         id: 'gear.wheels', text: 'Main gear and wheels (fitted shape)', color: '#' + HATCH_COLOR.toString(16).padStart(6, '0'), cls: 'fitted',
         at: () => bay.wheelAnchor(fwp)?.add(new THREE.Vector3(0, 0.02, 0)) ?? null,
-        vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.wheels.visible ? 1 : 0),
+        vis: budgeted('gear.wheels', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.wheels.visible, () => 10),
         priority: () => labelPriority({ inOp: false, cut: false, fitted: true }),
         tie: () => 0,
       })
+    }
+    // chapters 12-13: the elevators on the airplane (fitted shapes), and the nose wheel's two candidates, each worded as a candidate in conflict
+    if (bay && ELEV) {
+      const ie = bay.installedMeshes().find((m) => m.name === 'installed:elevator.right')
+      flabels.add({
+        id: 'elevator.installed', text: 'Elevators (fitted shape)', color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => (ie && bay.installed.visible ? (fbox.setFromObject(ie), fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)) : null),
+        vis: budgeted('elevator.installed', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.installed.visible, () => (selected === 'r30.elev-fuselage-clearance' ? 80 : 15)),
+        priority: () => labelPriority({ inOp: chapterOf(selected) === 12 && selected === 'r30.elev-fuselage-clearance', cut: false, fitted: true }),
+        tie: () => 0,
+      })
+    }
+    if (bay && noseGear) {
+      const c = noseGear.candidates
+      const wheel = (id: string, text: string, cand: 'plans' | 'manual') => flabels.add({
+        id, text, color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => bay.noseWheelAnchor(cand, fwp),
+        vis: budgeted(id, () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.nosePresent, () => 100), // the conflict: always on
+        priority: () => 4, tie: () => 0,
+      })
+      wheel('mark.nose-plans', `Nose wheel, plans candidate F.S. ${c.plans.axle_fs}: conflict (fitted shape)`, 'plans')
+      wheel('mark.nose-manual', `Ghost: manual candidate about F.S. ${c.manual.axle_fs}: conflict (fitted shape)`, 'manual')
     }
     // the gear positioning's marks (plans-1980:p50 figure 1A): the 15 in from the datum board to the axle line, and the axle station
     if (bay?.markAt && bay.data.gear_marks) {
@@ -999,6 +1252,14 @@ async function boot() {
       mk('mark.dim', MARK_TEXT.dim(gm.axle_fwd_of_board_in), bay.markAt.dim)
       mk('mark.axle', MARK_TEXT.axle(gm.axle_fs), bay.markAt.axle)
     }
+    // the two tube jigs the elevators are built on (and hang from): fitted furniture, labelled as such
+    if (ELEV && jigs.children.length) {
+      labels.add({
+        id: 'elevator.jigs', text: ELEV.jig_label, color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => ep.copy(jigPosts[0]).applyMatrix4(jigs.matrixWorld).add(new THREE.Vector3(0, 0.04, 0)),
+        vis: () => (subject === 'canard' && (tourOv.labels ?? labelsOn) && jigs.visible ? 1 : 0),
+      })
+    }
     stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt); flabels.update(window.innerWidth, window.innerHeight, dt) }
     const setLabels = (on: boolean) => {
       labelsOn = on
@@ -1011,10 +1272,12 @@ async function boot() {
     const select = (id: string | null, fly = true) => {
       selected = id
       lastSel[subject] = id
+      opT = 0 // the elevators' and the nose gear's motions run from here, in sim time
       ui.setSelected(id)
       // the fuselage box turns over (animated, as the canard's turnover) when the step crosses the bottom bond, either way
-      if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey() }
+      if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey(); bay.setNose(noseTNow()); fitCutRange() }
       openOp()
+      if (!fly) snapKin()
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
@@ -1038,6 +1301,15 @@ async function boot() {
       }
       key.target.updateMatrixWorld()
       pipeline.shadowDirty = true
+    }
+    /** re-range the fuselage's station slider for the selected op (the nose ops reach the nose tip), keeping the cut where it is when it still fits */
+    const fitCutRange = () => {
+      const r = cutRangeFor(chapterOf(selected))
+      if (r.min === FS_MIN && r.max === FS_MAX) return
+      FS_MIN = r.min; FS_MAX = r.max
+      fsecFs = Math.max(FS_MIN, Math.min(fsecFs, FS_MAX))
+      if (fsecOn) bay?.setStation(true, fsecFs, 0)
+      ui.scaleSection(secScale(), fsecOn, fsecFs)
     }
     const secScale = () => (subject === 'canard'
       ? { min: 0, max: semi, fmt: fmtBl, label: 'Section station in buttock line inches' }
@@ -1222,7 +1494,9 @@ async function boot() {
         return { kind: f.spec.kind, angles: f.spec.angles.slice(), wet: fi?.wet ?? 0, hatch: !!mat.userData.hatch, fidelity: f.fidelity }
       }
       const info = (m.mesh.material as THREE.Material).userData.comp as { wet: number } | undefined
-      return { kind: m.spec.kind, angles: m.spec.angles.slice(), wet: info?.wet ?? 0 }
+      // an elevator part is a fitted shape: it says so (the canard's own parts report no hatch, as before)
+      const fitted = m.cid.startsWith('elevator.') ? { hatch: !!(m.mesh.material as THREE.Material).userData.hatch, fidelity: 'representational' } : {}
+      return { kind: m.spec.kind, angles: m.spec.angles.slice(), wet: info?.wet ?? 0, ...fitted }
     }
     hook.setWet = (name, w) => {
       const m = merged.find((x) => (x.node ?? x.cid) === name)
@@ -1237,7 +1511,29 @@ async function boot() {
       const bx = new THREE.Box3().setFromObject(mesh)
       return [bx.min.toArray(), bx.max.toArray()]
     }
-    hook.state = () => Object.fromEntries(bstate)
+    // state() is the subject's original set (canard.* ; the box's parts and plies); stateAll() adds the elevators and the nose
+    hook.state = () => Object.fromEntries([...bstate].filter(([k]) => (subject === 'canard' ? k.startsWith('canard.') : fuseLegacy.has(k))))
+    hook.stateAll = () => Object.fromEntries(bstate)
+    hook.kin = () => kinNow()
+    hook.elevators = () => {
+      if (!ELEV) return null
+      const boxes: Record<string, number[][]> = {}
+      for (const m of elevMeshes) if (m.mesh.visible) { const b = new THREE.Box3().setFromObject(m.mesh); boxes[m.node!] = [b.min.toArray(), b.max.toArray()] }
+      return { mode: elevMode(), degDown: elevDeg, slide: elevDx, hangPitch, noseDown: hangNose, jigs: jigs.visible, installed: !!bay?.installed.visible, boxes }
+    }
+    hook.noseGear = () => {
+      if (!bay || !noseGear) return null
+      const w: Record<string, number[]> = {}
+      for (const c of ['plans', 'manual'] as const) { const p = bay.noseWheelAt(c); if (p) w[c] = p }
+      return { t: bay.noseProgress, crank: crankText(bay.noseProgress, noseGear.crank_turns), shown: bay.nosePresent, wheel: w, ghostShown: bay.ghost.visible, stand: bay.noseStand.visible }
+    }
+    hook.installedCanard = () => {
+      if (!bay) return null
+      bay.group.updateMatrixWorld(true)
+      const boxes: Record<string, number[][]> = {}
+      for (const m of bay.installedMeshes()) { const b = new THREE.Box3().setFromObject(m); boxes[m.name] = [b.min.toArray(), b.max.toArray()] }
+      return { shown: bay.installed.visible, at: bay.installed.position.toArray(), nodes: bay.installedMeshes().length, boxes }
+    }
     hook.phase = (name) => phases.get(name) ?? bay?.phases.get(name) ?? null
     hook.lay = () => lay
     hook.setLay = setLay
@@ -1253,7 +1549,9 @@ async function boot() {
       controls.update()
       rig.lastUser = performance.now()
     }
-    hook.labels = () => (subject === 'canard' ? labels.stats() : flabels.stats())
+    // labels() is the subject's original set (the canard's own part names; the fuselage's); labelsAll() adds the elevators' and the nose's
+    hook.labels = () => (subject === 'canard' ? labels.stats().filter((l) => l.id.startsWith('canard.')) : flabels.stats())
+    hook.labelsAll = () => (subject === 'canard' ? labels.stats() : flabels.stats())
     hook.paths = () => {
       pathsGroup.updateWorldMatrix(true, true)
       return pathObjs.map((o) => {

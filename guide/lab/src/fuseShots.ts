@@ -5,9 +5,9 @@
  *
  * focus: `parts` (fuselage part names, as exported) aims at the middle of those parts; with `fs` it aims at that fuselage station on
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
- * positioning's dimension (the datum board to the axle line). `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim).
+ * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | 'box' | 'marks'; dist: number; el: number; az: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | 'box' | 'marks'; dist: number; el: number; az: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -74,8 +74,49 @@ export const FUSE_VIEWS: Record<string, FuseView> = {
   'f09.brake-lines': one('strut', 112, 30, -12),
 }
 
+/** a point of the airplane in the station's box frame (x = F.S., y = W.L. - 17.4, z = -B.L.; see FuselageBay) */
+const at = (fs: number, wl: number, bl = 0): { at: [number, number, number] } => ({ at: [fs, wl - 17.4, -bl] })
+/**
+ * Chapters 12 and 13, authored the same way (kept apart from FUSE_VIEWS, which is the chapter 4-9 set). The nose's part names are the
+ * export's (`nose_<component>`, `gear_nose_strut`: layup.json "extras"). The box stands on its own gear for these ops, the nose toward -X and
+ * the canard installed across the top at W.L. 18.9 (aft of the nose), so:
+ *  - the nose and gear ops look from low, in front and to the left (the room side, az +40), the eye below the canard plane, at the nose
+ *    and the nose gear (F.S. 0..40, W.L. +14 .. -22), so the strut, wheel, plates, floor blocks and door all show;
+ *  - the canard ops look at the canard's trailing edge and the elevators near F22 from the left and behind.
+ */
+const nose = (fs: number, wl: number, dist: number, el = 12, az = 40): FuseView => ({ focus: at(fs, wl), dist, el, az })
+const canardTe = (fs: number, bl: number, dist = 72, el = 16, az = -38): FuseView => ({ focus: at(fs, 19, bl), dist, el, az })
+export const NOSE_VIEWS: Record<string, FuseView> = {
+  // chapter 12: the canard's trailing edge, the elevators and F22, from the left and behind
+  'r30.f22-drill-tabs': canardTe(35, -14, 62, 22, -52),
+  'r30.elev-fuselage-clearance': canardTe(35, -8, 54, 20, -58),
+  'r30.lift-tab-bushings': canardTe(35, -16, 60, 24, -46),
+  'r30.f28-pins-permanent': canardTe(36, -12, 66, 22, -56),
+  // chapter 13: low three-quarter from the front left
+  'f13.strut-reinforce': nose(8, -8, 96, 10),
+  'f13.worm-drive-bench': nose(8, -8, 96, 10),
+  'f13.ng30-plates': nose(6, 4, 72, 12),
+  'f13.ng-box-assemble': nose(8, 0, 86, 12),
+  'f13.ng3-ng4': nose(8, 2, 72, 12, 42),
+  'f13.ng31-f6': nose(10, 2, 80, 12),
+  'f13.floor-blocks': nose(8, 2, 74, 16),
+  'f13.pedal-pivot-blocks': nose(10, 2, 74, 16),
+  'f13.side-pieces': nose(8, 4, 82, 14),
+  'f13.canard-attach-reinforce': canardTe(35, -16, 62, 22, -50),
+  'f13.rudder-pedals': nose(10, 2, 76, 14),
+  'f13.lower-gear': nose(8, -9, 92, 8),
+  'f13.strut-slot-sc': nose(8, -8, 92, 8),
+  'f13.nb-box': nose(14, -4, 98, 10),
+  'f13.rig-nose-gear': nose(22, -8, 122, 8, 36), // the strut's whole swing (F.S. 17 down to the NB box at 31-39.75) in view
+  'f13.pitot-static': nose(4, -2, 86, 12),
+  'f13.top-foam': nose(8, 8, 88, 14),
+  'f13.carve-glass-nose': nose(8, -2, 102, 10),
+  'f13.nose-door': nose(6, -2, 86, 10),
+  'f13.shock-strut': nose(8, -10, 92, 8),
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {

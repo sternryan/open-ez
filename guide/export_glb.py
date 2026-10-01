@@ -67,13 +67,14 @@ def canard_components() -> dict:
 def default_components() -> dict:
     from guide import fuselage_export
 
-    # elevator_components() joins here with the lab's chapter 11 work (M2.4 Task 5): the lab reads every canard.* / glb node as the
-    # canard subject today, so adding the nodes earlier breaks its canard-scope checks.
-    return {**canard_components(), **fuselage_export.components()}
+    # The lab sorts the glb's nodes into subjects by prefix: canard.* and elevator.* are the canard subject, fuselage.*, gear.* and nose.*
+    # the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
+    # (canard_components) stays canard alone.
+    return {**canard_components(), **elevator_components(), **fuselage_export.components(), **nose_components()}
 
 
 def elevator_components() -> dict:
-    """The Roncz elevator parts (core.elevators_book), one glb component per graph id. Not part of the canard-only cutaway export."""
+    """The Roncz elevator parts (core.elevators_book), one glb component per graph id. In default_components(); not in the canard-only cutaway export."""
     from core.elevators_book import build_elevators
 
     p = {n: part.solid.val().copy() for n, part in build_elevators().items()}
@@ -85,8 +86,8 @@ def elevator_components() -> dict:
 
 
 def nose_components() -> dict:
-    """The nose structure and the nose gear (gear down), one glb component per graph id. Not part of default_components() or the
-    canard-only cutaway export until the lab work (M2.4 Task 5). nose.worm_drive has no geometry and is absent."""
+    """The nose structure and the nose gear (gear down), one glb component per graph id. In default_components(); not in the canard-only
+    cutaway export. nose.worm_drive has no geometry and is absent."""
     from core.landing_gear_book import build_nose_gear
     from core.nose_book import COMPONENT_PARTS, build_nose
 

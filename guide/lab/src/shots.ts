@@ -20,6 +20,25 @@ const VIEWS: Record<string, View> = {
   'r30.shear-web': { dist: 46, el: 32, az: 52, vertical: true },
   'r30.top-spar-cap': { dist: 50, el: 31, az: 52 },
   'r30.top-skin': { dist: 54, el: 31, az: 52 },
+  // the elevators: built apart, seen from aft and above (az past 90 swings the eye round the trailing edge); the travel and hang checks are seen along
+  // the span from the root, so the angle reads in profile
+  'r30.elev-bond-cores': { dist: 96, el: 30, az: 132 },
+  'r30.elev-balance-check': { dist: 46, el: 8, az: 86 },
+  'r30.elev-uptravel-test': { dist: 42, el: 8, az: 86 },
+  'r30.elev-travel-check': { dist: 42, el: 8, az: 86 },
+  'r30.elev-nc2-inserts': { dist: 96, el: 30, az: 132 },
+  'r30.elev-skin-bottom': { dist: 96, el: 30, az: 132 },
+  'r30.elev-skin-top': { dist: 96, el: 30, az: 132 },
+  'r30.elev-trim-ends': { dist: 96, el: 30, az: 132 },
+  'r30.elev-hinges': { dist: 84, el: 30, az: 130 },
+  'r30.elev-hinge-slots': { dist: 84, el: 30, az: 130 },
+  'r30.elev-flox-hinges': { dist: 84, el: 30, az: 130 },
+  'r30.elev-nc12a': { dist: 84, el: 30, az: 130 },
+  'r30.canard-tips': { dist: 84, el: 30, az: 130 },
+  'r30.elev-trim-belcrank': { dist: 84, el: 30, az: 130 },
+  'r30.elev-mass-balance': { dist: 84, el: 30, az: 130 },
+  'r30.elev-balance-pockets': { dist: 84, el: 30, az: 130 },
+  'r30.elev-cs11': { dist: 84, el: 30, az: 130 },
 }
 
 /** Which surface the op works on, from the authored tour: the authored eye above the target is the top surface, below it the bottom. */

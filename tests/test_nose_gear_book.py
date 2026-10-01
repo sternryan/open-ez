@@ -172,10 +172,9 @@ def test_nose_components_keys_and_canard_only_export_has_none():
     assert "nose.worm_drive" not in ids  # no geometry
     for k in eg.canard_components():
         assert not (k.startswith("nose.") or k == "gear.nose_strut")
-    for k in eg.default_components():
-        assert not (
-            k.startswith("nose.") or k == "gear.nose_strut"
-        )  # not in the default export until the lab work (Task 5)
+    import inspect
+
+    assert "nose_components()" in inspect.getsource(eg.default_components)  # the lab's fuselage subject shows them (M2.4 Task 5; tests/guide/test_export_glb.py builds the export)
 
 
 def test_nose_export_writes_one_node_per_graph_id(tmp_path):

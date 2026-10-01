@@ -7,10 +7,12 @@ import type { BuildState, MeshInfo } from './logic/build'
 import {
   placement, jigPose, upFace, planHalfWidth, stationAmount, turnPose, hatchSoftness, shownAt, stageAt, poseAngle, poseBase, restLift, animatedTurn, dryTone,
   STATION_CUT, FS_EPS, TRIAL_FIT, FLIP_SECONDS, FLIP_DELAY, JIG_ONLY, GEAR_TABLE_RISE, BANK_DEG, FITTED_TYRE_OD, TYRE_SECTION, RIM_DIA,
+  CANARD_INSTALLED_CHAPTERS, NOSE_CHAPTER,
   type FuseLayup, type FusePlyRow, type Placement, type JigPose, type ShowWindow,
 } from './logic/fuselage'
 import { matte } from './core/materials'
 import { buildFuselageStation, STATION, INCH, blockTopY, fsToX } from './scene/fuselageStation'
+import { nosePoints, nosePose, noseAxleAt, type Candidate, type NosePoints, type NoseGearKin } from './logic/kin'
 import { fuseView, viewOffset } from './fuseShots'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
@@ -47,6 +49,8 @@ export interface FMesh {
   jigOnly: boolean
   /** the material an opening removes: drawn lifted out of it at its op */
   void: boolean
+  /** a chapter 13 nose or nose-gear part (layup.json "extras"): shown only while a chapter 13 op is selected */
+  extra: boolean
 }
 
 // Representational colours (the canard's rule: tell materials apart, not a measured product colour).
@@ -114,6 +118,17 @@ export class FuselageBay {
   private turnK = 1
   private half = { h: 0, w: 0 }
   private yMid = 0
+  /** chapters 12-13: the canard and its elevators installed on the airplane (jig frame, inches), mirrored for the left half */
+  readonly installed = new THREE.Group()
+  /** the nose gear's other axle candidate, drawn as a ghost wheel and strut beside the one the export draws (the p171 / Owner's Manual conflict) */
+  readonly ghost = new THREE.Group()
+  private opChapter = new Map<string, number>()
+  private noseK: NoseGearKin | null = null
+  private nosePts: Record<Candidate, NosePoints> | null = null
+  private noseT = 0
+  private noseShown = false
+  private ghostWheel: THREE.Mesh | null = null
+  private ghostStrut: THREE.Mesh | null = null
 
   constructor(parts: { cid: string; node: string | null; geo: THREE.BufferGeometry; name: string }[], readonly data: FuseLayup, graph: GraphLite) {
     this.group.name = 'fuselage'
@@ -122,12 +137,19 @@ export class FuselageBay {
     this.jigFrame.name = 'fuselageJig'
     this.jigFrame.matrixAutoUpdate = false
     this.order = graph.order
+    for (const o of graph.ops) this.opChapter.set(o.id, o.chapter)
     this.dry = graph.ops.find((o) => o.id === TRIAL_FIT)?.components ?? []
     const byId = new Map(graph.ops.map((o) => [o.id, o]))
     this.order.forEach((id, i) => { for (const c of byId.get(id)?.components ?? []) if (!this.firstIdx.has(c)) this.firstIdx.set(c, i) })
     this.cut = new CutState(this.jigFrame, STATION_CUT.extent, STATION_CUT.depth, 0, new THREE.Vector3(1, 0, 0))
     this.cut.amount = 0
     this.bank = data.bank_deg ?? BANK_DEG
+    const extraParts = new Set(Object.keys(data.extras?.nose_parts ?? {}))
+    const ng = data.extras?.nose_gear
+    if (ng) {
+      this.noseK = ng as NoseGearKin
+      this.nosePts = { plans: nosePoints(this.noseK, 'plans'), manual: nosePoints(this.noseK, 'manual') }
+    }
     const partOf = new Map(Object.entries(data.parts).map(([p, r]) => [r.node, p]))
     // a later shape of a node is not a mesh of its own: it replaces the node's geometry from its op on (paint)
     const stageGeo = new Map<string, THREE.BufferGeometry>()
@@ -190,7 +212,7 @@ export class FuselageBay {
       const cid = row ? row.component : prow.component
       this.meshes.push({
         name: p.name, part, cid, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier,
-        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void,
+        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part),
       })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
     }
@@ -216,8 +238,11 @@ export class FuselageBay {
     this.buildFurniture()
     this.buildNoseStand()
     this.buildMarks()
+    this.buildGhost()
     this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
-    this.jigFrame.add(this.marks)
+    this.jigFrame.add(this.marks, this.installed, this.ghost)
+    this.installed.name = 'installedCanard'
+    this.installed.visible = false
     this.setPose('upright')
     this.pack()
   }
@@ -395,7 +420,8 @@ export class FuselageBay {
     this.cradles['bank-left-45'].visible = rest && this.pose === 'bank-left-45'
     this.cradles['bank-right-45'].visible = rest && this.pose === 'bank-right-45'
     this.marks.visible = rest && this.marksOn
-    this.noseStand.visible = rest && this.pose === 'on-gear'
+    // the nose stand holds the nose until the nose gear is on the floor, and again once it is up; while the gear is down or swinging it would be in the way
+    this.noseStand.visible = rest && this.pose === 'on-gear' && !(this.noseShown && this.noseT < 1)
   }
 
   /** the axle-station marks are on (the datum boards are out) */
@@ -553,6 +579,8 @@ export class FuselageBay {
     const sel = state ? opId : back
     const pose = this.poseFor(sel)
     if (pose !== this.pose) this.setPose(pose)
+    const chapter = sel ? this.opChapter.get(sel) ?? -1 : -1
+    const noseOn = chapter === NOSE_CHAPTER
     const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
     const bi = back ? this.order.indexOf(back) : -1
     const madeBy = (m: FMesh) => (m.ply ? this.order.indexOf(m.ply.op) : this.firstIdx.get(m.cid) ?? Infinity) <= bi
@@ -565,7 +593,7 @@ export class FuselageBay {
         : partPhase(st)
       this.phases.set(m.name, ph)
       const where = st === 'ghost' ? 'jig' : this.placeOf(m, sel)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && shownAt(m.show, sel, this.order) && !(m.jigOnly && where === 'table')
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && shownAt(m.show, sel, this.order) && !(m.jigOnly && where === 'table') && (!m.extra || noseOn)
       // the shape for this op: the node's own, or a later stage (carved, cut, holed)
       const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
       const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
@@ -594,6 +622,14 @@ export class FuselageBay {
     this.wheels.visible = this.pose === 'on-gear' && !!axles?.jig.visible
     sig += this.wheels.visible ? 'w' : ''
     this.marksOn = boards
+    // chapters 12-13: the canard and the elevators stand installed on the airplane (never on a chapter 4-9 op, nor on the finished ch 4-9 box)
+    this.installed.visible = !!state && CANARD_INSTALLED_CHAPTERS.has(chapter)
+    sig += this.installed.visible ? 'c' : ''
+    const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
+    this.noseShown = !!strut?.jig.visible
+    this.ghost.visible = this.noseShown
+    this.applyNose()
+    sig += this.noseShown ? 'n' + this.noseT.toFixed(3) : ''
     this.furniture()
     return sig + (boards ? 'm' : '') + (this.gearTable.visible ? 'g' : '') + (this.cradles['bank-left-45'].visible ? 'l' : '') + (this.cradles['bank-right-45'].visible ? 'r' : '')
   }
@@ -651,6 +687,8 @@ export class FuselageBay {
       const target = new THREE.Vector3()
       if (v.focus === 'marks' && this.markAt) {
         target.copy(this.markAt.dim).lerp(this.markAt.axle, 0.5).applyMatrix4(this.restMatrix(this.poseFor(id))) // both marks' words in frame
+      } else if (typeof v.focus === 'object' && 'at' in v.focus) {
+        target.set(...v.focus.at).applyMatrix4(this.restMatrix(this.poseFor(id)))
       } else if (v.focus === 'box' || v.focus === 'marks') {
         const bx = new THREE.Box3()
         for (const m of this.meshes) if (!m.ply && BOX.has(m.part) && this.placeOf(m, id) === 'jig' && this.isMade(m, id)) bx.union(this.worldBoxAt(m, id))
@@ -700,6 +738,11 @@ export class FuselageBay {
     return { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
   }
 
+  /** the component's first op is `opId`: it is new on that op */
+  isNewOn(cid: string, opId: string | null): boolean {
+    return !!opId && this.firstIdx.get(cid) === this.order.indexOf(opId)
+  }
+
   /** a part exists by this op (its component's first op is at or before it) */
   private isMade(m: FMesh, opId: string): boolean {
     const f = this.firstIdx.get(m.cid)
@@ -731,6 +774,95 @@ export class FuselageBay {
   wheelAnchor(out: THREE.Vector3): THREE.Vector3 | null {
     if (!this.wheels.visible || !this.wheelTop) return null
     return out.copy(this.wheelTop).applyMatrix4(this.jigFrame.matrixWorld)
+  }
+
+  // ---- chapters 12-13: the installed canard, the nose gear's retraction and its other axle candidate ----
+
+  /**
+   * Put the canard and elevators on the airplane (shown for chapters 12-13). `items` are meshes the caller built (materials follow this bay's
+   * station cut; geometry is the caller's own copy, since a cut rewrites its meshes' groups). The canard's frame (x chord, y up, z = -B.L.)
+   * is the box's frame, so the group only translates: its leading edge at F.S. `fs_le` and `z_le` above the wing plane (layup.json
+   * "extras".canard_install), at zero incidence to the longerons (book; config canard_incidence is unsourced and is not used).
+   * `left` items are the mirror image (z scaled by -1); `both: false` items (the left elevator) are placed as they come.
+   */
+  attachInstalled(items: { mesh: THREE.Mesh; mirror: boolean }[]) {
+    const ci = this.data.extras?.canard_install
+    this.installed.position.set(ci?.fs_le ?? 18.7, ci?.z_le ?? 1.5, 0)
+    for (const { mesh, mirror } of items) {
+      if (mirror) mesh.scale.z = -1
+      mesh.castShadow = true; mesh.receiveShadow = true
+      this.installed.add(mesh)
+    }
+    this.cut.collect(this.jigFrame)
+    this.cut.update()
+  }
+
+  /** a part of the installed canard group by mesh name */
+  installedMeshes(): THREE.Mesh[] { return this.installed.children.filter((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh) }
+
+  /** the nose gear's retraction progress (0 down, 1 up) is now `t` */
+  setNose(t: number) {
+    if (t === this.noseT) return
+    this.noseT = t
+    this.applyNose()
+    this.furniture()
+  }
+  get noseProgress(): number { return this.noseT }
+  /** the nose gear's strut is drawn now (a chapter 13 op from the one that makes it) */
+  get nosePresent(): boolean { return this.noseShown }
+
+  /** the other axle candidate: a ghost wheel and a ghost strut, striped like every fitted part and drawn faint (it is a possibility, not the model) */
+  private buildGhost() {
+    const k = this.noseK
+    if (!k) return
+    const mat = partMaterial(this.cut, { color: 0xc8ccd2, hatch: true, name: 'nose-ghost' })
+    setPlyLook(mat, { unroll: 1, front: 1, cure: 1, ghost: true })
+    const R = k.tire_od / 2, tube = k.tire_width / 2
+    const wheel = new THREE.Mesh(new THREE.TorusGeometry(R - tube, tube, 14, 40), mat)
+    const strut = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1.8), mat)
+    for (const m of [wheel, strut]) { m.castShadow = false; m.receiveShadow = false; this.ghost.add(m) }
+    this.ghostWheel = wheel; this.ghostStrut = strut
+    this.ghost.name = 'noseGhost'
+    this.ghost.visible = false
+    this.ghost.userData.representational = true
+    this.ghost.userData.hatch = true
+  }
+
+  /** the strut group's matrix about the NG6 pivot at progress `noseT` (jig frame: x = F.S., y up), and the ghost's */
+  private applyNose() {
+    const pts = this.nosePts
+    if (!pts) return
+    const t = this.noseT
+    const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
+    if (strut) {
+      const p = nosePose(t, pts.plans)
+      strut.jig.matrixAutoUpdate = false
+      strut.jig.matrix.set(p.r[0], p.r[1], 0, p.tx, p.r[2], p.r[3], 0, p.tz, 0, 0, 1, 0, 0, 0, 0, 1)
+      strut.jig.matrixWorldNeedsUpdate = true
+    }
+    if (this.ghostWheel && this.ghostStrut) {
+      const g = pts.manual
+      const [ax, az] = noseAxleAt(t, g)
+      this.ghostWheel.position.set(ax, az, 0)
+      const [px, pz] = g.pivot
+      const len = Math.hypot(ax - px, az - pz)
+      this.ghostStrut.scale.set(1, len, 1.8)
+      this.ghostStrut.position.set((ax + px) / 2, (az + pz) / 2, 0)
+      this.ghostStrut.rotation.set(0, 0, Math.atan2(az - pz, ax - px) - Math.PI / 2)
+    }
+    this.jigFrame.updateMatrixWorld(true)
+  }
+
+  /** where a candidate's wheel centre is now (the box's frame, inches) */
+  noseWheelAt(cand: Candidate): [number, number] | null {
+    return this.nosePts ? noseAxleAt(this.noseT, this.nosePts[cand]) : null
+  }
+  /** a point above a candidate's wheel for its label (world metres), or null with no nose gear shown */
+  noseWheelAnchor(cand: Candidate, out: THREE.Vector3): THREE.Vector3 | null {
+    const c = this.noseWheelAt(cand)
+    if (!c || !this.noseShown || !this.nosePts) return null
+    const R = (this.noseK?.tire_od ?? 9) / 2
+    return out.set(c[0], c[1] + R, cand === 'plans' ? -1 : 1).applyMatrix4(this.jigFrame.matrixWorld)
   }
 
   labelColor(m: FMesh): string {

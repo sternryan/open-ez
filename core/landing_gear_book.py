@@ -375,7 +375,9 @@ def ground_handling() -> dict:
             "main_axle_fs": f"{_P50} figure 1A; {_P171}",
             "main_axle_wl": _P171,
             "tip_back_line_deg": f"{_P171} 12 deg line from the main tyre contact",
+            "nose_wheel_wl": f"{_P171} (CP25 LPC 24)",
         },
+        "nose_wheel_wl": G.wl_nose_wheel,
         "tip_back_check": "not yet computed: no source for the CG height",
         "tip_over_check": "not yet computed: the track has no source",
     }

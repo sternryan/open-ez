@@ -2,7 +2,8 @@
 // Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
 import { barOps, visibleOps } from './logic/graph'
-import { fuseBarOps, FUSE_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
+import { KIN_HOLD } from './logic/kin'
+import { fuseBarOps, FUSE_TOUR_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -266,7 +267,7 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
     const chip = `#chips button[data-op="${o.op}"]`
     s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i }) // the click flies to the op's shot (and turns the canard over for the bottom side)
     const n = nPlies(o.op)
-    if (!n) { t += 0.6 + 1.7; return } // no plies: a short dwell on its shot
+    if (!n) { t += 0.6 + Math.max(1.7, KIN_HOLD[o.op] ?? 0); return } // no plies: a short dwell on its shot (long enough for a motion to play: the elevator checks)
     t += 0.6 + 1.9
     s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
     t += 0.5 + playSeconds(n)
@@ -294,7 +295,7 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear' }
+const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installed', 13: 'Nose and nose gear' }
 const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72
@@ -314,7 +315,7 @@ const FUSE_SWEEP_FS = 110
 /** Which chapters the fuselage Tour button plays: the selected op's chapter when it is a fuselage op (chapters 4-9), else all of them. */
 export function fuselageTourChapters(graph: GraphLite, variant: string, selectedId: string | null): number[] {
   const cur = fuseBarOps(graph, variant).find((o) => o.id === selectedId)
-  return cur ? [cur.chapter] : [...FUSE_CHAPTERS].sort((a, b) => a - b)
+  return cur ? [cur.chapter] : [...FUSE_TOUR_CHAPTERS]
 }
 
 /**
@@ -346,7 +347,7 @@ export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: st
       const n = plies(o.op)
       const turns = o.op in BANK_DEG || o.op === TURN_GEAR
       const after = o.op === TURN_GEAR ? TURN_SECONDS + GEAR_READ_SECONDS : turns ? Math.max(n ? 1.9 : 1.7, TURN_SECONDS + 0.9) : n ? 1.9 : 1.7
-      if (!n) { t += 0.6 + after; continue }
+      if (!n) { t += 0.6 + Math.max(after, KIN_HOLD[o.op] ?? 0); continue } // the nose gear's crank is given its time too
       t += 0.6 + after
       s.push({ t, move: '#play', dur: 0.4 }, { t: t + 0.45, click: '#play' })
       t += 0.5 + playSeconds(n)
