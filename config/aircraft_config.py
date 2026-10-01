@@ -343,6 +343,8 @@ class GeometricParams:
     ctl_cs121_length_in: float = 29.5  # book: p102 trim to fit
     ctl_cs119_length_in: float = 4.1  # cp-corrected: CP26 LPC 29 (printed 3.1)
     ctl_elevator_arm_gu_in: float = 1.9  # book, medium: GU CS12 only; not the Roncz elevator
+    ctl_elevator_arm_fit_in: float = 1.9  # fitted: GU arm 1.9 is a size hint only, Roncz arm not printed
+    ctl_stick_lever_fit_in: float = 5.0  # fitted: stick rod-end lever, representational, not printed
     trim_panel_face_fs_in: float = 40.0  # book: p106 (fs_panel carries 39.75, unchanged)
     trim_pth_dim_from_panel_in: float = 9.5  # book: p106 leftmost end of the PTH
     trim_pth_leftmost_fs_label: float = 49.8  # conflict: p106 label, against the 49.5 derived property
@@ -914,6 +916,10 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "ctl_cs119_length_in": _p("cp-corrected", "cp-text:p26 CP26 LPC 29 CS119 4.1", "high", "plans printed 3.1"),
     "ctl_elevator_arm_gu_in": _p("book", "plans-1980:p102 GU CS12 elevator arm 1.9", "medium",
         "GU schematic only; not the Roncz elevator. GU travel values 20 and 22 are different-airplane numbers and are not carried"),
+    "ctl_elevator_arm_fit_in": _p("unsourced", "", "low",
+        "fitted: GU arm 1.9 is a size hint only, Roncz arm not printed; representational, drives the pushrod kinematics sketch only"),
+    "ctl_stick_lever_fit_in": _p("unsourced", "", "low",
+        "fitted: stick rod-end lever not printed; representational, drives the pushrod kinematics sketch only"),
     "trim_panel_face_fs_in": _p("book", "plans-1980:p106 panel face FS 40", "high", "fs_panel carries 39.75 unchanged; reference only"),
     "trim_pth_dim_from_panel_in": _p("book", "plans-1980:p106 PTH left end 9.5 from the panel", "high"),
     "trim_pth_leftmost_fs": _p("conflict", "plans-1980:p106 panel face 40 plus 9.5", "high",
