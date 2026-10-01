@@ -3,9 +3,9 @@
 /**
  * Render the canard-chapter film to a 1080p MP4, frame by frame, so it never drops a frame.
  *
- *   npm --prefix guide/lab run record -- canard|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url>
+ *   npm --prefix guide/lab run record -- canard|canard12|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url>
  *
- * `canard` is the Roncz chapter 30 film; `fuselage6` is the fuselage's chapter 6 (jig assembly) film; `fuselage9` its chapter 9 (main landing gear) film.
+ * `canard` is the Roncz chapter 30 film; `fuselage6` is the fuselage's chapter 6 (jig assembly) film; `fuselage9` its chapter 9 (main landing gear) film; `canard12` is the canard lowering onto F22 (chapter 12) on the fuselage subject.
  *
  * <url> is the served site's lab page, e.g. http://127.0.0.1:8800/lab/ (build a site with
  * `python -m guide.build_site --models <longez.glb> --out <dir>` and serve <dir> with `python3 -m http.server <port>`).
@@ -18,8 +18,8 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 const [film, out, fps = '60', url] = process.argv.slice(2)
-if (!['canard', 'fuselage6', 'fuselage8', 'fuselage9'].includes(film) || !out || !url) {
-  console.error('usage: record canard|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url of the served /lab/ page>')
+if (!['canard', 'canard12', 'fuselage6', 'fuselage8', 'fuselage9'].includes(film) || !out || !url) {
+  console.error('usage: record canard|canard12|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url of the served /lab/ page>')
   process.exit(2)
 }
 mkdirSync(dirname(out), { recursive: true })

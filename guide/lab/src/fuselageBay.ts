@@ -788,6 +788,7 @@ export class FuselageBay {
   attachInstalled(items: { mesh: THREE.Mesh; mirror: boolean }[]) {
     const ci = this.data.extras?.canard_install
     this.installed.position.set(ci?.fs_le ?? 18.7, ci?.z_le ?? 1.5, 0)
+    this.installedBaseY = this.installed.position.y
     for (const { mesh, mirror } of items) {
       if (mirror) mesh.scale.z = -1
       mesh.castShadow = true; mesh.receiveShadow = true
@@ -795,6 +796,23 @@ export class FuselageBay {
     }
     this.cut.collect(this.jigFrame)
     this.cut.update()
+  }
+
+  private installedBaseY = 0
+  /** hold the installed canard `inches` above its installed pose (the canard12 film's lowering); 0 is the installed pose exactly */
+  setInstalledLift(inches: number) {
+    this.installed.position.y = this.installedBaseY + inches
+    this.installed.updateMatrixWorld(true)
+  }
+  /** the installed canard's box in the box (jig) frame, inches, held `lift` inches above its installed pose */
+  installedBox(lift = 0): THREE.Box3 {
+    const bx = new THREE.Box3()
+    for (const m of this.installedMeshes()) {
+      m.updateMatrix()
+      if (!m.geometry.boundingBox) m.geometry.computeBoundingBox()
+      bx.union(m.geometry.boundingBox!.clone().applyMatrix4(m.matrix))
+    }
+    return bx.translate(new THREE.Vector3(this.installed.position.x, this.installedBaseY + lift, this.installed.position.z))
   }
 
   /** a part of the installed canard group by mesh name */
