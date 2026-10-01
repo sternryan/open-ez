@@ -403,7 +403,7 @@ def test_empty_checklist_heading_hidden(csite):
         assert not pg.is_visible("#checklist-h")
         pg.click('#ops li[data-op="r30.shear-web"]')
         assert pg.is_visible("#checklist-h") and pg.locator("#checklist li").count() > 0
-        pg.click('#ops li[data-op="r30.elevators"]')
+        pg.click('#ops li[data-op="c03.layup-skills"]')
         assert pg.locator("#checklist li").count() == 0 and not pg.is_visible("#checklist-h")
         pg.click('#ops li[data-op="r30.shear-web"]')
         pg.select_option("#variant", "gu")  # r30 op no longer visible -> clearDetail

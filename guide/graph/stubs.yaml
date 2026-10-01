@@ -8,11 +8,6 @@
   title: GU elevators built
   variants: [gu]
   stub: true
-- id: r30.elevators
-  chapter: 30
-  title: Roncz elevators built and hung
-  variants: [roncz]
-  stub: true
 - id: ref.back-cover-3view
   chapter: 0
   title: Plans back cover 3-view (reference)
