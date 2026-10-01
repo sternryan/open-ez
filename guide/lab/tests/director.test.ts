@@ -274,3 +274,71 @@ test('each chapter tour ends its cut in that chapter\'s last op state, never wit
   assert.equal(fin(fuselageTour(HG, 'roncz', hplies, [8])).op, 'f08.step')
   assert.equal(fin(fuselageTour(FG, 'roncz', fplies, [4, 5, 6])).op, undefined, 'the all-chapters tour has no cut and finishes as before')
 })
+
+// ---- M2.4 Task 6: chapters 11-13 tours and the canard12 film ----
+const KG: TourGraph = {
+  order: ['r30.cores', 'r30.elev-skin-top', 'r30.elev-travel-check', 'r30.elev-balance-check', 'r30.f22-drill-tabs', 'r30.elev-fuselage-clearance', 'r30.lift-tab-bushings', 'r30.f28-pins-permanent', 'f13.nb-box', 'f13.rig-nose-gear', 'f13.nose-door'],
+  ops: [op('r30.cores', 30, ['roncz']), op('r30.elev-skin-top', 11, ['roncz']), op('r30.elev-travel-check', 11, ['roncz']), op('r30.elev-balance-check', 11, ['roncz']),
+    op('r30.f22-drill-tabs', 12, ['roncz']), op('r30.elev-fuselage-clearance', 12, ['roncz']), op('r30.lift-tab-bushings', 12, ['roncz']), op('r30.f28-pins-permanent', 12, ['roncz']),
+    op('f13.nb-box', 13, ['roncz']), op('f13.rig-nose-gear', 13, ['roncz']), op('f13.nose-door', 13, ['roncz'])],
+}
+const cardsOf = (s: Step[]) => s.filter((x) => 'card' in x && x.card) as { t: number; card: { title: string; sub?: string } }[]
+const acts = (s: Step[]) => s.filter((x) => 'act' in x) as { t: number; act: string; op?: string; arg?: number }[]
+
+test('chapter cards for 11, 12 and 13 carry the owner\'s words with the em dash the other cards use', async () => {
+  const { fuselageTour } = await import('../src/director')
+  assert.equal(cardsOf(chapterTour(KG, 'roncz', 11))[0].card.title, 'Chapter 11 — Roncz elevators')
+  assert.equal(cardsOf(fuselageTour(KG, 'roncz', () => 0, [12]))[0].card.title, 'Chapter 12 — Canard installation')
+  assert.equal(cardsOf(fuselageTour(KG, 'roncz', () => 0, [13]))[0].card.title, 'Chapter 13 — Nose and nose gear')
+})
+
+test('the chapter 30 tour keeps its own card and closing; chapter 11 visits its ops and closes on its last op with no section cut', () => {
+  assert.deepEqual(cardsOf(chapterTour(G, 'roncz', 30)).map((c) => c.card.sub), ['Chapter 30', 'Build rehearsal'])
+  const s = chapterTour(KG, 'roncz', 11)
+  assert.deepEqual(opsOf(s), ['r30.elev-skin-top', 'r30.elev-travel-check', 'r30.elev-balance-check'])
+  assert.deepEqual(acts(s).filter((a) => a.act === 'finish'), [{ t: acts(s).find((a) => a.act === 'finish')!.t, act: 'finish', op: 'r30.elev-balance-check' }])
+  assert.equal(clicks(s, '#section-on').length, 0)
+  assert.ok(!acts(s).some((a) => a.act === 'closeup'), 'the cut-face close shot is the canard chapter\'s; the elevators keep their op\'s shot')
+})
+
+test('the chapter 11 and 13 tours hold on each pose op until its motion has finished', async () => {
+  const { fuselageTour } = await import('../src/director')
+  const { KIN_HOLD, travelDuration, hangDuration, RIG_WAIT } = await import('../src/logic/kin')
+  const s = chapterTour(KG, 'roncz', 11)
+  assert.ok(gapAfter(s, 'r30.elev-travel-check').gap - 0.6 >= travelDuration(), 'the travel reaches 15 up before the next op')
+  assert.ok(gapAfter(s, 'r30.elev-balance-check').gap - 0.6 >= hangDuration(), 'the hang settles before the next op')
+  const f = fuselageTour(KG, 'roncz', () => 0, [13])
+  assert.ok(gapAfter(f, 'f13.rig-nose-gear').gap - 0.6 >= RIG_WAIT + 6, 'the crank reaches 10.8 turns before the next op')
+  assert.ok(KIN_HOLD['f13.rig-nose-gear'] >= RIG_WAIT + 6)
+})
+
+test('chapters 12 and 13 close on their own last op, chapters 7 and 9 keep their old closing', async () => {
+  const { fuselageTour } = await import('../src/director')
+  const fin = (s: Step[]) => acts(s).find((a) => a.act === 'finish')!
+  assert.equal(fin(fuselageTour(KG, 'roncz', () => 0, [12])).op, 'r30.f28-pins-permanent')
+  assert.equal(fin(fuselageTour(KG, 'roncz', () => 0, [13])).op, 'f13.nose-door')
+  assert.equal(fin(fuselageTour(HG, 'roncz', hplies, [9])).op, undefined)
+})
+
+test('the canard12 film: card, then the lowering, then the chapter 12 ops in order, ending on a held wide shot with the last op selected', async () => {
+  const { canard12Film } = await import('../src/director')
+  const { LOWER_HOLD, LOWER_SECONDS } = await import('../src/logic/lower')
+  const s = canard12Film(KG, 'roncz')
+  assert.equal(cardsOf(s)[0].card.title, 'Chapter 12 — Canard installation')
+  assert.equal(cardsOf(s).length, 1, 'no end card: it ends on the shot')
+  assert.deepEqual(opsOf(s), ['r30.f22-drill-tabs', 'r30.elev-fuselage-clearance', 'r30.lift-tab-bushings', 'r30.f28-pins-permanent'])
+  const lower = acts(s).find((a) => a.act === 'lower')!
+  assert.equal(lower.op, 'r30.f22-drill-tabs')
+  assert.equal(lower.arg, LOWER_SECONDS)
+  assert.ok(lower.t <= 2.3, 'set up as the card starts to fade')
+  assert.ok(clicks(s, '#chips')[0].t >= lower.t + LOWER_HOLD + LOWER_SECONDS, 'no op is picked until the canard has landed')
+  const a = acts(s)
+  assert.equal(a.find((x) => x.act === 'finish')!.op, 'r30.f28-pins-permanent')
+  const close = a.find((x) => x.act === 'closeup')!
+  const end = a.at(-1)!
+  assert.equal(end.act, 'noop')
+  assert.ok(end.t - close.t >= 6, 'the wide shot is held')
+  assert.equal(clicks(s, '#play').length, 0)
+  const dur = Math.max(...s.map((x) => x.t + ('dur' in x ? x.dur : 0))) + 0.6
+  assert.ok(dur >= 35 && dur <= 60, `${dur} s`)
+})

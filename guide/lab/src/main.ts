@@ -19,7 +19,9 @@ import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
 import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
-import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './director'
+import { Director, chapterTour, tourChapter, canard12Film, CHAPTER, TOUR_BUILD_RATE } from './director'
+import { viewOffset } from './fuseShots'
+import { lowerLift, lowerProgress, LOWER_HEIGHT, LOWER_HOLD, LOWER_SECONDS, LOWER_LABEL } from './logic/lower'
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
@@ -347,12 +349,14 @@ async function boot() {
   let stepFlows: (dt: number) => void = () => {}
   let stepKin: (dt: number) => void = () => {} // the elevators' and nose gear's poses and the motion readout
   let stepDirector: (t: number) => void = () => {}
+  let stepLower: (dt: number) => void = () => {} // the canard12 film's lowering
   const step = (dt: number) => {
     simT += dt
     GLOW_TIME.value = simT
     stepDirector(simT)
     stepPose(dt)
     stepKin(dt)
+    stepLower(dt)
     stepBuild(dt)
     stepCut(dt)
     stepFlows(dt)
@@ -701,7 +705,7 @@ async function boot() {
     }
     // the fuselage's shots: one per chapter 4-6 op, aimed where its parts are for that op (src/fuseShots.ts), and its own home view
     const fuseOpIds = graph.order.filter((id) => FUSE_CHAPTERS.has(graph.ops.find((o) => o.id === id)?.chapter ?? -1))
-    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut', 'ffinal', ...Object.values(FUSE_CUTS).map((fs) => `fcut${fs}`)] : [])
+    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut', 'ffinal', 'flowerA', 'flowerB', 'fwide12', 'fwide13', ...Object.values(FUSE_CUTS).map((fs) => `fcut${fs}`)] : [])
     // what the canard subject shows of the fuselage corner: the box as chapter 6 leaves it, on the jig (FuselageBay.paint `backdrop`)
     const canardBackdrop = fuseOpIds.filter((id) => graph.ops.find((o) => o.id === id)?.chapter === 6).at(-1) ?? null
     if (bay) {
@@ -716,6 +720,18 @@ async function boot() {
       // the finished box on its own feet on the floor beside the bench: from the room side and a little aft, the nose kept clear of the dock
       const fb = bay.finishedBox()
       rig.shots.ffinal = fitShot(fb, fb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx, FINAL_SHOT.dy, 0)), new THREE.Vector3(...FINAL_SHOT.dir).normalize(), 30, 1.6, FINAL_SHOT.fill)
+      // the canard12 film (src/director.ts canard12Film): the canard hanging 24 in over its pose, and installed, framed from the left and behind; and the
+      // closing wide shots of the airplane with the canard installed (chapter 12 from the left and behind, chapter 13 from the front left)
+      const M = bay.restMatrix('on-gear')
+      const world = (b: THREE.Box3) => b.clone().applyMatrix4(M)
+      const cHang = world(bay.installedBox(LOWER_HEIGHT)), cDown = world(bay.installedBox(0))
+      const view = (az: number, el: number) => new THREE.Vector3(...viewOffset({ focus: 'box', dist: 1, el, az })).normalize()
+      const rear = view(-52, 24), rearHigh = view(-48, 34)
+      rig.shots.flowerA = fitShot(cHang.clone().union(fb), cHang.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx * 0.3, -0.2, 0)), rear, 30, 1.6, 0.74)
+      rig.shots.flowerB = fitShot(cDown, cDown.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx * 0.3, -0.1, 0)), rear, 30, 1.6, 0.64)
+      const all = fb.clone().union(cDown)
+      rig.shots.fwide12 = fitShot(all, all.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx * 0.3, -0.08, 0)), rear, 30, 1.6, 0.66)
+      rig.shots.fwide13 = fitShot(all, all.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx * 0.3, -0.08, 0)), view(40, 20), 30, 1.6, 0.66)
     }
     const snap = (name: string): CamState | null => {
       if (!rig.shots[name]) return null
@@ -1330,15 +1346,51 @@ async function boot() {
       select(want !== undefined && (want === null || ops.some((o) => o.id === want)) ? want : ops[0]?.id ?? null, fly)
       syncPaths()
     }
+    // ---- the canard12 film's lowering: the canard hangs LOWER_HEIGHT in over its installed pose, then comes down in sim time (lowerLift) while the camera
+    // moves from the hanging shot to the installed one. lowerT is seconds since the descent starts (negative while it hangs); null when no film is lowering. ----
+    let lowerT: number | null = null
+    const endLower = () => {
+      if (lowerT === null) return
+      lowerT = null
+      bay?.setInstalledLift(0)
+      pipeline.shadowDirty = true
+    }
+    const beginLower = (op?: string) => {
+      if (!bay || subject !== 'fuselage') return
+      stopPlay()
+      select(op ?? null, false) // a chapter 12 op: the canard is on the airplane (the step card is renamed below)
+      lowerT = -LOWER_HOLD
+      bay.setInstalledLift(LOWER_HEIGHT)
+      goto('flowerA', false) // unseen: the film's card is still up
+      const title = document.getElementById('step-title'), summary = document.getElementById('step-summary')
+      if (title) title.textContent = LOWER_LABEL
+      if (summary) summary.textContent = 'The canard, with its elevators, comes down onto F22 at the chapter 7 cutout.'
+      pipeline.shadowDirty = true
+    }
+    stepLower = (dt) => {
+      if (lowerT === null || !bay) return
+      lowerT += dt
+      bay.setInstalledLift(lowerLift(lowerT))
+      const A = rig.landing('flowerA'), B = rig.landing('flowerB'), k = lowerProgress(lowerT)
+      if (lowerT > 0) {
+        rig.flying = false
+        camera.position.lerpVectors(A.pos, B.pos, k)
+        controls.target.lerpVectors(A.target, B.target, k)
+        currentShot = 'flowerB'
+      }
+      pipeline.shadowDirty = true
+      if (lowerT >= LOWER_SECONDS) lowerT = null // landed: lowerLift is exactly 0 and the camera is on the installed shot
+    }
     // ---- the tour: src/director.ts scripts the page's own controls with a cursor. A click the director dispatches is told from a person's by
     // director.busy; anything a person does (op chip, variant, scrubber, Play, the camera, Escape, Tour again) ends the tour where it stands. ----
     let orb: { r: number; y: number; a0: number } | null = null
     const director = new Director({
       act(name, arg, op) {
-        if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
+        if (name === 'reset') { endLower(); stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
         else if (name === 'finish') { stopPlay(); select(op ?? null, true) }
         else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : arg !== undefined && rig.shots[`fcut${arg}`] ? `fcut${arg}` : 'fcut', true)
-        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : homeShot(), true)
+        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : chapterOf(selected) === 12 && rig.shots.fwide12 ? 'fwide12' : chapterOf(selected) === 13 && rig.shots.fwide13 ? 'fwide13' : homeShot(), true)
+        else if (name === 'lower') beginLower(op)
       },
       orbit(k, deg, first) {
         if (first) {
@@ -1355,6 +1407,7 @@ async function boot() {
     // whatever ends the tour (its last step, Escape, a person's click), the section cut, paths and labels go back to what the person had
     let before: { secOn: boolean; secBl: number } | null = null
     const endTour = () => {
+      endLower()
       tourRate = 1
       tourOv.labels = tourOv.paths = null
       if (before) { const b = before; before = null; setSection(b.secOn, b.secBl) } // the subject's own section (a tour never changes subject)
@@ -1368,6 +1421,14 @@ async function boot() {
       endTour()
     }
     director.onEnd = endTour
+    const startFilm = (name: 'canard12') => {
+      stopPlay()
+      before = { secOn: fsecOn, secBl: fsecFs }
+      director.load(canard12Film(graph as never, variant))
+      director.start(simT)
+      tourRate = TOUR_BUILD_RATE
+      ui.setTouring(true)
+    }
     const startTour = (chapter?: number) => {
       if (subject === 'fuselage' && bay) {
         stopPlay()
@@ -1614,11 +1675,12 @@ async function boot() {
     hook.ready = true
     if (REC) {
       ;(window as unknown as Record<string, unknown>).__rec = {
-        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6`, `fuselage8` and `fuselage9` the fuselage's chapters 6, 8 and 9 */
+        /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6`, `fuselage8` and `fuselage9` the fuselage's chapters 6, 8 and 9, `canard12` the canard lowering onto F22 (chapter 12) */
         start(name: string) {
           const fuse = /^fuselage([689])$/.exec(name)
-          if (name !== 'canard' && !fuse) throw new Error(`no film called ${name}`)
-          if (fuse) { setSubject('fuselage', false, false); startTour(Number(fuse[1])) } // the box's own subject (never saved), its chapter tour
+          if (name !== 'canard' && name !== 'canard12' && !fuse) throw new Error(`no film called ${name}`)
+          if (name === 'canard12') { setSubject('fuselage', false, false); startFilm('canard12') } // the airplane's subject: the canard lowers onto it
+          else if (fuse) { setSubject('fuselage', false, false); startTour(Number(fuse[1])) } // the box's own subject (never saved), its chapter tour
           else startTour(CHAPTER)
           return director.duration
         },

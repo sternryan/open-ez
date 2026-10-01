@@ -3077,3 +3077,135 @@ def test_the_canard_bar_follows_chapter_11_and_the_fuselage_bar_takes_chapters_1
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.4 Task 6: the chapter 11, 12 and 13 tours and the canard12 film (the canard lowering onto F22).
+# ======================================================================================================================
+def _tour_probe(pg, ops, probes, after):
+    """Run the tour (dt 0.1) until it selects `after` (or ends); return the ops it selected in order and, for each op in `probes`, the probe's
+    value on the last frame the op was selected, i.e. at the moment the tour leaves it."""
+    seen, last = [], {}
+    for _ in range(6000):
+        _tour_adv(pg, 0.1, dt=0.1)
+        sel = pg.evaluate("__lab.selected()")
+        if sel and (not seen or seen[-1] != sel):
+            seen.append(sel)
+        if sel in probes:
+            last[sel] = pg.evaluate(probes[sel])
+        if sel == after or not pg.evaluate("__lab.touring()"):
+            break
+    return seen, last
+
+
+def test_chapter_11_tour_visits_every_elevator_op_and_holds_on_the_travel_and_hang_poses(rsite):
+    g = _graph(rsite)
+    want = _chapter_ops(g, "roncz", 11)
+    assert len(want) >= 10 and want[0] == "r30.elev-nc2-inserts"
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            pg.evaluate(f"__lab.select('{want[0]}')")
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is True and pg.evaluate("__lab.tourIndex()") == 0
+            probes = {"r30.elev-travel-check": "[__lab.elevators().degDown, __lab.kin().value]",
+                      "r30.elev-balance-check": "[__lab.elevators().noseDown, __lab.elevators().hangPitch, __lab.elevators().degDown, __lab.kin().value]"}
+            seen, last = _tour_probe(pg, want, probes, after=want[-1])
+            assert seen == want, seen  # every chapter 11 op, in order
+            deg, text = last["r30.elev-travel-check"]
+            assert deg == pytest.approx(-15.0) and text == "Up 15.0 deg  (target 15, floor 12.5)", last  # the travel reached 15 up before the tour left
+            nose_down, pitch, deg, text = last["r30.elev-balance-check"]
+            assert nose_down is True and pitch > 0 and deg == pytest.approx(-pitch, abs=0.01) and "Hangs nose down" in text, last  # the hang settled
+            pg.click("#tour")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_chapter_12_and_13_tours_visit_every_op_hold_the_crank_and_end_on_their_own_last_op(rsite):
+    g = _graph(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            # chapter 11 (the canard subject): the film's last frame is the elevators as the chapter leaves them, not the bare canard
+            b, pg, errors = _open_rec(p, url)
+            ch11 = _chapter_ops(g, "roncz", 11)
+            pg.evaluate(f"__lab.select('{ch11[0]}')")
+            pg.click("#tour")
+            seen, _ = _tour_probe(pg, ch11, {}, after="never")
+            assert seen == ch11 and pg.evaluate("__lab.touring()") is False
+            assert pg.evaluate("__lab.selected()") == ch11[-1]
+            assert pg.evaluate("__lab.stateAll()")["elevator.right"] != "hidden"
+            b.close()
+            for ch, last_probe in ((12, None), (13, "crank")):
+                want = _chapter_ops(g, "roncz", ch)
+                b, pg, errors = _open_rec(p, url)
+                _to_fuselage(pg)
+                pg.evaluate(f"__lab.select('{want[0]}')")
+                pg.click("#tour")
+                assert pg.evaluate("__lab.touring()") is True
+                probes = {"f13.rig-nose-gear": "__lab.noseGear().crank"} if ch == 13 else {}
+                seen, last = _tour_probe(pg, want, probes, after="never")
+                assert seen == want, (ch, seen)
+                if ch == 13:  # the tour waited out the crank: 10.8 turns, retracted, when it left the rig op
+                    assert last["f13.rig-nose-gear"] == "Crank 10.8 of 10.8 turns (retracted)", last
+                # the closing frame is the chapter's own last op with the canard installed, never another chapter's closing state
+                assert pg.evaluate("__lab.touring()") is False and pg.evaluate("__lab.selected()") == want[-1]
+                assert pg.evaluate("__lab.installedCanard()")["shown"] is True
+                assert pg.evaluate("__lab.subject()") == "fuselage"
+                assert not errors, (ch, errors)
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def test_canard12_film_starts_on_the_card_lowers_the_canard_onto_f22_and_ends_on_a_chapter_12_op(rsite):
+    g = _graph(rsite)
+    want = _chapter_ops(g, "roncz", 12)
+    ci = g["layup"]["fuselage"]["extras"]["canard_install"]
+    inch = 0.0254
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url, query="&clean=1")
+            dur = pg.evaluate("window.__rec.start('canard12')")
+            assert 35 <= dur <= 60, dur
+            assert pg.evaluate("__lab.subject()") == "fuselage"
+            # the first frame is the chapter card, over an airplane with no canard on it
+            pg.evaluate("window.__rec.frame(0.5, false)")
+            assert pg.evaluate("getComputedStyle(document.getElementById('endcard')).display") != "none"
+            assert pg.inner_text("#endcard .ec-t") == "Chapter 12 — Canard installation"
+            assert pg.evaluate("__lab.installedCanard().shown") is False
+            samples, seen, active, t, nxt = [], [], True, 0.5, 0.5
+            while active:
+                r = pg.evaluate("window.__rec.frame(1 / 15, false)")
+                active, t = r["active"], t + 1 / 15
+                sel = pg.evaluate("__lab.selected()")
+                if sel and (not seen or seen[-1] != sel):
+                    seen.append(sel)
+                if t >= nxt:
+                    ic = pg.evaluate("__lab.installedCanard()")
+                    samples.append((t, ic["shown"], ic["at"][1], ic["boxes"].get("installed:canard.core")))
+                    nxt += 0.5
+            shown = [x for x in samples if x[1]]
+            assert shown and not samples[0][1], samples[:3]
+            ys = [x[2] for x in shown]  # the group's height in the box frame (inches): 24 in over, then down, then exactly installed
+            assert ys[0] == pytest.approx(ci["z_le"] + 24.0, abs=1e-6)
+            assert all(a >= b2 - 1e-9 for a, b2 in zip(ys, ys[1:])), ys  # only ever coming down
+            assert ys[-1] == ci["z_le"] and ys.count(ci["z_le"]) >= 20  # then held exactly at the installed pose (Task 5's)
+            falling = [x for x in shown if x[2] > ci["z_le"]]
+            assert len({round(x[2], 3) for x in falling}) >= 8  # a real descent: many distinct heights, not a jump
+            # clear on the way down: the canard's lowest point stays at least `lift` above where it ends up (it only translates vertically)
+            final_min = shown[-1][3][0][1]
+            for _, _, y, bx in falling:
+                assert bx[0][1] - final_min == pytest.approx((y - ci["z_le"]) * inch, abs=1e-6)
+            # the film ends on a chapter 12 op, the last one, with the cut off and the canard installed
+            assert not pg.evaluate("__lab.touring()") and pg.evaluate("__lab.selected()") == want[-1]
+            assert [o for o in seen if o in want] == want  # the chapter 12 ops in order
+            assert pg.evaluate("__lab.cut().enabled") is False
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

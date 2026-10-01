@@ -5,6 +5,7 @@ import { barOps, visibleOps } from './logic/graph'
 import { KIN_HOLD } from './logic/kin'
 import { fuseBarOps, FUSE_TOUR_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
+import { LOWER_HOLD, LOWER_SECONDS } from './logic/lower'
 import type { GraphLite } from './logic/graph'
 
 export type Step =
@@ -259,8 +260,9 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
   let bl = Math.round(semi / 2) // where the slider sits before the first cut (the page's own default)
   const s: Step[] = []
   const name = variant === 'gu' ? 'GU' : 'Roncz'
+  const elev = chapter === ELEVATOR_CHAPTER // chapter 11 (the Roncz elevators): its own card, and it closes on its last op, never the bare canard
   s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
-  s.push({ t: 0, card: { title: `${name} canard`, sub: `Chapter ${chapter}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
+  s.push({ t: 0, card: elev ? { title: chapterCard(chapter) } : { title: `${name} canard`, sub: `Chapter ${chapter}` }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
   s.push({ t: 2.6, cursor: 'show' })
   let t = 3.0
   ops.forEach((o, i) => {
@@ -281,22 +283,27 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
     }
   })
   // the finished canard: cut open at B.L. 20, a close slow 3/4 turn about the cut face (flows and part names on), then the closing card
-  s.push({ t, act: 'finish' })
-  if (hasCut) {
+  const lastOp = elev ? ops.at(-1)?.op : undefined // the elevators as their chapter leaves them (the bare canard hides them)
+  s.push(lastOp ? { t, act: 'finish', op: lastOp } : { t, act: 'finish' })
+  if (hasCut && !elev) {
     s.push({ t: t + 0.2, move: SEC_ON, dur: 0.4 }, { t: t + 0.7, click: SEC_ON })
     if (bl !== END_BL) s.push({ t: t + 0.9, drag: SEC_BL, from: bl, to: END_BL, dur: 1.0 })
   }
   s.push({ t: t + 1.9, cursor: 'hide' })
-  s.push({ t: t + 2.0, act: 'closeup' }) // a 1.8 s flight to the close shot
+  if (!elev) s.push({ t: t + 2.0, act: 'closeup' }) // a 1.8 s flight to the close shot (the elevators keep their op's own shot)
   s.push({ t: t + 4.0, orbit: { dur: 9, deg: -40 } })
-  s.push({ t: t + 13.4, card: { title: `Canard, chapter ${chapter}`, sub: 'Build rehearsal' }, dur: 1.0 })
+  s.push({ t: t + 13.4, card: { title: elev ? `Elevators, chapter ${chapter}` : `Canard, chapter ${chapter}`, sub: 'Build rehearsal' }, dur: 1.0 })
   s.push({ t: t + 16.2, act: 'noop' })
   return s
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installed', 13: 'Nose and nose gear' }
-const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
+const FUSE_CHAPTER_NAME: Record<number, string> = { 11: 'Roncz elevators', 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installation', 13: 'Nose and nose gear' }
+/** the Roncz elevators' chapter: a canard-subject tour */
+export const ELEVATOR_CHAPTER = 11
+/** the chapters whose tours close on their own last op (the canard and elevators installed, the nose), not the bare finished airplane */
+const CLOSE_ON_LAST_OP = new Set([12, 13])
+export const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72
 /** The roll-over box spans FS 79.04-83.55 (layup.json); the chapter 8 film ends its cut inside that, at this station. */
@@ -354,7 +361,7 @@ export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: st
     }
   })
   // a chapter that ends on a station cut finishes in its own last op's state (the box as that chapter leaves it), not the finished airplane on its gear
-  const lastOp = cutFs !== undefined ? tourSteps(graph, variant, chs[0]).at(-1)?.op : undefined
+  const lastOp = cutFs !== undefined || (single && CLOSE_ON_LAST_OP.has(chs[0])) ? tourSteps(graph, variant, chs[0]).at(-1)?.op : undefined
   s.push(lastOp ? { t, act: 'finish', op: lastOp } : { t, act: 'finish' })
   if (cutFs !== undefined) { // the station cut through the chapter's own part, the cursor on the real slider
     s.push({ t: t + 0.2, move: SEC_ON, dur: 0.4 }, { t: t + 0.7, click: SEC_ON })
@@ -371,5 +378,38 @@ export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: st
   }
   s.push({ t: t + 13.4, card: single ? { title: `Fuselage, chapter ${chs[0]}`, sub: 'Build rehearsal' } : { title: 'Fuselage box', sub: 'Build rehearsal' }, dur: 1.0 })
   s.push({ t: t + 16.2, act: 'noop' })
+  return s
+}
+
+/** seconds the canard12 film holds on each chapter 12 op's close view (the drilling, the elevator clearance, the bushings, the pins) */
+export const CANARD12_DWELL = 4.4
+/** seconds the film holds its closing wide shot of the installed canard */
+export const CANARD12_HOLD = 6.5
+/** the film starts the lowering here (as the card starts to fade, so the camera and the canard's first frame are set under it) */
+const LOWER_AT = 2.3
+
+/**
+ * The `canard12` film, "the canard lowering onto F22", on the fuselage subject: the chapter card over the finished airplane with no canard
+ * on it; the canard (with its elevators) then hangs 24 in above its installed pose, comes down over LOWER_SECONDS onto the ch7 cutout (the page's
+ * `lower` action, naming the chapter 12 op it opens on, LOWER_LABEL on the step card), and then the chapter 12 ops one by one (the cursor clicks
+ * each chip, which flies to its own close view), ending on a held wide shot of the installed canard with the last op selected. No end card.
+ */
+export function canard12Film(graph: TourGraph, variant: string): Step[] {
+  const ops = tourSteps(graph, variant, 12)
+  const s: Step[] = []
+  s.push({ t: 0, act: 'reset' }, { t: 0, seg: 0 })
+  s.push({ t: 0, card: { title: chapterCard(12) }, dur: 0.4 }, { t: 2.3, card: null, dur: 0.6 })
+  s.push({ t: LOWER_AT, act: 'lower', arg: LOWER_SECONDS, op: ops[0]?.op })
+  let t = LOWER_AT + LOWER_HOLD + LOWER_SECONDS + 0.6 // the canard has landed
+  s.push({ t: t - 0.4, cursor: 'show' })
+  ops.forEach((o, i) => {
+    const chip = `#chips button[data-op="${o.op}"]`
+    s.push({ t, move: chip, dur: 0.55 }, { t: t + 0.6, click: chip }, { t: t + 0.6, seg: i })
+    t += 0.6 + Math.max(CANARD12_DWELL, KIN_HOLD[o.op] ?? 0)
+  })
+  s.push({ t, act: 'finish', op: ops.at(-1)?.op })
+  s.push({ t: t + 0.1, cursor: 'hide' })
+  s.push({ t: t + 0.2, act: 'closeup' }) // a 1.8 s flight to the wide shot, then it holds
+  s.push({ t: t + 0.2 + 1.8 + CANARD12_HOLD, act: 'noop' })
   return s
 }
