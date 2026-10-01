@@ -24,3 +24,20 @@
 - {id: fuselage.gear_pad, label: Main gear attach pad, fidelity: plans-checked}
 - {id: fuselage.gear_extrusions, label: Main gear tube and extrusions, fidelity: no-geometry}
 - {id: fuselage.bottom, label: Fuselage bottom (partial contour), fidelity: unvalidated}
+# Exterior skins, roll-over structure and attachments (chapters 7-8) and main gear (chapter 9). All no-geometry until the geometry task builds them.
+# Strut, extrusions, canard cutout and roll-over tilt are fitted (representational) shapes; the axle position is book.
+- {id: fuselage.canard_cutout, label: Canard opening (fitted outline), fidelity: no-geometry}
+- {id: fuselage.skin_right, label: Right exterior skin, fidelity: no-geometry}
+- {id: fuselage.skin_left, label: Left exterior skin, fidelity: no-geometry}
+- {id: fuselage.belt_insert, label: Lower-corner belt insert (left side; position read from the figure), fidelity: no-geometry}
+- {id: fuselage.rollover, label: Roll-over structure (tilt not printed), fidelity: no-geometry}
+- {id: fuselage.access_holes, label: Map slot and baggage hole, fidelity: no-geometry}
+- {id: fuselage.harness_attach, label: Front shoulder-harness attachment, fidelity: no-geometry}
+- {id: fuselage.belt_attach, label: Seat-belt attachments (approximate positions), fidelity: no-geometry}
+- {id: fuselage.step, label: Fuselage step, fidelity: no-geometry}
+- {id: gear.strut, label: Main gear strut (fitted shape), fidelity: no-geometry}
+- {id: gear.jig_blocks, label: Gear jig blocks, fidelity: no-geometry}
+- {id: gear.datum_board, label: Gear datum board (at the spar aft face), fidelity: no-geometry}
+- {id: gear.tabs, label: Gear attach tabs and pads, fidelity: no-geometry}
+- {id: gear.axles, label: Axles and brake calipers, fidelity: no-geometry}
+- {id: gear.brake_lines, label: Brake lines, fidelity: no-geometry}

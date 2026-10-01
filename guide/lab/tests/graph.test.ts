@@ -23,6 +23,12 @@ test('barOps leaves out the fuselage chapters', () => {
   assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b'])
 })
 
+test('barOps leaves out chapters 7-9 until the lab adds them', () => {
+  const f: GraphLite = { ops: [op('f07.a', 7, ['both']), op('f08.a', 8, ['both']), op('f09.a', 9, ['both']), ...g.ops], order: ['f07.a', 'f08.a', 'f09.a', ...g.order] }
+  assert.deepEqual(barOps(f, 'roncz').map((o) => o.id), ['r30.a', 'r30.b'])
+  assert.deepEqual(barOps(f, 'gu').map((o) => o.id), ['c10.a'])
+})
+
 test('makeStore toggles, and survives storage that throws', () => {
   const mem = new Map<string, string>()
   const ok = makeStore({ getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => { mem.set(k, v) } })

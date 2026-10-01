@@ -1,0 +1,101 @@
+# Chapter 7 — fuselage exterior skins (plans pp. 7-1 and 7-2; scan pages 45-46). Right side is glassed first at 45 degrees of left bank,
+# then the box is rolled the other way for the left side. The canard cutout outline and the lower-corner insert position are fitted shapes.
+- id: f07.carve-corners
+  chapter: 7
+  title: Round the box corners
+  summary: Sand the bottom and top corners of the box round with a long block held along the longerons. Leave the lower aft corner high where the gear bolts pass.
+  variants: [both]
+  requires: [f06.bottom-tape]
+  components: [fuselage.side_left, fuselage.side_right, fuselage.bottom]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 45}
+  completion:
+    - Corners rounded evenly along the full length
+    - Sanding block kept parallel to the longerons
+    - Lower aft corner left high at the gear bolts
+- id: f07.canard-cutout
+  chapter: 7
+  title: Cut the canard opening
+  summary: Cut the full-size canard pattern from the sides, take out the longeron ahead of F28, and trim the F22 tab down to the marked waterline.
+  variants: [both]
+  requires: [f06.bond-firewall, f06.f28-install]
+  components: [fuselage.canard_cutout, fuselage.longerons, fuselage.f22]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 45}
+  changes:
+    - {cp: 27, lpc: 46, class: OPT, status: verified, kind: official, note: "Optional: lower the longeron notch in F28 by a quarter inch so F28 sits higher against the canopy.", annotation_pp: 45}
+    - {cp: 27, lpc: 50, class: MEO, status: verified, kind: official, note: "The printed A-A section is not accurate; take the outline from the A sheet instead.", annotation_pp: 45}
+  completion:
+    - Opening cut to the full-size pattern, edges clean
+    - Longeron ahead of F28 removed
+    - F22 tab trimmed no higher than waterline 18.9
+- id: f07.fuel-gauge-area
+  chapter: 7
+  title: Sight-gauge area and firewall edge
+  summary: Mark and sand the shallow depression for the fuel sight gauge, peel off the grey tape, and fill the bolt holes with micro. Round the plywood firewall edge and cut the insulation back from the skin lap.
+  variants: [both]
+  requires: [f07.carve-corners]
+  components: [fuselage.side_left, fuselage.firewall]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 46}
+  completion:
+    - Depression sanded at the marked spot, 21 in ahead of the firewall
+    - Grey tape removed and bolt holes filled with micro
+    - Plywood firewall edge rounded about an eighth of an inch
+    - Insulation trimmed back so the skin laps onto the wood
+- id: f07.belt-insert
+  chapter: 7
+  title: Lower-corner belt insert
+  summary: On the left side only, cut out the bottom foam at the lower corner and micro in a small wood insert that will later carry the seat-belt attachment.
+  variants: [both]
+  requires: [f06.bottom-foam-fit]
+  components: [fuselage.belt_insert, fuselage.bottom]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 46}
+  completion:
+    - Foam removed at the lower left corner only
+    - Insert about five inches long, micro-bonded flush
+    - Position taken from the figure; the exact station is a fitted reading
+- id: f07.skin-right
+  chapter: 7
+  title: Glass the right side
+  summary: Jig the fuselage banked 45 degrees to the left and glass the right side, with two crossed UND plies and a third forward of the front seat bulkhead. Add the tapered three-ply strip along the top longeron, F.S. 60 to 110.
+  variants: [both]
+  requires: [f07.carve-corners, f07.canard-cutout, f07.fuel-gauge-area, f07.belt-insert, f05.gear-extrusions]
+  components: [fuselage.skin_right]
+  geometry_visible: false
+  materials:
+    - {cloth: UND, plies: 2, where: "crossed 30 degrees to the longerons, whole skin"}
+    - {cloth: UND, plies: 1, where: "forward of the front seat bulkhead only, along the longerons"}
+    - {cloth: UND, plies: 3, where: "3 in strip, tapered 52/50/48 in, FS 60 to 110"}
+  sources:
+    - {doc: scan-1980, scan_pp: 46}
+  completion:
+    - Fuselage banked 45 degrees left on the jig
+    - Two crossed plies cover the right side, lapping 2 in at the bottom centreline
+    - Third ply stops at the front seat bulkhead
+    - Three-ply strip laid from FS 60 to FS 110
+    - Skin cured before the box is moved
+- id: f07.skin-left
+  chapter: 7
+  title: Glass the left side
+  summary: Roll the fuselage to 45 degrees of right bank once the right skin is cured and glass the left side the same way. Put peel ply on the strake bond areas.
+  variants: [both]
+  requires: [f07.skin-right]
+  components: [fuselage.skin_left]
+  geometry_visible: false
+  materials:
+    - {cloth: UND, plies: 2, where: "crossed 30 degrees to the longerons, whole skin"}
+    - {cloth: UND, plies: 1, where: "forward of the front seat bulkhead only, along the longerons"}
+    - {cloth: UND, plies: 3, where: "3 in strip, tapered 52/50/48 in, FS 60 to 110"}
+  sources:
+    - {doc: scan-1980, scan_pp: 46}
+  completion:
+    - Fuselage rolled to 45 degrees right bank
+    - Left skin laid to the same schedule as the right
+    - Peel ply on the strake bond areas, around the spar cutout and at the firewall and F22
+    - Skin laps half an inch onto the firewall
