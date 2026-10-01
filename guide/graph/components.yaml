@@ -43,15 +43,15 @@
 - {id: gear.tabs, label: Gear attach tabs and pads, fidelity: no-geometry}
 - {id: gear.axles, label: Axles and brake calipers, fidelity: unvalidated}
 - {id: gear.brake_lines, label: Brake lines, fidelity: no-geometry}
-# Elevators (chapter 11, Roncz path), chapter 12 gap ops and the nose and nose gear (chapter 13). No geometry yet; the model tasks that follow add it.
+# Elevators (chapter 11, Roncz path), chapter 12 gap ops and the nose and nose gear (chapter 13). The six elevator shapes are fitted (unvalidated); the rest have no geometry yet.
 # Elevator and nose shapes are templates or A-sheet outlines the owner does not hold, so they will be fitted (representational) shapes.
 - {id: canard.tips, label: Canard tips (foam with glass skin), fidelity: no-geometry}
-- {id: elevator.right, label: Right elevator, fidelity: no-geometry}
-- {id: elevator.left, label: Left elevator, fidelity: no-geometry}
-- {id: elevator.tube, label: Elevator torque tubes, fidelity: no-geometry}
-- {id: elevator.hinges, label: Elevator hinges and NC-12A weldments, fidelity: no-geometry}
-- {id: elevator.balance_weight, label: Elevator outboard mass balance weights (CS-10), fidelity: no-geometry}
-- {id: elevator.cs11_weight, label: Elevator CS-11 lead weights, fidelity: no-geometry}
+- {id: elevator.right, label: Right elevator, fidelity: unvalidated}
+- {id: elevator.left, label: Left elevator, fidelity: unvalidated}
+- {id: elevator.tube, label: Elevator torque tubes, fidelity: unvalidated}
+- {id: elevator.hinges, label: Elevator hinges and NC-12A weldments, fidelity: unvalidated}
+- {id: elevator.balance_weight, label: Elevator outboard mass balance weights (CS-10), fidelity: unvalidated}
+- {id: elevator.cs11_weight, label: Elevator CS-11 lead weights, fidelity: unvalidated}
 - {id: elevator.ice_shield, label: Elevator ice shields (optional), fidelity: no-geometry}
 - {id: gear.nose_strut, label: Nose gear strut (NG-1L), fidelity: no-geometry}
 - {id: nose.worm_drive, label: Nose gear worm drive and crank, fidelity: no-geometry}
