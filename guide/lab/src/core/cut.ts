@@ -27,6 +27,12 @@ export class CutState {
   /** Half angle of the wedge in radians around the owner's Y axis, centred on +Z. 0 = a straight cut. */
   wedge = 0
   readonly uGlow = { value: 0 }
+  /**
+   * The elevators' cove (see logic/cove.ts): (x cut, half span, enabled, 0), in the owner's model frame. Materials that opt in
+   * (materials.ts markCove) discard everything aft of x cut within the half span, and the cap pass closes the wall it leaves.
+   */
+  readonly uCove = { value: new THREE.Vector4(0, 0, 0, 0) }
+  coveOn = false
   /** 0 = whole, 1 = cut to the section plane. */
   amount = 0
   /**
@@ -52,21 +58,37 @@ export class CutState {
   }
 
   setCaps(on: boolean) {
-    if (on === this.capsOn) return
-    this.capsOn = on
-    for (const m of this.materials) {
-      if (m.type !== 'ShaderMaterial') continue
-      const sm = m as THREE.ShaderMaterial
-      if (on) sm.defines.CAPS = 1
-      else delete sm.defines.CAPS
-      m.userData.caps = on
-      m.needsUpdate = true
+    if (on !== this.capsOn) {
+      this.capsOn = on
+      for (const m of this.materials) {
+        if (m.type !== 'ShaderMaterial') continue
+        const sm = m as THREE.ShaderMaterial
+        if (on) sm.defines.CAPS = 1
+        else delete sm.defines.CAPS
+        m.userData.caps = on
+        m.needsUpdate = true
+      }
     }
+    this.applyCaps()
+  }
+
+  /** Open or close the cove (null closes it): its meshes (userData.cove) draw the cap pass while it is open, whatever the section cut does. */
+  setCove(c: { xCut: number; blEnd: number } | null) {
+    this.coveOn = !!c
+    if (c) this.uCove.value.set(c.xCut, c.blEnd, 1, 0)
+    else this.uCove.value.z = 0
+    this.applyCaps()
+  }
+
+  /** Every mesh draws its front pass; the back face pass (the caps) is on while the section is open, and for a cove mesh while the cove is. */
+  private applyCaps() {
     for (const mesh of this.meshes) {
+      const want = this.capsOn || (this.coveOn && !!mesh.userData.cove)
+      if (!!mesh.userData.capsApplied === want && mesh.userData.front) continue
       const front = (mesh.userData.front ?? mesh.material) as THREE.Material
       mesh.userData.front = front
       const g = mesh.geometry
-      if (on) {
+      if (want) {
         const make = front.userData.makeBack as (() => THREE.Material) | undefined
         if (!make) continue
         front.userData.back ??= make()
@@ -75,9 +97,11 @@ export class CutState {
         g.addGroup(0, count, 0)
         g.addGroup(0, count, 1)
         mesh.material = [front, front.userData.back]
+        mesh.userData.capsApplied = true
       } else {
         g.clearGroups()
         mesh.material = front
+        mesh.userData.capsApplied = false
       }
     }
   }
@@ -122,7 +146,7 @@ export class CutState {
 export const CUT_PROJ = { value: new THREE.Matrix4() }
 
 /** Plane used by parts that are never cut (keeps shader permutations shared). */
-export const NO_CUT = { uPlane: { value: new THREE.Vector4(0, 0, -1, 1e4) }, uPlane2: { value: new THREE.Vector4(0, 0, 0, -1) }, uGlow: { value: 0 } }
+export const NO_CUT = { uPlane: { value: new THREE.Vector4(0, 0, -1, 1e4) }, uPlane2: { value: new THREE.Vector4(0, 0, 0, -1) }, uGlow: { value: 0 }, uCove: { value: new THREE.Vector4(0, 0, 0, 0) } }
 
 export const GLSL_CUT_VERT_PARS = /* glsl */ `
 uniform vec4 uCutPlane;

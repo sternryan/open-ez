@@ -355,3 +355,24 @@ def test_layup_extras_carry_the_nose_the_elevators_the_install_and_the_nose_gear
     led = json.loads((fuse_export.parent / "ledger.json").read_text())["gear"]
     assert led["ground_handling"]["nose_wheel_wl"] == -22.0 and "CP25 LPC 24" in led["ground_handling"]["cite"]["nose_wheel_wl"]
     assert led["nose_arm_candidates"] == [17.0, 20.0] and led["nose_arm_candidates_status"] == "conflict"
+
+
+# ---- M2.4 fix 1: the elevators' cove is lab data (layup.json extras), never geometry in the glb or the canard-only cutaway export ----
+def test_the_cove_is_the_elevator_leading_edge_less_the_slot_gap_over_the_elevator_span_and_the_cutaway_export_is_untouched(fuse_export, tmp_path):
+    from config.aircraft_config import config
+    from core import elevators_book as eb
+    from guide.export_glb import canard_components
+
+    G = config.geometry
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"]["extras"]["elevators"]
+    cove = ex["cove"]
+    assert cove["x_cut"] == pytest.approx(eb.x_tube_le() - G.elevator_slot_gap_in, abs=1e-6)  # read from the book numbers, never hard-coded
+    assert cove["slot_gap"] == G.elevator_slot_gap_in == 0.2 and cove["bl_end"] == G.elevator_outboard_end_bl_in == 65.0
+    assert cove["x_cut"] == pytest.approx(ex["tube_le_x"] - 0.2, abs=1e-6) and cove["label"].endswith("(fitted shape)")  # the cove is a fitted shape
+    # the Blender cutaway's canard-only export does not know the cove: same nodes, same bytes as an export of the canard's own components,
+    # and no cove or elevator key in its layup.json
+    d = fuse_export.parent / "canard"
+    again = export_components(canard_components(), tmp_path / "again" / "longez.glb")
+    assert (d / "longez.glb").read_bytes() == again.read_bytes()
+    assert set(read_glb_node_names(d / "longez.glb")) == PRE_M22_CANARD_NODES
+    assert "cove" not in (d / "layup.json").read_text() and "elevator" not in (d / "layup.json").read_text()

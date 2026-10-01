@@ -445,6 +445,13 @@ def extras_section() -> dict:
             "parts": elev_rows,
             "hinge_xz": [round(hx, 6), round(hz, 6)],
             "tube_le_x": round(x_tube_le(), 6),
+            # the canard's own core and skins are not drawn aft of x_cut over the elevators' span while the elevators show (lab only; the glb
+            # and the canard-only cutaway export are untouched): the elevators' leading edge (the fitted tube LE) less the book's hinge slot gap
+            "cove": {
+                "x_cut": round(x_tube_le() - G_.elevator_slot_gap_in, 6), "slot_gap": G_.elevator_slot_gap_in,
+                "bl_end": G_.elevator_outboard_end_bl_in,
+                "label": "Cove cut for the elevators (fitted shape)",
+            },
             "travel": {"up_target_deg": up_t, "up_floor_deg": G_.elevator_travel_up_floor_deg, "down_deg": down},
             "hang_cg": {"dx": HANG_CG[0], "dz": HANG_CG[1], "note": "illustrative CG: masses not sourced", "fitted": True},
             "jig_label": "NC-7 tube jig (fitted shape)",

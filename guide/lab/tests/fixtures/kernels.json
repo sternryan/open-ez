@@ -624,6 +624,12 @@
     0.224538
    ],
    "tube_le_x": 9.114,
+   "cove": {
+    "x_cut": 8.914,
+    "slot_gap": 0.2,
+    "bl_end": 65.0,
+    "label": "Cove cut for the elevators (fitted shape)"
+   },
    "travel": {
     "up_target_deg": 15.0,
     "up_floor_deg": 12.5,
