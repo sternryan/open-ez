@@ -1,6 +1,6 @@
-"""Per-ply areas for the fuselage box (plans chapters 4-6).
+"""Per-ply areas for the fuselage box (plans chapters 4-8).
 
-Every ``materials`` row of a chapter 4-6 op in the guide graph is either MAPPED to a part and a
+Every ``materials`` row of a chapter 4-8 op in the guide graph is either MAPPED to a part and a
 region (SCOPE) or EXCLUDED with a reason (EXCLUDED). ``scope_problems`` fails on any row that is
 neither, so a new row cannot slip into the model unplaced.
 
@@ -27,12 +27,15 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
+import cadquery as cq
+
 from config import config
 
+from . import fuselage_book as fb
 from .fuselage_book import FusePart, build_fuselage
 
 G = config.geometry
-CHAPTERS = (4, 5, 6)
+CHAPTERS = (4, 5, 6, 7, 8)
 _GRAPH_DIR = Path(__file__).resolve().parents[1] / "guide" / "graph"
 
 
@@ -47,6 +50,11 @@ _FACES: dict[str, tuple[tuple[float, float, float], float, str]] = {
     "fwd": ((-1.0, 0.0, 0.0), 0.5, "largest"),
     "aft": ((1.0, 0.0, 0.0), 0.5, "largest"),
     "upper": ((0.0, 0.0, 1.0), 0.9, "largest"),
+    "lower": ((0.0, 0.0, -1.0), 0.9, "largest"),
+    # the side's outside face: normal away from the centreline (right +y, left -y), all pieces of the bent plan
+    "outside": ((0.0, 0.0, 0.0), 0.9, "all"),
+    # the flat top of each small block (belt-attach pads): every block's top face
+    "pad_top": ((0.0, 0.0, 1.0), 0.99, "all"),
     # the side's inside face: normal toward the centreline, all pieces (bent plan, sight gauge, dish)
     "inside": ((0.0, 0.0, 0.0), 0.9, "all"),
 }
@@ -59,6 +67,12 @@ def _direction(part_name: str, name: str) -> tuple[float, float, float]:
         if part_name == "side_right":
             return (0.0, -1.0, 0.0)
         raise FusePlyError(f"{part_name} has no inside face rule")
+    if name == "outside":
+        if part_name == "side_left":
+            return (0.0, -1.0, 0.0)
+        if part_name == "side_right":
+            return (0.0, 1.0, 0.0)
+        raise FusePlyError(f"{part_name} has no outside face rule")
     return _FACES[name][0]
 
 
@@ -100,6 +114,91 @@ class Face:
             hole = math.pi / 4 * self.less_circle_dia**2
             area -= hole
         return area, arm
+
+    def faces(self, part_name: str) -> list:
+        """The faces this region covers on the part solid (the lab shells these; the area is measured on them)."""
+        return _faces(part_name, build_fuselage()[part_name], self.name)
+
+
+# Clips for ClipFace, hashable tuples: ("box", x0, x1, y0, y1, z0, z1) or ("fwd_of_front_bkhd",).
+Clip = tuple
+
+
+def _clip_solid(clip: Clip):
+    if clip[0] == "box":
+        return fb._box(*clip[1:])
+    if clip[0] == "fwd_of_front_bkhd":
+        # forward of the front seat bulkhead's line on the side (derived from the config segment, extended)
+        z_lo, z_hi = -60.0, 60.0
+        x_lo, x_hi = fb.front_bulkhead_line_fs(z_lo), fb.front_bulkhead_line_fs(z_hi)
+        return (
+            cq.Workplane("XZ")
+            .polyline([(0.0, z_lo), (x_lo, z_lo), (x_hi, z_hi), (0.0, z_hi)])
+            .close()
+            .extrude(50.0, both=True)
+        )
+    raise FusePlyError(f"unknown clip {clip[0]}")
+
+
+@dataclass(frozen=True)
+class ClipFace(Face):
+    """A named face of the part solid clipped to a stated region (a box or the front seat bulkhead's slanted line)."""
+
+    clip: Clip = ("box", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+    def label(self) -> str:
+        return f"face:{self.name} clipped ({self.clip[0]})"
+
+    def faces(self, part_name: str) -> list:
+        solid = _clip_solid(self.clip).val()
+        out = []
+        for f in _faces(part_name, build_fuselage()[part_name], self.name):
+            out.extend(f.intersect(solid).Faces())
+        if not out:
+            raise FusePlyError(f"{part_name}: clip {self.clip[0]} leaves no {self.name} face")
+        return out
+
+    def measure(self, part_name: str, part: FusePart) -> tuple[float, float]:
+        fs = self.faces(part_name)
+        area = sum(f.Area() for f in fs)
+        return area, sum(f.Area() * f.Center().x for f in fs) / area
+
+
+@dataclass(frozen=True)
+class PadMargin:
+    """Each block's top face grown by ``margin`` all round (a pad of glass lapping the insert, summed over blocks)."""
+
+    margin: float
+    face: str = "pad_top"
+    lower_bound: bool = False
+    note: str = ""
+
+    def label(self) -> str:
+        return f"pads: block tops plus {self.margin:g} in all round"
+
+    def measure(self, part_name: str, part: FusePart) -> tuple[float, float]:
+        total = moment = 0.0
+        for f in _faces(part_name, part, self.face):
+            bb = f.BoundingBox()
+            a = (bb.xlen + 2 * self.margin) * (bb.ylen + 2 * self.margin)
+            total += a
+            moment += a * f.Center().x
+        return total, moment / total
+
+
+@dataclass(frozen=True)
+class RolloverFaces:
+    """The roll-over box's glass faces, measured on the part's planar faces (see core.fuselage_book)."""
+
+    kind: str  # "inside" or "outside"
+    lower_bound: bool = False
+    note: str = ""
+
+    def label(self) -> str:
+        return f"roll-over {self.kind} faces"
+
+    def measure(self, part_name: str, part: FusePart) -> tuple[float, float]:
+        return fb.rollover_face_area(self.kind)
 
 
 @dataclass(frozen=True)
@@ -160,7 +259,7 @@ def corner_tape_length(part_name: str = "bottom") -> float:
     return _side_contact(build_fuselage()[part_name])[0]
 
 
-Region = Face | CornerTape
+Region = Face | ClipFace | PadMargin | RolloverFaces | CornerTape
 
 
 # --- scope ----------------------------------------------------------------------------------------
@@ -360,6 +459,149 @@ EXCLUDED: dict[tuple[str, str], tuple[str, tuple[str, ...]]] = {
 }
 
 
+# --- chapter 7 skins and chapter 8 roll-over / belt pads ------------------------------------------------
+_P46, _P47, _P48, _P49 = (f"plans-1980:p{n}" for n in (46, 47, 48, 49))
+_ANG = G.skin_ply_angle_deg
+_WRAP_TOP = (
+    "the wrap over the top longeron and the 0.5 in lap onto the firewall are not counted "
+    "(neither is measured)"
+)
+_BOTTOM_AFT = (
+    "the bottom foam behind the rear seat bulkhead is not modelled, so the skin there is not counted; "
+    "the 0.5 in lap onto the firewall is not counted"
+)
+_HALF_OVERLAP = G.skin_bottom_overlap / 2  # each skin runs this far past the centre line: 2 in overlap in all
+_STRIP_FS = G.skin_third_ply_fs_range
+_ROW_SKIN = "crossed 30 degrees to the longerons, whole skin"
+_ROW_THIRD = "forward of the front seat bulkhead only, along the longerons"
+_ROW_STRIP = "3 in strip, tapered 52/50/48 in, FS 60 to 110"
+_STRIP_NOTE = (
+    "tapered 52/50/48 in per ply on p46 (sum 150 = 3 x 50); the area uses the nominal 50 in (FS 60 to 110) for "
+    "every ply, which is exact for the three plies together"
+)
+
+
+def _skin_place(side: str) -> dict[tuple[str, str], Place]:
+    right = side == "right"
+    op = f"f07.skin-{side}"
+    part = f"side_{side}"
+    y_lim = (-_HALF_OVERLAP, 50.0) if right else (-50.0, _HALF_OVERLAP)
+    bottom = ClipFace(
+        "lower",
+        lower_bound=True,
+        note=_BOTTOM_AFT,
+        clip=("box", G.fs_f22 - 1.0, 300.0, y_lim[0], y_lim[1], -50.0, 50.0),
+    )
+    return {
+        (op, _ROW_SKIN): Place(
+            (
+                _t(part, Face("outside", lower_bound=True, note=_WRAP_TOP)),
+                _t("bottom", bottom),
+            ),
+            (_ANG, -_ANG),
+            _P46,
+        ),
+        (op, _ROW_THIRD): Place(
+            (
+                _t(
+                    part,
+                    ClipFace(
+                        "outside",
+                        note="aft edge follows the front seat bulkhead's slanted line, FS 63.55 at the "
+                        "floor to 81.75 at the top (derived from the config)",
+                        clip=("fwd_of_front_bkhd",),
+                    ),
+                ),
+            ),
+            (0.0,),
+            _P46,
+        ),
+        (op, _ROW_STRIP): Place(
+            (
+                _t(
+                    part,
+                    ClipFace(
+                        "outside",
+                        note=_STRIP_NOTE,
+                        clip=(
+                            "box",
+                            _STRIP_FS[0],
+                            _STRIP_FS[1],
+                            -50.0,
+                            50.0,
+                            fb.Z_TOP - G.skin_strip_width,
+                            fb.Z_TOP + 1.0,
+                        ),
+                    ),
+                ),
+            ),
+            (None,),  # p46 does not print the strip's fibre direction
+            _P46,
+        ),
+    }
+
+
+SCOPE.update(_skin_place("right"))
+SCOPE.update(_skin_place("left"))
+SCOPE.update(
+    {
+        ("f08.roll-over-inside", "inside faces"): Place(
+            (_t("rollover", RolloverFaces("inside", note="edge faces and joint fillets not counted")),),
+            (None,),  # p48 does not print an orientation for the BID
+            _P48,
+        ),
+        ("f08.roll-over-outside", "outside skin, 1 in overlap onto seat bulkhead and sides"): Place(
+            (
+                _t(
+                    "rollover",
+                    RolloverFaces(
+                        "outside",
+                        lower_bound=True,
+                        note="the 1 in lap onto the seat bulkhead and sides, the peak rounding and the edge "
+                        "faces are not counted; the front piece's base on the bulkhead is not exposed",
+                    ),
+                ),
+            ),
+            (None,),
+            _P48,
+        ),
+        ("f08.belt-attach", "each of 4 belt-attach pads"): Place(
+            (
+                _t(
+                    "belt_attach",
+                    PadMargin(
+                        1.0,
+                        note="p49 1 in all round the insert; the four pads summed; insert size is fitted",
+                    ),
+                ),
+            ),
+            (None,),
+            _P49,
+        ),
+    }
+)
+EXCLUDED.update(
+    {
+        ("f08.roll-over-outside", "local reinforcement"): (
+            "p48 names two plies of local reinforcement but does not say where or how large",
+            ("rollover",),
+        ),
+        ("f08.roll-over-outside", "buildup over each of 3 inserts"): (
+            "the 12-ply buildup's outline over each 1.25 in insert is not dimensioned",
+            ("rollover", "rollover_inserts"),
+        ),
+        ("f08.roll-over-outside", "over the peak"): (
+            "how far the 3 extra plies run down from the peak is not dimensioned (the peak is also radiused first)",
+            ("rollover",),
+        ),
+        ("f08.shoulder-harness", "over the shoulder-harness pads"): (
+            "the harness pads' outline is not dimensioned and the 4.0 insert spacing is not placeable",
+            ("rollover", "rollover_inserts"),
+        ),
+    }
+)
+
+
 def material_rows(graph) -> list[tuple[str, str]]:
     return [
         (op_id, m["where"])
@@ -498,6 +740,33 @@ def region_direction(part_name: str, face_name: str) -> tuple[float, float, floa
 def region_faces(part_name: str, face_name: str):
     """The faces of a part solid that a ``Face(face_name)`` region measures (same normal rule as the areas)."""
     return _faces(part_name, build_fuselage()[part_name], face_name)
+
+
+def region_shape_faces(p: FusePly) -> list:
+    """The faces a ply's region covers (clipped faces for a ClipFace). Only Face-family regions have them."""
+    reg = region_of(p)
+    if not isinstance(reg, Face):
+        raise FusePlyError(f"{p.node}: region {reg.label()} is not a face region")
+    return reg.faces(p.part)
+
+
+def skin_shell(side: str) -> cq.Workplane:
+    """A thin solid over the region the skin's two crossed plies cover on ``side`` ('right' or 'left').
+
+    The side's outside face plus the bottom's outer face from that side to 1 in past the centre line, offset
+    outward by two UND plies' cured thickness (config uni_ply_thickness). Representational as a shape: the
+    thickness is the cured ply stack, the covered region is the same selection the ply area is measured on, and the
+    wrap over the top longeron is not drawn.
+    """
+    if side not in ("right", "left"):
+        raise FusePlyError(f"side must be 'right' or 'left', not {side!r}")
+    place = SCOPE[(f"f07.skin-{side}", _ROW_SKIN)]
+    t = 2 * config.materials.uni_ply_thickness
+    solids = []
+    for tgt in place.targets:
+        for f in tgt.region.faces(tgt.part):
+            solids.append(f.thicken(t))
+    return cq.Workplane("XY").add(cq.Compound.makeCompound(solids))
 
 
 def excluded_by_part() -> dict[str, list[str]]:

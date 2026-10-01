@@ -55,3 +55,37 @@ materials:
     f28: {material: R250, cite: "plans-1980:p34 panel, F22 and F28 from 0.2 thick dark red R250 (p9 list)"}
     panel: {material: R250, cite: "plans-1980:p34 panel, F22 and F28 from 0.2 thick dark red R250 (p9 list)"}
     firewall: {material: birch_plywood, cite: "plans-1980:p35 quarter-inch birch plywood; no density source yet"}
+    rollover: {material: R45, cite: "plans-1980:p47 roll-over box from 0.35 thick R45 PV foam"}
+    rollover_inserts: {material: birch_plywood, cite: "plans-1980:p48 1/4 plywood inserts; no density source yet"}
+    step: {material: aluminium_2024_T3, cite: "plans-1980:p49 1/8 2024-T3 aluminium plate; no density source yet"}
+
+# Block 2 M2.3 Task 4: the retired 45 lb landing-gear lump, decomposed (core/ledger.py gear_rows).
+# status: book = a printed weight; unsourced = no source (stays in the physics empty weight, flagged).
+# arm_status: book | approximate (arm is a stand-in for a CG the book does not print) | conflict | unsourced.
+gear:
+  retired_lump: {weight_lb: 45.0, arm_in: 84.5, note: "landing_gear_weight_lb / landing_gear_arm_in, unsourced; removed from config"}
+  rows:
+    - name: main_strut
+      label: "Main gear strut"
+      weight_lb: 22.0
+      arm_in: 110.5
+      status: book
+      arm_status: approximate
+      cite: ["plans-1980:p50 Long-EZ gear weighs 22 lb", "plans-1980:p8 MG-1L main gear strut 22-lb S-glass"]
+      note: "one piece, both legs. Arm is the axle station (p50, p171); strut CG not printed, a bow's CG sits above and maybe forward of the axle"
+    - name: nose_strut
+      label: "Nose gear strut"
+      weight_lb: 2.8
+      arm_in: 17.0
+      status: book
+      arm_status: conflict
+      cite: ["plans-1980:p8 NG-1L nose gear strut 2.8 lb S-glass", "plans-1980:p171 nose wheel F.S. 17"]
+      note: "weight is book; station conflicts: p171 prints F.S. 17, the Owner's Manual says about 20 (fs_nose_wheel); nose gear is chapter 13"
+    - name: wheels_brakes_tyres_axles
+      label: "Wheels and brakes (unsourced)"
+      weight_lb: 20.2
+      arm_in: 110.5
+      status: unsourced
+      arm_status: unsourced
+      cite: []
+      note: "the remainder of the retired 45 lb lump (45 - 22 - 2.8); no source for the weight or the arm; placed at the main axle station only so the empty weight does not silently drop"

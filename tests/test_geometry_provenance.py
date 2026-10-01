@@ -121,7 +121,7 @@ def test_book_stations_block1():
 def test_weight_arms_shift_uniformly():
     old = {
         "wing_arm_in": 140.0, "fuselage_arm_in": 100.0,
-        "landing_gear_arm_in": 130.0, "electrical_arm_in": 165.0,
+        "electrical_arm_in": 165.0,
         "instruments_arm_in": 75.0, "interior_arm_in": 95.0,
     }
     w = StructuralWeightParams()

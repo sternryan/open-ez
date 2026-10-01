@@ -120,17 +120,16 @@ def _parents(j):
 
 
 def test_fuselage_parts_and_plies_are_glb_nodes_nested_like_the_canard(fuse_export):
-    from core.fuselage_book import build_fuselage
-    from core.fuselage_plies import plies
+    from guide import fuselage_export as fe
 
     j = _glb_json(fuse_export)
     names = [n["name"] for n in j["nodes"]]
     idx = {n: i for i, n in enumerate(names)}
     parent = _parents(j)
-    parts = build_fuselage()
+    parts = fe._parts()  # the exported chapters' parts (fe.EXPORT_CHAPTERS)
     for part in parts:
         assert f"fuselage.{part}" in idx, part  # one node per part
-    pl = plies()
+    pl = fe._plies()
     with_plies = {p.part for p in pl}
     for p in pl:
         assert parent[idx[p.node]] == f"fuselage.{p.part}", p.node  # a child of its part's sub-assembly
@@ -142,14 +141,16 @@ def test_fuselage_parts_and_plies_are_glb_nodes_nested_like_the_canard(fuse_expo
 
 def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fuse_export):
     from core import fuselage_plies as fp
-    from core.fuselage_book import build_fuselage
 
     lj = json.loads((fuse_export.parent / "layup.json").read_text())
     assert {"ops", "semi_span", "nodes"} <= set(lj)  # the canard's keys are untouched
     assert not any(k.startswith("fuselage.") for k in lj["nodes"])
     fz = lj["fuselage"]
     g = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
-    pl = fp.plies(g)
+    from guide import fuselage_export as fe
+
+    keep = tuple(f"f{c:02d}." for c in fe.EXPORT_CHAPTERS)
+    pl = [p for p in fp.plies(g) if p.op.startswith(keep)]  # the exported chapters' plies
     assert set(fz["nodes"]) == {p.node for p in pl}
     for p in pl:
         n = fz["nodes"][p.node]
@@ -172,7 +173,7 @@ def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fu
     for op_id in fz["ops"]:
         orders = sorted(n["op_order"] for n in fz["nodes"].values() if n["op"] == op_id)
         assert orders == list(range(1, len(orders) + 1)), op_id
-    parts = build_fuselage()
+    parts = fe._parts()
     assert set(fz["parts"]) == set(parts)
     for name, part in parts.items():
         e = fz["parts"][name]

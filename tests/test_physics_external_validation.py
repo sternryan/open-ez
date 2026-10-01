@@ -30,6 +30,7 @@ sys.modules.setdefault("cadquery", MagicMock())
 sys.modules.setdefault("OCP", MagicMock())
 
 from config import config  # noqa: E402
+from core.ledger import gear_cg  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +107,7 @@ class TestGrossWeightSanityCheck:
             sw.wing_weight_lb
             + sw.canard_weight_lb
             + sw.fuselage_weight_lb
-            + sw.landing_gear_weight_lb
+            + gear_cg()[0]
             + sw.electrical_weight_lb
             + sw.instruments_weight_lb
             + sw.interior_weight_lb
@@ -137,7 +138,7 @@ class TestGrossWeightSanityCheck:
             sw.wing_weight_lb
             + sw.canard_weight_lb
             + sw.fuselage_weight_lb
-            + sw.landing_gear_weight_lb
+            + gear_cg()[0]
             + sw.electrical_weight_lb
             + sw.instruments_weight_lb
             + sw.interior_weight_lb

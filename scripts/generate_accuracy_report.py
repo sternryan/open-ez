@@ -37,6 +37,7 @@ sys.modules.setdefault("OCP", MagicMock())
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from core.ledger import gear_cg  # noqa: E402
 from core.reference import truth_airfoil, truth_specs  # noqa: E402
 from core.sources import check_citation  # noqa: E402
 
@@ -461,7 +462,7 @@ def collect_metrics(
         sw.wing_weight_lb
         + sw.canard_weight_lb
         + sw.fuselage_weight_lb
-        + sw.landing_gear_weight_lb
+        + gear_cg()[0]  # ledger gear rows, 45 lb total
         + sw.electrical_weight_lb
         + sw.instruments_weight_lb
         + sw.interior_weight_lb

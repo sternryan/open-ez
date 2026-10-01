@@ -904,8 +904,7 @@ class StructuralWeightParams:
     )  # canard structural weight at the canard (quarter chord), Block 1
     fuselage_weight_lb: float = 120.0
     fuselage_arm_in: float = 54.5  # unsourced (internal 100.0 shifted by -45.5); Block 2 replaces
-    landing_gear_weight_lb: float = 45.0
-    landing_gear_arm_in: float = 84.5  # unsourced (internal 130.0 shifted by -45.5); Block 2 replaces
+    # landing gear: no free constants; decomposed rows in data/mass_ledger.yaml `gear:` (core.ledger.gear_rows)
     electrical_weight_lb: float = 25.0
     electrical_arm_in: float = 119.5  # unsourced (internal 165.0 shifted by -45.5); Block 2 replaces
     instruments_weight_lb: float = 15.0

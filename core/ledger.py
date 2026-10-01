@@ -87,6 +87,8 @@ def fuselage_ledger() -> list[dict]:
     unplaced = excluded_by_part()
     rows = []
     for name, part in parts.items():
+        if part.void:  # a cut-away volume (the canard opening), not a part: it has no mass and no row
+            continue
         vol = part.solid.val().Volume()
         arm_core = part.solid.val().Center().x
         mat, dens, why = _core(name, mats)
@@ -176,6 +178,69 @@ def fuselage_cg(lower_bound: bool = False) -> tuple[float, float | None, list[st
     return w, (m / w if w else None), inc, exc
 
 
+# --- landing gear (Block 2 M2.3 Task 4) ------------------------------------------------------------
+# The retired 45 lb lump, decomposed in data/mass_ledger.yaml `gear:`. Rows with status "unsourced"
+# stay in the physics empty weight (core/analysis.py) but never enter a lower bound.
+class GearRow(NamedTuple):
+    name: str
+    label: str
+    weight_lb: float
+    arm_in: float
+    status: str  # book | unsourced
+    arm_status: str  # book | approximate | conflict | unsourced
+    cite: tuple[str, ...]
+    note: str
+
+
+def gear_rows() -> list[GearRow]:
+    """The decomposed gear rows with their status flags (every cite checked against the registry)."""
+    from .sources import check_citation
+
+    rows = []
+    for r in load_ledger()["gear"]["rows"]:
+        for c in r["cite"]:
+            check_citation(c)
+        if r["status"] != "unsourced" and not r["cite"]:
+            raise ValueError(f"gear row {r['name']}: a sourced row needs a citation")
+        rows.append(
+            GearRow(r["name"], r["label"], float(r["weight_lb"]), float(r["arm_in"]), r["status"],
+                    r["arm_status"], tuple(r["cite"]), r["note"])
+        )
+    return rows
+
+
+def gear_cg(sourced_only: bool = False) -> tuple[float, float | None]:
+    """(weight_lb, arm_in) of the gear rows; sourced_only drops every row whose status is unsourced."""
+    rows = [r for r in gear_rows() if not sourced_only or r.status != "unsourced"]
+    w = sum(r.weight_lb for r in rows)
+    return w, (sum(r.weight_lb * r.arm_in for r in rows) / w if w else None)
+
+
+def gear_json() -> dict:
+    from .landing_gear_book import ground_handling  # lazy: landing_gear_book pulls in CadQuery
+
+    return {
+        "rows": [r._asdict() | {"cite": list(r.cite)} for r in gear_rows()],
+        "total_lb": gear_cg()[0],
+        "sourced_lb": gear_cg(sourced_only=True)[0],
+        "ground_handling": ground_handling(),
+    }
+
+
+def _lower_bound_with_gear() -> dict:
+    """cg_lower_bound: the fuselage's placed core and glass plus the sourced gear rows (never the unsourced one)."""
+    w, arm, inc, exc = fuselage_cg(lower_bound=True)
+    m = w * arm if arm is not None else 0.0
+    for r in gear_rows():
+        if r.status == "unsourced":
+            exc[r.name] = _NYC + "weight and arm of " + r.label.lower() + " not sourced"
+            continue
+        inc.append(r.name)
+        w += r.weight_lb
+        m += r.weight_lb * r.arm_in
+    return {"weight_lb": w, "arm_in": (m / w if w else None), "included": inc, "excluded": exc}
+
+
 def fuselage_ledger_json() -> dict:
     """Plain, JSON-serialisable ledger for the lab readout: per-part rows and both CG results."""
     def cg_dict(lower: bool) -> dict:
@@ -186,9 +251,10 @@ def fuselage_ledger_json() -> dict:
         "units": {"mass": "lb", "arm": "in (fuselage station)", "area": "in^2", "volume": "in^3"},
         "parts": fuselage_ledger(),
         "cg": cg_dict(False),
-        "cg_lower_bound": cg_dict(True),
+        "cg_lower_bound": _lower_bound_with_gear(),
+        "gear": gear_json(),
         "notes": [
             "cg: parts whose core and glass are both fully sourced and placed (none yet).",
-            "cg_lower_bound: core plus only the glass rows that are placed; an undercount, not a weight.",
+            "cg_lower_bound: core plus only the glass rows that are placed, plus the sourced gear rows (main and nose strut); never the unsourced wheels and brakes row. An undercount, not a weight.",
         ],
     }
