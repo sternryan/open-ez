@@ -7,7 +7,7 @@ import { GLOW_TIME, GLOW_VIEW_H, flowRibbon, glowLineMaterial } from './render/f
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
 import { CHEAP, setCheapShaders } from './core/materials'
-import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS, FOLLOW } from './core/composite'
+import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS, FOLLOW, HATCH_COLOR } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
@@ -23,7 +23,7 @@ import { Director, chapterTour, tourChapter, CHAPTER, TOUR_BUILD_RATE } from './
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
-import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, removedByStationCut, crossedByStationCut, labelPriority, jigPose, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite } from './logic/fuselage'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, FUSE_CHAPTERS, SUBJECT_KEY, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { STATION, fsToX } from './scene/fuselageStation'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS } from './director'
 import './style.css'
@@ -97,7 +97,7 @@ interface LabHook {
   paths(): { id: string; kind: string; visible: boolean; drawn: boolean; color: number[]; worldPoints: number[][]; clipped: boolean }[]
   /** world metres -> canvas CSS pixels [x, y] with the camera as it is now */
   project(p: number[]): number[]
-  /** what the lab is building: the canard (the default) or the fuselage box (chapters 4-6); setSubject is the control's action */
+  /** what the lab is building: the canard (the default) or the fuselage box and gear (chapters 4-9); setSubject is the control's action */
   subject(): Subject; setSubject(s: Subject): void
   /** the fuselage: where each part is now (on the layup table, in the jig, or not made yet) and which way up the box is */
   placement(): Record<string, 'table' | 'jig' | 'none'>; jigPose(): string
@@ -107,6 +107,12 @@ interface LabHook {
   fuseToWorld(p: number[]): number[]
   /** the same with the box at rest in `pose` (no turn under way), and whether the box is turning over now */
   fuseRestToWorld(p: number[], pose: string): number[]; fuseTurning(): boolean
+  /** the finished box on its feet: the jig bench's world box and each gear part's (and the wheels') world box as drawn now, metres */
+  fuseFloor(): { bench: number[][]; gear: Record<string, number[][]>; noseStand: boolean } | null
+  /** the gear positioning's marks (plans-1980:p50): shown, their stations and words, their anchors in the box's frame and the world */
+  gearMarks(): { shown: boolean; axleFs: number; boardFs: number; dimText: string; axleText: string; dimModel: number[]; axleModel: number[]; dimWorld: number[]; axleWorld: number[] } | null
+  /** the ground-handling note as the readout shows it */
+  ground(): { value: string; sub: string } | null
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
@@ -130,7 +136,12 @@ const hook: LabHook = {
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
-  fuseRestToWorld: (p) => p, fuseTurning: () => false,
+  fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
+}
+/** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
+const MARK_TEXT = {
+  dim: (inches: number) => `${inches} in`,
+  axle: (fs: number) => `Axle C.L. F.S. ${fs} (book)`,
 }
 if (TEST) window.__lab = hook
 
@@ -183,6 +194,9 @@ function mergeModel(scene: THREE.Object3D, graph: Graph, parts: Set<string> = ne
   }
   return out
 }
+
+/** The finished fuselage's home shot (main: rig.shots.ffinal): eye direction from the target, target offset (metres) and frame fill. */
+const FINAL_SHOT = { dir: [0.62, 0.6, 0.5] as [number, number, number], dx: -0.32, dy: -0.12, fill: 0.56 }
 
 /** Distance along `dir` from `target` at which the box spans `fill` of the frame width, as a Shot. */
 function fitShot(box: THREE.Box3, target: THREE.Vector3, dir: THREE.Vector3, fovDeg: number, aspect: number, fill: number): Shot {
@@ -464,10 +478,13 @@ async function boot() {
     const ledgerP: Promise<LedgerLite | null> = fetch(DATA + 'ledger.json').then((r) => (r.ok ? (r.json() as Promise<LedgerLite>) : null)).catch(() => null)
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
     const fuseData = graph.layup?.fuselage ?? null
-    const allParts = mergeModel(gltf.scene, graph, new Set(Object.values(fuseData?.parts ?? {}).map((r) => r.node)))
-    // the canard and the fuselage box share the glb; everything below `root` is the canard, exactly as before the fuselage came
-    const parts = allParts.filter((p) => !p.cid.startsWith('fuselage.'))
-    const fuseParts = allParts.filter((p) => p.cid.startsWith('fuselage.')).map((p) => ({ ...p, name: p.node ?? p.cid }))
+    // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
+    const fuseNodes = new Set([...Object.values(fuseData?.parts ?? {}).map((r) => r.node), ...Object.values(fuseData?.stages ?? {}).flat().map((st) => st.node)])
+    const allParts = mergeModel(gltf.scene, graph, fuseNodes)
+    // the canard, the fuselage box and the main gear share the glb; everything below `root` is the canard, exactly as before the fuselage came
+    const isFuse = (cid: string) => cid.startsWith('fuselage.') || cid.startsWith('gear.')
+    const parts = allParts.filter((p) => !isFuse(p.cid))
+    const fuseParts = allParts.filter((p) => isFuse(p.cid)).map((p) => ({ ...p, name: p.node ?? p.cid }))
     const ledger = await ledgerP
     // One composite material per merged mesh, chosen from the layup cloth/orientation and the component id (logic/materials.ts).
     // The plane lives in the model frame (`root`), so it follows the flip. As in the 2.1 viewer, the kept side of a CutState is local
@@ -575,13 +592,18 @@ async function boot() {
     }
     // the fuselage's shots: one per chapter 4-6 op, aimed where its parts are for that op (src/fuseShots.ts), and its own home view
     const fuseOpIds = graph.order.filter((id) => FUSE_CHAPTERS.has(graph.ops.find((o) => o.id === id)?.chapter ?? -1))
-    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut'] : [])
+    const fuseShotIds = new Set<string>(bay ? [...fuseOpIds, 'fhome', 'fcut', 'ffinal'] : [])
+    // what the canard subject shows of the fuselage corner: the box as chapter 6 leaves it, on the jig (FuselageBay.paint `backdrop`)
+    const canardBackdrop = fuseOpIds.filter((id) => graph.ops.find((o) => o.id === id)?.chapter === 6).at(-1) ?? null
     if (bay) {
       Object.assign(rig.shots, bay.shots(fuseOpIds, LAB_FOV))
       const hb = bay.homeBox()
       // aimed a little toward the nose end: the dock covers the frame's left third
       rig.shots.fcut = bay.cutShot(FUSE_CUT_FS, LAB_FOV)
       rig.shots.fhome = fitShot(hb, hb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(-0.22, -0.05, 0)), new THREE.Vector3(-0.22, 0.6, 0.77).normalize(), 30, 1.6, 0.62)
+      // the finished box on its own feet on the floor beside the bench: from the room side and a little aft, the nose kept clear of the dock
+      const fb = bay.finishedBox()
+      rig.shots.ffinal = fitShot(fb, fb.getCenter(new THREE.Vector3()).add(new THREE.Vector3(FINAL_SHOT.dx, FINAL_SHOT.dy, 0)), new THREE.Vector3(...FINAL_SHOT.dir).normalize(), 30, 1.6, FINAL_SHOT.fill)
     }
     const snap = (name: string): CamState | null => {
       if (!rig.shots[name]) return null
@@ -641,7 +663,7 @@ async function boot() {
       }
       // the fuselage: its own build state in its subject; the finished box on its jig while the canard is the subject
       if (bay && (subject === 'fuselage' || bayStale)) {
-        bayFsig = bay.paint(subject === 'fuselage' ? bstate : null, selected, lay, layT, ghost, opIdx)
+        bayFsig = subject === 'fuselage' ? bay.paint(bstate, selected, lay, layT, ghost, opIdx) : bay.paint(null, null, lay, layT, ghost, opIdx, canardBackdrop)
         bayStale = false
       }
       sig += bayFsig
@@ -821,10 +843,12 @@ async function boot() {
       }
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
+      ui.setGround(groundRow(ledger))
     }
     const updateReadout = () => {
       if (subject === 'fuselage') { updateFuseReadout(); return }
       ui.setCg(null)
+      ui.setGround(null)
       const n = opCount(selected)
       const cnt = new Map<string, number>()
       const lit: Record<string, LayupNode> = {}
@@ -913,6 +937,8 @@ async function boot() {
     if (bay) {
       const byPart = new Map<string, typeof bay.meshes[number]>()
       for (const m of bay.meshes) if (!m.row) byPart.set(m.part, m)
+      // a part is there when it is drawn (the wheels are the bay's own meshes, shown on the finished box only)
+      const present = (p: string) => (p === 'wheels' ? bay.wheels.visible : !!(byPart.get(p) && bay.shown(byPart.get(p)!.name) && ['built', 'current'].includes(bstate.get(byPart.get(p)!.name) ?? '')))
       // where along the part (0 = its forward end) the label sits: the long parts are spread out so their pills do not stack at mid-box
       const along = (part: string) => (part.startsWith('side_') ? 0.72 : part.startsWith('top_longeron') ? 0.3 : part === 'bottom' ? 0.42 : 0.5)
       for (const [part, m] of byPart) {
@@ -937,12 +963,38 @@ async function boot() {
             if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return 0
             if (fsecOn && inJig() && removedByStationCut(row, fsecFs)) return 0 // the cut took this part away: its label must not hover over the gap
             const o = op()
-            return !o || m.hatch || o.components.includes(m.cid) || cutHere() ? 1 : 0
+            // the home view (nothing selected): one label per family of parts (logic/fuselage.ts LABEL_FAMILY); the cut's face keeps its words
+            if (!o) return homeLabel(part, present) || cutHere() ? 1 : 0
+            return m.hatch || o.components.includes(m.cid) || cutHere() ? 1 : 0
           },
           priority: () => labelPriority({ inOp: !!op()?.components.includes(m.cid), cut: cutHere(), fitted: m.hatch }),
           tie: () => row.fs_max - row.fs_min, // equal priority: the more specific (shorter) part keeps its words
         })
       }
+    }
+    // the main wheels on the finished box: fitted (logic/fuselage.ts FITTED_TYRE_OD), so labelled as such; at the home view this one
+    // label speaks for the whole main gear (the strut, extrusions, tubes and axles are still drawn and striped)
+    if (bay) {
+      flabels.add({
+        id: 'gear.wheels', text: 'Main gear and wheels (fitted shape)', color: '#' + HATCH_COLOR.toString(16).padStart(6, '0'), cls: 'fitted',
+        at: () => bay.wheelAnchor(fwp)?.add(new THREE.Vector3(0, 0.02, 0)) ?? null,
+        vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.wheels.visible ? 1 : 0),
+        priority: () => labelPriority({ inOp: false, cut: false, fitted: true }),
+        tie: () => 0,
+      })
+    }
+    // the gear positioning's marks (plans-1980:p50 figure 1A): the 15 in from the datum board to the axle line, and the axle station
+    if (bay?.markAt && bay.data.gear_marks) {
+      const gm = bay.data.gear_marks
+      const mk = (id: string, text: string, p: THREE.Vector3) => flabels.add({
+        id, text, color: '#2fc4ff', cls: 'mark',
+        at: () => fwp.copy(p).applyMatrix4(bay.jigFrame.matrixWorld),
+        vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.marksShown ? 1 : 0),
+        priority: () => 4, // the op's own measurement: never dropped for a part's name
+        tie: () => 0,
+      })
+      mk('mark.dim', MARK_TEXT.dim(gm.axle_fwd_of_board_in), bay.markAt.dim)
+      mk('mark.axle', MARK_TEXT.axle(gm.axle_fs), bay.markAt.axle)
     }
     stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt); flabels.update(window.innerWidth, window.innerHeight, dt) }
     const setLabels = (on: boolean) => {
@@ -951,27 +1003,35 @@ async function boot() {
       ui.setLabels(on)
     }
     buildShots(variant)
-    const homeShot = () => (subject === 'canard' ? 'home' : 'fhome')
+    // the fuselage's home: the finished box on its own feet when nothing is selected, else the station
+    const homeShot = () => (subject === 'canard' ? 'home' : selected === null && bay?.pose === 'on-gear' ? 'ffinal' : 'fhome')
     const select = (id: string | null, fly = true) => {
       selected = id
       lastSel[subject] = id
       ui.setSelected(id)
       // the fuselage box turns over (animated, as the canard's turnover) when the step crosses the bottom bond, either way
-      if (bay && subject === 'fuselage') bay.setPose(jigPose(id, graph.order), fly)
+      if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey() }
       openOp()
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
     const subjectOps = () => (subject === 'canard' ? barOps(graph, variant) : fuseBarOps(graph, variant))
     // the key light follows the subject: over the canard's table as it always was, or over the fuselage station (a wider cone)
-    const KEY_CANARD = { pos: key.position.clone(), target: key.target.position.clone(), angle: key.angle, penumbra: key.penumbra }
+    const KEY_CANARD = { pos: key.position.clone(), target: key.target.position.clone(), angle: key.angle, penumbra: key.penumbra, intensity: key.intensity }
     const aimKey = () => {
       if (subject === 'canard' || !bay) {
         key.position.copy(KEY_CANARD.pos); key.target.position.copy(KEY_CANARD.target); key.angle = KEY_CANARD.angle; key.penumbra = KEY_CANARD.penumbra
+        key.intensity = KEY_CANARD.intensity
+      } else if (bay.pose === 'on-gear') { // the finished box on the floor beside the bench: the key moves over it
+        key.position.set(STATION.jig.x + 0.2, ROOM.h - 0.35, (STATION.jig.z + STATION.floor.z) / 2 + 0.5)
+        key.target.position.set(STATION.jig.x, 0.6, (STATION.jig.z + STATION.floor.z) / 2 + 0.35)
+        key.angle = 0.92; key.penumbra = 0.75
+        key.intensity = KEY_CANARD.intensity * keyScale(bay.pose)
       } else {
         key.position.set(STATION.table.x + 0.2, ROOM.h - 0.35, (STATION.table.z + STATION.jig.z) / 2 + 0.55)
         key.target.position.set(STATION.table.x, 1.0, (STATION.table.z + STATION.jig.z) / 2)
         key.angle = 0.92; key.penumbra = 0.75
+        key.intensity = KEY_CANARD.intensity * keyScale(bay.pose)
       }
       key.target.updateMatrixWorld()
       pipeline.shadowDirty = true
@@ -1003,7 +1063,7 @@ async function boot() {
         if (name === 'reset') { stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
         else if (name === 'finish') { stopPlay(); select(null, true) }
         else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : 'fcut', true)
-        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : 'fhome', true)
+        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : homeShot(), true)
       },
       orbit(k, deg, first) {
         if (first) {
@@ -1116,9 +1176,25 @@ async function boot() {
     hook.jigPose = () => bay?.pose ?? 'upright'
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
+    hook.ground = () => groundRow(ledger)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
-    hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p === 'inverted' ? 'inverted' : 'upright')).toArray() : q)
+    hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
+    hook.gearMarks = () => {
+      const gm = bay?.data.gear_marks
+      if (!bay || !gm || !bay.markAt) return null
+      const w = (v: THREE.Vector3) => v.clone().applyMatrix4(bay.jigFrame.matrixWorld).toArray()
+      return { shown: bay.marksShown, axleFs: gm.axle_fs, boardFs: gm.board_fs, dimText: MARK_TEXT.dim(gm.axle_fwd_of_board_in), axleText: MARK_TEXT.axle(gm.axle_fs), dimModel: bay.markAt.dim.toArray(), axleModel: bay.markAt.axle.toArray(), dimWorld: w(bay.markAt.dim), axleWorld: w(bay.markAt.axle) }
+    }
     hook.fuseTurning = () => !!bay?.turning
+    hook.fuseFloor = () => {
+      if (!bay) return null
+      bay.group.updateMatrixWorld(true)
+      const arr = (b: THREE.Box3) => [b.min.toArray(), b.max.toArray()]
+      const gear: Record<string, number[][]> = {}
+      for (const m of bay.meshes) if ((m.cid.startsWith('gear.') || m.cid === 'fuselage.gear_extrusions') && !m.ply && m.jig.visible) gear[m.name] = arr(new THREE.Box3().setFromObject(m.jig, true))
+      if (bay.wheels.visible) gear['gear.wheels'] = arr(new THREE.Box3().setFromObject(bay.wheels, true))
+      return { bench: arr(bay.benchBox()), gear, noseStand: bay.noseStand.visible }
+    }
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected
@@ -1130,6 +1206,10 @@ async function boot() {
     hook.flipping = () => flipT < 1
     hook.labShots = () => lab
     hook.material = (name) => {
+      if (name === 'gear.wheels' && bay) { // the bay's own fitted wheels (no glb node): striped like every fitted part
+        const ms = bay.wheels.children.map((w) => (w as THREE.Mesh).material as THREE.Material)
+        return { kind: 'part', angles: [], wet: 0, hatch: ms.length > 0 && ms.every((x) => !!x.userData.hatch), fidelity: 'representational' }
+      }
       const m = merged.find((x) => (x.node ?? x.cid) === name)
       if (!m) {
         const f = bay?.meshes.find((x) => x.name === name)

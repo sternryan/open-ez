@@ -1,12 +1,13 @@
 /**
- * Lab shots for the fuselage ops (plans chapters 4-6), authored per op. The target is computed at run time from where the op's
+ * Lab shots for the fuselage and gear ops (plans chapters 4-9), authored per op. The target is computed at run time from where the op's
  * parts are for that op (on the layup table or in the jig), so a shot follows the build state; the eye is `dist` inches from it,
  * `el` degrees above the horizontal and `az` degrees round from the room side (+Z) toward the nose end of the station (-X).
  *
  * focus: `parts` (fuselage part names, as exported) aims at the middle of those parts; with `fs` it aims at that fuselage station on
- * the first part. `box` aims at the parts in the jig.
+ * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
+ * positioning's dimension (the datum board to the axle line). `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number } | 'box'; dist: number; el: number; az: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | 'box' | 'marks'; dist: number; el: number; az: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -46,6 +47,31 @@ export const FUSE_VIEWS: Record<string, FuseView> = {
   'f06.bottom-glass': one('bottom', 124, 58, 8),
   'f06.bottom-bond': { focus: 'box', dist: 132, el: 36, az: 18 },
   'f06.bottom-tape': { focus: 'box', dist: 108, el: 60, az: 10 },
+  // chapter 7: right side up; the right skin at 45 degrees of left bank (the right side faces up and toward the window wall), the left
+  // at 45 of right bank (up and toward the room)
+  'f07.carve-corners': { focus: { parts: ['side_left'], fs: 46 }, dist: 70, el: 20, az: 34 }, // the nose end: the striped round corners top and bottom
+  'f07.canard-cutout': one('canard_cutout', 72, 34, 38),
+  'f07.fuel-gauge-area': { focus: { parts: ['side_left'], fs: 100 }, dist: 70, el: 22, az: -12 },
+  'f07.belt-insert': one('belt_insert', 52, 8, 18),
+  'f07.skin-right': { focus: 'box', dist: 150, el: 24, az: 136 }, // from the nose end, window side: the right side faces up and toward it
+  'f07.skin-left': { focus: 'box', dist: 134, el: 34, az: 12 },
+  // chapter 8: the roll-over made on the table, then bonded on the front seat bulkhead in the box
+  'f08.roll-over-foam': one('rollover', 64, 52, 24),
+  'f08.roll-over-inside': one('rollover', 52, 62, 20), // upside down on the table: looking into it
+  'f08.roll-over-bond': one('rollover', 84, 34, -34),
+  'f08.roll-over-outside': one('rollover', 64, 26, 36),
+  'f08.access-holes': one('rollover', 58, 30, -62),
+  'f08.shoulder-harness': one('rollover', 56, 52, 18),
+  'f08.belt-attach': one('belt_attach', 92, 58, 10),
+  'f08.step': one('step', 44, 14, 24),
+  // chapter 9: the strut on the table, then the box upside down on the gear table, the gear legs up
+  'f09.strut-stiffen': one('strut', 118, 52, 8),
+  'f09.jig-blocks': one('jig_blocks', 56, 14, -34),
+  'f09.position-gear': { focus: 'marks', dist: 118, el: 16, az: -18 },
+  'f09.tab-layup': one('strut', 104, 34, -18),
+  'f09.tab-assembly': one('gear_tubes', 62, 40, -30),
+  'f09.axles-brakes': { focus: { parts: ['axles'], side: 'right' }, dist: 42, el: 14, az: -30 },
+  'f09.brake-lines': one('strut', 112, 30, -12),
 }
 
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }

@@ -28,6 +28,12 @@ export const STATION = {
   },
   /** the fuselage station at the middle of the jig bench (the box's FS extent is 22 to 125.5) */
   fsMid: 73.75,
+  /**
+   * Where the finished box stands on its own gear after chapter 9 (plans-1980:p50: turned right side up "on its own feet"): on the
+   * shop floor beside the jig bench, toward the room, at the bench's FS. REPRESENTATIONAL: a floor spot clear of the bench by the
+   * main wheels' reach (world Z of the box's centre line, metres).
+   */
+  floor: { z: 0.3 },
 }
 export const blockTopY = () => STATION.jig.benchTopY + STATION.jig.block.high
 /** world X of a fuselage station on the jig bench (FS runs toward +X, the nose toward the -X wall) */

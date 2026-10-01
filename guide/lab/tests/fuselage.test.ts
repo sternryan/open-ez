@@ -27,12 +27,12 @@ const G: GraphLite = {
 }
 const ORDER = G.order
 
-test('the fuselage bar is the chapter 4-6 ops that are not stubs, in graph order, whatever the variant', () => {
+test('the fuselage bar is the chapter 4-9 ops that are not stubs, in graph order, whatever the variant', () => {
   const want = ['f04.front-seat-bkhd-front', 'f04.panel-f22-f28-aft', 'f04.front-seat-bkhd-back', 'f05.side-blank', 'f06.trial-fit', 'f06.jig-check', 'f06.bond-front-seat',
     'f06.bond-panel', 'f06.bond-f22', 'f06.bottom-foam-fit', 'f06.bottom-glass', 'f06.bottom-bond']
   assert.deepEqual(fuseBarOps(G, 'roncz').map((o) => o.id), want)
   assert.deepEqual(fuseBarOps(G, 'gu').map((o) => o.id), want)
-  assert.deepEqual([...FUSE_CHAPTERS].sort(), [4, 5, 6])
+  assert.deepEqual([...FUSE_CHAPTERS].sort(), [4, 5, 6, 7, 8, 9])
   assert.deepEqual(barOps(G, 'roncz').map((o) => o.id), ['r30.a']) // the canard bar is untouched
 })
 
@@ -147,17 +147,19 @@ test('the CG row never shows the lower bound as the CG', () => {
   assert.equal(done.value, '30.0 lb at FS 70.0')
 })
 
-test('every chapter 4-6 op in the graph has an authored lab shot, and no shot is stale', () => {
+test('every chapter 4-9 op in the graph has an authored lab shot, and no shot is stale', () => {
   const ids: string[] = []
-  for (const ch of ['ch04', 'ch05', 'ch06']) {
+  for (const ch of ['ch04', 'ch05', 'ch06', 'ch07', 'ch08', 'ch09']) {
     const y = readFileSync(fileURLToPath(new URL(`../../graph/${ch}.yaml`, import.meta.url)), 'utf8')
     ids.push(...[...y.matchAll(/^- id: (\S+)/gm)].map((m) => m[1]))
   }
-  assert.ok(ids.length >= 31)
+  assert.ok(ids.length >= 52)
   assert.deepEqual(Object.keys(FUSE_VIEWS).sort(), [...ids].sort())
   for (const id of ids) {
     const v = fuseView(id)
-    assert.ok(v.dist > 20 && v.dist < 200 && v.el >= 20 && v.el <= 75, id)
+    // chapters 7-9 look low along the box for the lower corner, the step, the jig blocks and the legs; never from under the floor
+    const elMin = /^f0[456]\./.test(id) ? 20 : 5
+    assert.ok(v.dist > 20 && v.dist < 200 && v.el >= elMin && v.el <= 75, id)
   }
 })
 
@@ -235,4 +237,216 @@ test('label priority: the selected op parts, then the parts the station cut pass
   assert.equal(crossedByStationCut({ fs_min: 63.0151, fs_max: 82.2849 }, 72), true)
   assert.equal(crossedByStationCut({ fs_min: 22, fs_max: 22.2 }, 72), false)
   assert.equal(crossedByStationCut({ fs_min: 85, fs_max: 118 }, 72), false)
+})
+
+// ======================================================================================================================
+// Block 2 M2.3 Task 5: chapters 7-9 (the 45 degree rolls, the gear table, the stages, the gear CG rows and the ground note)
+// ======================================================================================================================
+const ORDER9 = ['f06.bottom-glass', 'f06.bottom-bond', 'f06.bottom-tape', 'f07.carve-corners', 'f07.canard-cutout', 'f07.fuel-gauge-area', 'f07.belt-insert',
+  'f07.skin-right', 'f07.skin-left', 'f08.roll-over-foam', 'f08.access-holes', 'f08.step', 'f09.strut-stiffen', 'f09.jig-blocks', 'f09.position-gear',
+  'f09.tab-layup', 'f09.axles-brakes', 'f09.brake-lines']
+
+/** Rx(angle) applied to a direction in the lab's box frame (x = FS, y = W.L. up, z = -B.L.): three.js's makeRotationX */
+const rotX = (a: number, [x, y, z]: number[]) => [x, y * Math.cos(a) - z * Math.sin(a), y * Math.sin(a) + z * Math.cos(a)]
+
+test('the right skin is glassed with the right side up: its outward normal points up at 45 degrees of left bank (Review Focus 5)', async () => {
+  const { poseAngle, BANK_DEG } = await import('../src/logic/fuselage')
+  // as core.landing_gear_book.bank_pose's own test: positive is a left bank, the right side (B.L. > 0, the lab's z < 0) goes up
+  assert.equal(BANK_DEG['f07.skin-right'], 135)
+  assert.equal(BANK_DEG['f07.skin-left'], -135)
+  const rightOut = [0, 0, -1], leftOut = [0, 0, 1]
+  const atRight = poseAngle(jigPose('f07.skin-right', ORDER9))
+  assert.ok(rotX(atRight, rightOut)[1] > 0.7, 'right side faces up at the right skin')
+  assert.ok(rotX(atRight, leftOut)[1] < -0.7, 'the left side faces down')
+  const atLeft = poseAngle(jigPose('f07.skin-left', ORDER9))
+  assert.ok(rotX(atLeft, leftOut)[1] > 0.7, 'left side faces up at the left skin')
+  assert.ok(Math.abs(atRight - (3 * Math.PI) / 4) < 1e-12 && Math.abs(atLeft + (3 * Math.PI) / 4) < 1e-12)
+  // the exported sign convention drives the same answer (layup.json "bank_deg")
+  assert.equal(jigPose('f07.skin-right', ORDER9, { 'f07.skin-right': 135, 'f07.skin-left': -135 }), 'bank-left-45')
+})
+
+test('at each skin both faces being glassed (the side and the bottom) face up 45 degrees or more (captain\'s 135 degree reading of p46)', async () => {
+  const { poseAngle } = await import('../src/logic/fuselage')
+  const down = [0, -1, 0], rightOut = [0, 0, -1], leftOut = [0, 0, 1] // box frame: y up, z = -B.L.
+  const atRight = poseAngle(jigPose('f07.skin-right', ORDER9)), atLeft = poseAngle(jigPose('f07.skin-left', ORDER9))
+  assert.ok(rotX(atRight, rightOut)[1] >= 0.7, 'right side up at the right skin')
+  assert.ok(rotX(atRight, down)[1] >= 0.7, 'bottom up at the right skin')
+  assert.ok(rotX(atLeft, leftOut)[1] >= 0.7, 'left side up at the left skin')
+  assert.ok(rotX(atLeft, down)[1] >= 0.7, 'bottom up at the left skin')
+})
+
+test('the roll from the right skin to the left skin goes the short way, over the top, and clears the support throughout', () => {
+  const half = { h: 10.3, w: 12.3 }
+  let prev = turnPose('bank-left-45', 'bank-right-45', 0, half).angle
+  assert.ok(Math.abs(prev - (3 * Math.PI) / 4) < 1e-12)
+  for (let k = 0.02; k <= 1.0001; k += 0.02) {
+    const p = turnPose('bank-left-45', 'bank-right-45', k, half)
+    if (k < 0.999) assert.ok(p.angle >= prev - 1e-12 && p.angle - prev < 0.2, 'one direction, no jump') // the last frame snaps to -135, the same pose as 225
+    prev = p.angle
+    for (const [y, z] of [[half.h, half.w], [half.h, -half.w], [-half.h, half.w], [-half.h, -half.w]]) assert.ok(p.lift + y * Math.cos(p.angle) - z * Math.sin(p.angle) >= -1e-9, `k=${k}`)
+  }
+  assert.ok(Math.abs(prev + (3 * Math.PI) / 4) < 1e-9, 'ends at -135 (equivalently 225)')
+  assert.ok(Math.abs(turnPose('bank-left-45', 'bank-right-45', 0.99, half).angle - (5 * Math.PI) / 4) < 0.1, 'it went over the top (through 180), not back through upright')
+  // from upright to the right skin and on to the floor of chapter 9 also clears
+  for (const [a, b] of [['upright', 'bank-left-45'], ['bank-right-45', 'gear-table'], ['bank-left-45', 'upright']] as const)
+    for (let k = 0; k <= 1.0001; k += 0.02) {
+      const p = turnPose(a, b, k, half)
+      for (const [y, z] of [[half.h, half.w], [half.h, -half.w], [-half.h, half.w], [-half.h, -half.w]]) assert.ok(p.lift + y * Math.cos(p.angle) - z * Math.sin(p.angle) >= -1e-9, `${a}->${b} k=${k}`)
+    }
+})
+
+test('the chapter 7-9 poses: upright to the right skin, the two rolls in order, upright for chapter 8, inverted from the gear positioning to the end, then on its gear', () => {
+  const pose = (id: string | null) => jigPose(id, ORDER9)
+  assert.equal(pose('f06.bottom-tape'), 'upright')
+  assert.equal(pose('f07.carve-corners'), 'upright')
+  assert.equal(pose('f07.belt-insert'), 'upright')
+  assert.equal(pose('f07.skin-right'), 'bank-left-45')
+  assert.equal(pose('f07.skin-left'), 'bank-right-45')
+  assert.ok(ORDER9.indexOf('f07.skin-right') < ORDER9.indexOf('f07.skin-left'))
+  assert.equal(pose('f08.roll-over-foam'), 'upright')
+  assert.equal(pose('f09.strut-stiffen'), 'upright')
+  assert.equal(pose('f09.jig-blocks'), 'upright')
+  for (const id of ['f09.position-gear', 'f09.tab-layup', 'f09.axles-brakes', 'f09.brake-lines']) assert.equal(pose(id), 'gear-table', id)
+  // after the chapter the book sets it on its own feet: the finished box stands right side up on its gear, on the floor
+  assert.equal(pose(null), 'on-gear')
+  assert.equal(jigPose('f10.after', [...ORDER9, 'f10.after']), 'on-gear') // anything after the last gear op, too
+  // a build with no gear op finishes upright on the jig blocks, as chapter 6 left it
+  assert.equal(jigPose(null, ORDER9.slice(0, ORDER9.indexOf('f09.position-gear'))), 'upright')
+})
+
+test('the box goes to and from the floor without the turn: it is carried off the bench, not rolled', async () => {
+  const { animatedTurn } = await import('../src/logic/fuselage')
+  assert.equal(animatedTurn('gear-table', 'on-gear'), false)
+  assert.equal(animatedTurn('on-gear', 'upright'), false)
+  assert.equal(animatedTurn('inverted', 'upright'), true)
+  assert.equal(animatedTurn('upright', 'gear-table'), true)
+})
+
+test('the banked poses dim the key and tone the dry cloth; every other pose keeps the canard\'s light and the cloth as it was', async () => {
+  const { keyScale, dryTone, KEY_BANK, DRY_TONE_BANK } = await import('../src/logic/fuselage')
+  for (const p of ['bank-left-45', 'bank-right-45'] as const) { assert.equal(keyScale(p), KEY_BANK); assert.equal(dryTone(p), DRY_TONE_BANK) }
+  for (const p of ['upright', 'inverted', 'gear-table', 'on-gear'] as const) { assert.equal(keyScale(p), 1); assert.equal(dryTone(p), 1) }
+  assert.ok(KEY_BANK > 0 && KEY_BANK < 1 && DRY_TONE_BANK > 0.5 && DRY_TONE_BANK < 1)
+})
+
+test('the wheels are fitted: their diameter is a named fitted number, the section and rim are the size name\'s 3.40 x 5', async () => {
+  const { FITTED_TYRE_OD, TYRE_SECTION, RIM_DIA } = await import('../src/logic/fuselage')
+  assert.equal(TYRE_SECTION, 3.4)
+  assert.equal(RIM_DIA, 5)
+  assert.ok(FITTED_TYRE_OD > RIM_DIA + TYRE_SECTION && FITTED_TYRE_OD < 16)
+})
+
+test('the home view labels one part per family: at most ten of the finished box\'s parts, every family still named', async () => {
+  const { homeLabel, LABEL_FAMILY } = await import('../src/logic/fuselage')
+  // the finished box's parts (layup.json "parts" with no end to their show window) and the drawn wheels
+  const parts = ['side_left', 'side_right', 'front_seat_bkhd', 'rear_seat_bkhd', 'top_longeron_left', 'top_longeron_right', 'f22', 'f28', 'panel', 'firewall',
+    'bottom', 'carved_corners', 'belt_insert', 'rollover', 'rollover_inserts', 'belt_attach', 'step', 'strut', 'extrusions', 'gear_tubes', 'axles', 'wheels']
+  const all = new Set(parts)
+  const shown = parts.filter((p) => homeLabel(p, (q) => all.has(q)))
+  assert.ok(shown.length <= 10, shown.join())
+  assert.deepEqual(shown.filter((p) => ['rollover', 'rollover_inserts'].includes(p)), ['rollover']) // one roll-over label, not its inserts too
+  assert.deepEqual(shown.filter((p) => ['strut', 'extrusions', 'gear_tubes', 'axles', 'wheels'].includes(p)), ['wheels']) // one gear label
+  // every part's label goes to a part that is shown (a family is never left unnamed)
+  for (const p of parts) {
+    let q = p
+    while (!shown.includes(q)) { q = LABEL_FAMILY[q]; assert.ok(q, p) }
+  }
+  // with no wheels drawn the strut speaks for the gear; with an op selected the rule is not used (main.ts)
+  const noWheels = new Set(parts.filter((p) => p !== 'wheels'))
+  assert.ok(homeLabel('strut', (q) => noWheels.has(q)) && !homeLabel('axles', (q) => noWheels.has(q)))
+})
+
+test('a roll rests on the lower corner and the gear table pose rests on the longerons above the roll-over', async () => {
+  const { poseAngle, poseBase, restLift, GEAR_TABLE_RISE } = await import('../src/logic/fuselage')
+  const half = { h: 10.3, w: 12.3 }
+  for (const p of ['bank-left-45', 'bank-right-45'] as const) {
+    const r = turnPose('upright', p, 1, half)
+    // the section's lowest corner sits on the block tops
+    const low = Math.min(...[[half.h, half.w], [half.h, -half.w], [-half.h, half.w], [-half.h, -half.w]].map(([y, z]) => y * Math.cos(r.angle) - z * Math.sin(r.angle)))
+    assert.ok(Math.abs(r.lift + low) < 1e-9, p)
+    assert.equal(r.lift, restLift(poseAngle(p), half))
+  }
+  const g = turnPose('bank-right-45', 'gear-table', 1, half)
+  assert.equal(g.angle, Math.PI)
+  assert.equal(g.lift, GEAR_TABLE_RISE + half.h)
+  assert.ok(GEAR_TABLE_RISE > 12.6 - 3, 'the roll-over (12.6 in above the longerons) hangs clear of the bench (3 in below the block tops)')
+  assert.equal(poseBase('upright'), 0)
+  // mid-turn the box clears the lower of its two supports
+  for (let k = 0; k <= 1.0001; k += 0.02) {
+    const p = turnPose('upright', 'gear-table', k, half)
+    for (const [y, zz] of [[half.h, half.w], [half.h, -half.w], [-half.h, half.w], [-half.h, -half.w]]) assert.ok(p.lift + y * Math.cos(p.angle) - zz * Math.sin(p.angle) >= -1e-9, `k=${k}`)
+  }
+})
+
+test('a part\'s show window and a node\'s stages follow the op', async () => {
+  const { shownAt, stageAt } = await import('../src/logic/fuselage')
+  assert.equal(shownAt(undefined, 'f07.carve-corners', ORDER9), true)
+  const only = { only: 'f07.canard-cutout' }
+  assert.equal(shownAt(only, 'f07.canard-cutout', ORDER9), true)
+  assert.equal(shownAt(only, 'f07.fuel-gauge-area', ORDER9), false)
+  assert.equal(shownAt(only, null, ORDER9), false) // the removed material is not part of the finished box
+  const tool = { until: 'f09.tab-layup' }
+  assert.equal(shownAt(tool, 'f09.position-gear', ORDER9), true)
+  assert.equal(shownAt(tool, 'f09.tab-layup', ORDER9), false)
+  assert.equal(shownAt(tool, null, ORDER9), false) // a tool is gone from the finished box
+  const from = { from: 'f07.carve-corners' }
+  assert.equal(shownAt(from, 'f06.bottom-tape', ORDER9), false)
+  assert.equal(shownAt(from, 'f07.carve-corners', ORDER9), true)
+  assert.equal(shownAt(from, null, ORDER9), true)
+  const st = [{ from: 'f07.carve-corners', node: 'fuselage.side_left~carved' }, { from: 'f07.canard-cutout', node: 'fuselage.side_left~cut' }]
+  assert.equal(stageAt(st, 'f06.bottom-tape', ORDER9), null)
+  assert.equal(stageAt(st, 'f07.carve-corners', ORDER9), 'fuselage.side_left~carved')
+  assert.equal(stageAt(st, 'f08.step', ORDER9), 'fuselage.side_left~cut')
+  assert.equal(stageAt(st, null, ORDER9), 'fuselage.side_left~cut')
+  assert.equal(stageAt(undefined, 'f08.step', ORDER9), null)
+})
+
+const GEAR: LedgerLite['gear'] = {
+  rows: [
+    { name: 'main_strut', label: 'Main gear strut', weight_lb: 22, arm_in: 110.5, status: 'book', arm_status: 'approximate', cite: ['plans-1980:p50'] },
+    { name: 'nose_strut', label: 'Nose gear strut', weight_lb: 2.8, arm_in: 17, status: 'book', arm_status: 'conflict', cite: ['plans-1980:p8'] },
+    { name: 'wheels_brakes_tyres_axles', label: 'Wheels and brakes (unsourced)', weight_lb: 20.2, arm_in: 110.5, status: 'unsourced', arm_status: 'unsourced', cite: [] },
+  ],
+  sourced_lb: 24.8,
+  ground_handling: {
+    main_axle_fs: 110.5, main_axle_wl: -22, tip_back_line_deg: 12, cite: {},
+    tip_back_check: 'not yet computed: no source for the CG height', tip_over_check: 'not yet computed: the track has no source',
+  },
+}
+const LG: LedgerLite = {
+  cg: { weight_lb: 0, arm_in: null, included: [], excluded: { firewall: 'not yet computed: density of birch plywood not sourced', wheels_brakes_tyres_axles: 'x' } },
+  cg_lower_bound: { weight_lb: 58.03, arm_in: 79.82, included: ['side_left', 'side_right', 'bottom', 'main_strut', 'nose_strut'], excluded: { wheels_brakes_tyres_axles: 'not yet computed: weight and arm of wheels and brakes (unsourced) not sourced' } },
+  gear: GEAR,
+}
+
+test('the CG row: the lower bound says it carries 24.8 lb of gear (the two struts), and the unsourced wheels row is excluded without its placeholder', () => {
+  const r = cgRow(LG)
+  assert.equal(r.value, 'not yet computed')
+  const segs = r.sub!.split(' · ')
+  const last = segs[segs.length - 1]
+  assert.ok(last.startsWith('≥ 58.0 lb at FS 79.8, lower bound, 3 parts and 24.8 lb of gear (main and nose struts)'), last)
+  assert.ok(!last.includes('not yet computed'))
+  assert.ok(segs.includes('Wheels and brakes: excluded, no source'), r.sub!)
+  assert.ok(!r.sub!.includes('20.2'), 'the unsourced placeholder weight is never shown')
+  assert.ok(!r.sub!.includes('45'), 'the retired lump is never shown')
+})
+
+test('the ground note: the book axle station and tip-back line, and both checks "not yet computed" with no number (Review Focus 4)', async () => {
+  const { groundRow } = await import('../src/logic/fuselage')
+  assert.equal(groundRow(null), null)
+  assert.equal(groundRow({ ...LG, gear: { ...GEAR, ground_handling: undefined } }), null)
+  const g = groundRow(LG)!
+  assert.equal(g.value, 'Main axle F.S. 110.5 (book)')
+  assert.ok(g.sub.includes('12° tip-back line from the main tyre contact (p171)'), g.sub)
+  const check = (name: string) => g.sub.split(' · ').find((x) => x.startsWith(name))!
+  assert.equal(check('tip-back check:'), 'tip-back check: not yet computed (no source for the CG height)')
+  assert.equal(check('tip-over check:'), 'tip-over check: not yet computed (the track has no source)')
+  for (const c of [check('tip-back check:'), check('tip-over check:')]) assert.ok(!/\d/.test(c), c)
+  // a verdict, a number or anything that is not "not yet computed" is never shown until the code that grades it is written on purpose
+  for (const bad of ['OK: 14.2 deg', 'not yet computed: CG height 30 in', 'passes', 'fails by 2 deg']) {
+    const b = groundRow({ ...LG, gear: { ...GEAR, ground_handling: { ...GEAR!.ground_handling!, tip_back_check: bad, tip_over_check: bad } } })!
+    assert.ok(b.sub.includes('tip-back check: not yet computed') && b.sub.includes('tip-over check: not yet computed'), b.sub)
+    assert.ok(!/check: [^·]*\d/.test(b.sub), b.sub)
+  }
+  assert.ok(!/track\D{0,12}\d/i.test(g.sub + g.value), 'no track number')
 })

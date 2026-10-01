@@ -5,9 +5,11 @@ import type { MaterialSpec } from './logic/materials'
 import { plyPhase, partPhase, type Phase } from './logic/anim'
 import type { BuildState, MeshInfo } from './logic/build'
 import {
-  placement, jigPose, upFace, planHalfWidth, stationAmount, turnPose, hatchSoftness, STATION_CUT, FS_EPS, TRIAL_FIT, FLIP_SECONDS, FLIP_DELAY,
-  type FuseLayup, type FusePlyRow, type Placement, type JigPose,
+  placement, jigPose, upFace, planHalfWidth, stationAmount, turnPose, hatchSoftness, shownAt, stageAt, poseAngle, poseBase, restLift, animatedTurn, dryTone,
+  STATION_CUT, FS_EPS, TRIAL_FIT, FLIP_SECONDS, FLIP_DELAY, JIG_ONLY, GEAR_TABLE_RISE, BANK_DEG, FITTED_TYRE_OD, TYRE_SECTION, RIM_DIA,
+  type FuseLayup, type FusePlyRow, type Placement, type JigPose, type ShowWindow,
 } from './logic/fuselage'
+import { matte } from './core/materials'
 import { buildFuselageStation, STATION, INCH, blockTopY, fsToX } from './scene/fuselageStation'
 import { fuseView, viewOffset } from './fuseShots'
 import type { GraphLite } from './logic/graph'
@@ -37,10 +39,34 @@ export interface FMesh {
   tableMat: THREE.Material
   /** the part whose table placement this mesh follows (a longeron and the side plies follow their side) */
   carrier: string
+  /** the node's own shape and its later ones (layup.json "stages": the carve, the canard opening, the access holes) */
+  base: THREE.BufferGeometry
+  stages: { from: string; node: string; geo: THREE.BufferGeometry }[]
+  /** the part's own show window (layup.json "show"), and whether it has no place on the layup table */
+  show?: ShowWindow
+  jigOnly: boolean
+  /** the material an opening removes: drawn lifted out of it at its op */
+  void: boolean
 }
 
 // Representational colours (the canard's rule: tell materials apart, not a measured product colour).
-const WOOD: Record<string, number> = { firewall: 0xc9a06a, top_longeron_left: 0xdcc08e, top_longeron_right: 0xdcc08e }
+const WOOD: Record<string, number> = {
+  firewall: 0xc9a06a, top_longeron_left: 0xdcc08e, top_longeron_right: 0xdcc08e,
+  belt_insert: 0xc9a06a, rollover_inserts: 0xc9a06a, belt_attach: 0xc9a06a, jig_blocks: 0xb98f5c, datum_board: 0xd2b27c,
+}
+/** metal and the glass strut (colour, metalness, roughness): aluminium angles and step, steel tubes and axles, S-glass */
+const METAL: Record<string, [number, number, number]> = {
+  step: [0xc4c8cd, 0.85, 0.35], extrusions: [0xb9bec4, 0.85, 0.4], gear_tubes: [0x8d939a, 0.9, 0.3], axles: [0x8d939a, 0.9, 0.3],
+  strut: [0xd8d0b0, 0.05, 0.45],
+}
+/** the parts the chapter 4-6 poses are measured on (the box itself): the roll-over, gear and tools never move where the box sits */
+const BOX = new Set(['side_left', 'side_right', 'front_seat_bkhd', 'rear_seat_bkhd', 'top_longeron_left', 'top_longeron_right', 'f22', 'f28', 'panel', 'firewall', 'bottom'])
+/** what a part lies with on the table, if not itself (the longerons and side plies follow their side: see the constructor) */
+const CARRIER: Record<string, string> = { rollover_inserts: 'rollover' }
+/** fitted parts that are thin bands, not plates: their bounding box says nothing about how large their faces are */
+const NARROW = new Set(['carved_corners'])
+/** how far the canard opening's removed material is lifted out of the box at its op (inches), so it reads as taken out */
+const VOID_LIFT = 5
 /** the bulkheads' row on the table, packed left to right from the nose end, and the two sides' rows (table-local inches) */
 const PACK = ['front_seat_bkhd', 'rear_seat_bkhd', 'panel', 'f22', 'f28', 'firewall']
 const ROW_V = -22.5
@@ -66,7 +92,22 @@ export class FuselageBay {
   private yBottom = 1e9
   private tableM = new Map<string, THREE.Matrix4>()
   private spots = new Map<string, number>()
-  private jigM: Record<JigPose, THREE.Matrix4>
+  private jigM = new Map<JigPose, THREE.Matrix4>()
+  private bank: Record<string, number>
+  /** chapter 9's level gear table, chapter 7's 45 degree cradles, and the axle-station marks (shown by pose and op in paint) */
+  readonly gearTable = new THREE.Group()
+  readonly cradles: Record<'bank-left-45' | 'bank-right-45', THREE.Group> = { 'bank-left-45': new THREE.Group(), 'bank-right-45': new THREE.Group() }
+  readonly marks = new THREE.Group()
+  /** the dry cloth's tone on the box in the jig (logic/fuselage.ts dryTone): one uniform shared by every jig ply */
+  private dryTone = { value: 1 }
+  /** the finished box on its own feet: the main wheels (fitted, in the box's frame) and the stand under the nose (representational furniture) */
+  readonly wheels = new THREE.Group()
+  readonly noseStand = new THREE.Group()
+  /** the box-frame point the wheels' label hangs over: the top of the right (bench-side) wheel */
+  private wheelTop: THREE.Vector3 | null = null
+  /** the marks' anchors in the box's frame (model inches): the dimension's middle and the axle's end of the station line */
+  markAt: { dim: THREE.Vector3; axle: THREE.Vector3 } | null = null
+  private marksOn = false
   private firstIdx = new Map<string, number>()
   /** the turn over (logic/fuselage.ts turnPose): from, and progress 0..1 in sim time; 1 = at rest in `pose` */
   private turnFrom: JigPose = 'upright'
@@ -86,8 +127,14 @@ export class FuselageBay {
     this.order.forEach((id, i) => { for (const c of byId.get(id)?.components ?? []) if (!this.firstIdx.has(c)) this.firstIdx.set(c, i) })
     this.cut = new CutState(this.jigFrame, STATION_CUT.extent, STATION_CUT.depth, 0, new THREE.Vector3(1, 0, 0))
     this.cut.amount = 0
+    this.bank = data.bank_deg ?? BANK_DEG
     const partOf = new Map(Object.entries(data.parts).map(([p, r]) => [r.node, p]))
+    // a later shape of a node is not a mesh of its own: it replaces the node's geometry from its op on (paint)
+    const stageGeo = new Map<string, THREE.BufferGeometry>()
+    const stageNodes = new Set(Object.values(data.stages ?? {}).flat().map((s) => s.node))
+    for (const p of parts) if (stageNodes.has(p.name)) { p.geo.computeBoundingBox(); stageGeo.set(p.name, p.geo) }
     for (const p of parts) {
+      if (stageNodes.has(p.name)) continue
       p.geo.computeBoundingBox()
       const row = p.node ? data.nodes[p.node] ?? null : null
       const part = row ? row.part : partOf.get(p.name)
@@ -96,8 +143,9 @@ export class FuselageBay {
       const hatch = prow.fidelity === 'representational'
       // the stripes thin out on a large surface (its two largest extents, in^2); small parts and cut faces keep the full stripes
       const e = p.geo.boundingBox!.getSize(new THREE.Vector3()).toArray().sort((a, b) => b - a)
-      const hatchSoft = hatch ? hatchSoftness(e[0] * e[1]) : 0
-      const carrier = part.startsWith('top_longeron_') ? part.replace('top_longeron_', 'side_') : part
+      // (the carved corners are thin bands whose box spans the whole box: they keep the full stripes)
+      const hatchSoft = hatch && !NARROW.has(part) ? hatchSoftness(e[0] * e[1]) : 0
+      const carrier = part.startsWith('top_longeron_') ? part.replace('top_longeron_', 'side_') : CARRIER[part] ?? part
       const flat = carrier.startsWith('side_') ? this.flatten(p.geo, isRight(carrier)) : p.geo.clone()
       flat.computeBoundingBox()
       let spec: MaterialSpec, jigMat: THREE.Material, tableMat: THREE.Material
@@ -106,12 +154,17 @@ export class FuselageBay {
         const cloth = row.cloth === 'UND' ? 'UND' : 'BID'
         spec = { kind: cloth === 'UND' ? 'und' : 'bid', angles: cloth === 'UND' ? [deg] : [deg, deg - 90], ply: { node: p.name, order: row.stack, cloth } }
         const fj = plyFrame(p.geo), ft = plyFrame(flat)
-        jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch, hatchSoft })
+        jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch, hatchSoft, dryTone: this.dryTone })
         tableMat = compositeMaterial(spec, null, ft.web, ft.span, { axis: ft.axis, hatch, hatchSoft })
       } else if (WOOD[part] !== undefined) {
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, hatchSoft, name: part })
         tableMat = partMaterial(null, { color: WOOD[part], hatch, hatchSoft, name: part })
+      } else if (METAL[part] !== undefined) {
+        const [color, metalness, roughness] = METAL[part]
+        spec = { kind: 'part', angles: [] }
+        jigMat = partMaterial(this.cut, { color, metalness, roughness, hatch, hatchSoft, name: part })
+        tableMat = partMaterial(null, { color, metalness, roughness, hatch, hatchSoft, name: part })
       } else {
         spec = { kind: 'foam', angles: [] }
         jigMat = compositeMaterial(spec, this.cut, 0, undefined, { hatch, hatchSoft })
@@ -123,30 +176,230 @@ export class FuselageBay {
       table.name = p.name + ':table'
       table.matrixAutoUpdate = false
       for (const m of [jig, table]) { m.castShadow = true; m.receiveShadow = true; m.visible = false }
+      if (part === 'belt_insert') for (const mt of [jigMat, tableMat]) { mt.polygonOffset = true; mt.polygonOffsetFactor = -1; mt.polygonOffsetUnits = -2 } // in the bottom foam's corner: its faces lie on the foam's
       this.jigFrame.add(jig)
       this.tableGroup.add(table)
       const bb = p.geo.boundingBox!
-      this.yTop = Math.max(this.yTop, bb.max.y)
-      this.yBottom = Math.min(this.yBottom, bb.min.y)
-      if (!row) this.half.w = Math.max(this.half.w, Math.abs(bb.min.z), Math.abs(bb.max.z))
+      if (BOX.has(part)) {
+        this.yTop = Math.max(this.yTop, bb.max.y)
+        this.yBottom = Math.min(this.yBottom, bb.min.y)
+        if (!row) this.half.w = Math.max(this.half.w, Math.abs(bb.min.z), Math.abs(bb.max.z))
+      }
       const ply = row ? { op: row.op, order: row.op_order } : null
-      this.meshes.push({ name: p.name, part, cid: row ? row.component : prow.component, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier })
+      const stages = (data.stages?.[p.name] ?? []).map((s) => ({ ...s, geo: stageGeo.get(s.node)! })).filter((s) => !!s.geo)
+      const cid = row ? row.component : prow.component
+      this.meshes.push({
+        name: p.name, part, cid, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier,
+        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void,
+      })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
     }
+    this.buildWheels()
     this.cut.collect(this.jigFrame)
     this.cut.update()
     const B = blockTopY(), J = STATION.jig
-    this.jigM = {
-      inverted: new THREE.Matrix4().makeTranslation(J.x, B, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
-        .multiply(new THREE.Matrix4().makeRotationX(Math.PI)).multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yTop, 0)),
-      upright: new THREE.Matrix4().makeTranslation(J.x, B, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
-        .multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yBottom, 0)),
-    }
+    this.jigM.set('inverted', new THREE.Matrix4().makeTranslation(J.x, B, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeRotationX(Math.PI)).multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yTop, 0)))
+    this.jigM.set('upright', new THREE.Matrix4().makeTranslation(J.x, B, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yBottom, 0)))
     this.half.h = (this.yTop - this.yBottom) / 2
     this.yMid = (this.yTop + this.yBottom) / 2
+    for (const p of ['bank-left-45', 'bank-right-45', 'gear-table'] as JigPose[]) {
+      const a = poseAngle(p, this.bank)
+      this.jigM.set(p, this.poseMatrix(a, poseBase(p) + restLift(a, this.half)))
+    }
+    // on its own feet: right side up on the shop floor beside the bench, the wheels' lowest point on the floor (y = 0); with no
+    // wheels (no axles in this build) the box's own bottom sits on the floor
+    const yLow = this.wheelLow ?? this.yBottom
+    this.jigM.set('on-gear', new THREE.Matrix4().makeTranslation(J.x, 0, STATION.floor.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -yLow, 0)))
+    this.buildFurniture()
+    this.buildNoseStand()
+    this.buildMarks()
+    this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
+    this.jigFrame.add(this.marks)
     this.setPose('upright')
     this.pack()
   }
+
+  /** the jig frame's matrix with the box rolled `angle` about its long axis through its middle, that axis `lift` inches above the block tops */
+  private poseMatrix(angle: number, lift: number): THREE.Matrix4 {
+    const J = STATION.jig
+    return new THREE.Matrix4().makeTranslation(J.x, blockTopY() + lift * INCH, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeRotationX(angle)).multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yMid, 0))
+  }
+
+  /**
+   * The furniture the chapter 7 and 9 poses stand on. REPRESENTATIONAL, as the rest of the station: the book says only "jig the
+   * fuselage at 45 degrees" (p46) and "level it on the top longerons" (p50).
+   *  - chapter 9: a level table GEAR_TABLE_RISE above the jig blocks on four posts, wide enough for the two datum boards at B.L. 26.75,
+   *    with an opening the inverted roll-over hangs through;
+   *  - chapter 7: a V cradle under the box's lower side and bottom at two stations, with a post from each board's free end to the bench.
+   */
+  private buildFurniture() {
+    const J = STATION.jig
+    const wood = matte(0x9a7650, 0.7, { detail: 5, colorVar: 0.12, name: 'gear-table' })
+    const post = matte(0x6b5038, 0.7, { detail: 4, colorVar: 0.1 })
+    const add = (g: THREE.Group, m: THREE.Material, sx: number, sy: number, sz: number, x: number, y: number, z: number) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m)
+      b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true
+      g.add(b)
+      return b
+    }
+    // ---- the gear table: its top at the support height, an opening for the roll-over ----
+    const top = blockTopY() + GEAR_TABLE_RISE * INCH, t = 0.75 * INCH, cy = top - t / 2
+    const x0 = fsToX(14), x1 = fsToX(134), hw = 31 * INCH
+    const ro = this.data.parts.rollover
+    const hx0 = fsToX((ro?.fs_min ?? 79) - 1.5), hx1 = fsToX((ro?.fs_max ?? 84) + 1.5), hz = 13 * INCH
+    add(this.gearTable, wood, hx0 - x0, t, 2 * hw, (x0 + hx0) / 2, cy, J.z)
+    add(this.gearTable, wood, x1 - hx1, t, 2 * hw, (x1 + hx1) / 2, cy, J.z)
+    for (const s of [-1, 1]) add(this.gearTable, wood, hx1 - hx0, t, hw - hz, (hx0 + hx1) / 2, cy, J.z + s * (hz + hw) / 2)
+    const legH = top - t - J.benchTopY
+    for (const fs of [34, 113]) for (const s of [-1, 1]) add(this.gearTable, post, 3.5 * INCH, legH, 3.5 * INCH, fsToX(fs), J.benchTopY + legH / 2, J.z + s * 11 * INCH)
+    this.gearTable.name = 'gearTable'
+    this.gearTable.visible = false
+    this.gearTable.userData.representational = true
+    // ---- the 45 degree cradles: boards in the box's frame at rest, posts in the world ----
+    const T = 0.75, W = 3.5
+    for (const p of ['bank-left-45', 'bank-right-45'] as const) {
+      const g = this.cradles[p]
+      g.name = `cradle-${p}`
+      g.visible = false
+      g.userData.representational = true
+      const M = this.jigM.get(p)!
+      const lowSide = p === 'bank-left-45' ? 1 : -1 // the side that goes down: the left (model z > 0) at a left bank
+      const { h, w } = this.half
+      // the face that goes down with the low side: the bottom when the roll is under 90 degrees, the top once it is past on its side
+      // (the 135 degree roll rests on the top-left corner, the bottom facing up)
+      const fy = Math.cos(poseAngle(p, this.bank)) < 0 ? 1 : -1
+      for (const fs of [40, 100]) {
+        const boards: [THREE.Vector3, THREE.Vector3, THREE.Vector3][] = [ // centre, size (model inches, box frame), free end
+          [new THREE.Vector3(fs, this.yMid + fy * (h + T / 2), 0), new THREE.Vector3(W, T, 2 * w + 2 * T), new THREE.Vector3(fs, this.yMid + fy * (h + T / 2), -lowSide * (w + T))],
+          [new THREE.Vector3(fs, this.yMid, lowSide * (w + T / 2)), new THREE.Vector3(W, 2 * h + T, T), new THREE.Vector3(fs, this.yMid - fy * h, lowSide * (w + T / 2))],
+        ]
+        for (const [c, sz, end] of boards) {
+          const b = new THREE.Mesh(new THREE.BoxGeometry(sz.x, sz.y, sz.z), post)
+          b.matrixAutoUpdate = false
+          b.matrix.copy(M).multiply(new THREE.Matrix4().makeTranslation(c.x, c.y, c.z))
+          b.castShadow = true; b.receiveShadow = true
+          g.add(b)
+          const e = end.clone().applyMatrix4(M)
+          const ph = e.y - J.benchTopY
+          if (ph > 0.02) add(g, post, 1.5 * INCH, ph, 1.5 * INCH, e.x, J.benchTopY + ph / 2, e.z)
+        }
+      }
+    }
+  }
+
+  /** the wheels' lowest point in the box's frame (inches), once they are built */
+  private wheelLow: number | null = null
+
+  /**
+   * The main wheels (logic/fuselage.ts FITTED_TYRE_OD): a tyre and a hub on each axle stub, centred on the stub, the axle along B.L.
+   * Fitted: striped and labelled "(fitted shape)" (main.ts). Shown only on the finished box, standing on them.
+   */
+  private buildWheels() {
+    const ax = this.meshes.find((m) => m.part === 'axles')
+    if (!ax) return
+    const pos = ax.base.attributes.position, v = new THREE.Vector3()
+    const half = { [1]: new THREE.Box3(), [-1]: new THREE.Box3() } as Record<number, THREE.Box3>
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i); half[v.z >= 0 ? 1 : -1].expandByPoint(v) }
+    const R = FITTED_TYRE_OD / 2, tube = TYRE_SECTION / 2
+    const tyre = new THREE.TorusGeometry(R - tube, tube, 18, 48) // in the XY plane: its axis is Z, the axle's direction (B.L.)
+    const hub = new THREE.CylinderGeometry(RIM_DIA / 2, RIM_DIA / 2, TYRE_SECTION * 0.8, 32).rotateX(Math.PI / 2)
+    const rubber = partMaterial(this.cut, { color: 0x2e2e30, roughness: 0.82, hatch: true, name: 'tyre' })
+    const metal = partMaterial(this.cut, { color: 0xa9aeb4, metalness: 0.8, roughness: 0.35, hatch: true, name: 'hub' })
+    for (const sgn of [1, -1]) {
+      const c = half[sgn].getCenter(new THREE.Vector3())
+      for (const [g, m] of [[tyre, rubber], [hub, metal]] as const) {
+        const w = new THREE.Mesh(g, m)
+        w.position.copy(c)
+        w.castShadow = true; w.receiveShadow = true
+        w.name = 'gear.wheels'
+        this.wheels.add(w)
+      }
+      this.wheelLow = c.y - R
+      if (sgn === -1) this.wheelTop = new THREE.Vector3(c.x, c.y + R, c.z) // the right wheel (model z < 0): the bench side, clear of the dock in the home shot
+    }
+    this.wheels.name = 'gear.wheels'
+    this.wheels.visible = false
+    this.wheels.userData.representational = true
+    this.wheels.userData.hatch = true
+    this.jigFrame.add(this.wheels)
+  }
+
+  /**
+   * The stand under the nose of the finished box. REPRESENTATIONAL furniture, as the cradles: the book has no nose gear until a later
+   * chapter, so the box stands on its main wheels with its forward end on a padded stand, the top longerons level as the gear was set.
+   */
+  private buildNoseStand() {
+    const M = this.jigM.get('on-gear')!
+    const fs = 34 // a station under the forward bottom
+    let yb = Infinity
+    for (const m of this.meshes) {
+      if (m.ply || !BOX.has(m.part)) continue
+      const pos = m.base.attributes.position
+      for (let i = 0; i < pos.count; i++) if (Math.abs(pos.getX(i) - fs) < 3) yb = Math.min(yb, pos.getY(i))
+    }
+    if (!Number.isFinite(yb)) return
+    const top = new THREE.Vector3(fs, yb, 0).applyMatrix4(M)
+    const wood = matte(0x6b5038, 0.7, { detail: 4, colorVar: 0.1 })
+    const pad = matte(0x3a3d42, 0.9)
+    const add = (m: THREE.Material, sx: number, sy: number, sz: number, x: number, y: number, z: number) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(sx * INCH, sy * INCH, sz * INCH), m)
+      b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true
+      this.noseStand.add(b)
+    }
+    const h = top.y / INCH // inches, floor to the box's bottom
+    add(pad, 4, 1, 18, top.x, top.y - 0.5 * INCH, top.z) // the padded saddle
+    add(wood, 3.5, 1.5, 20, top.x, top.y - 1.75 * INCH, top.z)
+    add(wood, 3.5, h - 4, 3.5, top.x, (1.5 + (h - 4) / 2) * INCH, top.z) // the post, foot to beam
+    add(wood, 16, 1.5, 16, top.x, 0.75 * INCH, top.z) // the foot
+    this.noseStand.name = 'noseStand'
+    this.noseStand.visible = false
+    this.noseStand.userData.representational = true
+  }
+
+  /**
+   * The axle-station marks for the gear positioning (plans-1980:p50 figure 1A), in the box's frame so they turn with it: a dimension
+   * from the right datum board's forward face (F.S. 125.5) forward to the axle centre line (F.S. 110.5) at the axle's height, its end
+   * ticks, and the station line from there out to the axle. Its labels ("15 in", the axle station) are the page's (main.ts). Only the
+   * book's numbers are drawn: the board B.L. and the axle height are book; how far out the axle is (the fitted track) is never labelled.
+   */
+  private buildMarks() {
+    const gm = this.data.gear_marks
+    const ax = this.meshes.find((m) => m.part === 'axles')
+    if (!gm || !ax) return
+    const mat = new THREE.MeshBasicMaterial({ color: 0x2fc4ff, toneMapped: false, depthTest: true })
+    const y = gm.axle_z, z = -gm.board_bl // the right board (B.L. +26.75): it faces the room once the box is inverted
+    const bar = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, th = 0.3) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(Math.max(Math.abs(x1 - x0), th), Math.max(Math.abs(y1 - y0), th), Math.max(Math.abs(z1 - z0), th)), mat)
+      b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+      b.castShadow = false; b.receiveShadow = false
+      this.marks.add(b)
+    }
+    const xa = gm.axle_fs, xb = gm.board_fs
+    bar(xa, y, z, xb, y, z) // the 15 in dimension
+    for (const x of [xa, xb]) bar(x, y - 2, z, x, y + 2, z) // its end ticks
+    const axleEnd = ax.base.boundingBox!.min.z + 5 // the right axle point: its stub runs 5 in outboard from it (FITTED_AXLE_STUB)
+    for (let k = 0, zz = z; zz > axleEnd; k++, zz -= 2) bar(xa, y, zz, xa, y, Math.max(axleEnd, zz - 1.2)) // the station line, dashed
+    this.markAt = { dim: new THREE.Vector3((xa + xb) / 2, y, z), axle: new THREE.Vector3(xa, y, axleEnd) }
+    this.marks.name = 'gearMarks'
+    this.marks.visible = false
+  }
+
+  /** the chapter 7 and 9 furniture and marks for the pose the box is in (at rest), and whether the marks are shown */
+  private furniture() {
+    const rest = this.turnK >= 1
+    this.gearTable.visible = rest && this.pose === 'gear-table'
+    this.cradles['bank-left-45'].visible = rest && this.pose === 'bank-left-45'
+    this.cradles['bank-right-45'].visible = rest && this.pose === 'bank-right-45'
+    this.marks.visible = rest && this.marksOn
+    this.noseStand.visible = rest && this.pose === 'on-gear'
+  }
+
+  /** the axle-station marks are on (the datum boards are out) */
+  get marksShown(): boolean { return this.marks.visible }
 
   /** Take the plan bend out: y' = y -+ half_width(x) in the export frame, which is z' = z +- h(x) here (right side at -z). */
   private flatten(geo: THREE.BufferGeometry, right: boolean): THREE.BufferGeometry {
@@ -163,18 +416,21 @@ export class FuselageBay {
 
   /** Put the box in pose `p`: at once, or (`animate`) turning over about its long axis from where it is now, in sim time (stepTurn). */
   setPose(p: JigPose, animate = false) {
-    if (animate && p !== this.pose) {
-      if (this.turnK <= 0) { this.pose = p; this.turnK = 1; this.applyMatrix(this.jigM[p]); return } // asked back before it started: it never left
+    this.toneFor(p)
+    if (animate && p !== this.pose && animatedTurn(this.pose, p)) {
+      if (this.turnK <= 0) { this.pose = p; this.turnK = 1; this.applyMatrix(this.jigM.get(p)!); this.furniture(); return } // asked back before it started: it never left
       // a turn already under way reverses from where it has got to; a fresh one waits for the camera to come round first
       this.turnK = this.turnK < 1 ? 1 - this.turnK : -FLIP_DELAY / FLIP_SECONDS
       this.turnFrom = this.pose
       this.pose = p
       this.applyTurn()
+      this.furniture()
       return
     }
     this.pose = p
     this.turnK = 1
-    this.applyMatrix(this.jigM[p])
+    this.applyMatrix(this.jigM.get(p)!)
+    this.furniture()
   }
 
   /** the turn is under way (or about to start) */
@@ -185,19 +441,24 @@ export class FuselageBay {
     if (this.turnK >= 1) return false
     this.turnK = Math.min(1, this.turnK + dt / FLIP_SECONDS)
     this.applyTurn()
+    this.furniture()
     return true
   }
 
   /** the jig frame's matrix for pose `p` at rest (world metres from the box's inches) */
-  restMatrix(p: JigPose): THREE.Matrix4 { return this.jigM[p] }
+  restMatrix(p: JigPose): THREE.Matrix4 { return this.jigM.get(p) ?? this.jigM.get('upright')! }
+
+  /** the pose for an op (layup.json's bank angles) */
+  poseFor(opId: string | null): JigPose { return jigPose(opId, this.order, this.bank) }
 
   private applyTurn() {
-    if (this.turnK >= 1) { this.applyMatrix(this.jigM[this.pose]); return }
-    const { angle, lift } = turnPose(this.turnFrom, this.pose, Math.max(0, this.turnK), this.half)
-    const J = STATION.jig
-    this.applyMatrix(new THREE.Matrix4().makeTranslation(J.x, blockTopY() + lift * INCH, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
-      .multiply(new THREE.Matrix4().makeRotationX(angle)).multiply(new THREE.Matrix4().makeTranslation(-STATION.fsMid, -this.yMid, 0)))
+    if (this.turnK >= 1) { this.applyMatrix(this.jigM.get(this.pose)!); return }
+    const { angle, lift } = turnPose(this.turnFrom, this.pose, Math.max(0, this.turnK), this.half, this.bank)
+    this.applyMatrix(this.poseMatrix(angle, lift))
   }
+
+  /** the dry cloth's tone for the pose the box is in or turning to */
+  private toneFor(p: JigPose) { this.dryTone.value = dryTone(p) }
 
   private applyMatrix(m: THREE.Matrix4) {
     this.jigFrame.matrix.copy(m)
@@ -210,6 +471,10 @@ export class FuselageBay {
   private flatRotation(carrier: string, face: 'fwd' | 'aft'): THREE.Quaternion {
     const up = new THREE.Vector3(0, 1, 0)
     if (carrier.startsWith('side_')) return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, isRight(carrier) ? 1 : -1), up)
+    // the strut lies flat on its bow (its plane of B.L. and W.L. on the table), its span along the table: FS up, B.L. along the table
+    // the roll-over box is glassed inside through its open bottom: it lies upside down on the table until it is bonded on
+    if (carrier === 'rollover') return new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI)
+    if (carrier === 'strut') return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0)))
     const fwd = this.data.parts[carrier]?.fwd_normal
     if (!fwd) return new THREE.Quaternion()
     const n = toModel(fwd).normalize()
@@ -218,7 +483,8 @@ export class FuselageBay {
   }
 
   private carrierGeo(carrier: string): THREE.BufferGeometry | null {
-    return this.meshes.find((m) => m.name === `fuselage.${carrier}`)?.table.geometry ?? null
+    const node = this.data.parts[carrier]?.node ?? `fuselage.${carrier}`
+    return this.meshes.find((m) => m.name === node)?.table.geometry ?? null
   }
 
   /** the carrier's flat box after the rotation, about the flat geometry's own centre (inches) */
@@ -251,8 +517,8 @@ export class FuselageBay {
     const q = this.flatRotation(carrier, face)
     const { box, c } = this.rotatedBox(carrier, q)
     const T = STATION.table
-    const u = carrier.startsWith('side_') || carrier === 'bottom' ? 0 : this.spots.get(carrier) ?? 0
-    const v = SIDE_V[carrier] ?? (carrier === 'bottom' ? 0 : ROW_V)
+    const u = carrier.startsWith('side_') || carrier === 'bottom' || carrier === 'strut' ? 0 : this.spots.get(carrier) ?? 0
+    const v = SIDE_V[carrier] ?? (carrier === 'bottom' || carrier === 'strut' ? 0 : ROW_V)
     const mid = box.getCenter(new THREE.Vector3())
     const m = new THREE.Matrix4().makeTranslation(T.x + u * INCH, T.topY + 0.0015, T.z + v * INCH)
       .multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
@@ -277,25 +543,38 @@ export class FuselageBay {
   }
 
   /**
-   * Show the build: `state` is visibleSet's answer for the selected op (null: the finished box, as the canard subject shows it).
-   * Returns a signature of what casts shadows, so the caller can redraw the shadow map only when it changed.
+   * Show the build: `state` is visibleSet's answer for the selected op (null: the finished box). `backdrop` (with no state): the box
+   * as it stands after that op, every part and ply made by then built and nothing later, which is how the canard subject shows its
+   * corner of the shop (the chapter 6 box on the jig, as it always has: the finished airplane on the floor would walk into the
+   * canard's frames). Returns a signature of what casts shadows, so the caller can redraw the shadow map only when it changed.
    */
-  paint(state: Map<string, BuildState> | null, opId: string | null, lay: number, layT: number, ghost: boolean, opIdx: Map<string, number>): string {
-    const sel = state ? opId : null
-    const pose = jigPose(sel, this.order)
+  paint(state: Map<string, BuildState> | null, opId: string | null, lay: number, layT: number, ghost: boolean, opIdx: Map<string, number>, backdrop: string | null = null): string {
+    const back = !state && backdrop && this.order.includes(backdrop) ? backdrop : null
+    const sel = state ? opId : back
+    const pose = this.poseFor(sel)
     if (pose !== this.pose) this.setPose(pose)
-    const cur = sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
+    const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
+    const bi = back ? this.order.indexOf(back) : -1
+    const madeBy = (m: FMesh) => (m.ply ? this.order.indexOf(m.ply.op) : this.firstIdx.get(m.cid) ?? Infinity) <= bi
     let sig = pose
+    let boards = false
     for (const m of this.meshes) {
-      const st = state ? state.get(m.name) ?? 'hidden' : 'built'
+      const st: BuildState = state ? state.get(m.name) ?? 'hidden' : back ? (madeBy(m) ? 'built' : 'hidden') : 'built'
       const ph = m.ply && cur !== undefined
         ? plyPhase({ meshOpIndex: opIdx.get(m.ply.op), curOpIndex: cur, order: m.ply.order, lay, count, t: layT, ghost })
         : partPhase(st)
       this.phases.set(m.name, ph)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0)
       const where = st === 'ghost' ? 'jig' : this.placeOf(m, sel)
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && shownAt(m.show, sel, this.order) && !(m.jigOnly && where === 'table')
+      // the shape for this op: the node's own, or a later stage (carved, cut, holed)
+      const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
+      const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
+      if (m.jig.geometry !== geo) this.swapGeometry(m.jig, geo)
+      if (stage) sig += stage
+      if (m.void) m.jig.position.y = VOID_LIFT
       m.jig.visible = shown && where === 'jig'
       m.table.visible = shown && where === 'table'
+      if (m.part === 'datum_board' && m.jig.visible) boards = true
       if (m.table.visible) {
         const face = this.faceFor(m.carrier, sel)
         m.table.matrix.copy(this.tableMatrix(m.carrier, face))
@@ -310,7 +589,24 @@ export class FuselageBay {
       sig += (m.jig.visible ? 'j' : m.table.visible ? 't' : '-') + (cast ? '1' : '0')
     }
     this.tableGroup.updateMatrixWorld(true)
-    return sig
+    // the wheels go on with the finished box, standing on them (the axles are on by then)
+    const axles = this.meshes.find((m) => m.part === 'axles')
+    this.wheels.visible = this.pose === 'on-gear' && !!axles?.jig.visible
+    sig += this.wheels.visible ? 'w' : ''
+    this.marksOn = boards
+    this.furniture()
+    return sig + (boards ? 'm' : '') + (this.gearTable.visible ? 'g' : '') + (this.cradles['bank-left-45'].visible ? 'l' : '') + (this.cradles['bank-right-45'].visible ? 'r' : '')
+  }
+
+  /** put a stage's shape on a jig mesh; while the station cut is open its mesh draws two material groups (core/cut.ts), so the new shape gets them too */
+  private swapGeometry(mesh: THREE.Mesh, geo: THREE.BufferGeometry) {
+    const old = mesh.geometry
+    if (old.groups.length) {
+      const count = geo.index ? geo.index.count : geo.attributes.position.count
+      geo.clearGroups()
+      for (const g of old.groups) geo.addGroup(0, count, g.materialIndex)
+    } else geo.clearGroups()
+    mesh.geometry = geo
   }
 
   /** the station cut: open at `fs` (the forward side removed), or closed */
@@ -341,9 +637,9 @@ export class FuselageBay {
   worldBoxAt(m: FMesh, opId: string | null): THREE.Box3 {
     const where = this.placeOf(m, opId)
     const mat = where === 'jig'
-      ? this.jigM[jigPose(opId, this.order)]
+      ? this.restMatrix(this.poseFor(opId))
       : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
-    const g = where === 'jig' ? m.jig.geometry : m.table.geometry
+    const g = where === 'jig' ? m.base : m.table.geometry
     return g.boundingBox!.clone().applyMatrix4(mat)
   }
 
@@ -353,19 +649,32 @@ export class FuselageBay {
     for (const id of ops) {
       const v = fuseView(id)
       const target = new THREE.Vector3()
-      if (v.focus === 'box') {
+      if (v.focus === 'marks' && this.markAt) {
+        target.copy(this.markAt.dim).lerp(this.markAt.axle, 0.5).applyMatrix4(this.restMatrix(this.poseFor(id))) // both marks' words in frame
+      } else if (v.focus === 'box' || v.focus === 'marks') {
         const bx = new THREE.Box3()
-        for (const m of this.meshes) if (!m.ply && this.placeOf(m, id) === 'jig' && this.isMade(m, id)) bx.union(this.worldBoxAt(m, id))
+        for (const m of this.meshes) if (!m.ply && BOX.has(m.part) && this.placeOf(m, id) === 'jig' && this.isMade(m, id)) bx.union(this.worldBoxAt(m, id))
         if (bx.isEmpty()) target.set(STATION.jig.x, blockTopY() + 0.25, STATION.jig.z); else bx.getCenter(target)
       } else {
-        const ms = v.focus.parts.map((p) => this.meshes.find((m) => m.name === `fuselage.${p}`)).filter((m): m is FMesh => !!m)
+        const ms = v.focus.parts.map((p) => this.meshes.find((m) => m.part === p && !m.ply)).filter((m): m is FMesh => !!m)
         if (v.focus.fs !== undefined && ms.length) {
           const m = ms[0], where = this.placeOf(m, id)
-          const g = where === 'jig' ? m.jig.geometry : m.table.geometry
+          const g = where === 'jig' ? m.base : m.table.geometry
           const c = g.boundingBox!.getCenter(new THREE.Vector3())
           c.x = v.focus.fs
-          const mat = where === 'jig' ? this.jigM[jigPose(id, this.order)] : this.tableMatrix(m.carrier, this.faceFor(m.carrier, id))
+          const mat = where === 'jig' ? this.restMatrix(this.poseFor(id)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, id))
           target.copy(c.applyMatrix4(mat))
+        } else if (v.focus.side && ms.length) { // one half of the part (B.L. > 0 is model z < 0): one axle, one leg
+          const right = v.focus.side === 'right'
+          const bx = new THREE.Box3(), q = new THREE.Vector3()
+          for (const m of ms) {
+            const where = this.placeOf(m, id)
+            const g = where === 'jig' ? m.base : m.table.geometry
+            const mat = where === 'jig' ? this.restMatrix(this.poseFor(id)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, id))
+            const pos = g.attributes.position
+            for (let i = 0; i < pos.count; i++) if ((pos.getZ(i) < 0) === right) bx.expandByPoint(q.fromBufferAttribute(pos, i).applyMatrix4(mat))
+          }
+          bx.getCenter(target)
         } else {
           const bx = new THREE.Box3()
           for (const m of ms) bx.union(this.worldBoxAt(m, id))
@@ -382,7 +691,7 @@ export class FuselageBay {
   /** the close shot of the station cut at `fs`: forward of the plane, a little above, looking aft at the face (world metres; the finished box, right side up) */
   cutShot(fs: number, fov: number): Shot {
     const bx = new THREE.Box3()
-    for (const m of this.meshes) if (!m.ply && this.placeOf(m, null) === 'jig') bx.union(this.worldBoxAt(m, null))
+    for (const m of this.meshes) if (!m.ply && BOX.has(m.part) && this.placeOf(m, null) === 'jig') bx.union(this.worldBoxAt(m, null))
     const target = bx.isEmpty() ? new THREE.Vector3(STATION.jig.x, blockTopY() + 0.25, STATION.jig.z) : bx.getCenter(new THREE.Vector3())
     target.x = fsToX(fs)
     const off = viewOffset({ focus: 'box', dist: 58, el: 24, az: 72 })
@@ -402,8 +711,29 @@ export class FuselageBay {
     return new THREE.Box3(new THREE.Vector3(T.x - T.len / 2, J.benchTopY, T.z - T.depth / 2), new THREE.Vector3(T.x + T.len / 2, blockTopY() + 0.6, J.z + J.benchDepth / 2))
   }
 
+  /** the finished box on its own feet (world metres): every part of it, the wheels and the nose stand, for its home shot */
+  finishedBox(): THREE.Box3 {
+    const M = this.restMatrix('on-gear'), bx = new THREE.Box3()
+    for (const m of this.meshes) if (!m.ply && this.placeOf(m, null) === 'jig' && shownAt(m.show, null, this.order)) bx.union(m.base.boundingBox!.clone().applyMatrix4(M))
+    for (const w of this.wheels.children) bx.union(((w as THREE.Mesh).geometry.boundingBox ?? ((w as THREE.Mesh).geometry.computeBoundingBox(), (w as THREE.Mesh).geometry.boundingBox!)).clone().translate(w.position).applyMatrix4(M))
+    bx.expandByPoint(new THREE.Vector3(bx.min.x, 0, bx.min.z))
+    return bx
+  }
+
+  /** the jig bench's world box, legs and blocks included (scene/fuselageStation.ts) */
+  benchBox(): THREE.Box3 {
+    const J = STATION.jig
+    return new THREE.Box3(new THREE.Vector3(J.x - J.benchLen / 2, 0, J.z - J.benchDepth / 2), new THREE.Vector3(J.x + J.benchLen / 2, blockTopY(), J.z + J.benchDepth / 2))
+  }
+
+  /** where the wheels' label hangs (world metres, as the box is now), or null with no wheels shown */
+  wheelAnchor(out: THREE.Vector3): THREE.Vector3 | null {
+    if (!this.wheels.visible || !this.wheelTop) return null
+    return out.copy(this.wheelTop).applyMatrix4(this.jigFrame.matrixWorld)
+  }
+
   labelColor(m: FMesh): string {
-    const c = m.hatch ? HATCH_COLOR : WOOD[m.part] ?? COLORS.foam
+    const c = m.hatch ? HATCH_COLOR : WOOD[m.part] ?? METAL[m.part]?.[0] ?? COLORS.foam
     return '#' + c.toString(16).padStart(6, '0')
   }
 }

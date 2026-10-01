@@ -1966,7 +1966,7 @@ _BOOK_BOND_ORDER = ("front_seat_bkhd", "panel", "f22", "rear_seat_bkhd", "firewa
 
 def _fuse_ops(g):
     byid = {o["id"]: o for o in g["ops"]}
-    return [i for i in g["order"] if byid[i]["chapter"] in (4, 5, 6) and not byid[i]["stub"]
+    return [i for i in g["order"] if byid[i]["chapter"] in (4, 5, 6, 7, 8, 9) and not byid[i]["stub"]
             and ("both" in byid[i]["variants"] or "roncz" in byid[i]["variants"])]
 
 
@@ -2267,6 +2267,288 @@ def test_recorder_url_exposes_rec_and_both_films_start(rsite, film):
             assert isinstance(dur, (int, float)) and dur > 0
             r = pg.evaluate("window.__rec.frame(1 / 60, true)")
             assert r["active"] is True
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.3 Task 5: chapters 7-9 in the lab. The 45 degree rolls, the gear table, the gear and fitted-shape stripes, the CG and
+# ground rows, and the station cut through the skins and the roll-over.
+# ======================================================================================================================
+def _up(pg, q, n):
+    """World 'up' component of the box-frame direction n at box-frame point q (unit-free): where the box is now."""
+    a = pg.evaluate(f"window.__lab.fuseToWorld({q})")
+    b = pg.evaluate(f"window.__lab.fuseToWorld({[q[i] + n[i] for i in range(3)]})")
+    d = [b[i] - a[i] for i in range(3)]
+    return d[1] / max(1e-9, sum(x * x for x in d) ** 0.5)
+
+
+def test_ch7_skin_right_rolls_the_box_right_side_up_in_sim_time_then_through_to_the_left_and_back(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f07.belt-insert")
+            assert pg.evaluate("window.__lab.subject()") == "fuselage"  # a chapter 7 op in the address opens the fuselage
+            pg.evaluate("window.__lab.advance(3)")
+            q_right, q_left = [70, -5, -12.3], [70, -5, 12.3]  # on the right (B.L. > 0 is the box frame's z < 0) and left sides
+            assert pg.evaluate("window.__lab.jigPose()") == "upright"
+            up0 = pg.evaluate(f"window.__lab.fuseToWorld({q_right})")
+            pg.evaluate("window.__lab.select('f07.skin-right')")
+            assert pg.evaluate("window.__lab.jigPose()") == "bank-left-45" and pg.evaluate("window.__lab.fuseTurning()")
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q_right})") == pytest.approx(up0, abs=1e-6)  # only step() moves it
+            pg.evaluate("window.__lab.advance(0.9)")  # a quarter of the way round (0.6 s delay, then 135 degrees over 1 s)
+            mid = _up(pg, q_right, [0, 0, -1])
+            pg.evaluate("window.__lab.advance(2)")
+            assert not pg.evaluate("window.__lab.fuseTurning()")
+            # the box is rolled 135 degrees (captain's reading of p46's "45 degrees of left bank"): the right side's AND the bottom's
+            # outward normals point up 45 degrees, the left side's down; the right side is higher
+            assert _up(pg, q_right, [0, 0, -1]) == pytest.approx(0.7071, abs=0.01)
+            assert _up(pg, q_right, [0, -1, 0]) == pytest.approx(0.7071, abs=0.01)
+            assert _up(pg, q_left, [0, 0, 1]) == pytest.approx(-0.7071, abs=0.01)
+            assert 0.05 < mid < 0.7, mid  # partway round when it was sampled
+            yr, yl = (pg.evaluate(f"window.__lab.fuseToWorld({q})")[1] for q in (q_right, q_left))
+            assert yr > yl + 0.3, (yr, yl)  # metres
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q_right})") == pytest.approx(pg.evaluate(f"window.__lab.fuseRestToWorld({q_right}, 'bank-left-45')"), abs=1e-6)
+            # the right skin's plies lie on the right side and the bottom only
+            fz = _graph(rsite)["layup"]["fuselage"]
+            parts = {n["part"] for n in fz["nodes"].values() if n["op"] == "f07.skin-right"}
+            assert parts == {"side_right", "bottom"}, parts
+            # through to 45 degrees of right bank for the left skin
+            pg.evaluate("window.__lab.select('f07.skin-left')")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "bank-right-45"
+            assert _up(pg, q_left, [0, 0, 1]) == pytest.approx(0.7071, abs=0.01)
+            assert _up(pg, q_left, [0, -1, 0]) == pytest.approx(0.7071, abs=0.01)
+            # stepping back puts it right side up again, exactly
+            pg.evaluate("window.__lab.select('f07.belt-insert')")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "upright"
+            assert pg.evaluate(f"window.__lab.fuseToWorld({q_right})") == pytest.approx(up0, abs=1e-6)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ch9_position_gear_inverts_the_box_with_the_datum_boards_and_marks_the_axle_at_fs_110_5(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f09.jig-blocks")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "upright"
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["strut"] == "table" and pl["jig_blocks"] == "jig" and pl["datum_board"] == "none", pl  # the strut waits on the table
+            assert not pg.evaluate("window.__lab.gearMarks()")["shown"]
+            top, bottom = [80, 5.6, 0], [80, -14.9, 0]  # the longeron tops (W.L. 23) and the box's floor at FS 80
+            pg.evaluate("window.__lab.select('f09.position-gear')")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "gear-table"
+            yt, yb = (pg.evaluate(f"window.__lab.fuseToWorld({q})")[1] for q in (top, bottom))
+            assert yt < yb - 0.3, (yt, yb)  # upside down: the longeron tops below the floor
+            assert _up(pg, [80, 0, 0], [0, 1, 0]) == pytest.approx(-1, abs=1e-6)  # level on the longerons, not rolled
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["datum_board"] == pl["strut"] == pl["jig_blocks"] == "jig", pl
+            gm = pg.evaluate("window.__lab.gearMarks()")
+            assert gm["shown"] and gm["axleFs"] == 110.5 and gm["boardFs"] == 125.5
+            assert gm["dimText"] == "15 in" and gm["axleText"] == "Axle C.L. F.S. 110.5 (book)"
+            assert gm["axleModel"][0] == pytest.approx(110.5) and gm["dimModel"][0] == pytest.approx((110.5 + 125.5) / 2)
+            # the mark is where the axle goes (it is fitted at axles-brakes): inside the axles' box in the box's frame, on the right
+            ab = pg.evaluate("window.__lab.plyBox('gear.axles')")
+            assert all(ab["min"][i] - 0.5 <= gm["axleModel"][i] <= ab["max"][i] + 0.5 for i in range(3)), (ab, gm["axleModel"])
+            assert gm["axleModel"][2] < -26.75  # outboard of the right datum board (B.L. 26.75; the box frame's z is -B.L.)
+            # and it turned over with the box: the axle line is above the box's floor now
+            assert gm["axleWorld"][1] > pg.evaluate(f"window.__lab.fuseToWorld({bottom})")[1] + 0.3
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert labs["mark.dim"]["text"] == "15 in" and labs["mark.dim"]["opacity"] > 0.5
+            assert labs["mark.axle"]["text"] == "Axle C.L. F.S. 110.5 (book)" and labs["mark.axle"]["opacity"] > 0.5
+            # it stays upside down to the end of the chapter, then (the finished box) right side up on its gear with the boards and marks gone
+            for op in ("f09.tab-layup", "f09.axles-brakes", "f09.brake-lines"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                assert pg.evaluate("window.__lab.jigPose()") == "gear-table", op
+            pg.evaluate("window.__lab.select(null)")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "on-gear"  # on its own feet (the next test checks where)
+            assert pg.evaluate("window.__lab.placement()")["datum_board"] == "none" and not pg.evaluate("window.__lab.gearMarks()")["shown"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_gear_and_the_ch7_9_fitted_shapes_are_striped_and_book_or_derived_parts_never_are(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f09.axles-brakes")
+            pg.evaluate("window.__lab.advance(3)")
+            fitted = ("strut", "extrusions", "gear_tubes", "axles", "jig_blocks", "carved_corners", "canard_cutout")
+            for part in fitted:
+                m = pg.evaluate(f"window.__lab.material('{fz['parts'][part]['node']}')")
+                assert m["hatch"] and m["fidelity"] == "representational", (part, m)
+            for part in ("rollover", "rollover_inserts", "step", "belt_attach", "belt_insert", "datum_board", "side_left", "side_right", "front_seat_bkhd"):
+                m = pg.evaluate(f"window.__lab.material('{fz['parts'][part]['node']}')")
+                assert not m["hatch"] and m["fidelity"] in ("book", "derived"), (part, m)
+            for node, n in fz["nodes"].items():  # the skins and the roll-over glass are on book or derived parts: never striped
+                if n["op"].startswith(("f07.", "f08.")):
+                    assert pg.evaluate(f"window.__lab.material('{node}').hatch") == (n["fidelity"] == "representational"), node
+            # what is on screen says so in its label: the gear's fitted parts read "(fitted shape)", the datum boards do not
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            for part in ("strut", "extrusions", "gear_tubes", "axles"):
+                lab = labs[fz["parts"][part]["node"]]
+                assert lab["text"].endswith("(fitted shape)"), lab
+            assert any(labs[fz["parts"][x]["node"]]["opacity"] > 0.5 for x in ("strut", "axles"))
+            assert "fitted shape" not in labs["gear.datum_board"]["text"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_readout_lists_the_gear_rows_and_the_ground_note_with_no_tip_back_or_tip_over_number(rsite):
+    import re
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f09.position-gear")
+            assert pg.is_hidden("#t-ground")  # closed by default: the dock stays one line
+            pg.click("#fuse-more")
+            assert pg.is_visible("#t-ground") and pg.is_visible("#ro-cg-sub")
+            sub = pg.inner_text("#ro-cg-sub")
+            assert pg.inner_text("#ro-cg") == "not yet computed"
+            last = sub.split("·")[-1]
+            assert "lower bound" in last and "24.8 lb of gear (main and nose struts)" in last, sub
+            assert "Wheels and brakes: excluded, no source" in sub and "20.2" not in sub, sub
+            assert pg.inner_text("#ro-ground") == "Main axle F.S. 110.5 (book)"
+            gsub = pg.inner_text("#ro-ground-sub")
+            assert "12° tip-back line" in gsub, gsub
+            segs = {x.strip().split(":")[0]: x.strip() for x in gsub.split("·")}
+            assert segs["tip-back check"].startswith("tip-back check: not yet computed") and not re.search(r"\d", segs["tip-back check"]), gsub
+            assert segs["tip-over check"].startswith("tip-over check: not yet computed") and not re.search(r"\d", segs["tip-over check"]), gsub
+            assert pg.evaluate("window.__lab.ground()")["value"] == "Main axle F.S. 110.5 (book)"
+            # the track has no source: no number next to it anywhere on the page
+            assert not re.search(r"track\D{0,20}\d", pg.inner_text("body"), re.I)
+            pg.click('#subject button[data-subject="canard"]')  # the canard has no ground note
+            assert pg.is_hidden("#t-ground")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_station_cut_opens_the_roll_over_at_fs_80_the_skins_at_fs_72_and_the_gear(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f08.step")
+            pg.evaluate("window.__lab.advance(3)")
+            pg.evaluate("window.__lab.setSection(true, 80)")
+            pg.evaluate("window.__lab.advance(3)")
+            c = pg.evaluate("window.__lab.cut()")
+            assert c["enabled"] and c["fs"] == 80 and c["keepsAft"] and c["removesForward"]
+            assert "fuselage.rollover" in c["capNodesVisible"], c["capNodesVisible"]
+            ro_plies = sorted(k for k, n in fz["nodes"].items() if n["part"] == "rollover" and n["fs_min"] - 1e-3 <= 80 <= n["fs_max"] + 1e-3)
+            assert ro_plies and set(ro_plies) <= set(c["capNodesVisible"]), (ro_plies, c["capNodesVisible"])
+            assert c["capsVisible"] == len(c["cappedNodes"])
+            assert f"Roll-over box: {len(ro_plies)} BID" in pg.inner_text("#ro-layers")
+            # FS 72: the skins are thin caps over the sides (every chapter 7 ply on a side spanning 72 is cut there)
+            pg.evaluate("window.__lab.setSection(true, 72)")
+            pg.evaluate("window.__lab.advance(3)")
+            c = pg.evaluate("window.__lab.cut()")
+            skins = [k for k, n in fz["nodes"].items() if n["op"].startswith("f07.skin") and n["part"].startswith("side_") and n["fs_min"] - 1e-3 <= 72 <= n["fs_max"] + 1e-3]
+            assert len(skins) >= 4 and set(skins) <= set(c["capNodesVisible"]), (skins, c["capNodesVisible"])
+            assert "Right side: " in pg.inner_text("#ro-layers")
+            # the gear is cut too: through the strut's flat and the extrusions at FS 117
+            pg.evaluate("window.__lab.select('f09.axles-brakes')")
+            pg.evaluate("window.__lab.setSection(true, 117)")
+            pg.evaluate("window.__lab.advance(3)")
+            c = pg.evaluate("window.__lab.cut()")
+            assert {"gear.strut", "gear.extrusions"} <= set(c["capNodesVisible"]), c["capNodesVisible"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _boxes_overlap(a, b):
+    return all(a[0][i] < b[1][i] and b[0][i] < a[1][i] for i in range(3))
+
+
+def test_the_finished_box_stands_on_its_gear_on_the_floor_clear_of_the_bench(rsite):
+    import re
+    inch = 0.0254
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f09.brake-lines")
+            pg.evaluate("window.__lab.advance(3)")
+            assert pg.evaluate("window.__lab.jigPose()") == "gear-table"
+            pg.evaluate("window.__lab.select(null)")  # the finished box: after chapter 9 the book sets it on its own feet
+            pg.evaluate("window.__lab.advance(4)")
+            assert pg.evaluate("window.__lab.jigPose()") == "on-gear"
+            f = pg.evaluate("window.__lab.fuseFloor()")
+            gear, bench = f["gear"], f["bench"]
+            fz = _graph(rsite)["layup"]["fuselage"]["parts"]
+            assert {fz[k]["node"] for k in ("strut", "axles", "extrusions", "gear_tubes")} | {"gear.wheels"} <= set(gear), sorted(gear)
+            # no gear part's world box meets the jig bench's (top, legs and blocks)
+            for name, bx in gear.items():
+                assert not _boxes_overlap(bx, bench), (name, bx, bench)
+            # it stands on the floor plane (y = 0), on its wheels
+            low = min(bx[0][1] for bx in gear.values())
+            assert abs(low) <= 0.5 * inch, low
+            assert gear["gear.wheels"][0][1] == pytest.approx(low, abs=1e-9)
+            assert all(bx[0][1] > low + 2 * inch for k, bx in gear.items() if k != "gear.wheels")  # the axles and legs are up off it
+            # and the whole box with it: nothing of the box under the floor or in the bench
+            for node in ("fuselage.side_left", "fuselage.side_right", "fuselage.bottom", "fuselage.rollover", "fuselage.firewall"):
+                mn, mx = pg.evaluate(f"window.__lab.meshBox('{node}')")
+                assert mn[1] > 0 and not _boxes_overlap([mn, mx], bench), (node, mn, mx)
+            assert f["noseStand"]  # its forward end on a stand: no nose gear yet
+            # the wheels are fitted: striped and labelled so; the home shot frames them, and no track number is printed anywhere
+            m = pg.evaluate("window.__lab.material('gear.wheels')")
+            assert m["hatch"] and m["fidelity"] == "representational", m
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert labs["gear.wheels"]["text"] == "Main gear and wheels (fitted shape)" and labs["gear.wheels"]["opacity"] > 0.5, labs["gear.wheels"]
+            for c in ([gear["gear.wheels"][0], gear["gear.wheels"][1]]):
+                x, y = pg.evaluate(f"window.__lab.project({c})")
+                assert 0 <= x <= 1180 and 0 <= y <= 820, (c, x, y)
+            assert not re.search(r"track\D{0,20}\d", pg.inner_text("body"), re.I)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_home_view_names_the_finished_box_by_family_in_ten_labels_or_fewer(rsite):
+    g = _graph(rsite)
+    fz = g["layup"]["fuselage"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1&op=f09.brake-lines")
+            pg.evaluate("window.__lab.select(null)")
+            pg.evaluate("window.__lab.advance(4)")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            on = [k for k, x in labs.items() if x["opacity"] > 0.5]
+            assert len(on) <= 10, on
+            assert fz["parts"]["rollover"]["node"] in on and fz["parts"]["rollover_inserts"]["node"] not in on  # one roll-over label
+            gear = [k for k in on if k.startswith("gear.") or k in {fz["parts"][x]["node"] for x in ("extrusions", "gear_tubes")}]
+            assert gear == ["gear.wheels"], gear  # one gear label
+            # a fitted part whose label waits for its op is still drawn striped
+            for part in ("strut", "axles", "extrusions", "gear_tubes", "carved_corners"):
+                node = fz["parts"][part]["node"]
+                assert node not in on and pg.evaluate(f"window.__lab.material('{node}')")["hatch"], part
+                assert pg.evaluate(f"window.__lab.meshBox('{node}')") is not None, part  # drawn
+            # with an op selected the parts keep their own labels (the axles at the axles op)
+            pg.evaluate("window.__lab.select('f09.axles-brakes')")
+            pg.evaluate("window.__lab.advance(3)")
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labels()")}
+            assert labs["gear.axles"]["opacity"] > 0.5 and labs["gear.wheels"]["opacity"] < 0.05
             assert not errors, errors
             b.close()
     finally:
