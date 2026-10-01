@@ -2777,6 +2777,199 @@ def test_ch11_balance_check_hangs_each_elevator_nose_down_with_the_cg_labelled_i
         s.shutdown()
 
 
+# ---- M2.4 fix 1: the elevators are SEEN. The canard's core and skins used to fill the space the elevators sit in, so the hinge, travel and
+# pocket ops showed a canard with labels pointing at nothing. These tests judge the on-screen pixels, not transforms and states.
+def _bare_view(pg):
+    """Only the 3D view: the cards, the bar, the labels and the load-path glow are off, so the pixels in a crop are the model's."""
+    _display(pg)
+    pg.uncheck("#paths-on")
+    pg.click("#more")
+    pg.add_style_tag(content="#controls,#dock,#opbar,#labels,#status,#viewpop{visibility:hidden !important}")
+
+
+def _screen_clip(pg, boxes, w, h, pad=4):
+    """The crop (screen pixels) that holds every world box in `boxes` (metres), clamped to the viewport."""
+    pts = [pg.evaluate("(p) => window.__lab.project(p)", [x, y, z]) for bx in boxes for x in (bx[0][0], bx[1][0]) for y in (bx[0][1], bx[1][1]) for z in (bx[0][2], bx[1][2])]
+    x0, x1 = max(0, min(q[0] for q in pts) - pad), min(w, max(q[0] for q in pts) + pad)
+    y0, y1 = max(0, min(q[1] for q in pts) - pad), min(h, max(q[1] for q in pts) + pad)
+    assert x1 - x0 > 40 and y1 - y0 > 20, pts
+    return {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}
+
+
+def _look_at(pg, box, dist, d=(0.55, 0.62, 0.55)):
+    """Aim the camera at the middle of a world box from `dist` metres along direction `d` (x aft, y up, z toward the root side)."""
+    n = sum(v * v for v in d) ** 0.5
+    c = [(box[0][i] + box[1][i]) / 2 for i in range(3)]
+    pos = [c[i] + dist * d[i] / n for i in range(3)]
+    pg.evaluate(f"window.__lab.setCamera({pos}, {c})")
+
+
+def _shot_clip(pg, clip):
+    from PIL import Image
+    return Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("RGB")
+
+
+def _pair(p, url, hide, query="", w=1180, h=820):
+    """Two pages on the same site: the lab as it is, and the lab with the elevators left out of the scene (?hide=, a debugging aid that keeps the
+    cove as it is). What differs between their frames is the elevator's own pixels: no colour guessing, no stripe classifier."""
+    b1, pg, e1 = _open(p, url, w, h, query="&freeze=1" + query)
+    b2, pgh, e2 = _open(p, url, w, h, query=f"&freeze=1&hide={hide}" + query)
+    for g in (pg, pgh):
+        _bare_view(g)
+    return (b1, b2), pg, pgh, e1 + e2
+
+
+def _elevator_pixels(pg, pgh, clip, tol=45):
+    """The mask (list of 0/1 per pixel of `clip`) of where the elevator is on screen: pixels that differ between the two pages' frames."""
+    on, off = _shot_clip(pg, clip), _shot_clip(pgh, clip)
+    return [1 if sum(abs(i - j) for i, j in zip(u, v)) > tol else 0 for u, v in zip(on.getdata(), off.getdata())]
+
+
+def _orange(img_pixels, mask):
+    """How many of the masked pixels read amber (the fitted-shape stripe, mixed into the part's colour): red over green over blue, clearly warm."""
+    return sum(1 for (r, g, b), m in zip(img_pixels, mask) if m and r > g > b and r - b >= 45)
+
+
+def test_ch11_travel_check_changes_the_pixels_of_the_elevator_on_screen_between_30_down_and_15_up(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            bs, pg, pgh, errors = _pair(p, url, "elevator.")
+            masks, clips = {}, {}
+            for g in (pg, pgh):
+                g.evaluate("window.__lab.select('r30.top-skin')")  # an upright canard: the travel op does not turn it over
+                _run(g, 3)
+                g.evaluate("window.__lab.select('r30.elev-travel-check')")
+                for _ in range(40):  # the op's own camera flight (1.8 s) ends before the elevator reaches 30 down (2.4 s): then take the camera
+                    _run(g, 0.1)
+                    if not g.evaluate("window.__lab.flying()"):
+                        break
+            assert pg.evaluate("window.__lab.elevators()")["degDown"] < 29
+            box = pg.evaluate("window.__lab.elevators()")["boxes"]["elevator.right"]
+            for g in (pg, pgh):
+                _look_at(g, box, 1.7)
+            boxes, got = [], set()
+            for _ in range(80):
+                _run(pg, 0.1)
+                _run(pgh, 0.1)
+                e = pg.evaluate("window.__lab.elevators()")
+                for deg in (30.0, -15.0):
+                    if abs(e["degDown"] - deg) < 1e-6 and deg not in got:
+                        got.add(deg)
+                        boxes.append((deg, e["boxes"]["elevator.right"]))
+                        masks[deg] = (_shot_clip(pg, None), _shot_clip(pgh, None))
+            assert got == {30.0, -15.0}, sorted(got)
+            clip = _screen_clip(pg, [b for _, b in boxes], 1180, 820)
+            crop = lambda im: im.crop((int(clip["x"]), int(clip["y"]), int(clip["x"] + clip["width"]), int(clip["y"] + clip["height"])))
+            m = {}
+            for deg, (on, off) in masks.items():
+                on, off = crop(on), crop(off)
+                m[deg] = [1 if sum(abs(i - j) for i, j in zip(u, v)) > 45 else 0 for u, v in zip(on.getdata(), off.getdata())]
+            n30, n15 = sum(m[30.0]), sum(m[-15.0])
+            moved = sum(1 for a, c in zip(m[30.0], m[-15.0]) if a != c)
+            print(f"elevator box {clip['width']:.0f}x{clip['height']:.0f}: the elevator covers {n30} px at 30 down and {n15} at 15 up; {moved} px belong to one pose only")
+            # an elevator buried in the canard shows a sliver (6k and 14k px here); out in its cove it is most of the box (86k and 57k)
+            assert n30 > 30000 and n15 > 30000, f"the elevator is not on screen: it covers {n30} px at 30 down and {n15} px at 15 up"
+            assert moved > 10000, f"the elevator does not move on screen: only {moved} px of its footprint differ between 30 down and 15 up"
+            assert not errors, errors
+            for b in bs:
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ch11_hinge_slots_show_the_striped_elevator_in_an_open_cove_of_the_canard(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            bs, pg, pgh, errors = _pair(p, url, "elevator.")
+            for op in ("r30.elev-hinge-slots", "r30.elev-mass-balance"):
+                for g in (pg, pgh):
+                    g.evaluate("window.__lab.select('r30.top-skin')")
+                    _run(g, 3)
+                    g.evaluate(f"window.__lab.select('{op}')")
+                    _run(g, 6)
+                e = pg.evaluate("window.__lab.elevators()")
+                assert e["mode"] == "none" and "elevator.right" in e["boxes"], (op, e["mode"])
+                for g in (pg, pgh):
+                    _look_at(g, e["boxes"]["elevator.right"], 1.7)
+                    _run(g, 0.2)
+                clip = _screen_clip(pg, [e["boxes"]["elevator.right"]], 1180, 820)
+                mask = _elevator_pixels(pg, pgh, clip)
+                n, warm = sum(mask), _orange(list(_shot_clip(pg, clip).getdata()), mask)
+                print(f"{op}: the elevator covers {n} px of its {clip['width']:.0f}x{clip['height']:.0f} box, {warm} of them amber")
+                assert n > 30000 and warm > 0.5 * n, f"{op}: the striped elevator is not on screen ({n} px, {warm} amber)"
+                cv = pg.evaluate("window.__lab.cove()")
+                assert cv["open"] and cv["xCut"] == pytest.approx(_graph(rsite)["layup"]["fuselage"]["extras"]["elevators"]["cove"]["x_cut"]), cv
+            assert not errors, errors
+            for b in bs:
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def test_ch12_installed_elevators_read_on_screen_with_a_fitted_shape_label(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ("r30.f22-drill-tabs", "r30.elev-fuselage-clearance"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 5)
+                labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+                lab = labs["elevator.installed"]
+                assert lab["text"] == "Elevators (fitted shape)" and lab["opacity"] > 0.5 and not lab.get("hidden") and not lab.get("collapsed"), (op, lab)
+            assert pg.evaluate("window.__lab.cove()")["installed"]
+            b.close()
+            bs, pg, pgh, errors = _pair(p, url, "installed:elevator.", query="&op=r30.f22-drill-tabs")
+            for g in (pg, pgh):
+                assert g.evaluate("window.__lab.subject()") == "fuselage"  # the op in the address opens the airplane
+                g.evaluate("window.__lab.select('r30.f22-drill-tabs')")
+                _run(g, 5)
+            bx = pg.evaluate("window.__lab.installedCanard()")["boxes"]["installed:elevator.right"]
+            for g in (pg, pgh):
+                _look_at(g, bx, 1.4, d=(0.7, 0.55, 0.45))
+                _run(g, 0.2)
+            clip = _screen_clip(pg, [bx], 1180, 820)
+            mask = _elevator_pixels(pg, pgh, clip)
+            n = sum(mask)
+            print(f"installed right elevator: {n} px on screen ({clip['width']:.0f}x{clip['height']:.0f} box)")
+            assert n > 20000, f"the installed elevator is not on screen ({n} px)"
+            assert not errors, errors
+            for b in bs:
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_canards_cove_is_open_exactly_while_an_elevator_part_shows_and_always_on_the_installed_canard(rsite):
+    g = _graph(rsite)
+    order, byid, first = _first_ops(g)
+    ex = g["layup"]["fuselage"]["extras"]["elevators"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            ch11 = [o for o in order if byid[o]["chapter"] == 11 and not byid[o]["stub"]]
+            for op in ch11 + ["r30.top-skin", "r30.install-pins", "r30.align-canard", None]:
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.3)
+                shown = any(v != "hidden" for k, v in pg.evaluate("window.__lab.stateAll()").items() if k.startswith("elevator."))
+                cv = pg.evaluate("window.__lab.cove()")
+                assert cv["open"] == shown, (op, cv, shown)  # the canard keeps its full chord wherever no elevator is on screen (chapter 30's frames)
+                assert cv["xCut"] == pytest.approx(ex["tube_le_x"] - ex["cove"]["slot_gap"], abs=1e-6) and cv["blEnd"] == ex["cove"]["bl_end"]
+            _to_fuselage(pg)
+            for op in ("r30.f22-drill-tabs", "r30.elev-fuselage-clearance", "f13.nose-door"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                assert pg.evaluate("window.__lab.cove()")["installed"], op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
 def test_the_canard_and_elevators_stand_installed_on_a_chapter_12_or_13_op_and_not_on_a_chapter_4_9_op(rsite):
     g = _graph(rsite)
     ci = g["layup"]["fuselage"]["extras"]["canard_install"]

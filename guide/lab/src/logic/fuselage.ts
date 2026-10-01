@@ -60,7 +60,7 @@ export interface FusePlyRow {
 /** layup.json "fuselage"."extras" (guide/fuselage_export.py extras_section): chapters 11-13 */
 export interface FuseExtras {
   nose_parts: Record<string, FusePartRow>
-  elevators: { parts: Record<string, { node: string; fidelity: Fidelity; label: string }>; hinge_xz: [number, number]; tube_le_x: number; travel: { up_target_deg: number; up_floor_deg: number; down_deg: number }; hang_cg: { dx: number; dz: number; note: string; fitted: boolean }; jig_label: string }
+  elevators: { parts: Record<string, { node: string; fidelity: Fidelity; label: string }>; hinge_xz: [number, number]; tube_le_x: number; cove: { x_cut: number; slot_gap: number; bl_end: number; label: string }; travel: { up_target_deg: number; up_floor_deg: number; down_deg: number }; hang_cg: { dx: number; dz: number; note: string; fitted: boolean }; jig_label: string }
   canard_install: { fs_le: number; z_le: number; z_le_status: string; incidence_deg: number; incidence_note: string }
   nose_gear: NoseGearKinLite
 }

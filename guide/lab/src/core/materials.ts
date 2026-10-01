@@ -69,6 +69,83 @@ export interface SurfHooks {
   bump?: boolean
 }
 
+/**
+ * The elevators' cove (logic/cove.ts is the same maths in TypeScript, under test). A material that opts in (markCove) discards what lies
+ * aft of uCove.x within |z| < uCove.y of its own model frame, and its cap pass closes the wall that leaves: a back face seen through the
+ * removed box is a cap where the ray left the box before reaching it (the section cut's trick, with a three-sided box in place of its planes).
+ * The wall is a fitted shape, so it carries the same amber stripes as the other fitted shapes.
+ */
+const GLSL_COVE_PARS = /* glsl */ `
+uniform vec4 uCove;
+uniform float uCoveMat;
+varying vec3 vCoveX;
+varying vec3 vCoveZ;
+// keep the part of the ray inside the half space n.p + c > 0; exitId is which space the ray leaves the removed box through
+void coveClip(vec3 n, float c, vec3 ro, vec3 rd, inout float t0, inout float t1, inout int exitId, int id) {
+  float dn = dot(n, rd);
+  float d0 = dot(n, ro) + c;
+  if (abs(dn) < 1e-9) { if (d0 <= 0.0) { t0 = 1.0; t1 = 0.0; } return; }
+  float th = -d0 / dn;
+  if (dn < 0.0) { if (th < t1) { t1 = th; exitId = id; } }
+  else t0 = max(t0, th);
+}
+`
+const GLSL_COVE = /* glsl */ `
+bool coveCap = false;
+if (uCoveMat > 0.5 && uCove.z > 0.5) {
+  if (vObj.x > uCove.x && abs(vObj.z) < uCove.y) discard;
+  #ifdef CAPS
+  {
+    #ifdef FLIP_SIDED
+      bool coveBack = gl_FrontFacing;
+    #else
+      bool coveBack = !gl_FrontFacing;
+    #endif
+    if (coveBack && !cutCap) {
+      vec3 ro = vCutObjCam;
+      vec3 toF = vObj - ro;
+      float tf = length(toF);
+      vec3 rd = toF / max(tf, 1e-6);
+      float t0 = 0.0, t1 = 1e9;
+      int exitId = -1;
+      coveClip(vec3(1.0, 0.0, 0.0), -uCove.x, ro, rd, t0, t1, exitId, 0);
+      coveClip(vec3(0.0, 0.0, 1.0), uCove.y, ro, rd, t0, t1, exitId, 1);
+      coveClip(vec3(0.0, 0.0, -1.0), uCove.y, ro, rd, t0, t1, exitId, 2);
+      if (exitId >= 0 && t0 < t1 && t1 > 0.0 && t1 < tf) {
+        coveCap = true;
+        cutCap = true;
+        cutHit = ro + rd * t1;
+        // the wall faces into the removed box: +x at the cut, and the two span ends of the box face each other
+        cutNW = -normalize(exitId == 0 ? vCoveX : exitId == 1 ? vCoveZ : -vCoveZ);
+      }
+    }
+  }
+  #endif
+}
+`
+
+/** Make a canard material follow its CutState's cove (the cove opens and closes with CutState.setCove). */
+export function markCove(m: THREE.Material) {
+  const u = m.userData.u as { uCoveMat: { value: number } } | undefined
+  if (u) u.uCoveMat.value = 1
+}
+
+/** The shadow map's version of the cove: a mesh with the cove's discard also casts no shadow where the cove is open. */
+export function coveDepthMaterial(cut: CutState): THREE.MeshDepthMaterial {
+  const m = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uCove = cut.uCove
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vCoveP;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvCoveP = transformed;')
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec4 uCove;\nvarying vec3 vCoveP;')
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (uCove.z > 0.5 && vCoveP.x > uCove.x && abs(vCoveP.z) < uCove.y) discard;')
+  }
+  m.customProgramCacheKey = () => 'cove-depth'
+  return m
+}
+
 const GLSL_BUMP = /* glsl */ `
 vec3 surfPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir) {
   vec3 vSigmaX = normalize(dFdx(surf_pos.xyz));
@@ -179,6 +256,8 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     uCutPlane: cut ? cut.uPlane : NO_CUT.uPlane,
     uCutPlane2: cut ? cut.uPlane2 : NO_CUT.uPlane2,
     uCutGlow: cut ? cut.uGlow : NO_CUT.uGlow,
+    uCove: cut ? cut.uCove : NO_CUT.uCove,
+    uCoveMat: { value: 0 },
     uCutProj: CUT_PROJ,
     uCapColor: { value: new THREE.Color((o.capColor ?? 0xc9ccd1) as THREE.ColorRepresentation) },
     uCapRough: { value: o.capRoughness ?? 0.42 },
@@ -208,8 +287,8 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     Object.assign(shader.uniforms, u)
     const capsDef = capPass ? '#define CAPS\n#define CAP_ONLY\n' : ''
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\n${GLSL_CUT_VERT_PARS}`)
-      .replace('#include <project_vertex>', `#include <project_vertex>\n${GLSL_CUT_VERT}`)
+      .replace('#include <common>', `#include <common>\n${GLSL_CUT_VERT_PARS}\nvarying vec3 vCoveX;\nvarying vec3 vCoveZ;`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${GLSL_CUT_VERT}\nvCoveX = mat3(modelMatrix) * vec3(1.0, 0.0, 0.0);\nvCoveZ = mat3(modelMatrix) * vec3(0.0, 0.0, 1.0);`)
 
     let f = shader.fragmentShader
     f = f.replace(
@@ -220,6 +299,7 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
 #endif
 ${capsDef}#include <common>
 ${GLSL_CUT_FRAG_PARS}
+${GLSL_COVE_PARS}
 ${GLSL_NOISE}
 ${GLSL_BUMP}
 uniform vec3 uCapColor; uniform float uCapRough; uniform float uCapMetal;
@@ -233,11 +313,12 @@ ${hk.pars ?? ''}
       `#include <clipping_planes_fragment>
 #ifdef SURF_CUT
 ${GLSL_CUT_FRAG}
+${GLSL_COVE}
 #ifdef CAP_ONLY
 if (!cutCap) discard;
 #endif
 #else
-bool cutCap = false; vec3 cutHit = vObj; vec3 cutNW = uCutPlane.xyz;
+bool cutCap = false; vec3 cutHit = vObj; vec3 cutNW = uCutPlane.xyz; bool coveCap = false;
 #endif
 float surfN1 = 0.5, surfN2 = 0.5, surfH = 0.0;
 #ifdef SURF_DETAIL
@@ -277,6 +358,12 @@ ${hk.surface ?? ''}
 ${hk.color ?? ''}
 if (cutCap) diffuseColor.rgb = uCapColor;
 ${hk.capColor ?? ''}
+if (coveCap) {
+  float hs = (cutHit.x + cutHit.y - cutHit.z) / 1.6;
+  float tri = abs(fract(hs) - 0.5) * 2.0;
+  float aa = clamp(fwidth(hs) * 2.0, 1e-4, 0.5);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.80, 0.40, 0.08), 0.7 * smoothstep(0.52 - aa, 0.52 + aa, tri) * (1.0 - 0.6 * aa * 2.0));
+}
 `,
     )
     f = f.replace(

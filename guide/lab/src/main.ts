@@ -6,7 +6,8 @@ import { Pipeline, LAYER_GLOW } from './render/pipeline'
 import { GLOW_TIME, GLOW_VIEW_H, flowRibbon, glowLineMaterial } from './render/flow'
 import { makeNoise3D, NOISE3D } from './core/noise'
 import { CutState } from './core/cut'
-import { CHEAP, setCheapShaders } from './core/materials'
+import { CHEAP, setCheapShaders, markCove, coveDepthMaterial } from './core/materials'
+import { coveFrom } from './logic/cove'
 import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet, COLORS, FOLLOW, HATCH_COLOR } from './core/composite'
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
@@ -123,6 +124,8 @@ interface LabHook {
   /** the motion readout: label, live value, note (null when hidden) */
   kin(): { label: string; value: string; sub: string } | null
   /** the elevators now (canard subject): the mode the op puts them in, their trailing-edge-down angle, how far aft of the canard they are held, the hang pitch, and each part's world box */
+  /** the elevators' cove (canard model frame, inches): where the canard's own meshes stop aft of, over what half span, whether it is open now (canard subject) and on the installed canard */
+  cove(): { xCut: number; blEnd: number; open: boolean; installed: boolean } | null
   elevators(): { mode: string; degDown: number; slide: number; hangPitch: number; noseDown: boolean; jigs: boolean; installed: boolean; boxes: Record<string, number[][]> } | null
   /** the nose gear now (fuselage subject): retraction progress, crank text, whether the strut is drawn, both candidates' wheel centres (box frame, inches) and world boxes */
   noseGear(): { t: number; crank: string; shown: boolean; wheel: Record<string, number[]>; ghostShown: boolean; stand: boolean } | null
@@ -152,7 +155,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
-  stateAll: () => ({}), kin: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -538,6 +541,9 @@ async function boot() {
       mesh.name = p.node ?? p.cid
       mesh.castShadow = true
       mesh.receiveShadow = true
+      markCove(mat) // the canard's own meshes open a cove for the elevators (logic/cove.ts) while cut.setCove has it open
+      mesh.userData.cove = true
+      mesh.customDepthMaterial = coveDepthMaterial(cut)
       root.add(mesh)
       const ref = p.node ? plyRefs.get(p.node) : undefined
       if (p.node && !ref) throw new Error(`ply ${p.node} is not in graph.plies`)
@@ -608,6 +614,10 @@ async function boot() {
     // bottom skin on (one solid stands for both). Poses run on sim time (stepElev): the cores, skins and tube are built clear of the canard,
     // aft of it on two tube jigs; they sit on its hinges for the travel check, and hang on their hinge line for the balance check.
     const ELEV = fuseRaw?.extras?.elevators ?? null
+    // the elevators' cove: the canard's own core and skins are not drawn aft of the elevators' leading edge less the hinge slot gap, over the
+    // elevators' span (everything from the export: logic/cove.ts). Open while any elevator part is on screen in the canard subject.
+    const COVE = ELEV?.cove ? coveFrom(ELEV.tube_le_x, ELEV.cove.slot_gap, ELEV.cove.bl_end) : null
+    let coveOpen = false
     const elevMeshes: Merged[] = []
     const elevMat = (cid: string, c: CutState, core = false): THREE.Material => {
       if (cid === 'elevator.right' || cid === 'elevator.left') return core ? compositeMaterial({ kind: 'foam', angles: [] }, c, 0, undefined, { hatch: true }) : partMaterial(c, { color: COLORS.und, hatch: true, name: 'elevator-skin', roughness: 0.55 })
@@ -665,8 +675,11 @@ async function boot() {
       for (const p of parts) {
         const geo = p.geo.clone()
         const { mat } = canardMat({ ...p, geo }, bay.cut)
+        markCove(mat)
         for (const mirror of [false, true]) {
           const mesh = new THREE.Mesh(geo, mat)
+          mesh.userData.cove = true
+          mesh.customDepthMaterial = coveDepthMaterial(bay.cut)
           mesh.name = `installed:${p.node ?? p.cid}${mirror ? ':left' : ''}`
           items.push({ mesh, mirror })
         }
@@ -677,6 +690,7 @@ async function boot() {
         items.push({ mesh, mirror: false })
       }
       bay.attachInstalled(items)
+      if (COVE) { bay.cut.setCove(COVE); pipeline.shadowDirty = true } // the installed elevators are always there: the installed canard always has its cove
     }
 
     // ---- shots: home is fitted to the canard's box; each op's lab shot is authored in the canard's frame (src/shots.ts) and
@@ -802,6 +816,8 @@ async function boot() {
       }
       jigs.visible = subject === 'canard' && (mode === 'apart' || mode === 'hang') && ['built', 'current'].includes(bstate.get('elevator.tube.right') ?? '')
       jigs.position.x = mode === 'hang' ? elevDx : APART_IN
+      const open = !!COVE && subject === 'canard' && elevMeshes.some((m) => (bstate.get(m.node!) ?? 'hidden') !== 'hidden') // by build state: ?hide= (a debugging aid) must not close it
+      if (open !== coveOpen) { coveOpen = open; cut.setCove(open ? COVE : null); pipeline.shadowDirty = true }
       root.updateMatrixWorld(true)
     }
     const noseGear = fuseRaw?.extras?.nose_gear ?? null
@@ -877,6 +893,7 @@ async function boot() {
         bayFsig = subject === 'fuselage' ? bay.paint(bstate, selected, lay, layT, ghost, opIdx) : bay.paint(null, null, lay, layT, ghost, opIdx, canardBackdrop)
         bayStale = false
       }
+      if (bay && hide.length) for (const m of bay.installedMeshes()) m.visible = !hide.some((h) => m.name.startsWith(h)) // ?hide= reaches the installed canard's meshes too
       sig += bayFsig
       if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
     }
@@ -1235,11 +1252,25 @@ async function boot() {
     }
     // chapters 12-13: the elevators on the airplane (fitted shapes), and the nose wheel's two candidates, each worded as a candidate in conflict
     if (bay && ELEV) {
-      const ie = bay.installedMeshes().find((m) => m.name === 'installed:elevator.right')
+      const ies = ['installed:elevator.right', 'installed:elevator.left'].map((n) => bay.installedMeshes().find((m) => m.name === n)).filter((m): m is THREE.Mesh => !!m)
+      const ndc = new THREE.Vector3()
       flabels.add({
         id: 'elevator.installed', text: 'Elevators (fitted shape)', color: hex(HATCH_COLOR), cls: 'fitted',
-        at: () => (ie && bay.installed.visible ? (fbox.setFromObject(ie), fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, (fbox.min.z + fbox.max.z) / 2)) : null),
-        vis: budgeted('elevator.installed', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.installed.visible, () => (selected === 'r30.elev-fuselage-clearance' ? 80 : 15)),
+        // above the middle of the right elevator, or of the left one, or a quarter along either, whichever is first well inside the frame (the
+        // pill is centred on its anchor, and a chapter 12 camera often has one of the two near the edge)
+        at: () => {
+          if (!ies.length || !bay.installed.visible) return null
+          let first: THREE.Vector3 | null = null
+          for (const f of [0.5, 0.25, 0.75]) for (const ie of ies) {
+            fbox.setFromObject(ie)
+            fwp.set((fbox.min.x + fbox.max.x) / 2, fbox.max.y + 0.02, fbox.min.z + (fbox.max.z - fbox.min.z) * f)
+            first ??= fwp.clone()
+            ndc.copy(fwp).project(camera)
+            if (Math.abs(ndc.x) < 0.55 && ndc.y > -0.6 && ndc.y < 0.75) return fwp
+          }
+          return first ? fwp.copy(first) : null
+        },
+        vis: budgeted('elevator.installed', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.installed.visible, () => (selected === 'r30.elev-fuselage-clearance' ? 80 : chapterOf(selected) === 12 ? 75 : 15)), // the installed elevators are what chapter 12's ops stand them in
         priority: () => labelPriority({ inOp: chapterOf(selected) === 12 && selected === 'r30.elev-fuselage-clearance', cut: false, fitted: true }),
         tie: () => 0,
       })
@@ -1267,6 +1298,15 @@ async function boot() {
       })
       mk('mark.dim', MARK_TEXT.dim(gm.axle_fwd_of_board_in), bay.markAt.dim)
       mk('mark.axle', MARK_TEXT.axle(gm.axle_fs), bay.markAt.axle)
+    }
+    // the cove the canard is cut back to while the elevators show: a fitted shape (its cut face is striped), said so on the wall
+    if (COVE && ELEV?.cove) {
+      const cp3 = new THREE.Vector3()
+      labels.add({
+        id: 'elevator.cove', text: ELEV.cove.label, color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => cp3.set(COVE.xCut, 0.9, -COVE.blEnd * 0.62).applyMatrix4(root.matrixWorld),
+        vis: () => (subject === 'canard' && (tourOv.labels ?? labelsOn) && coveOpen ? 1 : 0),
+      })
     }
     // the two tube jigs the elevators are built on (and hang from): fitted furniture, labelled as such
     if (ELEV && jigs.children.length) {
@@ -1576,6 +1616,7 @@ async function boot() {
     hook.state = () => Object.fromEntries([...bstate].filter(([k]) => (subject === 'canard' ? k.startsWith('canard.') : fuseLegacy.has(k))))
     hook.stateAll = () => Object.fromEntries(bstate)
     hook.kin = () => kinNow()
+    hook.cove = () => (COVE ? { xCut: COVE.xCut, blEnd: COVE.blEnd, open: coveOpen, installed: !!bay && bay.cut.coveOn } : null)
     hook.elevators = () => {
       if (!ELEV) return null
       const boxes: Record<string, number[][]> = {}
