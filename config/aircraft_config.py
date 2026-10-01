@@ -274,6 +274,89 @@ class GeometricParams:
     elevator_weight_ceiling_left_lb: float = 3.9
     elevator_weight_ceiling_right_lb: float = 3.6
 
+    # === CENTRE-SECTION SPAR, FIREWALL, CONTROLS, TRIM (chapters 14-17, M2.5) ===
+    # plans-1980 pdf pages p84-p107; Roncz trim values from cobelu ch30. The attach-bolt station is NOT printed
+    # (it comes with chapter 19), and spar-cap trough outlines, the firewall outline, console and stick fore-aft
+    # positions beyond the two pivot planes, master-cylinder stations and belcrank height live on A-sheets.
+    spar_fwd_face_fs: float = 118.5  # book: p88 forward face, BL 0 to 23
+    spar_aft_face_fs_centre: float = 125.0  # book: p88 centreline aft face = the firewall line
+    spar_kink_bl: float = 23.0  # book: p88
+    spar_outboard_sweep_deg: float = 8.57  # book: p88
+    spar_half_span_bl: float = 56.46  # book: p88
+    spar_chord_centreline_in: float = 6.50  # book: p88 fore-aft depth of the spar
+    spar_face_length_fwd_outboard_in: float = 33.834  # book: p88 forward face outboard of the kink
+    spar_face_length_aft_outboard_in: float = 32.865  # book: p88 aft face outboard of the kink
+    spar_hard_point_spacing_aft_in: float = 28.82  # book: p88 along the aft face
+    spar_depth_in: float = 8.50  # book: p88
+    spar_top_wl: float = 22.0  # book: p88
+    spar_bottom_wl: float = 13.5  # book: p88
+    spar_bottom_flat_to_bl: float = 9.0  # book, medium: p88 "about"
+    spar_bottom_wl_outboard: float = 15.15  # book: p88 at BL 56.46
+    spar_top_flat_to_bl: float = 25.0  # book: p88
+    spar_top_wl_outboard: float = 21.7  # book, medium: p88 label at the outboard end
+    spar_hp_inboard_bl_in: float = 25.0  # book: p88 one bolt per wing
+    spar_hp_inboard_wl_in: float = 20.25  # book: p88
+    spar_hp_outboard_bl_in: float = 53.5  # book: p88 two bolts per wing
+    spar_hp_outboard_wl_in: Tuple[float, float] = (20.5, 16.3)  # book: p88
+    spar_end_bulkhead_width_in: float = 6.30  # book: p90 CS5/CS8
+    spar_end_bulkhead_height_in: float = 6.83  # book: p90 CS5/CS8
+    spar_foam_height_centre_in: float = 8.41  # book: p90 CS1
+    spar_foam_height_kink_in: float = 7.94  # book: p90 CS1 at BL 23
+    spar_foam_height_end_in: float = 6.83  # book: p90 CS1 at the ends
+    spar_cap_tape_width_in: float = 3.0  # book: p85
+    spar_ply_thickness_laid_in: float = 0.0375  # book: p85 text, as laid
+    spar_ply_thickness_stock_in: float = 0.035  # book: p85 text, stock tape
+    # ply strip lengths, full-span strips first then partials short-to-long order of the book table (p86)
+    spar_top_cap_strips_in: Tuple[float, ...] = (113, 113, 113, 113, 100, 90, 80, 70, 60, 50, 40, 30)
+    spar_bottom_cap_strips_in: Tuple[float, ...] = (113, 113, 113, 96, 82, 68, 54, 40, 26)
+    spar_top_cap_partial_end_bl: Tuple[float, ...] = (15, 20, 25, 30, 35, 40, 45, 50)  # p86, strips 30 to 100
+    spar_bottom_cap_partial_end_bl: Tuple[float, ...] = (13, 20, 27, 34, 41, 48)  # p86, strips 26 to 96
+    spar_full_ply_end_bl: float = 55.5  # book: p86
+    spar_spruce_block_in: Tuple[float, float, float] = (1.0, 1.0, 3.0)  # book: p86
+    spar_spruce_block_bl: float = 7.5  # book: p86 at BL +/-7.5, top and bottom
+    spar_em12_length_in: float = 8.0  # book: p87 1x1x1/8 angle, four off
+    spar_em12_count: int = 4  # book: p87
+    # LWA (name, height, thickness, width, quantity), 2024-T3; LWA4/LWA5 heights are the CP43 corrected sizes
+    spar_lwa_sizes: Tuple[Tuple[str, float, float, float, int], ...] = (
+        ("LWA1", 1.5, 0.125, 2.0, 6), ("LWA2", 2.5, 0.125, 2.0, 4), ("LWA3", 6.4, 0.125, 2.0, 4),
+        ("LWA4", 1.75, 0.25, 2.0, 8), ("LWA5", 2.25, 0.25, 2.0, 2),
+    )
+    spar_lwa1_outboard_setback_in: float = 0.75  # cp-corrected: CP25 LPC 28 (p85 printed 1.0)
+    spar_baggage_hole_in: Tuple[float, float] = (14.0, 5.0)  # book: p87/p88 forward face, centred
+    spar_nut_access_hole_dia_in: float = 2.25  # book: p87/p92 at BL 53.5 through the bottom
+    ctl_torque_tube_hole_dia_in: float = 1.0  # book: p98/p101 through the firewall
+    ctl_torque_tube_hole_bl_in: float = 6.2  # book: p98 text, right of centre
+    ctl_torque_tube_hole_wl_in: float = 12.3  # book: p101
+    ctl_rudder_conduit_wl_in: float = 8.0  # book: p103
+    ctl_rudder_conduit_length_in: float = 82.0  # book: p103
+    ctl_stick_pivot_fs_front: float = 45.5  # book, medium: p100 CS108/109 plane
+    ctl_stick_pivot_fs_rear: float = 89.7  # book, medium: p100 CS117/118 plane
+    ctl_stick_cant_inboard_deg: float = 5.0  # book: p97/p98/p102 at neutral aileron
+    ctl_stick_cant_forward_deg: float = 5.0  # book: p97/p98/p102 at neutral elevator
+    ctl_roll_travel_deg: float = 20.0  # book: p97/p102 each way from the 5 deg cant
+    ctl_cs103_length_in: float = 6.1  # book: p98
+    ctl_cs110_length_in: float = 39.2  # book: p99 trim to length
+    ctl_cs105_length_in: float = 42.9  # book: p99 trim to fit
+    ctl_cs106_length_in: float = 3.8  # book: p99
+    ctl_cs115_length_in: float = 4.2  # book: p102
+    ctl_cs116_length_in: float = 4.4  # book: p102
+    ctl_cs121_length_in: float = 29.5  # book: p102 trim to fit
+    ctl_cs119_length_in: float = 4.1  # cp-corrected: CP26 LPC 29 (printed 3.1)
+    ctl_elevator_arm_gu_in: float = 1.9  # book, medium: GU CS12 only; not the Roncz elevator
+    trim_panel_face_fs_in: float = 40.0  # book: p106 (fs_panel carries 39.75, unchanged)
+    trim_pth_dim_from_panel_in: float = 9.5  # book: p106 leftmost end of the PTH
+    trim_pth_leftmost_fs_label: float = 49.8  # conflict: p106 label, against the 49.5 derived property
+    trim_handle_pivot_wl_in: float = 8.6  # book: p106
+    trim_friction_bolt_wl_in: float = 7.1  # book: p106 lower friction bolt
+    trim_swage_from_sleeve_in: Tuple[float, float] = (5.6, 6.2)  # book: p106
+    trim_sleeve_bl_in: float = 9.5  # cp-corrected: CP25 addendum
+    trim_sleeve_wl_in: Tuple[float, float] = (9.6, 8.3)  # cp-corrected: CP25 addendum
+    trim_spring_pts_in: Tuple[float, float] = (6.0, 9.0)  # book: p105 free, installed
+    trim_spring_rts_in: Tuple[float, float] = (2.0, 3.0)  # book: p105 free, installed
+    trim_spring_cs_in: Tuple[float, float] = (0.5, 0.25)  # book: p105 as listed
+    trim_nc5a_belcrank_bl_left_in: float = 9.2  # positioned-from-text: cobelu fig C-1, inboard end of the left tube
+    trim_cs202_extra_spacer_in: float = 0.4  # book, medium: Roncz spacer at the elevator-end rod end
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -329,6 +412,28 @@ class GeometricParams:
     def fs_ng31_max(self) -> float:
         """Derived: F22 minus the floor block length (p79)."""
         return self.fs_f22 - self.floor_block_length_in
+
+    @property
+    def spar_chord_square_outboard_in(self) -> float:
+        """Derived: centreline chord times cos(outboard sweep), square to the outboard face (p88)."""
+        return self.spar_chord_centreline_in * math.cos(math.radians(self.spar_outboard_sweep_deg))
+
+    @property
+    def spar_fwd_face_fs_tip(self) -> float:
+        """Derived: forward face station at the half span from the kink and the sweep (p88)."""
+        return self.spar_fwd_face_fs + (self.spar_half_span_bl - self.spar_kink_bl) * math.tan(
+            math.radians(self.spar_outboard_sweep_deg))
+
+    @property
+    def spar_aft_face_fs_bl_55_5(self) -> float:
+        """Derived: aft face station at BL 55.5 from the kink and the sweep (p88 prints 129.9)."""
+        return self.spar_aft_face_fs_centre + (55.5 - self.spar_kink_bl) * math.tan(
+            math.radians(self.spar_outboard_sweep_deg))
+
+    @property
+    def trim_pth_leftmost_fs(self) -> float:
+        """Derived: panel face FS 40 plus the 9.5 dimension (p106); the p106 label reads 49.8."""
+        return self.trim_panel_face_fs_in + self.trim_pth_dim_from_panel_in
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -592,7 +697,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     "bottom_aft_trim": _p("book", "plans-1980:p42 bottom block", "high",
         "trim aft of the rear seat mark"),
     "fs_spar_aft_face": _p("book", "plans-1980:p50 aft face of center section spar at B.L. 26.75, F.S. 125.5", "high",
-        "0.5 aft of fs_firewall 125 (p101); p88 forward face 118.5 implies a 7 in spar; no conflict"),
+        "swept aft face at BL 26.75: 125 + (26.75-23) tan 8.57 = 125.57, so 125.5; the spar is 6.50 deep fore-aft and its centreline aft face is FS 125.0, the firewall line (p101); no conflict"),
     "bl_gear_datum": _p("book", "plans-1980:p50 straight-board datum at the spar aft face, B.L. 26.75", "high"),
     "main_axle_fwd_of_spar": _p("book", "plans-1980:p50 axle centre line 15 in forward of the datum edge", "high"),
     "fs_main_axle": _p("derived", "plans-1980:p50 figure 1A prints F.S. 110.5", "high",
@@ -728,6 +833,105 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "check bound, not a mass of any part"),
     "elevator_weight_ceiling_right_lb": _p("book", "om-1980:p30 right elevator ceiling with balance installed 3.6", "high",
         "check bound, not a mass of any part"),
+    # --- chapters 14-17 (M2.5): centre-section spar, firewall, controls, trim ---
+    **{k: _p("book", "plans-1980:p88 spar planform and elevations", "high", n) for k, n in {
+        "spar_fwd_face_fs": "forward face FS 118.5 from BL 0 to the kink",
+        "spar_aft_face_fs_centre": "centreline aft face = firewall line FS 125.0; the swept aft face reaches 125.5 at BL 26.75",
+        "spar_kink_bl": "faces turn outboard at BL 23.0",
+        "spar_outboard_sweep_deg": "outboard faces swept 8.57 deg aft",
+        "spar_half_span_bl": "half span BL 56.46",
+        "spar_chord_centreline_in": "6.50 fore-aft at the centreline",
+        "spar_face_length_fwd_outboard_in": "forward face outboard of the kink, 33.834 = 33.46/cos 8.57",
+        "spar_face_length_aft_outboard_in": "aft face outboard of the kink, 32.865 = 32.5/cos 8.57",
+        "spar_hard_point_spacing_aft_in": "hard-point spacing along the aft face",
+        "spar_depth_in": "8.50 deep, WL 22.0 to 13.5",
+        "spar_top_wl": "top at WL 22.0",
+        "spar_bottom_wl": "bottom at WL 13.5",
+        "spar_bottom_wl_outboard": "bottom rises to WL 15.15 at BL 56.46",
+        "spar_top_flat_to_bl": "top flat to BL 25, then tapers aft",
+        "spar_hp_inboard_bl_in": "inboard hard point BL 25.0, one bolt per wing; attach-bolt FS is not printed (comes with ch19)",
+        "spar_hp_inboard_wl_in": "inboard hard point WL 20.25",
+        "spar_hp_outboard_bl_in": "outboard hard points BL 53.5, two bolts per wing; nut access hole centred here (p87, p92)",
+        "spar_hp_outboard_wl_in": "outboard hard points at WL 20.5 and WL 16.3",
+    }.items()},
+    "spar_bottom_flat_to_bl": _p("book", "plans-1980:p88 bottom flat to about BL 9", "medium", "the word about is in the page; the rise to WL 15.15 is straight"),
+    "spar_top_wl_outboard": _p("book", "plans-1980:p88 WL 21.7 label at outboard end", "medium", "hand digits; not cross-checked"),
+    "spar_chord_square_outboard_in": _p("derived", "plans-1980:p88 centreline chord and 8.57 deg sweep", "high",
+        "6.50 cos 8.57 = 6.43, the chord square to the outboard face; property, cannot drift"),
+    "spar_fwd_face_fs_tip": _p("derived", "plans-1980:p88 forward face 118.5, kink BL 23, sweep 8.57 deg", "high",
+        "118.5 + (56.46-23) tan 8.57 = 123.54; property, cannot drift"),
+    "spar_aft_face_fs_bl_55_5": _p("derived", "plans-1980:p88 aft face 125.0, kink BL 23, sweep 8.57 deg", "medium",
+        "125 + 32.5 tan 8.57 = 129.89; p88 prints 129.9 at BL 55.5 in hand digits, medium-high, and agrees; property"),
+    **{k: _p("book", "plans-1980:p90 parts sheet", "high", n) for k, n in {
+        "spar_end_bulkhead_width_in": "CS5 and CS8 end bulkheads 6.30 wide",
+        "spar_end_bulkhead_height_in": "CS5 and CS8 end bulkheads 6.83 tall",
+        "spar_foam_height_centre_in": "CS1 foam 8.41 high at the centreline",
+        "spar_foam_height_kink_in": "CS1 foam 7.94 high at BL 23",
+        "spar_foam_height_end_in": "CS1 foam 6.83 high at the ends",
+    }.items()},
+    "spar_cap_tape_width_in": _p("book", "plans-1980:p85 cap tape 3 wide", "high"),
+    "spar_ply_thickness_laid_in": _p("book", "plans-1980:p85 text, ply as laid 0.0375", "high", "stock tape is 0.035"),
+    "spar_ply_thickness_stock_in": _p("book", "plans-1980:p85 text, stock tape 0.035", "high"),
+    "spar_top_cap_strips_in": _p("book", "plans-1980:p86 top cap, 12 plies", "high",
+        "four full 113 strips then 100 down to 30; sums to 972"),
+    "spar_bottom_cap_strips_in": _p("book", "plans-1980:p86 bottom cap, 9 plies", "high",
+        "three full 113 strips then 96 down to 26; sums to 705, total 1677. Cobelu's four full bottom strips is rejected: scan p85 prints three and only three makes 1677"),
+    "spar_top_cap_partial_end_bl": _p("book", "plans-1980:p86 top cap ply end stations", "high", "BL 15 to 50, strip length is twice the end BL"),
+    "spar_bottom_cap_partial_end_bl": _p("book", "plans-1980:p86 bottom cap ply end stations", "high", "BL 13 to 48, strip length is twice the end BL"),
+    "spar_full_ply_end_bl": _p("book", "plans-1980:p86 full plies end at BL 55.5", "high",
+        "p85 shows an unresolved hand figure 29.84 (29.84 - 28.82 = 1.02, near the 1.0 setback, unproven); not used"),
+    "spar_spruce_block_in": _p("book", "plans-1980:p86 spruce blocks 1 by 1 by 3", "high"),
+    "spar_spruce_block_bl": _p("book", "plans-1980:p86 spruce blocks at BL +/-7.5, top and bottom", "high"),
+    "spar_em12_length_in": _p("book", "plans-1980:p87 EM12 angle 8.0 long", "high", "1x1x1/8 angle"),
+    "spar_em12_count": _p("book", "plans-1980:p87 EM12 four off", "high"),
+    "spar_lwa_sizes": _p("cp-corrected", "cp-text:p43 CP43 LPC 119 LWA4 and LWA5 heights", "high",
+        "p90 prints LWA4 1.5x1/4 and LWA5 2x1/4; CP43 corrects the heights to 1.75 and 2.25, the model values. "
+        "LWA1 1.5x1/8 x6, LWA2 2.5x1/8 x4, LWA3 6.4x1/8 x4 as printed (plans-1980:p90); all 2 wide, 2024-T3"),
+    "spar_lwa1_outboard_setback_in": _p("cp-corrected", "cp-text:p25 CP25 LPC 28 LWA1 setback 0.75", "high",
+        "p85 printed 1.0 outside CS5/CS8; corrected to 0.75"),
+    "spar_baggage_hole_in": _p("book", "plans-1980:p87 baggage hole 14 long by 5 high", "medium",
+        "forward face, centred; the top near WL 20 is a hand tick, medium"),
+    "spar_nut_access_hole_dia_in": _p("book", "plans-1980:p87 nut access hole 2.25 diameter", "high", "at BL 53.5 through the bottom (p92 agrees)"),
+    "ctl_torque_tube_hole_dia_in": _p("book", "plans-1980:p101 torque-tube hole 1 in diameter", "high"),
+    "ctl_torque_tube_hole_bl_in": _p("book", "plans-1980:p98 text, hole at BL 6.2 right", "medium",
+        "p101 BL ticks 4.8 and 9.2 are low-confidence hand reads and are not used"),
+    "ctl_torque_tube_hole_wl_in": _p("book", "plans-1980:p101 hole at WL 12.3", "high"),
+    "ctl_rudder_conduit_wl_in": _p("book", "plans-1980:p103 rudder conduits at WL 8", "high"),
+    "ctl_rudder_conduit_length_in": _p("book", "plans-1980:p103 conduits 82 long", "high"),
+    "ctl_stick_pivot_fs_front": _p("book", "plans-1980:p100 front stick pivot plane FS 45.5", "medium", "CS108 and CS109 plane; hand digits"),
+    "ctl_stick_pivot_fs_rear": _p("book", "plans-1980:p100 rear stick pivot plane FS 89.7", "medium", "CS117 and CS118 plane; hand digits"),
+    "ctl_stick_cant_inboard_deg": _p("book", "plans-1980:p97 stick tilts 5 deg inboard", "high", "at neutral aileron; also p98, p102"),
+    "ctl_stick_cant_forward_deg": _p("book", "plans-1980:p98 stick tilts 5 deg forward", "high",
+        "at neutral elevator; no pitch stop is printed anywhere, so stops are representational and carry no number"),
+    "ctl_roll_travel_deg": _p("book", "plans-1980:p102 roll 20 deg each way from the cant", "high", "also p97, p98"),
+    "ctl_cs103_length_in": _p("book", "plans-1980:p98 CS103 6.1 long", "high"),
+    "ctl_cs110_length_in": _p("book", "plans-1980:p99 CS110 39.2, trim to length", "high"),
+    "ctl_cs105_length_in": _p("book", "plans-1980:p99 CS105 42.9, trim to fit", "high"),
+    "ctl_cs106_length_in": _p("book", "plans-1980:p99 CS106 3.8", "high"),
+    "ctl_cs115_length_in": _p("book", "plans-1980:p102 CS115 4.2", "high"),
+    "ctl_cs116_length_in": _p("book", "plans-1980:p102 CS116 4.4", "high"),
+    "ctl_cs121_length_in": _p("book", "plans-1980:p102 CS121 29.5, trim to fit", "high"),
+    "ctl_cs119_length_in": _p("cp-corrected", "cp-text:p26 CP26 LPC 29 CS119 4.1", "high", "plans printed 3.1"),
+    "ctl_elevator_arm_gu_in": _p("book", "plans-1980:p102 GU CS12 elevator arm 1.9", "medium",
+        "GU schematic only; not the Roncz elevator. GU travel values 20 and 22 are different-airplane numbers and are not carried"),
+    "trim_panel_face_fs_in": _p("book", "plans-1980:p106 panel face FS 40", "high", "fs_panel carries 39.75 unchanged; reference only"),
+    "trim_pth_dim_from_panel_in": _p("book", "plans-1980:p106 PTH left end 9.5 from the panel", "high"),
+    "trim_pth_leftmost_fs": _p("conflict", "plans-1980:p106 panel face 40 plus 9.5", "high",
+        "derived 49.5; the p106 label reads 49.8 (trim_pth_leftmost_fs_label), 0.3 in apart; nothing moves to 49.8; property"),
+    "trim_pth_leftmost_fs_label": _p("conflict", "plans-1980:p106 label FS 49.8", "medium",
+        "pair with trim_pth_leftmost_fs 49.5 derived; unresolved"),
+    "trim_handle_pivot_wl_in": _p("book", "plans-1980:p106 trim handle pivot WL 8.6", "high"),
+    "trim_friction_bolt_wl_in": _p("book", "plans-1980:p106 lower friction bolt WL 7.1", "high"),
+    "trim_swage_from_sleeve_in": _p("book", "plans-1980:p106 swages 5.6 and 6.2 from the panel sleeve", "high"),
+    "trim_sleeve_bl_in": _p("cp-corrected", "cp-text:p25 CP25 addendum sleeve BL 9.5", "medium", "not on the scan"),
+    "trim_sleeve_wl_in": _p("cp-corrected", "cp-text:p25 CP25 addendum sleeve WL 9.6 and 8.3", "medium", "not on the scan"),
+    "trim_spring_pts_in": _p("book", "plans-1980:p105 PTS spring 6.0 free, 9.0 installed", "high"),
+    "trim_spring_rts_in": _p("book", "plans-1980:p105 RTS spring 2.0 free, 3.0 installed", "high"),
+    "trim_spring_cs_in": _p("book", "plans-1980:p105 CS spring 0.5 and 0.25", "high", "pair order as listed; not re-read as free and installed"),
+    "trim_nc5a_belcrank_bl_left_in": _p("positioned-from-text", "cobelu:pC-1 ch30 figure C-1 NC-5A at the left tube inboard end, BL 9.2", "low",
+        "medium at best; the earlier BL 0 claim is unsupported (BL 0 is the dimension datum); p101 ticks 4.8 and 9.2 are a separate low read"),
+    "trim_cs202_extra_spacer_in": _p("book", "cobelu:pch30 ch30 extra 0.4 CS-202 spacer at the elevator-end rod end", "medium",
+        "GU plans list two CS202, the Roncz parts list three"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 
