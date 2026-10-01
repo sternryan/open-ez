@@ -206,3 +206,19 @@ p43 6-5, p44 6-6.
   ended `LAYUP_CUTAWAY_OK shots=7`; fresh PNGs written to that key's cache directory (16:36 local);
   `guide.render_key --check` against the canard export passes.
 - Gate: linux 652 passed, 3 skipped, 8 xfailed; mac 138 + 5 passed; local_render 5 passed; guide.check OK.
+
+## Recorder hook report (7375530)
+- Lead's report: on the deployed build, `record -- fuselage6` timed out waiting for `window.__rec`.
+- **Did not reproduce.** On fresh builds of main (d85c242), plain and deploy-shaped (`--scan-base`,
+  `--renders`), and on the repo's `site/`, a bare `?rec=1` page on the Metal GPU path exposes
+  `window.__rec` within 1 s. Both films recorded end to end. The load path has no frame-dependent
+  wait (its only awaits are the graph/config/ledger fetches and the glb load).
+- Added: an e2e that a bare `?rec=1` page exposes `__rec` within 30 s, and that `start('canard')` and
+  `start('fuselage6')` each return a positive length and step an active frame. The recorder now polls
+  for `__rec` on a 250 ms timer (not animation frames), times out at 120 s, and on timeout prints the
+  page state and console tail and exits 3. The timeout path itself was not exercised.
+- Films, from a fresh export and build of 7375530, 60 fps, Metal GPU path, scratchpad `t8/film/`:
+  `canard-ch30.mp4` 89.75 s (141 MB, 363 s to render) and `fuselage-ch6.mp4` 60.08 s (115 MB,
+  230 s). Spot frames read correctly (canard turnover at 45 s; fuselage bottom glassing at 30 s).
+- Gate: linux 652 passed, 3 skipped, 8 xfailed; mac 142 + 5 passed; local_render 5 passed; lab tests
+  pass; guide.check OK.
