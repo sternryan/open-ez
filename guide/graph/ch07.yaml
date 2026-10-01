@@ -19,7 +19,7 @@
   title: Cut the canard opening
   summary: Cut the full-size canard pattern from the sides, take out the longeron ahead of F28, and trim the F22 tab down to the marked waterline.
   variants: [both]
-  requires: [f06.bond-firewall, f06.f28-install]
+  requires: [f06.f28-install]
   components: [fuselage.canard_cutout, fuselage.longerons, fuselage.f22]
   geometry_visible: true
   sources:

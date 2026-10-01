@@ -1,0 +1,65 @@
+# Chapter 15 — firewall accessories (plans pp. 15-1 and 15-2; scan pages 95-96). The firewall outline is on the A4 sheet, which the owner does not hold;
+# the master cylinder and bracket positions are not printed, so those shapes are representational. Stainless and insulation are owned here, not in chapter 4.
+- id: f15.parts-fab
+  chapter: 15
+  title: Firewall accessory parts
+  summary: Make the belcrank plates, brackets, pulley brackets, brake arms and the bushing from the printed patterns. Most come prefabricated.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 95}
+    - {doc: scan-1980, scan_pp: 96}
+  completion:
+    - CS15 (2), CS71 (4), CS72 (2), BA (2), CS75 and the CS73 brackets made or bought
+    - No model of these small parts yet; the later steps show only the assembled hardware
+- id: f15.stainless-firewall
+  chapter: 15
+  title: Stainless firewall sheet
+  summary: Trial-fit the stainless sheet over the engine-mount angles and the six studs. Caulk a bead of silicone near the edge, press the sheet on, bolt the pulley brackets, clamp it and cure two days. Fit the insulation after the cowling.
+  variants: [both]
+  requires: [f14.bond-spar, f15.parts-fab]
+  components: [fuselage.firewall_stainless]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 95}
+    - {doc: scan-1980, scan_pp: 96}
+  changes:
+    - {cp: 25, lpc: 25, class: DES, status: verified, kind: official, note: "Aluminium may replace the stainless sheet; insulation waits until after the cowling is fitted, using silicone rubber."}
+    - {cp: 27, lpc: 47, class: DES, status: verified, kind: official, note: "Move the left rudder pulley bracket up 0.6 in to keep the cable off the aileron pushrod, or bend it so the pulley sits about 0.2 in aft."}
+  completion:
+    - Sheet trial-fitted over the extrusions and six studs
+    - Silicone bead about 1/8 in, an inch from the edge; sheet pressed on and clamped top and bottom
+    - Pulley brackets bolted, three #10 holes each, cured two days
+    - Insulation deferred until after the cowling, per the newsletter
+- id: f15.belcrank-brackets
+  chapter: 15
+  title: Rudder belcrank brackets
+  summary: Offset the rudder and brake belcrank from the cable slot, drill through the stainless, insulation and plywood, and bolt it with AN3 bolts. Inboard nuts sit in the baggage space; outboard nuts are reached through a ground hole.
+  variants: [both]
+  requires: [f15.stainless-firewall]
+  components: [firewall.belcrank]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 96}
+  completion:
+    - Belcrank assembly offset from the cable slot
+    - "Holes (#10) drilled through stainless, insulation and ply; AN3-6A bolts fitted"
+    - Outboard nut access hole filled afterwards with dry micro
+    - Belcrank height on the firewall is read from tick marks only (representational)
+- id: f15.master-cylinders
+  chapter: 15
+  title: Brake master cylinders
+  summary: Mount Cleveland or Gerdes master cylinders upright between the engine-mount fittings. Bolt the lower bracket flush, fit the upper brake arm free to move, and use a longer bolt later with the engine mount.
+  variants: [both]
+  requires: [f15.belcrank-brackets]
+  components: [firewall.master_cylinders]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 96}
+  completion:
+    - Cylinders upright between the upper and lower engine-mount fittings
+    - Lower CS73 bracket drilled and countersunk for flush AN509 screws
+    - Upper brake arm on CS75, free to move
+    - Cylinder positions are not printed (representational)

@@ -1,5 +1,5 @@
 # Chapter 6 — fuselage assembly (plans pp. 6-1 to 6-6). The bonding order is encoded as a requires chain:
-# front seat -> instrument panel -> F22 -> rear seat -> firewall (plans p. 6-2 text).
+# front seat -> instrument panel -> F22 -> rear seat (plans p. 6-2 text). The firewall bond comes last, after the chapter 14 spar fit (Canard Pusher 25 hint).
 - id: f06.trial-fit
   chapter: 6
   title: Trial fit of sides and bulkheads
@@ -90,21 +90,6 @@
     - Bulkhead top meets the cutout's lower forward corner
     - Bottom edge flush with the bottom line of the sides
     - Flox squeeze-out visible all round
-- id: f06.bond-firewall
-  chapter: 6
-  title: Bond the firewall
-  summary: Last in the order. Flox the firewall to both sides, check it is still square to the top longeron, recheck the whole jig, then leave the assembly untouched for twelve hours.
-  variants: [both]
-  requires: [f06.bond-rear-seat]
-  components: [fuselage.firewall, fuselage.side_left, fuselage.side_right]
-  geometry_visible: true
-  sources:
-    - {doc: scan-1980, scan_pp: 40}
-    - {doc: scan-1980, scan_pp: 41}
-  completion:
-    - Firewall square to the top longeron after bonding
-    - All five bulkheads bonded and the jig checks still hold
-    - Left undisturbed for twelve hours
 - id: f06.f28-install
   chapter: 6
   title: Install F28
@@ -142,7 +127,7 @@
   title: Fit the bottom foam
   summary: Fit the thick foam bottom block against F22 and trim it a little outboard of the side marks and a hair aft of the rear seat mark. Cut the nose-gear well.
   variants: [both]
-  requires: [f06.bond-firewall, f06.f28-install, f06.rear-seat-tape]
+  requires: [f06.f28-install, f06.rear-seat-tape]
   components: [fuselage.bottom]
   geometry_visible: true
   sources:
@@ -208,3 +193,21 @@
   completion:
     - Every corner taped, none missed
     - Fuselage box closed and ready for the next chapter
+- id: f06.bond-firewall
+  chapter: 6
+  title: Bond the firewall
+  summary: The firewall stays dry-fit and loose until the spar has slid in from the rear (chapter 14), so this step now follows the spar fit. Flox it to both sides, lap one BID ply round its edges, check it is still square to the top longeron, then leave the assembly untouched for twelve hours.
+  variants: [both]
+  requires: [f06.bond-rear-seat, f14.fit-fuselage]
+  components: [fuselage.firewall, fuselage.side_left, fuselage.side_right]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 40}
+    - {doc: scan-1980, scan_pp: 41}
+  changes:
+    - {cp: 25, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Newsletter hint for new builds: keep the plywood firewall loose through chapters 6 and 7. Once the spar has gone in from behind, bond the firewall."}
+  completion:
+    - Spar already fitted from the rear (chapter 14) before the firewall is bonded
+    - Firewall square to the top longeron after bonding, one BID ply lapped round its edges
+    - All five bulkheads bonded and the jig checks still hold
+    - Left undisturbed for twelve hours
