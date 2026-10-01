@@ -84,8 +84,8 @@ export function hangState(t: number, pitchDeg: number): { slide: number; degDown
 }
 export const hangDuration = (): number => HANG.wait + HANG.slide + 6
 export function hangText(pitchDeg: number, noseDown: boolean, settled: boolean): string {
-  const f = (Math.round(pitchDeg * 10) / 10).toFixed(1)
-  return `${settled ? 'Hangs' : 'Swinging toward'} ${noseDown ? 'nose down' : 'nose up'} ${f} deg  (illustrative CG: masses not sourced)`
+  // rounded to a whole degree, said as "about": the CG it hangs from is illustrative (its note is the readout's sub-line), so a tenth of a degree claims too much
+  return `${settled ? 'Hangs' : 'Swinging toward'} ${noseDown ? 'nose down' : 'nose up'}, about ${Math.round(pitchDeg)} deg`
 }
 
 // ---- nose gear (core/nose_gear_kin.py) ----

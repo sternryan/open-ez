@@ -601,12 +601,12 @@
     "elevator.tube": {
      "node": "elevator.tube",
      "fidelity": "representational",
-     "label": "Elevator torque tubes (fitted shape)"
+     "label": "Elevator torque tubes (1 in OD book; section fitted, unresolved)"
     },
     "elevator.hinges": {
      "node": "elevator.hinges",
      "fidelity": "representational",
-     "label": "Elevator hinges and NC-12A weldments (positioned from text, low confidence) (fitted shape)"
+     "label": "Elevator hinges (from text, low confidence; fitted shape)"
     },
     "elevator.balance_weight": {
      "node": "elevator.balance_weight",

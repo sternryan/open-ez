@@ -108,11 +108,14 @@ Do not copy numbers into this file; they go stale. Read:
 - The two-method NP check fails (analytic vs VSPAERO, bound 1.0 in); left failing on purpose.
   Diagnosis and numbers: `docs/block1-report.md`.
 - Canard planform is GU-sized (conflict flag); the Roncz planform is unconfirmed.
+- The elevator torque tube is 1 in OD (book); the canard section is fitted to an airfoil file (`data/airfoils/roncz_r1145ms.dat`) that is thinner than the tube: unresolved, labelled so in the lab. Check the file's provenance and t/c in the Block 1 airfoil look before any printed plug.
 - Empty weight and CG limits fail against the manual; they wait on the Block 2 ledger.
-- The fuselage box (`core/fuselage_book.py`, chapters 4–6) tags every part `book`, `derived` or
-  `representational`; F22, F28, the panel, the firewall and the bottom are fitted shapes (their
-  outlines are on full-size sheets the owner does not hold). Nothing aft of the firewall or forward of
-  F22 is modelled yet.
+- The fuselage box (`core/fuselage_book.py`, chapters 4–9) and the nose (`core/nose_book.py`,
+  chapter 13) tag every part `book`, `derived` or `representational`; F22, F28, the panel, the
+  firewall, the bottom, the gear strut, the NG30 plates and the nose outline are fitted shapes (their
+  outlines are on full-size sheets the owner does not hold). The model runs from the nose tip to the
+  firewall; nothing aft of the firewall is modelled yet. The nose-wheel station is a conflict (17
+  printed, about 20 in the manual) and both are carried.
 - Regression snapshots (`tests/snapshots/`, `accuracy_report.json`) lock the code's current output;
   they are not external truth.
 - Nothing has been validated against hardware. G-code has never run on a CNC machine.
