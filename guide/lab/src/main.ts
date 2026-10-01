@@ -1280,7 +1280,7 @@ async function boot() {
       const wheel = (id: string, text: string, cand: 'plans' | 'manual') => flabels.add({
         id, text, color: hex(HATCH_COLOR), cls: 'fitted',
         at: () => bay.noseWheelAnchor(cand, fwp),
-        vis: budgeted(id, () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.nosePresent, () => 100), // the conflict: always on
+        vis: budgeted(id, () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.nosePresent && bay.noseProgress < 1, () => 100), // the conflict: always on while the wheel is down or moving; stowed (F.S. ~34-37, in the NB box) the 17 / 20 is not where it is, and the motion and CG rows keep the conflict
         priority: () => 4, tie: () => 0,
       })
       wheel('mark.nose-plans', `Nose wheel, plans candidate F.S. ${c.plans.axle_fs}: conflict (fitted shape)`, 'plans')

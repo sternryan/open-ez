@@ -153,6 +153,16 @@ export function placement(component: string, opId: string | null, order: string[
   return i >= 0 && at >= i ? 'jig' : 'table'
 }
 
+/** The nose-gear box is built on the jig bench (plans-1980:p73-p78: the plates, NG6 and the strut group are put together before they go in the
+ * airplane), then mounted on F22 by NG_MOUNT_OP. These components lie on the bench from the op that makes them until that op. */
+export const NG_BENCH = ['gear.nose_strut', 'nose.ng30_plates', 'nose.ng_hardware']
+export const NG_MOUNT_OP = 'f13.ng31-f6'
+export function onBench(component: string, opId: string | null, order: string[]): boolean {
+  if (!opId || !NG_BENCH.includes(component)) return false
+  const at = order.indexOf(opId), first = order.indexOf(INSTALL[component]), mount = order.indexOf(NG_MOUNT_OP)
+  return first >= 0 && mount >= 0 && at >= first && at < mount
+}
+
 /** From this op to the end of chapter 9 the box is upside down on its top longerons on the level gear table (plans-1980:p50); the
  * book turns it right side up "on its own feet" after the chapter, which the lab shows as the finished box (nothing selected). */
 export const TURN_GEAR = 'f09.position-gear'

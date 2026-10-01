@@ -431,8 +431,10 @@ def extras_section() -> dict:
                       ("elevator.cs11_weight", ("cs11_weight_right", "cs11_weight_left"))):
         fid = "representational" if any(el[k].fidelity == "representational" for k in keys) else el[keys[0]].fidelity
         label = _labelled(cid, fid)
-        if cid == "elevator.hinges":  # the stations are placed from the text and the figure at low confidence (core.elevators_book)
-            label = label.replace(" (fitted shape)", " (positioned from text, low confidence) (fitted shape)")
+        if cid == "elevator.hinges":  # the stations are placed from the text and the figure at low confidence (core.elevators_book); one parenthetical, short enough for a phone
+            label = "Elevator hinges (from text, low confidence; fitted shape)"
+        elif cid == "elevator.tube":  # the tube is the book's 1 in; the airfoil file the canard section is fitted to is thinner than it (owner item, unresolved)
+            label = "Elevator torque tubes (1 in OD book; section fitted, unresolved)"
         elev_rows[cid] = {"node": cid, "fidelity": fid, "label": label}
     hx, hz = hinge_axis_xz()
     G_ = config.geometry

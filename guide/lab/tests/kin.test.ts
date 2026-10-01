@@ -65,7 +65,9 @@ test('the hang settles at the hang pitch, nose down, with the CG under the hinge
   assert.deepEqual(hangState(0, p), { slide: 0, degDown: 0 })
   const [, z] = rotateAboutHinge([ek.hang_cg.dx, ek.hang_cg.dz], [0, 0], end.degDown)
   assert.ok(z < -1)
-  assert.ok(hangText(p, true, true).includes('nose down') && hangText(p, true, true).includes('illustrative CG: masses not sourced'))
+  assert.equal(hangText(93.8, true, true), 'Hangs nose down, about 94 deg') // rounded, no decimal; the illustrative-CG note is the sub-line's
+  assert.equal(hangText(93.8, true, false), 'Swinging toward nose down, about 94 deg')
+  assert.ok(hangText(p, true, true).includes('nose down') && !hangText(p, true, true).includes('illustrative'))
 })
 
 test('the nose gear: pivot, angles, pose and axle are the kernel for both candidates', () => {

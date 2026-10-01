@@ -5,9 +5,9 @@
  *
  * focus: `parts` (fuselage part names, as exported) aims at the middle of those parts; with `fs` it aims at that fuselage station on
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
- * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim).
+ * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | 'box' | 'marks'; dist: number; el: number; az: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -84,7 +84,8 @@ const at = (fs: number, wl: number, bl = 0): { at: [number, number, number] } =>
  *    and the nose gear (F.S. 0..40, W.L. +14 .. -22), so the strut, wheel, plates, floor blocks and door all show;
  *  - the canard ops look at the canard's trailing edge and the elevators near F22 from the left and behind.
  */
-const nose = (fs: number, wl: number, dist: number, el = 12, az = 40): FuseView => ({ focus: at(fs, wl), dist, el, az })
+const nose = (fs: number, wl: number, dist: number, el = 12, az = 40, pan = 0): FuseView => ({ focus: at(fs, wl), dist, el, az, pan })
+const bench = (dist: number, el = 28, az = 28, pan = 0, up = 0): FuseView => ({ focus: 'bench', dist, el, az, pan, up })
 const canardTe = (fs: number, bl: number, dist = 72, el = 16, az = -38): FuseView => ({ focus: at(fs, 19, bl), dist, el, az })
 export const NOSE_VIEWS: Record<string, FuseView> = {
   // chapter 12: the canard's trailing edge, the elevators and F22, from the left and behind
@@ -93,12 +94,12 @@ export const NOSE_VIEWS: Record<string, FuseView> = {
   'r30.lift-tab-bushings': canardTe(35, -16, 60, 24, -46),
   'r30.f28-pins-permanent': canardTe(36, -12, 66, 22, -56),
   // chapter 13: low three-quarter from the front left
-  'f13.strut-reinforce': nose(8, -8, 96, 10),
-  'f13.worm-drive-bench': nose(8, -8, 96, 10),
-  'f13.ng30-plates': nose(6, 4, 72, 12),
-  'f13.ng-box-assemble': nose(8, 0, 86, 12),
-  'f13.ng3-ng4': nose(8, 2, 72, 12, 42),
-  'f13.ng31-f6': nose(10, 2, 80, 12),
+  'f13.strut-reinforce': bench(90, 32, 30, 10, 7), // on the jig bench (the NG box is built there, then mounted on F22 at f13.ng31-f6)
+  'f13.worm-drive-bench': bench(90, 32, 30, 10, 7),
+  'f13.ng30-plates': bench(84, 32, 30, 10, 7),
+  'f13.ng-box-assemble': bench(90, 32, 30, 10, 7),
+  'f13.ng3-ng4': bench(90, 32, 30, 10, 7),
+  'f13.ng31-f6': nose(10, 2, 80, 12, 40, 5),
   'f13.floor-blocks': nose(8, 2, 74, 16),
   'f13.pedal-pivot-blocks': nose(10, 2, 74, 16),
   'f13.side-pieces': nose(8, 4, 82, 14),
@@ -108,11 +109,11 @@ export const NOSE_VIEWS: Record<string, FuseView> = {
   'f13.strut-slot-sc': nose(8, -8, 92, 8),
   'f13.nb-box': nose(14, -4, 98, 10),
   'f13.rig-nose-gear': nose(22, -8, 122, 8, 36), // the strut's whole swing (F.S. 17 down to the NB box at 31-39.75) in view
-  'f13.pitot-static': nose(4, -2, 86, 12),
+  'f13.pitot-static': nose(14, 8, 100, 12, 40, 6), // the pitot tube runs the nose's length and the static port is on the side at F.S. 32: both in frame
   'f13.top-foam': nose(8, 8, 88, 14),
   'f13.carve-glass-nose': nose(8, -2, 102, 10),
-  'f13.nose-door': nose(6, -2, 86, 10),
-  'f13.shock-strut': nose(8, -10, 92, 8),
+  'f13.nose-door': { focus: { parts: ['nose_door'] }, dist: 52, el: 44, az: 64, pan: 4, up: 9 }, // from above and forward of the nose, aimed at the door: it is a 0.08 in panel laid flush on the nose's top, so its outline is what reads
+  'f13.shock-strut': nose(24, 5, 100, 14, 40, 8), // the strut is stowed in the NB box here (F.S. 9 to 39): aim at it, not at the empty floor
 }
 
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }

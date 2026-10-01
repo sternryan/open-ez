@@ -7,7 +7,7 @@ import type { BuildState, MeshInfo } from './logic/build'
 import {
   placement, jigPose, upFace, planHalfWidth, stationAmount, turnPose, hatchSoftness, shownAt, stageAt, poseAngle, poseBase, restLift, animatedTurn, dryTone,
   STATION_CUT, FS_EPS, TRIAL_FIT, FLIP_SECONDS, FLIP_DELAY, JIG_ONLY, GEAR_TABLE_RISE, BANK_DEG, FITTED_TYRE_OD, TYRE_SECTION, RIM_DIA,
-  CANARD_INSTALLED_CHAPTERS, NOSE_CHAPTER,
+  CANARD_INSTALLED_CHAPTERS, NOSE_CHAPTER, NG_BENCH, onBench,
   type FuseLayup, type FusePlyRow, type Placement, type JigPose, type ShowWindow,
 } from './logic/fuselage'
 import { matte } from './core/materials'
@@ -555,6 +555,32 @@ export class FuselageBay {
     return m
   }
 
+  private benchM: THREE.Matrix4 | null = null
+  /**
+   * The nose-gear box on the jig bench (REPRESENTATIONAL: the book says only that it is built before it goes in the airplane). It lies on its
+   * side so it fits the bench: the box frame's (F.S., W.L., B.L.) go to the room's (across the bench, along it, up), the assembly's middle over the
+   * bench's middle and its lowest face on the bench top. One rigid matrix for the strut group, the plates and NG6, so they keep their places
+   * against each other from the op that makes the first of them until the mount; the frame is the part's own base geometry (strut down).
+   */
+  benchMatrix(): THREE.Matrix4 {
+    if (this.benchM) return this.benchM
+    const J = STATION.jig
+    const R = new THREE.Matrix4().set(0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1) // (x, y, z) -> (y, z, x): a proper rotation
+    const box = new THREE.Box3()
+    for (const m of this.meshes) if (!m.ply && NG_BENCH.includes(m.cid)) box.union(m.base.boundingBox!.clone().applyMatrix4(R))
+    const c = box.getCenter(new THREE.Vector3())
+    this.benchM = new THREE.Matrix4().makeTranslation(J.x, J.benchTopY + 0.0015, J.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeTranslation(-c.x, -box.min.y, -c.z)).multiply(R)
+    return this.benchM
+  }
+
+  /** the nose-gear box's whole world box on the bench (every part of it, wherever it is built yet), for the bench shots */
+  benchAssemblyBox(): THREE.Box3 {
+    const M = this.benchMatrix(), bx = new THREE.Box3()
+    for (const m of this.meshes) if (!m.ply && NG_BENCH.includes(m.cid)) bx.union(m.base.boundingBox!.clone().applyMatrix4(M))
+    return bx
+  }
+
   /** the face a carrier lies on for this op (the bulkheads turn over between their front and back glassing) */
   faceFor(carrier: string, opId: string | null): 'fwd' | 'aft' {
     return this.data.parts[carrier]?.fwd_normal ? upFace(carrier, opId, this.order, this.data.nodes) : 'fwd'
@@ -592,8 +618,10 @@ export class FuselageBay {
         ? plyPhase({ meshOpIndex: opIdx.get(m.ply.op), curOpIndex: cur, order: m.ply.order, lay, count, t: layT, ghost })
         : partPhase(st)
       this.phases.set(m.name, ph)
-      const where = st === 'ghost' ? 'jig' : this.placeOf(m, sel)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && shownAt(m.show, sel, this.order) && !(m.jigOnly && where === 'table') && (!m.extra || noseOn)
+      // the nose-gear box lies on the jig bench until it is mounted on F22 (logic/fuselage.ts onBench): drawn there from its own op on
+      const benched = st !== 'ghost' && !m.ply && onBench(m.cid, sel, this.order)
+      const where = st === 'ghost' ? 'jig' : benched ? 'table' : this.placeOf(m, sel)
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || shownAt(m.show, sel, this.order)) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn)
       // the shape for this op: the node's own, or a later stage (carved, cut, holed)
       const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
       const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
@@ -605,9 +633,9 @@ export class FuselageBay {
       if (m.part === 'datum_board' && m.jig.visible) boards = true
       if (m.table.visible) {
         const face = this.faceFor(m.carrier, sel)
-        m.table.matrix.copy(this.tableMatrix(m.carrier, face))
+        m.table.matrix.copy(benched ? this.benchMatrix() : this.tableMatrix(m.carrier, face))
         m.table.matrixWorldNeedsUpdate = true
-        sig += m.carrier + face
+        sig += m.carrier + face + (benched ? 'b' : '')
       }
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
@@ -671,6 +699,7 @@ export class FuselageBay {
 
   /** world box of a mesh where it would be for `opId` (placement and pose for that op) */
   worldBoxAt(m: FMesh, opId: string | null): THREE.Box3 {
+    if (!m.ply && onBench(m.cid, opId, this.order)) return m.base.boundingBox!.clone().applyMatrix4(this.benchMatrix())
     const where = this.placeOf(m, opId)
     const mat = where === 'jig'
       ? this.restMatrix(this.poseFor(opId))
@@ -685,7 +714,9 @@ export class FuselageBay {
     for (const id of ops) {
       const v = fuseView(id)
       const target = new THREE.Vector3()
-      if (v.focus === 'marks' && this.markAt) {
+      if (v.focus === 'bench') {
+        target.copy(this.benchAssemblyBox().getCenter(new THREE.Vector3()))
+      } else if (v.focus === 'marks' && this.markAt) {
         target.copy(this.markAt.dim).lerp(this.markAt.axle, 0.5).applyMatrix4(this.restMatrix(this.poseFor(id))) // both marks' words in frame
       } else if (typeof v.focus === 'object' && 'at' in v.focus) {
         target.set(...v.focus.at).applyMatrix4(this.restMatrix(this.poseFor(id)))
@@ -720,6 +751,12 @@ export class FuselageBay {
         }
       }
       const off = viewOffset(v)
+      if (v.pan) {
+        // move the aim sideways (along the camera's right) so the subject stands left of the middle, clear of the control card on the right
+        const right = new THREE.Vector3(off[0], 0, off[2]).normalize().cross(new THREE.Vector3(0, 1, 0)).negate().multiplyScalar(v.pan * INCH)
+        target.add(right)
+      }
+      if (v.up) target.y -= v.up * INCH
       const pos = target.clone().add(new THREE.Vector3(off[0], off[1], off[2]).multiplyScalar(INCH))
       out[id] = { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
     }
@@ -875,12 +912,13 @@ export class FuselageBay {
   noseWheelAt(cand: Candidate): [number, number] | null {
     return this.nosePts ? noseAxleAt(this.noseT, this.nosePts[cand]) : null
   }
-  /** a point above a candidate's wheel for its label (world metres), or null with no nose gear shown */
+  /** a point on a candidate's wheel for its label (world metres), or null with no nose gear shown: above the drawn wheel's top, and below the ghost's bottom,
+   * so the two pills (the wheels are only 3 in apart) never share a place and the declutter rule has room for both */
   noseWheelAnchor(cand: Candidate, out: THREE.Vector3): THREE.Vector3 | null {
     const c = this.noseWheelAt(cand)
     if (!c || !this.noseShown || !this.nosePts) return null
     const R = (this.noseK?.tire_od ?? 9) / 2
-    return out.set(c[0], c[1] + R, cand === 'plans' ? -1 : 1).applyMatrix4(this.jigFrame.matrixWorld)
+    return out.set(c[0], cand === 'plans' ? c[1] + R : c[1] - R, cand === 'plans' ? -1 : 1).applyMatrix4(this.jigFrame.matrixWorld)
   }
 
   labelColor(m: FMesh): string {

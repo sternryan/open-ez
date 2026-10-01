@@ -21,7 +21,7 @@
 - id: f13.worm-drive-bench
   chapter: 13
   title: Worm drive bench assembly
-  summary: Build or buy the worm drive and its brackets, plates and fork on the bench, and check it turns freely. The friction damper should let the wheel pivot under a modest side load.
+  summary: Build or buy the worm drive and its brackets, plates and fork on the bench, and check it turns freely. The friction damper should let the wheel pivot under a modest side load. The lab has no model of the worm drive, so its frame shows the reinforced strut waiting on the bench.
   variants: [both]
   requires: [c03.layup-skills]
   components: [nose.worm_drive]

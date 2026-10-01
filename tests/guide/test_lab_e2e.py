@@ -2675,7 +2675,7 @@ def test_ch11_elevators_appear_on_their_ops_are_fitted_shapes_and_never_show_on_
             for cid, row in ex["parts"].items():
                 if cid in ("elevator.left",):
                     continue
-                assert labs[cid]["text"] == row["label"] and labs[cid]["text"].endswith("(fitted shape)"), (cid, labs[cid])
+                assert labs[cid]["text"] == row["label"] and "fitted" in labs[cid]["text"], (cid, labs[cid])  # (the hinges and the tube say it in their own one parenthetical)
             assert any(labs[c]["opacity"] > 0.5 for c in ("elevator.right", "elevator.tube", "elevator.balance_weight"))
             # bond cores: the tube held clear of the bench on its two jigs, the cores bare (no skin yet); the skin op skins them
             pg.evaluate("window.__lab.select('r30.elev-bond-cores')")
@@ -2763,7 +2763,7 @@ def test_ch11_balance_check_hangs_each_elevator_nose_down_with_the_cg_labelled_i
             assert e["hangPitch"] == pytest.approx(want, abs=1e-9) and e["degDown"] == pytest.approx(-want, abs=0.01)
             assert e["jigs"] and e["slide"] == pytest.approx(10.0)  # hung clear of the canard on its hinge line
             k = pg.evaluate("window.__lab.kin()")
-            assert k["label"] == "Elevator hang" and "Hangs nose down" in k["value"] and "illustrative CG: masses not sourced" in k["value"], k
+            assert k["label"] == "Elevator hang" and k["value"] == f"Hangs nose down, about {round(want)} deg" and "illustrative CG: masses not sourced" in k["sub"], k  # M2.4 review 9: rounded; the note is the sub-line
             # nose down in the world: the leading-edge weights hang below the hinge line, the trailing edge goes up
             hx, hz = ex["hinge_xz"]
             hinge_y = pg.evaluate(f"window.__lab.toWorld([{hx}, {hz}, -30])")[1]
@@ -3018,6 +3018,14 @@ def test_the_canard_and_elevators_stand_installed_on_a_chapter_12_or_13_op_and_n
         s.shutdown()
 
 
+def _legible(x):
+    """A label counts as on screen only if it has its words: visible, not collapsed to its dot, not hidden by the declutter rule."""
+    return x["opacity"] > 0.5 and not x.get("collapsed") and not x.get("hidden")
+
+
+_NG_BENCH = ("gear.nose_strut", "nose.ng30_plates", "nose.ng_hardware")
+
+
 def test_nose_parts_appear_on_the_op_that_lists_them_and_never_before_chapter_13(rsite):
     g = _graph(rsite)
     fz = g["layup"]["fuselage"]
@@ -3036,10 +3044,13 @@ def test_nose_parts_appear_on_the_op_that_lists_them_and_never_before_chapter_13
                 pl = pg.evaluate("window.__lab.placement()")
                 for name, row in rows.items():
                     due = order.index(first[row["component"]]) <= order.index(op)
-                    if name == "gear_nose_strut":  # drawn from the op that lowers it into the box
+                    if name == "gear_nose_strut":  # drawn from the op that lowers it into the box (before that, only on the bench: below)
                         due = due and order.index(op) >= order.index("f13.lower-gear")
-                    assert pl[name] == ("jig" if due else "none"), (op, name, pl[name])
-                    assert (pg.evaluate(f"window.__lab.meshBox('{row['node']}')") is not None) == due, (op, name)
+                    # M2.4 fix 2: the NG box (strut group, plates, NG6) is built on the jig bench ('table') from the op that makes each, until f13.ng31-f6 mounts it
+                    on_bench = row["component"] in _NG_BENCH and order.index(first[row["component"]]) <= order.index(op) < order.index("f13.ng31-f6")
+                    want = "table" if on_bench else "jig" if due else "none"
+                    assert pl[name] == want, (op, name, pl[name])
+                    assert (pg.evaluate(f"window.__lab.meshBox('{row['node']}')") is not None) == (due or on_bench), (op, name)
             # the first op of each nose component is a real chapter 13 op (not a stub, not a later chapter)
             assert all(byid[first[r["component"]]]["chapter"] == 13 for r in rows.values())
             # nothing of the nose before chapter 13, nor on the finished chapter 4-9 box
@@ -3056,7 +3067,7 @@ def test_nose_parts_appear_on_the_op_that_lists_them_and_never_before_chapter_13
                 m = pg.evaluate(f"window.__lab.material('{row['node']}')")
                 assert m["hatch"] and m["fidelity"] == "representational", (name, m)
                 assert labs[row["node"]]["text"] == row["label"] and labs[row["node"]]["text"].endswith("(fitted shape)"), name
-            assert labs["nose.door"]["opacity"] > 0.5
+            assert _legible(labs["nose.door"]), labs["nose.door"]  # on screen with its words: not a collapsed dot, not hidden
             assert min(r["fs_min"] for r in rows.values()) == pytest.approx(-6.8, abs=0.01)
             assert not errors, errors
             b.close()
@@ -3078,16 +3089,18 @@ def test_chapter_12_and_13_ops_show_at_most_ten_labels_and_keep_the_conflict_and
             for op in ops:
                 pg.evaluate(f"window.__lab.select('{op}')")
                 _run(pg, 3)
-                on = [x["id"] for x in pg.evaluate("window.__lab.labelsAll()") if x["opacity"] > 0.5]
+                allp = pg.evaluate("window.__lab.labelsAll()")
+                on = [x["id"] for x in allp if x["opacity"] > 0.5]
                 assert len(on) <= 10, (op, on)  # dots count: nothing beyond ten is on screen, readable or collapsed
                 ng = pg.evaluate("window.__lab.noseGear()")
-                if ng["shown"] and ng["t"] < 1:  # the nose wheel is down and in view: its two candidates (conflict) always stay
-                    assert {"mark.nose-plans", "mark.nose-manual"} <= set(on), (op, on)
+                if ng["shown"] and ng["t"] < 1:  # the nose wheel is down and in view: its two candidates (conflict) always stay, readable (M2.4 fix: not hidden, not a dot)
+                    legible = {x["id"] for x in allp if _legible(x)}
+                    assert {"mark.nose-plans", "mark.nose-manual"} <= legible, (op, [x for x in allp if x["id"].startswith("mark.nose")])
             # the parts new on an op keep their fitted-shape label, whatever else is dropped for the budget
             for op, node in (("f13.nose-door", "nose.door"), ("f13.carve-glass-nose", "nose.skin"), ("f13.pitot-static", "nose.pitot"), ("f13.top-foam", "nose.top_block")):
                 pg.evaluate(f"window.__lab.select('{op}')")
                 _run(pg, 3)
-                on = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()") if x["opacity"] > 0.5}
+                on = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()") if _legible(x)}  # M2.4 fix: a collapsed or hidden label is not "on"
                 assert node in on and "fitted shape" in on[node]["text"], (op, list(on))
             assert not errors, errors
             b.close()
@@ -3398,6 +3411,194 @@ def test_canard12_film_starts_on_the_card_lowers_the_canard_onto_f22_and_ends_on
             assert not pg.evaluate("__lab.touring()") and pg.evaluate("__lab.selected()") == want[-1]
             assert [o for o in seen if o in want] == want  # the chapter 12 ops in order
             assert pg.evaluate("__lab.cut().enabled") is False
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- M2.4 fix round 2 (visual review findings 2, 3, 4, 5, 9): the chapter 13 frames show their subject, the stowed wheel carries no stale
+# station, the phone readout does not overlap. These judge what is on screen (boxes in screen pixels, label state), not transforms alone.
+def _screen_box(pg, bx):
+    pts = [pg.evaluate("(p) => window.__lab.project(p)", [x, y, z]) for x in (bx[0][0], bx[1][0]) for y in (bx[0][1], bx[1][1]) for z in (bx[0][2], bx[1][2])]
+    return [min(q[0] for q in pts), min(q[1] for q in pts), max(q[0] for q in pts), max(q[1] for q in pts)]
+
+
+def _ch13_ops(g):
+    order, byid, first = _first_ops(g)
+    return [o for o in order if byid[o]["chapter"] == 13 and not byid[o]["stub"]], byid
+
+
+def test_every_chapter_13_op_shows_its_own_parts_with_their_words_not_a_collapsed_dot(rsite):
+    g = _graph(rsite)
+    rows = g["layup"]["fuselage"]["extras"]["nose_parts"]
+    ops, byid = _ch13_ops(g)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 4)
+                labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+                own = [r["node"] for r in rows.values() if r["component"] in byid[op]["components"]]
+                for node in own:
+                    assert node in labs and _legible(labs[node]), (op, node, labs.get(node))  # the op's own part: on screen, collapsed false, hidden false
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_nose_gear_box_is_built_on_the_bench_then_mounted_and_every_nose_frame_shows_its_subject_clear_of_the_cards(rsite):
+    g = _graph(rsite)
+    rows = g["layup"]["fuselage"]["extras"]["nose_parts"]
+    ops, byid = _ch13_ops(g)
+    node_of = {r["component"]: r["node"] for r in rows.values()}
+    bench_ops = ["f13.strut-reinforce", "f13.worm-drive-bench", "f13.ng30-plates", "f13.ng-box-assemble", "f13.ng3-ng4"]
+    inch = 0.0254
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            floor = pg.evaluate("window.__lab.fuseFloor()")["bench"]  # the bench's box: its top is the blocks' top less their 3 in
+            top = floor[1][1] - 3 * inch
+
+            def own_nodes(op):
+                got = [node_of[c] for c in byid[op]["components"] if c in node_of]
+                if not got:  # the worm drive has no model: the frame shows what is on the bench by then
+                    got = [n for c, n in node_of.items() if c in _NG_BENCH and pg.evaluate(f"window.__lab.meshBox('{n}')")]
+                return got
+
+            def clear_of_cards(op, nodes):
+                for n in nodes:
+                    sb = _screen_box(pg, pg.evaluate(f"window.__lab.meshBox('{n}')"))
+                    assert 0 <= sb[0] and sb[2] <= 1180 and 0 <= sb[1] and sb[3] <= 820, (op, n, sb)  # on screen
+                    for sel in _CARDS:
+                        c = _rect(pg, sel)
+                        assert not (sb[0] < c[2] and c[0] < sb[2] and sb[1] < c[3] and c[1] < sb[3]), (op, n, sel, sb, c)  # and not under a card
+
+            for op in bench_ops + ["f13.ng31-f6", "f13.nose-door"]:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 5)
+                nodes = own_nodes(op)
+                assert nodes, op
+                clear_of_cards(op, nodes)
+                if op in bench_ops:
+                    for c in _NG_BENCH:  # whatever of the NG box exists by this op lies on the bench: above its top, inside its footprint
+                        n = node_of[c]
+                        bx = pg.evaluate(f"window.__lab.meshBox('{n}')")
+                        if bx is None:
+                            continue
+                        assert bx[0][1] >= top - 1e-3 and bx[1][1] < top + 0.6, (op, n, bx, top)
+                        assert bx[0][0] >= floor[0][0] and bx[1][0] <= floor[1][0] and bx[0][2] >= floor[0][2] and bx[1][2] <= floor[1][2], (op, n, bx, floor)
+            # the strut is on the bench for the first op, and the plates arrive with theirs
+            pg.evaluate("window.__lab.select('f13.strut-reinforce')")
+            _run(pg, 1)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["gear_nose_strut"] == "table" and pl["nose_ng30_plates"] == "none" and pl["nose_ng_hardware"] == "none", pl
+            # mounted: from f13.ng31-f6 the plates stand at F22, where every later op has them (same box), far from the bench
+            pg.evaluate("window.__lab.select('f13.ng3-ng4')")
+            _run(pg, 1)
+            on_bench = pg.evaluate(f"window.__lab.meshBox('{node_of['nose.ng30_plates']}')")
+            pg.evaluate("window.__lab.select('f13.ng31-f6')")
+            _run(pg, 1)
+            mounted = pg.evaluate(f"window.__lab.meshBox('{node_of['nose.ng30_plates']}')")
+            assert pg.evaluate("window.__lab.placement()")["nose_ng30_plates"] == "jig"
+            pg.evaluate("window.__lab.select('f13.floor-blocks')")
+            _run(pg, 1)
+            later = pg.evaluate(f"window.__lab.meshBox('{node_of['nose.ng30_plates']}')")
+            assert all(abs(u - v) < 1e-6 for r, q in zip(mounted, later) for u, v in zip(r, q)), (mounted, later)
+            cm = [(mounted[0][i] + mounted[1][i]) / 2 for i in range(3)]
+            cb = [(on_bench[0][i] + on_bench[1][i]) / 2 for i in range(3)]
+            assert sum((a - c) ** 2 for a, c in zip(cm, cb)) ** 0.5 > 1.0, (cm, cb)  # moved off the bench, not nudged
+            # and the strut is out of the frame between the mount and the lowering of the gear (it goes into the box at f13.lower-gear)
+            assert pg.evaluate("window.__lab.placement()")["gear_nose_strut"] == "none"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", [(390, 844), (1180, 820)])
+def test_the_motion_row_is_not_clipped_and_does_not_overlap_its_neighbours(rsite, w, h):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            for op, subj, secs in (("r30.elev-balance-check", "canard", 16), ("f13.lower-gear", "fuselage", 1), ("f13.rig-nose-gear", "fuselage", 3)):
+                b = p.chromium.launch(args=GL)
+                ctx = b.new_context(viewport={"width": w, "height": h}, has_touch=w < 700)
+                pg = ctx.new_page()
+                errors = []
+                pg.on("pageerror", lambda e: errors.append(str(e)))
+                pg.goto(url + f"?test=1&q=low&freeze=1&op={op}")
+                pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+                assert pg.evaluate("window.__lab.subject()") == subj
+                _run(pg, secs)
+                assert pg.is_visible("#t-kin")
+                m = pg.evaluate("""() => {
+                    const r = (e) => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.right, b.bottom] }
+                    const kin = document.getElementById('t-kin'), val = document.getElementById('ro-kin'), sub = document.getElementById('ro-kin-sub')
+                    const others = [...document.querySelectorAll('#readout .tile, #readout .layers, #fuse-rows .tile')]
+                        .filter((e) => e !== kin && !kin.contains(e) && e.offsetParent && e.getBoundingClientRect().width > 0)
+                        .map((e) => [e.id || e.dataset.k, r(e)])
+                    const fits = (e) => e.scrollWidth <= e.clientWidth + 1
+                    return { kin: r(kin), val: r(val), valText: val.textContent, valFits: fits(val), subFits: fits(sub), others, kinFits: fits(kin) }
+                }""")
+                assert m["valFits"] and m["subFits"] and m["kinFits"], (op, m)  # nothing clipped sideways: "Hangs nose down ... (illustrative CG:" was
+                k = m["kin"]
+                assert m["val"][2] <= k[2] + 1 and m["val"][0] >= k[0] - 1, (op, m)  # the value sits inside its own tile
+                for name, o in m["others"]:
+                    inter = max(0, min(k[2], o[2]) - max(k[0], o[0])) * max(0, min(k[3], o[3]) - max(k[1], o[1]))
+                    assert inter <= 1, (op, w, name, o, k)  # no neighbouring tile's box meets the motion row's
+                if w <= 640:
+                    assert k[2] - k[0] >= w - 40, (op, k)  # the motion row has its own full-width line on a phone
+                    assert all(o[3] <= k[1] + 1 for _, o in m["others"] if o[0] < k[2] and o[2] > k[0] and o[1] < k[1]), (op, m["others"], k)  # the others sit above it
+                if op == "r30.elev-balance-check":
+                    assert m["valText"].startswith("Hangs nose down, about ") and m["valText"].endswith(" deg") and "." not in m["valText"], m["valText"]
+                    assert "illustrative CG: masses not sourced" in pg.inner_text("#ro-kin-sub")
+                assert not errors, errors
+                b.close()
+    finally:
+        s.shutdown()
+
+
+def test_the_stowed_nose_wheel_carries_no_f_s_17_or_20_mark_and_the_marks_stay_while_it_is_down(rsite):
+    g = _graph(rsite)
+    ops, byid = _ch13_ops(g)
+    after = ops[ops.index("f13.rig-nose-gear"):]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+
+            def stale():
+                return [(x["id"], x["text"]) for x in pg.evaluate("window.__lab.labelsAll()") if ("F.S. 17" in x["text"] or "F.S. 20" in x["text"]) and x["opacity"] > 0.004 and not x.get("hidden")]
+
+            # gear down (and while it turns): the marks are there, in words
+            for op, secs in (("f13.lower-gear", 4), ("f13.rig-nose-gear", 4)):  # (the camera is still flying in for the first ~2.5 s of an op)
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, secs)
+                n = pg.evaluate("window.__lab.noseGear()")
+                assert n["shown"] and n["t"] < 1, (op, n)
+                legible = {x["id"] for x in pg.evaluate("window.__lab.labelsAll()") if _legible(x)}
+                assert {"mark.nose-plans", "mark.nose-manual"} <= legible, (op, legible)
+            # stowed (t == 1): the end of the rig op and every later op: neither station is on a label, the motion and CG rows keep the conflict
+            pg.evaluate("window.__lab.select('f13.rig-nose-gear')")
+            _run(pg, 9)
+            assert pg.evaluate("window.__lab.noseGear()")["t"] == 1
+            for op in after:
+                if op != "f13.rig-nose-gear":
+                    pg.evaluate(f"window.__lab.select('{op}')")
+                    _run(pg, 4)
+                assert pg.evaluate("window.__lab.noseGear()")["t"] == 1, op
+                assert stale() == [], (op, stale())
+                assert "conflict" in pg.inner_text("#ro-kin-sub"), op
+            pg.click("#fuse-more")
+            assert "conflict" in pg.inner_text("#ro-cg-sub")
             assert not errors, errors
             b.close()
     finally:

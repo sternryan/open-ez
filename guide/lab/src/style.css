@@ -186,6 +186,13 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
   #readout .tile[data-k="mass"], #readout .tile[data-k="cloth"] { display: none; }
   /* the fuselage's CG and legend: their own line under the readout, closed to one line by default and opened by the chevron */
   body[data-subject="fuselage"] #readout { flex-wrap: wrap; }
+  /* the motion row (elevator travel and hang, nose-gear crank) gets its own full-width line under the one-line readout, with a rule above it: sharing
+     the row cut its value to "Hangs nose down 93.8 deg (illustrative CG:"; the note under it keeps its words in two lines at most */
+  #readout { flex-wrap: wrap; }
+  #readout #t-kin { flex: 1 0 100%; min-width: 0; border-left: 0; border-top: 1px solid var(--line); justify-content: flex-start; flex-wrap: wrap; }
+  #readout #t-kin .label { display: inline; }
+  #ro-kin { min-width: 0; overflow-wrap: anywhere; }
+  #ro-kin-sub { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
   #fuse-rows { flex: 1 0 100%; }
   #fuse-rows .tile .label { display: inline; }
   #fuse-rows .tile { padding: 7px 10px; justify-content: flex-start; }

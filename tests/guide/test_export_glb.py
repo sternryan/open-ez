@@ -340,8 +340,10 @@ def test_layup_extras_carry_the_nose_the_elevators_the_install_and_the_nose_gear
     assert ex["nose_parts"]["gear_nose_strut"]["show"] == {"from": "f13.lower-gear"}
     el = ex["elevators"]
     assert set(el["parts"]) == {"elevator.right", "elevator.left", "elevator.tube", "elevator.hinges", "elevator.balance_weight", "elevator.cs11_weight"}
-    assert all(p["node"] in names and p["fidelity"] == "representational" and p["label"].endswith("(fitted shape)") for p in el["parts"].values())
-    assert "positioned from text, low confidence" in el["parts"]["elevator.hinges"]["label"]  # the hinge plates say how well placed they are
+    assert all(p["node"] in names and p["fidelity"] == "representational" and "fitted" in p["label"] for p in el["parts"].values())
+    assert el["parts"]["elevator.hinges"]["label"] == "Elevator hinges (from text, low confidence; fitted shape)"  # the hinge plates say how well placed they are, in one parenthetical
+    assert el["parts"]["elevator.tube"]["label"] == "Elevator torque tubes (1 in OD book; section fitted, unresolved)"  # M2.4 review 7: the tube is the book's, the section is not
+    assert all(p["label"].endswith("(fitted shape)") for c, p in el["parts"].items() if c not in ("elevator.hinges", "elevator.tube"))
     assert el["travel"] == {"up_target_deg": 15.0, "up_floor_deg": 12.5, "down_deg": 30.0}
     assert ek.travel_range_deg() == (15.0, 30.0)
     assert "masses not sourced" in el["hang_cg"]["note"] and el["hang_cg"]["fitted"] is True and el["hang_cg"]["dx"] < 0  # forward of the hinge
