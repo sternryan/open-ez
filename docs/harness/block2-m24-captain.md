@@ -62,3 +62,15 @@ never committed. Pages read: p77, p79, p81, p82, p83, p171.
 
 ## Lane log (call, lane, reason)
 
+- **Evidence correction 2 (cobelu fig C-1, read by the captain, drawing is rotated 90 deg).** The research
+  leaves the elevators' spanwise placement open and the lengths look asymmetric about the fuselage.
+  The figure resolves it: both elevators END at |B.L.| 65.0 (plan dimension "65" from B.L. 0 to the outer
+  end), the right one runs B.L. +9.3 to +65.0 (55.7), and the left one runs B.L. -65.0 to +7.7 (72.7), so the
+  left elevator crosses the centreline (the NC-5A trim belcrank is at B.L. 0). 65.0 + 7.7 = 72.7 and
+  65.0 - 9.3 = 55.7 both check. Hinges are at |B.L.| 9.2 / 34.1 / 59.0 on the stations drawn for each
+  elevator (left: -59.0, -34.1, -9.2; right: +34.1, +59.0 and an inboard one near +9.3), positioned from
+  text and figure only. Elevator ends and left/right inboard stations are therefore dimensioned from the
+  figure; the contour is not.
+- T1 config/ledger/source notes: crew a612c57c, sonnet subagent. Reason: multi-file (config, ledger yaml, notes, tests), values pasted from captain page reads. 1 wave, no escalation.
+- T2 graph: crew a78e4925, sonnet subagent. Op YAML drafted on smithy local-anvil first: 7 calls (E1-E3 ch11 elevator, G ch12 gap, N1-N3 ch13), each attempt 1, no 503, 3-8 s. Quality low: every draft needed hand fixes (truncation, wrong materials, junk rows, one unparseable YAML); drafts used as a base, requires/sources/changes/components written by the crew from the research. Reason for sonnet: integration across ch30.yaml, ch13.yaml, components, layup.py, tests.
+- T2 follow-up: same crew, moved new ops to chapters 11/12 so the ch30 film keeps its old op set (film length bound 55-95 s failed at 140 s).

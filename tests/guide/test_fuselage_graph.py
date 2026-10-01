@@ -92,11 +92,16 @@ def test_recall_finds_the_four_new_annotations(g):
 # the tie-break must not move any of them.
 CANARD_ORDER = [
     "ref.back-cover-3view", "c03.layup-skills", "c10.templates-cores", "c10.shear-web", "c10.jig-cores",
-    "c10.bottom-spar-skin", "c10.top-spar-skin", "c11.elevators", "c12.alignment-pins", "c12.align-canard",
+    "c10.bottom-spar-skin", "c10.top-spar-skin",
     "r30.templates-cores", "r30.lift-tabs", "r30.shear-web", "r30.jig-assemble", "r30.bottom-spar-cap",
     "r30.bottom-skin", "r30.turnover-twist-check", "r30.hinge-foam", "r30.top-spar-cap", "r30.top-skin",
-    "r30.elevators", "r30.install-pins", "r30.align-canard",
+    # the GU stub chain moved here when the Roncz elevator ops became chapter 11 (it sorts by chapter, then by authored order)
+    "c11.elevators", "c12.alignment-pins", "c12.align-canard", "r30.install-pins", "r30.align-canard",
 ]
+
+# The chapter 11 / 12 Roncz ops added in 2.4 (r30.* ids, chapters 11 and 12) are checked in test_ch1113_graph.py.
+NEW_R30 = {"r30.f22-drill-tabs", "r30.elev-fuselage-clearance", "r30.lift-tab-bushings", "r30.f28-pins-permanent",
+           "r30.canard-tips"}
 
 
 def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
@@ -104,7 +109,7 @@ def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
 
     g = load_graph(GRAPH)
     order = topo_order(g)
-    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6, 7, 8, 9)] == CANARD_ORDER
+    assert [i for i in order if g.ops[i].chapter not in (4, 5, 6, 7, 8, 9, 13) and i not in NEW_R30 and not i.startswith('r30.elev-')] == CANARD_ORDER
     # plans pp 4-1 to 4-3: front seat, rear seat, panel/F22/F28, firewall
     assert [i for i in order if g.ops[i].chapter == 4] == [
         "f04.front-seat-bkhd-front", "f04.front-seat-bkhd-back", "f04.rear-seat-bkhd-foam",

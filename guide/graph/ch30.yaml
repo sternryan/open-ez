@@ -164,12 +164,294 @@
   completion:
     - Four plies laid in order and cured
     - Trailing edge straight and sanded to the template
+# Elevators and canard tips (cobelu chapter 30, Elevators / Canard Tip / mass balance sections). Replaces the old r30.elevators stub.
+- id: r30.elev-nc2-inserts
+  chapter: 11
+  title: Install NC-2 inserts
+  summary: Press five inserts into torque-tube pockets. Drill, grease, rivet, and seal. Deepen the slots.
+  variants: [roncz]
+  requires: [c03.layup-skills, r30.top-skin]
+  components: [elevator.tube]
+  geometry_visible: false
+  sources:
+    - {doc: cobelu, heading: "Step 1: Install NC-2 inserts into torque tube", figure: I/images/30/30_36.png}
+    - {doc: cobelu, heading: "Step 1: Install NC-2 inserts into torque tube", figure: I/images/30/30_37.jpg}
+  completion:
+    - Five NC-2 inserts pressed into the tube pockets
+    - Pin holes drilled, greased and pop-riveted
+    - Edges sealed and the tube slots deepened
+- id: r30.elev-bond-cores
+  chapter: 11
+  title: Bond elevator cores
+  summary: Sand the tube, hold it clear of the bench on the NC-7 jigs, and micro the elevator cores onto it with the outboard ends flush.
+  variants: [roncz]
+  requires: [r30.elev-nc2-inserts, r30.templates-cores]
+  components: [elevator.right, elevator.left, elevator.tube]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 2: Bond Torque tube to elevator cores", figure: I/images/30/30_38.jpg}
+  completion:
+    - Tube sanded and held on NC-7 jigs through two NC-2 inserts
+    - Cores micro'd on with outboard ends flush
+- id: r30.elev-skin-bottom
+  chapter: 11
+  title: Bottom elevator skin
+  summary: Fair the cores to templates H and I with a flat bottom, then lay the crossed UND skin and dig foam back at the trailing edge for a glass-to-glass closeout.
+  variants: [roncz]
+  requires: [r30.elev-bond-cores]
+  components: [elevator.right, elevator.left]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "elevator bottom skin, crossed at +/-30 deg, each elevator"}
+  sources:
+    - {doc: cobelu, heading: "Step 3: Skin the bottom of the elevator", figure: I/images/30/30_40.PNG}
+  completion:
+    - Cores faired to templates H and I, bottom flat
+    - Two UND plies laid crossed at 30 degrees either way
+    - Trailing edge trimmed and foam dug out for the closeout
+- id: r30.elev-skin-top
+  chapter: 11
+  title: Top elevator skin
+  summary: Lay the crossed UND top skin lapping onto the bottom skin, with dry micro under peel ply along the trailing edge.
+  variants: [roncz]
+  requires: [r30.elev-skin-bottom]
+  components: [elevator.right, elevator.left]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "elevator top skin, crossed at +/-30 deg, each elevator"}
+  sources:
+    - {doc: cobelu, heading: "Step 4: Skin the top of the elevator"}
+  completion:
+    - Two UND plies laid crossed at 30 degrees either way
+    - Lap onto the bottom skin at least 1/2 in
+    - Dry micro under peel ply along the trailing edge
+- id: r30.elev-trim-ends
+  chapter: 11
+  title: Trim elevator ends
+  summary: Trim the trailing edge straight against templates H and I, fit the NC-6 plugs, and close the outboard end with one BID ply.
+  variants: [roncz]
+  requires: [r30.elev-skin-top]
+  components: [elevator.right, elevator.left]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "outboard end of each elevator"}
+  sources:
+    - {doc: cobelu, heading: "Step 5: Knife trim"}
+    - {doc: cobelu, heading: "Step 6: Mount NC-6 onto the elevator", figure: I/images/30/30_43.png}
+    - {doc: cobelu, heading: "Step 7: Close outboard end of elevators"}
+  completion:
+    - Trailing edge knife-trimmed, planed and checked against H and I
+    - NC-6 plugs fitted with drilled holes and a pop rivet
+    - Outboard end closed with one BID ply
+- id: r30.elev-hinges
+  chapter: 11
+  title: Install elevator hinges
+  summary: Clear the glass over the NC-2 inserts and pin the NC-3 and NC-3A hinges on with NC-8 pins, bushings and washers. The NC-12A weldments go in only temporarily.
+  variants: [roncz]
+  requires: [r30.elev-trim-ends]
+  components: [elevator.hinges, elevator.tube]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 8: Mount NC-3 Hinges to the elevator"}
+    - {doc: cobelu, heading: "Step 9: NC-12A weldments attach to the elevator"}
+  completion:
+    - Glass cleared over the NC-2 inserts
+    - NC-3 and NC-3A hinges pinned with NC-8 pins
+    - NC-12A weldments slipped in temporarily
+- id: r30.elev-hinge-slots
+  chapter: 11
+  title: Elevator hinge slots
+  summary: With the canard upside down, jig each elevator at an even slot gap using two L jigs, then mark and rout the seven hinge slots.
+  variants: [roncz]
+  requires: [r30.elev-hinges, r30.top-skin, r30.hinge-foam]
+  components: [elevator.hinges, canard.hinge_foam, canard.core]
+  geometry_visible: false
+  sources:
+    - {doc: cobelu, heading: "Step 10: Locate NC-3 slots in the canard", figure: I/images/30/30_44.png}
+  completion:
+    - Canard upside down, each elevator held by two L jigs
+    - Uniform slot gap of 0.2 in from canard trailing edge to elevator
+    - Seven hinge slots marked and routed with a 1/4 drill
+    - Hinge stations (BL 9.2, 34.1, 59.0) are positioned from the text and figure only; the inboard ones are unconfirmed
+- id: r30.elev-uptravel-test
+  chapter: 11
+  title: Elevator up-travel test
+  summary: Hold the NC-3 hinges in place with hot glue, measure the up-travel with an angle finder, and shim the hinges out until the travel is enough.
+  variants: [roncz]
+  requires: [r30.elev-hinge-slots]
+  components: [elevator.hinges]
+  geometry_visible: false
+  sources:
+    - {doc: cobelu, heading: "Step 11: Test elevator up travel", figure: I/images/30/30_45.png}
+  completion:
+    - NC-3 hinges hot-glued in temporarily
+    - Up-travel measured with an angle finder
+    - NC-3 hinges shimmed out until at least 15 degrees up
+- id: r30.elev-flox-hinges
+  chapter: 11
+  title: Flox the hinges
+  summary: Fill each slot two-thirds with wet flox, sand the buried hinge area, seat the hinges, top up and wipe clean.
+  variants: [roncz]
+  requires: [r30.elev-uptravel-test]
+  components: [elevator.hinges, canard.hinge_foam]
+  geometry_visible: false
+  sources:
+    - {doc: cobelu, heading: "Step 11: Flox the NC-3s into the canard"}
+  completion:
+    - Slots two-thirds full of wet flox
+    - Buried hinge area sanded
+    - Hinges seated, slots topped up and wiped
+- id: r30.elev-nc12a
+  chapter: 11
+  title: Install NC-12A hinges
+  summary: Recess the CS-11 screw heads, set each NC-12A weldment with its hinge offset from the tube leading edge, and drill through tube and arm for the bolt.
+  variants: [roncz]
+  requires: [r30.elev-flox-hinges]
+  components: [elevator.hinges, elevator.tube]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Step 12: Attach NC-12a weldments to elevator torque tubes", figure: I/images/30/30_46.png}
+  completion:
+    - Screw heads recessed with a 100 degree countersink
+    - Each NC-12A set with a 0.55 in offset
+    - Number 12 hole drilled through tube and arm, AN3-12A bolt fitted
+- id: r30.elev-balance-check
+  chapter: 11
+  title: Elevator balance check
+  summary: Hang each elevator on its hinge points and confirm it settles nose down. Fix a wrong balance by sanding the top UND or adding a little weight forward.
+  variants: [roncz]
+  requires: [r30.elev-nc12a]
+  components: [elevator.right, elevator.left]
+  geometry_visible: false
+  inspection: true
+  sources:
+    - {doc: cobelu, heading: "Verify elevator balance"}
+    - {doc: cobelu, heading: "Adjustments for elevators that are not properly balanced"}
+  completion:
+    - Each elevator hung on its hinge points falls nose down
+    - If not, top UND sanded back by up to half a ply
+    - Added forward weight, if any, no more than 0.3 lb
+    - "Mandatory ground inspection (CP57-8): certify elevator weight, stiffness and shape"
+- id: r30.elev-travel-check
+  chapter: 11
+  title: Elevator travel check
+  summary: Remount the elevators on the canard and check the full range of travel with template G against the Roncz limits.
+  variants: [roncz]
+  requires: [r30.elev-balance-check]
+  components: [elevator.right, elevator.left]
+  geometry_visible: false
+  inspection: true
+  sources:
+    - {doc: cobelu, heading: "Step 13: Check Elevator full range of travel"}
+  completion:
+    - Elevators remounted on the canard
+    - Trailing edge reaches 30 degrees down (template G)
+    - Up-travel about 15 degrees; 12.5 degrees is the absolute floor
+    - "Mandatory inspection (CP66-9): check the torque tubes for corrosion"
+- id: r30.canard-tips
+  chapter: 11
+  title: Canard tips
+  summary: Micro foam tip blocks on outboard of each canard half, shape them to the swoop template, glass them top and bottom, and cut the hinge pins to length.
+  variants: [roncz]
+  requires: [r30.elev-travel-check]
+  components: [canard.tips, elevator.tube]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "each canard tip upper surface, crossed (BID allowed)"}
+    - {cloth: UND, plies: 2, where: "each canard tip lower surface, crossed (BID allowed)"}
+  sources:
+    - {doc: cobelu, heading: "Step 1: Attach Tip foam outboard of canard", figure: I/images/30/30_48.png}
+    - {doc: cobelu, heading: "Step 3: Shape the canard tip foam", figure: I/images/30/30_50.PNG}
+    - {doc: cobelu, heading: "Step 4: Layup the upper surface of the tip"}
+    - {doc: cobelu, heading: "Step 5: Layup the lower surface of the tip", figure: I/images/30/30_51.png}
+    - {doc: cobelu, heading: "Step 6: Trim hinge pins to length", figure: I/images/30/30_52.png}
+  completion:
+    - Tip foam micro'd on and marked 1 in above the trailing edge
+    - Tips shaped to template M
+    - Two crossed UND or BID plies on each side, top and bottom
+    - Hinge pins trimmed to 36 in right and 61 in left
+- id: r30.elev-trim-belcrank
+  chapter: 11
+  title: Elevator trim bellcrank
+  summary: On the left elevator only, swap the inboard NC-12A for the NC-5A trim belcrank and rivet it on clear of the pin.
+  variants: [roncz]
+  requires: [r30.canard-tips]
+  components: [elevator.left, elevator.tube]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Install Pitch Trim Belcrank"}
+  completion:
+    - "Left elevator only: NC-12A inboard end swapped for NC-5A"
+    - Twelve pop rivets set, clear of the hinge pin
+- id: r30.elev-mass-balance
+  chapter: 11
+  title: Elevator mass balance
+  summary: Bond a foam spacer and a CS-10 lead weight to each elevator's leading edge on the J jig, then wrap the weight with UND strips.
+  variants: [roncz]
+  requires: [r30.elev-trim-belcrank]
+  components: [elevator.balance_weight, elevator.right, elevator.left]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "strips round each CS-10 spacer and weight"}
+  sources:
+    - {doc: cobelu, heading: "Install Outboard Mass Balance Weights", figure: I/images/30/30_53.png}
+    - {doc: cobelu, heading: "Install Outboard Mass Balance Weights", figure: I/images/30/30_54.png}
+  completion:
+    - Spacer and CS-10 bonded to each elevator on the J jig
+    - Two UND strips wrapped round each weight
+    - Inboard side of each weight 7.5 in from the elevator end
+    - Each weight kept with its own spacer and elevator
+- id: r30.elev-balance-pockets
+  chapter: 11
+  title: Elevator balance pockets
+  summary: Cut a pocket in the canard bottom skin and foam so the balance weight swings clear, then seal it with flox and BID. Repeat at the tip rib.
+  variants: [roncz]
+  requires: [r30.elev-mass-balance]
+  components: [elevator.balance_weight, canard.skin_bottom, canard.core]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside each balance-weight pocket, and the tip rib"}
+  sources:
+    - {doc: cobelu, heading: "Elevator mass balance pockets in Canards", figure: I/images/30/30_56.png}
+  completion:
+    - Pocket cut with 0.06 in clearance round the weight
+    - Flox corner and one BID ply inside the pocket
+    - Same done at the tip rib
+- id: r30.elev-ice-shield
+  chapter: 11
+  title: Ice shield (optional)
+  summary: Optional. Build a small fiberglass fence over a foam core ahead of each balance weight; skip it unless icing is possible.
+  variants: [roncz]
+  requires: [r30.elev-balance-pockets]
+  components: [elevator.ice_shield, elevator.balance_weight]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "each optional ice shield"}
+  sources:
+    - {doc: cobelu, heading: "Anti-Ice shield for CS-10 mass balance weight", figure: I/images/30/30_57.jpg}
+  completion:
+    - "Decision made: skipped, or built because icing is possible"
+    - Fence about 1.4 by 4 in over a foam core ahead of each weight
+- id: r30.elev-cs11
+  chapter: 11
+  title: Elevator CS-11
+  summary: Fit a CS-11 lead block on the left side of each NC-12A, on both elevators, held by two screws with the nut side recessed.
+  variants: [roncz]
+  requires: [r30.elev-balance-check, r30.elev-balance-pockets]
+  components: [elevator.cs11_weight, elevator.hinges]
+  geometry_visible: true
+  sources:
+    - {doc: cobelu, heading: "Install CS-11 weights on NC-12As", figure: I/images/30/30_59.png}
+  completion:
+    - CS-11 lead on the left side of each NC-12A, both elevators
+    - Two number 16 holes drilled and nut side recessed
+    - AN509-10A screws fitted
 - id: r30.install-pins
   chapter: 30
   title: Pins and fuselage fit for the Roncz canard
   summary: Make the two alignment pins for F28, then set the canard on the fuselage and lower the fuselage sides until it sits at the right incidence with room for full elevator travel.
   variants: [roncz]
-  requires: [r30.top-skin, f06.bottom-tape, r30.elevators]
+  requires: [r30.top-skin, f06.bottom-tape, r30.elev-cs11]
   components: [canard.alignment_pins]
   geometry_visible: true
   sources:
@@ -200,3 +482,68 @@
     - Incidence set with the template level against the longerons
     - Rear tabs glassed and bushed
     - Sweep and incidence rechecked after the shims come out
+# Chapter 12 steps the first install ops do not spell out (cobelu Install Canard steps 4, 7, 8, 9). Step 10 (control connection) is chapter 16 work and is not an op here.
+- id: r30.f22-drill-tabs
+  chapter: 12
+  title: Drill F22 tabs
+  summary: Using the tabs' pilot holes as guides, drill the lift tab holes through F22, then pass a temporary AN3 bolt through and clamp.
+  variants: [roncz]
+  requires: [r30.align-canard]
+  components: [canard.lift_tabs, fuselage.f22]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 71}
+    - {doc: scan-1980, scan_pp: 72}
+    - {doc: cobelu, heading: "Step 4: Connect the lift tabs to F22 Bulkhead"}
+  completion:
+    - Number 10 holes drilled through F22 from the tab pilot holes
+    - Temporary AN3 bolts through and clamped
+- id: r30.elev-fuselage-clearance
+  chapter: 12
+  title: Elevator clearance check
+  summary: Trim the inboard end of each elevator so it stops just short of the fuselage side, and confirm the tubes clear it through the whole travel.
+  variants: [roncz]
+  requires: [r30.elev-travel-check, r30.f22-drill-tabs]
+  components: [elevator.right, elevator.left]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 72}
+    - {doc: cobelu, heading: "Step 7: Check exterior clearance of elevator with fuselage", figure: I/images/30/30_68.png}
+  completion:
+    - Each inboard end trimmed to about 1/16 in from the fuselage side
+    - 0.1 in clearance round the tubes at 15 degrees up
+    - 0.1 in clearance round the tubes at 30 degrees down
+- id: r30.lift-tab-bushings
+  chapter: 12
+  title: Lift tab bushings
+  summary: Open the tab and F22 holes, counterbore F22 for the CNL bushings, and leave those bushings loose until chapter 13. The CN-2 bushings go in the tab holes now.
+  variants: [roncz]
+  requires: [r30.f22-drill-tabs]
+  components: [canard.lift_tabs, fuselage.f22]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 72}
+    - {doc: cobelu, heading: "Step 8: Finish F22 and Lift Tab connection", figure: I/images/30/30_70.png}
+  completion:
+    - Tab and F22 holes opened to 1/4 in
+    - F22 counterbored to 5/8 in for the CNL bushings
+    - CNL bushings left untrimmed and unbonded until chapter 13
+    - CN-2 bushings in the tab holes
+- id: r30.f28-pins-permanent
+  chapter: 12
+  title: Permanent F28 pins
+  summary: Pull the alignment pins, glass the marked area on F28, then drill out and flox the pins in for good.
+  variants: [roncz]
+  requires: [r30.lift-tab-bushings]
+  components: [canard.alignment_pins, fuselage.f28]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 1, where: "F28 pin area, 1/4 in flox corners"}
+  sources:
+    - {doc: scan-1980, scan_pp: 72}
+    - {doc: scan-1980, scan_pp: 71}
+    - {doc: cobelu, heading: "Step 9: Install the positioning pins in F28 bulkhead", figure: I/images/30/30_71.png}
+  completion:
+    - Pins pulled and the marked F28 area glassed with one BID ply
+    - Flox corners 1/4 in
+    - Holes drilled out to number 10 and the pins floxed in

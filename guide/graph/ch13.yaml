@@ -1,0 +1,346 @@
+# Chapter 13 — nose and nose gear (plans pp. 13-1 to 13-11; scan pages 73-83). Outlines on the A6/A7 sheets are not in hand, so shapes are representational.
+# The nose-wheel station is a conflict in the sources (see docs); no op states it as a single number.
+- id: f13.strut-reinforce
+  chapter: 13
+  title: Reinforce the NG-1L strut
+  summary: Round the edges of the NG-1L strut and wrap it in BID, three sides first and the fourth after cure. Trim the strut to fit its castings.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [gear.nose_strut]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "NG-1L strut, 45 deg, three sides full length"}
+    - {cloth: BID, plies: 1, where: "NG-1L strut, fourth side"}
+  sources:
+    - {doc: scan-1980, scan_pp: 73}
+  completion:
+    - Strut edges rounded
+    - One BID ply at 45 degrees on three sides, full length
+    - One BID ply on the fourth side after cure
+    - Strut trimmed to fit the castings
+- id: f13.worm-drive-bench
+  chapter: 13
+  title: Worm drive bench assembly
+  summary: Build or buy the worm drive and its brackets, plates and fork on the bench, and check it turns freely. The friction damper should let the wheel pivot under a modest side load.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [nose.worm_drive]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 73}
+    - {doc: scan-1980, scan_pp: 74}
+    - {doc: scan-1980, scan_pp: 75}
+    - {doc: scan-1980, scan_pp: 76}
+  changes:
+    - {cp: 30, lpc: 87, class: "?", status: verified, kind: official, note: "The NG17 part takes a wall thickness of 0.188 and spring wire of 0.083 in."}
+  completion:
+    - Worm drive, NG3 and NG4 brackets, NG8 plates, NG6 assembly and lower fork assembled
+    - Bench assembly turns without binding
+    - Wheel pivots at about 5 lb of side load
+    - NG17 wall and spring wire follow the Canard Pusher change (CP30 LPC 87)
+- id: f13.ng30-plates
+  chapter: 13
+  title: Fabricate NG30 plates
+  summary: Cut the two NG30 plates from thin PV foam, glass them inside and out, and build up pads at the bolt and pivot holes.
+  variants: [both]
+  requires: [f13.worm-drive-bench]
+  components: [nose.ng30_plates]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 4, where: "inside face of each NG30 plate"}
+    - {cloth: BID, plies: 4, where: "outside skin of each NG30 plate"}
+    - {cloth: BID, plies: 15, where: "each NG30 pad over a pivot or bolt hole"}
+  sources:
+    - {doc: scan-1980, scan_pp: 77}
+  completion:
+    - Two NG30 plates cut from 0.2 in PV foam
+    - Four BID plies inside each plate
+    - Five pilot holes drilled; foam stripped at pads and BID pads laid
+    - Four-ply outer skin laid; holes opened to 5/16 and 1/4
+- id: f13.ng-box-assemble
+  chapter: 13
+  title: Assemble the NG box
+  summary: Bolt the plates together over the NG6, NG23, NG7 and NG8 hardware with NG51 plates and NG14 spacers, then set the strut and NG5 in wet flox.
+  variants: [both]
+  requires: [f13.ng30-plates, f13.strut-reinforce]
+  components: [nose.ng30_plates, nose.ng_hardware, gear.nose_strut]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 73}
+    - {doc: scan-1980, scan_pp: 77}
+  completion:
+    - Plates 3.0 in apart inside, held by NG14 spacers
+    - Box checked square
+    - Strut and NG5 set on NG6 in wet flox, strut centred
+- id: f13.ng3-ng4
+  chapter: 13
+  title: Fit NG3 and NG4
+  summary: Fit NG3 snug with dry BID plies, re-lay it wet with flox and clamp it, then drill for the rod end and check the bolt spacing.
+  variants: [both]
+  requires: [f13.ng-box-assemble]
+  components: [nose.ng_hardware, nose.worm_drive]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 3, where: "dry wrap so NG3 fits snug (2 to 3)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 78}
+  completion:
+    - NG3 fitted snug with two or three dry BID plies
+    - Re-laid wet in flox and clamped
+    - Hole drilled 1/4 in for the rod end
+    - Bolt to NG7 centre 6.71 +/- 0.05 in
+- id: f13.ng31-f6
+  chapter: 13
+  title: Install NG31 and F6
+  summary: Glass the NG31 disc and flox it to the fronts of the NG30 plates, mount the assembly on F22, and tie the plates together with an F6 wrap.
+  variants: [both]
+  requires: [f13.ng3-ng4, r30.align-canard]
+  components: [nose.ng31, nose.ng30_plates, fuselage.f22]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "NG31 disc, one face"}
+    - {cloth: BID, plies: 2, where: "F6 wrap, 45 deg, 1 in overlap onto NG30"}
+  sources:
+    - {doc: scan-1980, scan_pp: 78}
+  changes:
+    - {cp: 25, lpc: 23, class: MEO, status: verified, kind: official, note: "The NG31 foam is 1/4 in red R100, not the dark blue R45 listed."}
+  completion:
+    - NG31 disc glassed with one BID ply on one face
+    - NG31 floxed to the NG30 fronts with tapes
+    - Assembly mounted on F22 with flox and BID tapes, nailed
+    - F6 across the plates, two BID plies at 45 degrees
+    - NG31 foam is the red R100, per CP25 LPC 23
+- id: f13.floor-blocks
+  chapter: 13
+  title: Carve floor blocks
+  summary: Carve the urethane floor blocks, dished on the inboard side, fit them level with the floor at F22, and glass them in with an extra ply aft.
+  variants: [both]
+  requires: [f13.ng31-f6]
+  components: [nose.floor_blocks]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "each floor block, 1 in lap up NG30 and NG31"}
+    - {cloth: BID, plies: 1, where: "extra ply on aft 3 in of the floor"}
+  sources:
+    - {doc: scan-1980, scan_pp: 79}
+  completion:
+    - Two 2 in urethane floor blocks carved and dished
+    - Fitted level with the floor at F22
+    - Two BID plies, 1 in lap onto NG30, NG31 and the floor
+    - Extra ply over the aft 3 in
+- id: f13.pedal-pivot-blocks
+  chapter: 13
+  title: Pedal pivot blocks
+  summary: "Drill through NG30 for the pivot bolt and make the pivot blocks: nutplates riveted to thin plates, set on dark-red foam blocks butted to F22."
+  variants: [both]
+  requires: [f13.floor-blocks]
+  components: [nose.pivot_blocks, nose.ng30_plates]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 79}
+    - {doc: scan-1980, scan_pp: 80}
+  completion:
+    - Number 10 hole drilled through NG30 for the pivot bolt
+    - Nutplates riveted on 0.063 plates, bonded to foam blocks
+    - Blocks 6.1 in from NG30, butted to F22
+- id: f13.side-pieces
+  chapter: 13
+  title: Side pieces
+  summary: Carve the urethane side blocks to fit, glass the inside and mount them in wet micro, then bury the pivot blocks under BID with the holes kept open.
+  variants: [both]
+  requires: [f13.pedal-pivot-blocks]
+  components: [nose.side_blocks, nose.pivot_blocks]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "inside of each side piece"}
+    - {cloth: BID, plies: 4, where: "over each rudder pedal pivot block"}
+  sources:
+    - {doc: scan-1980, scan_pp: 79}
+    - {doc: scan-1980, scan_pp: 80}
+  completion:
+    - Two 2 in urethane side blocks carved to fit
+    - Two BID plies inside each, mounted in wet micro
+    - Pivot blocks set in wet micro and covered with four BID plies
+    - Pedal holes kept open
+- id: f13.canard-attach-reinforce
+  chapter: 13
+  title: Canard attachment reinforcement
+  summary: Reinforce the top corners of F22 with BID, open the lift holes, and bond the CNL bushings and the AN970 washers.
+  variants: [both]
+  requires: [f13.side-pieces, r30.lift-tab-bushings]
+  components: [canard.lift_tabs, fuselage.f22]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 3, where: "F22 top corner over each canard lift hole"}
+    - {cloth: BID, plies: 1, where: "over the AN970 washer on F22"}
+  sources:
+    - {doc: scan-1980, scan_pp: 72}
+    - {doc: scan-1980, scan_pp: 80}
+  completion:
+    - Three BID plies in the F22 top corner
+    - Lift holes opened to 5/8 in after cure
+    - CNL bushings set in wet flox, flush both sides
+    - AN970 bonded to F22 under one BID ply
+- id: f13.rudder-pedals
+  chapter: 13
+  title: Rudder pedals
+  summary: Open the pivot holes and bolt on the left and right pedals with CS13 spacers, then add a light return spring on a small tab.
+  variants: [both]
+  requires: [f13.canard-attach-reinforce]
+  components: [nose.pedals]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 75}
+    - {doc: scan-1980, scan_pp: 80}
+  changes:
+    - {cp: 30, lpc: 86, class: MAN, status: verified, kind: official, note: "Before 10 flight hours, reinforce the top tab on each pedal weldment."}
+  completion:
+    - Pivot holes opened
+    - Left and right pedals bolted on with CS13 spacers clamped tight
+    - Light return spring on a small tab
+    - Top tab reinforced (CP30 LPC 86, mandatory within 10 flight hours)
+- id: f13.lower-gear
+  chapter: 13
+  title: Lower gear
+  summary: Trim the strut end to nest in the NG15A at the printed length, bond it in wet flox, and fit the forward door on four screws.
+  variants: [both]
+  requires: [f13.ng-box-assemble, f13.floor-blocks]
+  components: [gear.nose_strut, nose.ng_hardware]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 81}
+  completion:
+    - Strut end trimmed to nest in NG15A at the printed length
+    - Bonded wet with flox
+    - Forward door on four screws
+    - Nose-wheel station left as a flagged conflict until the A-sheet is held
+- id: f13.strut-slot-sc
+  chapter: 13
+  title: Strut slot cutout
+  summary: With the fuselage upside down, cut the bottom skin and foam aft of F22 so the strut retracts flush, then bond the SC strut cover.
+  variants: [both]
+  requires: [f13.lower-gear]
+  components: [nose.strut_cover, fuselage.bottom]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "SC strut cover, over bare foam aft"}
+  sources:
+    - {doc: scan-1980, scan_pp: 81}
+  completion:
+    - Skin and foam cut from F22 aft to the wheel cutout
+    - Strut retracts flush
+    - SC cover bonded, two BID plies over bare foam
+- id: f13.nb-box
+  chapter: 13
+  title: NB box
+  summary: Check tire clearance, bond the NB nose gear box with BID tape, fit a plexiglass window in the panel bulkhead and hang the aft door.
+  variants: [both]
+  requires: [f13.strut-slot-sc]
+  components: [nose.nb_box]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "NB nose gear box tape, inside"}
+  sources:
+    - {doc: scan-1980, scan_pp: 81}
+  completion:
+    - Tire clearance checked before bonding
+    - NB box bonded with one BID tape
+    - Plexiglass window in the panel bulkhead
+    - Aft door on three screws, aft edge rounded
+- id: f13.rig-nose-gear
+  chapter: 13
+  title: Rig the nose gear
+  summary: Crank the gear fully up, drill the universal and NG61, adjust the rod ends, and check the down position. The gear-down switch is chapter 22 work.
+  variants: [both]
+  requires: [f13.nb-box]
+  components: [gear.nose_strut, nose.worm_drive]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 81}
+  completion:
+    - Gear cranked to fully retracted
+    - Number 12 hole drilled in the universal and NG61
+    - Rod ends adjusted, then shortened one turn
+    - Down position checked
+- id: f13.pitot-static
+  chapter: 13
+  title: Install pitot-static system
+  summary: Run the 1/4 in aluminium pitot tube through F22 and NG31, and make the left-side static port from a pinched, potted tube.
+  variants: [both]
+  requires: [f13.side-pieces]
+  components: [nose.pitot, nose.static_port]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 82}
+  completion:
+    - Tubes 6 in and 38 in cut from 1/4 in 5052
+    - 1/4 in hole in NG31; long tube through F22 on centreline
+    - Static port in the left side, tube pinched and potted, three 1/16 in holes
+- id: f13.top-foam
+  chapter: 13
+  title: Add top foam
+  summary: Tack a 2 in green urethane top block to the sides and NG31 with dabs of adhesive, ready to carve.
+  variants: [both]
+  requires: [f13.pitot-static]
+  components: [nose.top_block]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 82}
+  completion:
+    - 2 in green urethane top block cut
+    - Temporarily bonded to sides and NG31 with dabs
+- id: f13.carve-glass-nose
+  chapter: 13
+  title: Carve glass nose
+  summary: With the gear retracted, carve the nose to shape and skin it in BID, with heavier plies round the canard cutout and a bumper flange.
+  variants: [both]
+  requires: [f13.top-foam, f13.nb-box]
+  components: [nose.skin]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "whole nose skin, 1 in lap onto SC, sides, bottom"}
+    - {cloth: BID, plies: 3, where: "bare foam round the canard cutout"}
+    - {cloth: BID, plies: 4, where: "bumper flange, 45 deg"}
+  sources:
+    - {doc: scan-1980, scan_pp: 82}
+    - {doc: scan-1980, scan_pp: 83}
+  completion:
+    - Nose carved with gear retracted; gaps filled at the strut front
+    - Two BID plies, 1 in lap
+    - Three BID plies and 1/4 in flox corners round the canard cutout
+    - Four-ply BID bumper flange at 45 degrees
+- id: f13.nose-door
+  chapter: 13
+  title: Construct nose door
+  summary: Lay up the nose door over release film, cut it free with a flange, and fit it on ten flush screws and nutplates.
+  variants: [both]
+  requires: [f13.carve-glass-nose]
+  components: [nose.door]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 4, where: "door"}
+    - {cloth: BID, plies: 1, where: "inside of top block, plus 2 locally on flanges"}
+    - {cloth: BID, plies: 1, where: "1 in strip over the cut edges"}
+  sources:
+    - {doc: scan-1980, scan_pp: 83}
+  completion:
+    - Four BID plies laid over release film
+    - 0.7 in flange marked and the top block cut off
+    - One BID ply inside, plus two locally
+    - Reflox with a 1 in BID strip; ten flush screws and nutplates
+- id: f13.shock-strut
+  chapter: 13
+  title: Shock strut (optional)
+  summary: Optional. For rough or grass fields, fit the spring assembly in place of the NG9 or NG10A rod; the Roncz text assumes it is fitted.
+  variants: [both]
+  requires: [f13.rig-nose-gear]
+  components: [gear.nose_strut]
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 73}
+    - {doc: scan-1980, scan_pp: 81}
+  changes:
+    - {cp: 25, lpc: 27, class: DES, status: verified, kind: official, note: "For rough fields, a spring assembly replaces the NG9 and NG10A rod."}
+  completion:
+    - "Decision made: rod, or spring assembly for rough fields"
+    - Spring assembly in place of NG9/NG10A (CP25 LPC 27)
