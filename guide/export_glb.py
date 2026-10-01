@@ -67,7 +67,21 @@ def canard_components() -> dict:
 def default_components() -> dict:
     from guide import fuselage_export
 
+    # elevator_components() joins here with the lab's chapter 11 work (M2.4 Task 5): the lab reads every canard.* / glb node as the
+    # canard subject today, so adding the nodes earlier breaks its canard-scope checks.
     return {**canard_components(), **fuselage_export.components()}
+
+
+def elevator_components() -> dict:
+    """The Roncz elevator parts (core.elevators_book), one glb component per graph id. Not part of the canard-only cutaway export."""
+    from core.elevators_book import build_elevators
+
+    p = {n: part.solid.val().copy() for n, part in build_elevators().items()}
+    out: dict = {"elevator.right": p["elevator_right"], "elevator.left": p["elevator_left"]}
+    for cid, key in (("elevator.tube", "elevator_tube"), ("elevator.hinges", "hinges"),
+                     ("elevator.balance_weight", "balance_weight"), ("elevator.cs11_weight", "cs11_weight")):
+        out[cid] = {f"{cid}.{side}": p[f"{key}_{side}"] for side in ("right", "left")}
+    return out
 
 
 def _canard_layup(graph) -> dict:
