@@ -505,3 +505,101 @@ Found and not used, or rejected:
 
 Rows of chapters 4 to 6 that stay out of the ply model, and why, live in `core/fuselage_plies.py` (`EXCLUDED`):
 no tape width on the ch. 6 bond tapes, undimensioned doubler, pad and strip extents, and the gear-pad outline.
+
+## Fuselage chapters 7–9 (Block 2 M2.3)
+
+Page numbers are plans-1980 scan pages (printed footers 7-1 = p45 through 9-4 = p53; p8 is 2-1; p171 is the back cover). The captain read every value on the page images, 200 dpi, with 400 dpi crops for p48, p49 and p171. Paraphrases are our own words, 10 words or fewer. Nothing here was measured off an undimensioned image.
+
+### Geometry table
+
+| value | citation | what the page says (≤10 words, own words) | status |
+|---|---|---|---|
+| fs_spar_aft_face 125.5 | plans-1980:p50 | spar aft face is the datum, B.L. 26.75 | book, high |
+| bl_gear_datum 26.75 | plans-1980:p50 | straight board sits on the spar aft face | book, high |
+| main_axle_fwd_of_spar 15.0 | plans-1980:p50 | axle line sits 15 in ahead of the board | book, high |
+| fs_main_axle 110.5 | plans-1980:p50 | figure 1A prints the axle station | derived (property), high |
+| wl_main_axle -22 | plans-1980:p171 | typeset axle height on the back cover | book, high |
+| fs_nose_wheel 17 | plans-1980:p171 | back cover prints the nose wheel station | conflict |
+| wl_nose_wheel -22 | cp-text:p25 LPC 24 | nose gear centre line height, corrected | cp-corrected, medium |
+| gear_tip_back_deg 12 | plans-1980:p171 | line drawn from the main tyre contact | book, high |
+| gear_toe_in_b_minus_a (0.2, 0.45) over 24 | plans-1980:p52 | toe-in as a difference between squares | book, high |
+| skin_third_ply_fs_range (60, 110) | plans-1980:p46 | third-ply strip labelled with its station span | derived, high |
+| skin_strip_width 3, lengths (52, 50, 48) | plans-1980:p46 | tapered three-ply strip | book, high |
+| skin_firewall_lap 0.5, skin_bottom_overlap 2 | plans-1980:p46 | skin laps onto firewall and at bottom centre | book, high |
+| skin_ply_angle_deg 30 | plans-1980:p46 | two plies crossed to the longerons | book, high |
+| belt_insert_fs_range (49.7, 54.7) | plans-1980:p46 | 5 in insert, dimensioned from the FS 22 edge | derived, medium |
+| rollover_width 23, base height 4 | plans-1980:p47 | front piece outline | book, high |
+| rollover_shoulder 7.3, peak_base 8.4, peak_height 12.6 | plans-1980:p47 | shoulders, peak flat and peak rise | book, high |
+| rollover_notch (0.7, 1.4) | plans-1980:p47 | corner notches | book, high |
+| rollover_side_length 13 | cp-text:p26 LPC 37 | sides lengthened from the printed 12.7 | cp-corrected, high |
+| rollover_side_ends (3, 4.5), back_triangle (8.1, 12.7), shoulder_top (6.9, 2.7) | plans-1980:p47 | side ends, triangle and small piece | book, high |
+| rollover_foam_thickness 0.35 | plans-1980:p47 | R45 PV foam | book, high |
+| rollover_insert (1.25, 1.25, 0.25) | plans-1980:p48 | three small plywood inserts | book, high |
+| rollover_harness_insert_spacing 4.0 | cp-text:p27 LPC 52 | spacing shortened from the printed 4.5 | cp-corrected, high |
+| rollover_harness_insert_from_end 1.25 | plans-1980:p47 | harness insert set in from the shoulder end | book, high |
+| rollover_canopy_insert_from_peak (1.5, 1.25) | plans-1980:p47 | canopy insert sits below the peak | book, high |
+| rollover_map_slot (1.8, 8.0) | plans-1980:p48 | map slot, right side only | book, high |
+| rollover_baggage_hole_dia 3.75 | plans-1980:p48 | rear access hole, 3 3/4 in | book, medium |
+| belt_front_fwd_of_front_seat_bkhd 5 | plans-1980:p49 | front belt ahead of the front seat bulkhead | book, medium (hand sketch) |
+| belt_rear_fwd_of_rear_seat_bkhd 8 | plans-1980:p49 | rear belt ahead of the rear seat bulkhead | book, medium (hand sketch) |
+| step_size (1.8, 4.5, 4.5), thickness 0.125, min bend radius 0.5 | plans-1980:p49 | bent aluminium step | book, high |
+| gear_jig_block (2, 1, 0.625, 0.7, 0.8, 0.25) | plans-1980:p53, plans-1980:p51 | plywood jig block: width, radius, hole, below hole, bevel, thickness | book, high |
+| gear_tube (0.625, 0.049, 6.75), showing 0.65 | plans-1980:p53, plans-1980:p50 | 4130N tube and its exposed length | book, high |
+| gear_tab_pads (2.5×12, 2.5×3.5, 2.5×2.5) | plans-1980:p53 | three pad sizes per tab | book, high |
+| gear_extrusion (0.25, 2, 2), 6061-T6 | plans-1980:p52 | aluminium extrusion section | book, high |
+
+No track, tread or gear-width value is in the config. The strut mold is not printed, so the track has no source, and the lateral tip-over check stays blocked.
+
+### Derived arithmetic
+
+- Main axle: 125.5 − 15 = 110.5. Figure 1A, the p171 back cover and the Owner's Manual (110.5 ±1) all agree. CP32 says hold the axle within 1/2 in.
+- Third-ply strip: the strip is 50 long and ends 15 forward of F.S. 125. 125 − 15 = 110, and 110 − 50 = 60. The page label reads F.S. 60 to 110.
+- Belt insert: the figure's left edge is F.S. 22. 22 + 27.7 = 49.7 and 22 + 32.7 = 54.7. The 32.7 read as reaching the insert's aft end is our reading, so it stays medium.
+- Roll-over front: 7.3 + 8.4 + 7.3 = 23, equal to the front seat bulkhead width.
+- Spar aft face 125.5 against fs_firewall 125: 0.5 aft. The p88 forward face at 118.5 would make the spar 7 in deep. No conflict.
+
+### Research corrections (captain page reads)
+
+- Baggage hole is 3 3/4 in diameter. The research read 3/4.
+- Nose-wheel W.L. note: the owner's hand note reads -22, not -23. It matches CP25 LPC 24. The printed typeset label is struck through, and the struck digit is unclear at 400 dpi (-23 or -25).
+- Rear belt sits 8 in forward of the rear seat bulkhead. The research said 8 in between.
+- The gear board datum is at B.L. 26.75. The research left the B.L. out.
+- p46: the third-ply strip is parallel to the longerons, ahead of the front seat bulkhead only.
+
+### Canard Pusher changes (17 entries)
+
+| issue | citation | change (own words) |
+|---|---|---|
+| CP25 | cp-text:p25 LPC 24 | nose gear centre line at W.L. -22 |
+| CP26 | cp-text:p26 LPC 34 | LMGA belongs to chapter 5 |
+| CP26 | cp-text:p26 LPC 35 | landing brake wording added on p9-1 |
+| CP26 | cp-text:p26 LPC 37 | roll-over sides 13, not 12.7 |
+| CP27 | cp-text:p27 LPC 45 (OPT) | extrusion 3/8 holes up 0.4 in |
+| CP27 | cp-text:p27 LPC 46 (OPT) | F28 longeron notch 0.25 in lower |
+| CP27 | cp-text:p27 LPC 50 | p7-1 section A-A inaccurate; use A2 |
+| CP27 | cp-text:p27 LPC 52 | spacing 4.5 becomes 4.0; insert moves outboard 1/2 in |
+| CP27 | cp-text:p27 builder hint | Weatherhead #2030X4 tube for the Nylaflow end |
+| CP30 | cp-text:p30 LPC 75 | axle bolt sketch; 1/16 in strut-to-caliper clearance mandatory |
+| CP30 | cp-text:p30 LPC 83 | AN960-1016, six total, not 1018 |
+| CP30 | cp-text:p30 LPC 80, 85 | A5 reference is p9-3 |
+| CP30 | cp-text:p30 builder hint | set toe-in against a tight centreline wire |
+| CP31 | cp-text:p31 LPC 89 | brake line runs round the inboard strut face |
+| CP32 | cp-text:p32 builder hint | axle within 1/2 in; toe-in 1/4 to 1/2 deg |
+| CP36 | cp-text:p36 LPC 112 | "Chapter 8" on p9-1 becomes Chapter 14 |
+| CP48 | cp-text:p48 LPC 127 / CP69 | inspect nylon brake lines, mandatory ground item |
+
+The captain re-read CP25 LPC 24, CP26 LPC 37, CP27 LPC 52 and CP30 LPC 83. The other rows come from the research and were not re-checked here.
+
+### Conflicts
+
+- Gear lump: the model's 84.5 arm and 45 lb weight are unsourced. The book gives main strut 22 lb at F.S. 110.5 and nose strut 2.8 lb. Wheels and brakes have no printed weight. Task 4 splits the row.
+- Spar aft face 125.5 against firewall 125: recorded, plausible, not a conflict.
+- Nose station: p171 prints 17, the Owner's Manual says about 20 (sample 19.6). Kept as a conflict.
+- Aft harness bolt: AN4-6A on p8-2, AN4-5A in the parts list.
+- p7-2 points to "chapter 17" for the landing brake. That is stale, because chapter 17 is pitch trim.
+- Gear strut plies: the p9-1 overview says 40°, the body says 30–40°.
+- The "22" in "22 lb" has a print overstrike on p9-1. The p8 parts list confirms 22 lb.
+
+### Not in the book
+
+Canard cutout outline (A3), extrusion placement (A5), strut mold, track, and wheel, brake and tyre weights. The roll-over tilt is "bevel as required" on p47.

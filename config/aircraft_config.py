@@ -172,6 +172,56 @@ class GeometricParams:
     bottom_trim_outboard: float = 0.7
     bottom_aft_trim: float = 0.25
 
+    # === EXTERIOR, ROLL-OVER AND MAIN GEAR (chapters 7-9, plans-1980:p46-p53, p171) ===
+    fs_spar_aft_face: float = 125.5  # book: p50 aft face of the center section spar
+    bl_gear_datum: float = 26.75  # book: p50 straight-board datum at the spar aft face
+    main_axle_fwd_of_spar: float = 15.0  # book: p50
+    wl_main_axle: float = -22.0  # book: p171
+    fs_nose_wheel: float = 17.0  # conflict: p171 prints 17, the Owner's Manual says about 20
+    wl_nose_wheel: float = -22.0  # cp-corrected: CP25 LPC 24
+    gear_tip_back_deg: float = 12.0  # book: p171 line from the main contact
+    gear_toe_in_b_minus_a: Tuple[float, float] = (0.2, 0.45)  # book: p52, over gear_toe_in_square_in
+    gear_toe_in_square_in: float = 24.0
+    # skins and belt insert
+    skin_third_ply_fs_range: Tuple[float, float] = (60.0, 110.0)  # derived: p46
+    skin_strip_width: float = 3.0
+    skin_strip_lengths: Tuple[float, float, float] = (52.0, 50.0, 48.0)
+    skin_firewall_lap: float = 0.5
+    skin_bottom_overlap: float = 2.0
+    skin_ply_angle_deg: float = 30.0
+    belt_insert_fs_range: Tuple[float, float] = (49.7, 54.7)  # derived: p46, medium
+    # roll-over box (p47, p48)
+    rollover_width: float = 23.0
+    rollover_base_height: float = 4.0
+    rollover_shoulder: float = 7.3
+    rollover_peak_base: float = 8.4
+    rollover_peak_height: float = 12.6
+    rollover_notch: Tuple[float, float] = (0.7, 1.4)
+    rollover_side_length: float = 13.0  # cp-corrected: CP26 LPC 37 (printed 12.7)
+    rollover_side_ends: Tuple[float, float] = (3.0, 4.5)
+    rollover_back_triangle: Tuple[float, float] = (8.1, 12.7)
+    rollover_shoulder_top: Tuple[float, float] = (6.9, 2.7)
+    rollover_foam_thickness: float = 0.35
+    rollover_insert: Tuple[float, float, float] = (1.25, 1.25, 0.25)
+    rollover_harness_insert_spacing: float = 4.0  # cp-corrected: CP27 LPC 52 (printed 4.5)
+    rollover_harness_insert_from_end: float = 1.25
+    rollover_canopy_insert_from_peak: Tuple[float, float] = (1.5, 1.25)
+    rollover_map_slot: Tuple[float, float] = (1.8, 8.0)  # right side only
+    rollover_baggage_hole_dia: float = 3.75
+    # belts and step (p49)
+    belt_front_fwd_of_front_seat_bkhd: float = 5.0  # hand sketch
+    belt_rear_fwd_of_rear_seat_bkhd: float = 8.0  # hand sketch
+    step_size: Tuple[float, float, float] = (1.8, 4.5, 4.5)
+    step_thickness: float = 0.125
+    step_min_bend_radius: float = 0.5
+    # gear jig and hardware (p50-p53)
+    gear_jig_block: Tuple[float, float, float, float, float, float] = (2.0, 1.0, 0.625, 0.7, 0.8, 0.25)
+    # (width, top radius, hole dia, below hole, bevel, thickness)
+    gear_tube: Tuple[float, float, float] = (0.625, 0.049, 6.75)  # (OD, wall, length), 4130N
+    gear_tube_showing: float = 0.65
+    gear_tab_pads: Tuple[Tuple[float, float], ...] = ((2.5, 12.0), (2.5, 3.5), (2.5, 2.5))
+    gear_extrusion: Tuple[float, float, float] = (0.25, 2.0, 2.0)  # 6061-T6
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -192,6 +242,11 @@ class GeometricParams:
     # === ERGONOMICS ===
     cockpit_width: float = 23.0  # F-22 interior width
     pilot_height_max: float = 77.0  # Max pilot height (inches)
+
+    @property
+    def fs_main_axle(self) -> float:
+        """Derived: spar aft face minus 15 in (p50). A property so it cannot drift."""
+        return self.fs_spar_aft_face - self.main_axle_fwd_of_spar
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -451,6 +506,65 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "trim outboard of the side marks"),
     "bottom_aft_trim": _p("book", "plans-1980:p42 bottom block", "high",
         "trim aft of the rear seat mark"),
+    "fs_spar_aft_face": _p("book", "plans-1980:p50 aft face of center section spar at B.L. 26.75, F.S. 125.5", "high",
+        "0.5 aft of fs_firewall 125 (p101); p88 forward face 118.5 implies a 7 in spar; no conflict"),
+    "bl_gear_datum": _p("book", "plans-1980:p50 straight-board datum at the spar aft face, B.L. 26.75", "high"),
+    "main_axle_fwd_of_spar": _p("book", "plans-1980:p50 axle centre line 15 in forward of the datum edge", "high"),
+    "fs_main_axle": _p("derived", "plans-1980:p50 figure 1A prints F.S. 110.5", "high",
+        "fs_spar_aft_face 125.5 minus 15; p171 back cover prints F.S. 110.5 too; Owner's Manual says 110.5 +/-1 (om-1980 p34 per research); property, cannot drift"),
+    "wl_main_axle": _p("book", "plans-1980:p171 main axle W.L. -22", "high"),
+    "fs_nose_wheel": _p("conflict", "plans-1980:p171 back cover prints nose wheel F.S. 17", "medium",
+        "Owner's Manual says about 20 (sample 19.6); conflict kept; nose gear is chapter 13"),
+    "wl_nose_wheel": _p("cp-corrected", "cp-text:p25 LPC 24 nose gear CL at W.L. -22 not -23", "medium",
+        "printed label struck through on p171, struck digit unclear at 400 dpi (-23 or -25); the owner's note and CP25 LPC 24 say -22"),
+    "gear_tip_back_deg": _p("book", "plans-1980:p171 12 deg line from the main contact", "high",
+        "ground-handling note only; CG height is unsourced so no tip-back verdict"),
+    "gear_toe_in_b_minus_a": _p("book", "plans-1980:p52 toe-in B minus A 0.2 to 0.45", "high",
+        "total over gear_toe_in_square_in"),
+    "gear_toe_in_square_in": _p("book", "plans-1980:p52 toe-in squares 24 in", "high"),
+    "skin_third_ply_fs_range": _p("derived", "plans-1980:p46 strip 50 long ending 15 forward of F.S. 125", "high",
+        "labelled F.S. 60 to 110; 125 - 15 = 110, 110 - 50 = 60"),
+    "skin_strip_width": _p("book", "plans-1980:p46 3 in wide strip", "high"),
+    "skin_strip_lengths": _p("book", "plans-1980:p46 strip lengths 52/50/48", "high"),
+    "skin_firewall_lap": _p("book", "plans-1980:p46 skin laps 1/2 in onto firewall", "high"),
+    "skin_bottom_overlap": _p("book", "plans-1980:p46 2 in overlap at bottom centre line", "high"),
+    "skin_ply_angle_deg": _p("book", "plans-1980:p46 two plies crossed at 30 deg", "high"),
+    "belt_insert_fs_range": _p("derived", "plans-1980:p46 insert 5 in long, 32.7 from the F.S. 22 edge", "medium",
+        "32.7 from the FS 22 edge read as reaching the insert's aft end: 22 + 27.7 = 49.7, 22 + 32.7 = 54.7; left side only"),
+    "rollover_width": _p("book", "plans-1980:p47 roll-over 23 wide", "high"),
+    "rollover_base_height": _p("book", "plans-1980:p47 roll-over 4 high at base", "high"),
+    "rollover_shoulder": _p("book", "plans-1980:p47 roll-over 7.3 each shoulder", "high"),
+    "rollover_peak_base": _p("book", "plans-1980:p47 roll-over 8.4 peak base", "high"),
+    "rollover_peak_height": _p("book", "plans-1980:p47 roll-over 12.6 peak height", "high"),
+    "rollover_notch": _p("book", "plans-1980:p47 roll-over 0.7 by 1.4 notches", "high"),
+    "rollover_side_ends": _p("book", "plans-1980:p47 roll-over side ends 3 and 4.5", "high"),
+    "rollover_back_triangle": _p("book", "plans-1980:p47 roll-over triangle 8.1 by 12.7", "high"),
+    "rollover_shoulder_top": _p("book", "plans-1980:p47 roll-over small piece 6.9 by 2.7", "high"),
+    "rollover_foam_thickness": _p("book", "plans-1980:p47 roll-over 0.35 foam", "high"),
+    "rollover_side_length": _p("cp-corrected", "cp-text:p26 LPC 37 roll-over sides 13", "high",
+        "printed 12.7 on p47; CP26 LPC 37 makes it 13"),
+    "rollover_insert": _p("book", "plans-1980:p48 inserts 1.25 by 1.25 by 1/4 ply", "high"),
+    "rollover_harness_insert_spacing": _p("cp-corrected", "cp-text:p27 LPC 52 harness insert spacing 4.0", "high",
+        "printed 4.5 on p47; CP27 LPC 52 makes it 4.0 and moves the insert outboard 1/2 in"),
+    "rollover_harness_insert_from_end": _p("book", "plans-1980:p47 harness insert 1.25 from the shoulder end", "high"),
+    "rollover_canopy_insert_from_peak": _p("book", "plans-1980:p47 canopy insert 1.5 and 1.25 below the peak", "high"),
+    "rollover_map_slot": _p("book", "plans-1980:p48 map slot 1.8 by 8, right side only", "high"),
+    "rollover_baggage_hole_dia": _p("book", "plans-1980:p48 rear access hole 3 3/4 dia", "medium",
+        "the research read 3/4; the page reads 3 3/4 at 400 dpi"),
+    "belt_front_fwd_of_front_seat_bkhd": _p("book", "plans-1980:p49 front belt 5 forward of front seat bulkhead", "medium",
+        "hand sketch, not to scale"),
+    "belt_rear_fwd_of_rear_seat_bkhd": _p("book", "plans-1980:p49 rear belt 8 forward of rear seat bulkhead", "medium",
+        "hand sketch, not to scale; the research said 8 between"),
+    "step_size": _p("book", "plans-1980:p49 step 1.8 by 4.5 by 4.5", "high"),
+    "step_thickness": _p("book", "plans-1980:p49 step 1/8 2024-T3", "high"),
+    "step_min_bend_radius": _p("book", "plans-1980:p49 step min bend radius 0.5", "high"),
+    "gear_jig_block": _p("book", "plans-1980:p53 jig block 1/4 ply, 1 in radius, 5/8 hole; p51 2 in wide", "high",
+        "(width 2, radius 1, hole 0.625, below hole 0.7, bevel 0.8, thickness 0.25)"),
+    "gear_tube": _p("book", "plans-1980:p53 4130N tube 5/8 OD, 0.049 wall, 6.75 long", "high"),
+    "gear_tube_showing": _p("book", "plans-1980:p50 about 0.65 of tube shows each side", "high",
+        "also p53"),
+    "gear_tab_pads": _p("book", "plans-1980:p53 pads 2.5 by 12, 2.5 by 3.5, 2.5 by 2.5", "high"),
+    "gear_extrusion": _p("book", "plans-1980:p52 extrusion 1/4 by 2 by 2, 6061-T6", "high"),
     "datum_offset_in": _p("book", "om-1980:p25 datum F.S. 0.0", "high", "published frame by definition (offset 0); was 45.5, fitted to NP; retired"),
 }
 
