@@ -41,9 +41,9 @@ def real(tmp_path_factory):
               for n, p in layup.items()]
     # A glb node is a component mesh only if it is a graph component and holds no ply children;
     # group nodes (canard.shear_web, ...) and the scene root (longez) are not meshes.
-    # The fuselage box (chapters 4-6) shares the glb; this viewer skips its nodes (guide/viewer/js/app.js), so this does too.
+    # The fuselage box and main gear (chapters 4-9) share the glb; this viewer skips their nodes (guide/viewer/js/app.js), so this does too.
     for n in names:
-        if n.startswith("fuselage."):
+        if n.startswith(("fuselage.", "gear.")):
             continue
         if n in graph["components"] and n not in layup and not any(k.startswith(n + ".") for k in layup):
             meshes.append({"name": n, "component": n, "ply": None})

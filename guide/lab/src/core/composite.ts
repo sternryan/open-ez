@@ -59,6 +59,7 @@ uniform vec2 uLay;       // x: unrolled fraction of the span (from the root), y:
 uniform float uWeb;      // 1 when the ply lies in the model Y-Z plane (shear web), 0 when it lies in X-Z (skins, caps), 2 in X-Y
 uniform vec2 uAng;       // cos, sin of the first tow direction, measured from the span axis in the ply's plane
 uniform vec4 uWv;        // x: weave period or foam cells per inch, y: relief in inches, z: UND stitch spacing (in), w: ply order in its op
+uniform float uDryTone;  // the dry cloth's brightness, 1 as it always was; the fuselage lowers it where a pose faces the cloth into the light
 vec3 h33(vec3 p) {
   p = fract(p * vec3(0.1031, 0.1030, 0.0973));
   p += dot(p, p.yxz + 33.33);
@@ -195,7 +196,7 @@ diffuseColor.rgb *= cmpShade;
 // wet resin: darker and less saturated (the cloth goes translucent), with epoxy's faint amber cast
 vec3 cmpWc = mix(vec3(dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11))), diffuseColor.rgb, 0.55) * vec3(0.8, 0.77, 0.66);
 diffuseColor.rgb = mix(diffuseColor.rgb, cmpWc, cmpWet);
-diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.89, 0.89, 0.86) * (0.5 + 0.5 * cmpShade), (1.0 - cmpWetK) * 0.94);
+diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.89, 0.89, 0.86) * uDryTone * (0.5 + 0.5 * cmpShade), (1.0 - cmpWetK) * 0.94);
 ` + GLSL_GHOST_COLOR
 
 // Behind the front the resin is glossy, and the leading edge, where the squeegee pushes resin ahead of it, is glossier still. Dry cloth has no gloss.
@@ -313,7 +314,7 @@ export function plyFrame(geo: THREE.BufferGeometry): PlyFrame {
 }
 
 /** Options the fuselage uses; the canard passes none, and gets exactly its old material. `hatchSoft` (0..1) thins the stripes on a large surface. */
-export interface CompositeOpts { axis?: THREE.Vector3; hatch?: boolean; hatchSoft?: number }
+export interface CompositeOpts { axis?: THREE.Vector3; hatch?: boolean; hatchSoft?: number; dryTone?: { value: number } }
 const hatchValue = (hatch?: boolean, soft = 0) => (hatch ? 1 + THREE.MathUtils.clamp(soft, 0, 1) : 0)
 
 export interface CompositeInfo { kind: MaterialSpec['kind']; angles: number[]; wet: number }
@@ -327,7 +328,7 @@ export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web:
   if (spec.kind === 'foam') {
     m = surf({
       ...common, name: 'foam', color: COLORS.foam, roughness: 0.86, capColor: COLORS.foamCap, capRoughness: 0.88, capMetalness: 0,
-      hooks: { ...HOOKS_FOAM, uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
+      hooks: { ...HOOKS_FOAM, uniforms: { uDryTone: opts.dryTone ?? { value: 1 }, uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uWeb: { value: 0 }, uAng: { value: new THREE.Vector2(1, 0) }, uWv: { value: new THREE.Vector4(6, 0.015, 1, 0) } } },
     })
   } else if (spec.kind === 'und' || spec.kind === 'bid') {
     const und = spec.kind === 'und'
@@ -340,7 +341,7 @@ export function compositeMaterial(spec: MaterialSpec, cut: CutState | null, web:
       clearcoat: 0.12, clearcoatRoughness: 0.45,
       hooks: {
         ...glassHooks(und ? 'COMP_UND' : 'COMP_BID'),
-        uniforms: { uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), und ? 0.009 : 0.013) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, spec.ply?.order ?? 0) } },
+        uniforms: { uDryTone: opts.dryTone ?? { value: 1 }, uWet: { value: 0 }, uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: hatch, uAxis: axis, uPly: { value: new THREE.Vector3(span.rootZ, 1 / Math.max(span.len, 1e-3), und ? 0.009 : 0.013) }, uLay: { value: new THREE.Vector2(1, 1) }, uWeb: { value: web }, uAng: { value: new THREE.Vector2(Math.cos(th), Math.sin(th)) }, uWv: { value: new THREE.Vector4(und ? 0.24 : 0.18, und ? 0.012 : 0.008, 1, spec.ply?.order ?? 0) } },
       },
     })
   } else {
@@ -389,10 +390,10 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
 }
 
 /** A matte non-composite part (no plies). Same ghost handling as the composites. */
-export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; hatchSoft?: number; name?: string } = {}): THREE.MeshStandardMaterial {
+export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; hatchSoft?: number; name?: string; metalness?: number; roughness?: number } = {}): THREE.MeshStandardMaterial {
   const color = opts.color ?? 0xe6dfcf // the canard passes nothing: its old pale part colour
   const m = surf({
-    name: opts.name ?? 'part', color, roughness: 0.85, metalness: 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: color,
+    name: opts.name ?? 'part', color, roughness: opts.roughness ?? 0.85, metalness: opts.metalness ?? 0, detail: 1.2, colorVar: 0.06, roughVar: 0.2, cut, capColor: color,
     hooks: { pars: GLSL_GHOST_PARS, surface: 'if (cutCap && uGhost > 0.5) discard;', color: GLSL_GHOST_COLOR, capColor: GLSL_FOLLOW, uniforms: { uGhost: { value: 0 }, uFollow: FOLLOW, uHatch: { value: hatchValue(opts.hatch, opts.hatchSoft) } } },
   })
   m.userData.hatch = !!opts.hatch

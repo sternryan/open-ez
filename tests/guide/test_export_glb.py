@@ -101,7 +101,7 @@ def test_cutaway_export_is_the_canard_alone(tmp_path):
     assert (d / "shots.json").read_text() == (tmp_path / "shots.json").read_text()
 
 
-# ---- fuselage box (chapters 4-6) in the lab export (Block 2 M2.2 Task 5) ----
+# ---- fuselage box and main gear (chapters 4-9) in the lab export (Block 2 M2.2 Task 5, M2.3 Task 5) ----
 import math  # noqa: E402
 import re  # noqa: E402
 
@@ -126,20 +126,27 @@ def test_fuselage_parts_and_plies_are_glb_nodes_nested_like_the_canard(fuse_expo
     names = [n["name"] for n in j["nodes"]]
     idx = {n: i for i, n in enumerate(names)}
     parent = _parents(j)
-    parts = fe._parts()  # the exported chapters' parts (fe.EXPORT_CHAPTERS)
+    parts = fe._parts()  # the exported chapters' parts (fe.EXPORT_CHAPTERS): the box, the carved band and the gear
+    assert set(fe.EXPORT_CHAPTERS) == {4, 5, 6, 7, 8, 9}
+    from core.fuselage_book import build_fuselage
+    from core.landing_gear_book import build_gear
+    assert set(build_fuselage()) | set(build_gear()) <= set(parts)  # every part of the model, none left out
     for part in parts:
-        assert f"fuselage.{part}" in idx, part  # one node per part
+        assert fe.node_of(part) in idx, part  # one node per part
+        assert fe.node_of(part).startswith("gear." if part in build_gear() else "fuselage."), part
     pl = fe._plies()
+    from core import fuselage_plies as fp
+    assert {p.node for p in pl} == {p.node for p in fp.plies()}  # every chapter 4-8 ply
     with_plies = {p.part for p in pl}
     for p in pl:
-        assert parent[idx[p.node]] == f"fuselage.{p.part}", p.node  # a child of its part's sub-assembly
+        assert parent[idx[p.node]] == fe.node_of(p.part), p.node  # a child of its part's sub-assembly
     for part in parts:
-        kids = [names[c] for c in j["nodes"][idx[f"fuselage.{part}"]].get("children", ())]
+        kids = [names[c] for c in j["nodes"][idx[fe.node_of(part)]].get("children", ())]
         if part in with_plies:
             assert sorted(k for k in kids if re.search(r"\.p\d+$", k)) == sorted(p.node for p in pl if p.part == part)
 
 
-def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fuse_export):
+def test_layup_json_fuselage_section_carries_every_ch4_9_ply_or_its_exclusion(fuse_export):
     from core import fuselage_plies as fp
 
     lj = json.loads((fuse_export.parent / "layup.json").read_text())
@@ -157,10 +164,11 @@ def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fu
         assert (n["op"], n["cloth"], n["orientation_deg"], n["fidelity"], n["lower_bound"], n["part"]) == (
             p.op, p.cloth, p.orientation_deg, p.fidelity, p.lower_bound, p.part)
         assert n["fs_min"] <= n["fs_max"]
-    # every chapter 4-6 material row is either laid (as many plies as it says, on every target) or excluded with its reason
+    # every chapter 4-9 material row is either laid (as many plies as it says, on every target) or excluded with its reason
     excluded = {(e["op"], e["where"]) for e in fz["excluded"]}
+    assert all(e["reason"] and e["parts"] for e in fz["excluded"])
     for op_id, op in g.ops.items():
-        if op.chapter not in (4, 5, 6):
+        if op.chapter not in fe.EXPORT_CHAPTERS:
             continue
         for m in op.materials:
             key = (op_id, m["where"])
@@ -168,6 +176,7 @@ def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fu
             if key in excluded:
                 assert not laid, key
             else:
+                assert key in fp.SCOPE, key  # chapter 9's rows are all excluded (no ply model for the gear)
                 assert len(laid) == int(m["plies"]) * len(fp.SCOPE[key].targets), key
     # within an op the lay order runs 1..n with no gaps, in the order the plies are laid
     for op_id in fz["ops"]:
@@ -177,7 +186,7 @@ def test_layup_json_fuselage_section_carries_every_ch4_6_ply_or_its_exclusion(fu
     assert set(fz["parts"]) == set(parts)
     for name, part in parts.items():
         e = fz["parts"][name]
-        assert e["node"] == f"fuselage.{name}" and e["fidelity"] == part.fidelity
+        assert e["node"] == fe.node_of(name) and e["fidelity"] == part.fidelity
         assert e["component"] in {c.id for c in g.components.values()}, name
         # a fitted shape is never labelled as book, and a book part never claims to be fitted
         assert ("fitted shape" in e["label"]) == (part.fidelity == "representational"), (name, e["label"])
@@ -209,3 +218,81 @@ def test_ledger_json_is_written_beside_layup_json_and_says_the_cg_is_not_compute
     assert lj == json.loads(json.dumps(fuselage_ledger_json()))
     assert lj["cg"]["arm_in"] is None and lj["cg"]["weight_lb"] == 0  # no part is fully sourced yet
 
+
+
+# ---- Block 2 M2.3 Task 5: chapters 7-9 in the lab export ----
+def test_rollover_ply_shells_cover_the_faces_the_ledger_measures():
+    from core import fuselage_book as fb
+    from guide import fuselage_export as fe
+
+    for kind in ("inside", "outside"):
+        area = sum(f.Area() for f in fe.rollover_glass_faces(kind))
+        assert area == pytest.approx(fb.rollover_face_area(kind)[0], rel=1e-9), kind
+
+
+def test_stages_carve_cut_and_hole_the_shapes_from_their_ops(fuse_export):
+    import cadquery as cq
+    from guide import fuselage_export as fe
+
+    fz = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"]
+    names = set(read_glb_node_names(fuse_export))
+    st = fz["stages"]
+    # the sides: carved, then cut; the bottom carved; the longerons and F22 cut; the roll-over holed after its outside glass
+    assert [x["from"] for x in st["fuselage.side_left"]] == [fe.CARVE_OP, fe.CUTOUT_OP]
+    assert [x["from"] for x in st["fuselage.bottom"]] == [fe.CARVE_OP]
+    for n in ("fuselage.top_longeron_left", "fuselage.top_longeron_right", "fuselage.f22"):
+        assert [x["from"] for x in st[n]] == [fe.CUTOUT_OP], n
+    assert [x["from"] for x in st["fuselage.rollover"]] == [fe.HOLES_OP]
+    for node, stages in st.items():
+        for x in stages:
+            assert x["node"] in names and x["node"].startswith(node + "~"), x
+    # F28 and its plies keep their shape: the opening stops at F28
+    assert not any(k.startswith("fuselage.f28") for k in st)
+    base, stg = fe._base_and_stages()
+    vol = lambda wp: sum(v.Volume() for v in wp.vals())  # noqa: E731
+    cut_side = dict((n, sh) for _op, n, sh in stg["fuselage.side_left"])["fuselage.side_left~cut"]
+    assert vol(cut_side) < vol(base["side_left"]) - 1.0  # the opening takes foam out
+    # nothing of a cut part or of a ply laid on it after the cut stays inside the opening (F22's forward plies go with its tab)
+    region = fe._cutout_region().val()
+    for node, sh in [(n, s) for v in stg.values() for _op, n, s in v if n.endswith("~cut")] + [
+        (p.node, fe.ply_shells()[p.node]) for p in fe._plies() if p.part in fe.CUT_PARTS and p.op.startswith(("f07.skin", "f08."))
+    ]:
+        inside = sum(cq.Workplane("XY").add(x).intersect(cq.Workplane("XY").add(region)).val().Volume() for x in sh.vals())
+        assert inside < 1e-6, node
+    # the roll-over shows filled before the access holes are cut, holed after (the part's own shape)
+    from core.fuselage_book import build_fuselage
+
+    assert vol(base["rollover"]) > vol(build_fuselage()["rollover"].solid) + 1.0
+
+
+def test_gear_parts_are_gear_nodes_with_their_fidelity_and_the_axle_marks_are_book(fuse_export):
+    from config import config
+    from core.landing_gear_book import bank_pose, build_gear
+    from guide import fuselage_export as fe
+    import numpy as np
+
+    fz = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"]
+    g = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    comps = {c.id for c in g.components.values()}
+    for name, part in build_gear().items():
+        e = fz["parts"][name]
+        assert e["node"] == f"gear.{name}" and e["component"] in comps and e["fidelity"] == part.fidelity
+        assert ("fitted shape" in e["label"]) == (part.fidelity == "representational")
+    # the strut, extrusions, tubes and axles are fitted shapes (striped in the lab); the datum board is derived from p50
+    for name in ("strut", "extrusions", "gear_tubes", "axles"):
+        assert fz["parts"][name]["fidelity"] == "representational", name
+    assert fz["parts"]["datum_board"]["fidelity"] == "derived"
+    assert fz["parts"]["carved_corners"]["fidelity"] == "representational"
+    assert fz["parts"]["canard_cutout"]["fidelity"] == "representational" and fz["parts"]["canard_cutout"]["void"] is True
+    G = config.geometry
+    gm = fz["gear_marks"]
+    assert gm["axle_fs"] == G.fs_spar_aft_face - 15 == 110.5 and gm["board_fs"] == 125.5 and gm["board_bl"] == 26.75
+    assert gm["axle_fwd_of_board_in"] == 15.0
+    # the bank sign: at the right skin the right side's AND the bottom's outward normals point up (core.landing_gear_book.bank_pose);
+    # 135 degrees is the captain's reading of p46's "45 degrees of left bank" (was 45; changed by the 135 decision)
+    assert fz["bank_deg"] == {"f07.skin-right": 135.0, "f07.skin-left": -135.0}
+    rot = bank_pose(fz["bank_deg"]["f07.skin-right"]).rotation
+    assert (rot @ np.array([0.0, 1.0, 0.0]))[2] > 0.7 and (rot @ np.array([0.0, 0.0, -1.0]))[2] > 0.7
+    # the track has no source: it appears nowhere in what the lab reads
+    txt = json.dumps(fz)
+    assert not re.search(r"track\D{0,20}\d", txt, re.I) and "84" not in json.dumps({k: v for k, v in fz.items() if k in ("gear_marks", "bank_deg")})

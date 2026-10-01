@@ -109,6 +109,8 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
 .lbl.dot { padding: 4px; gap: 0; }
 .lbl.dot span, .lbl.dot em { display: none; }
 .lbl.gone { visibility: hidden; }
+/* a measurement drawn in the scene (the gear positioning's 15 in and axle station): the marks' own cyan, bold */
+.lbl.mark { border-color: rgba(47, 196, 255, 0.6); color: #bfeeff; font-weight: 600; }
 
 /* ---- bottom bar: the build steps ---- */
 #opbar { position: fixed; left: var(--left); right: var(--right); bottom: var(--bottom); height: var(--bar); display: flex; align-items: center; gap: 4px; padding: 5px;
@@ -136,6 +138,11 @@ input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--
 #fuse-rows[data-open="false"] > #t-cg { flex: 1 1 auto; min-width: 0; }
 #fuse-rows[data-open="false"] > #t-legend { flex: none; border-left: 1px solid var(--line); }
 #fuse-rows[data-open="false"] #ro-cg-sub, #fuse-rows[data-open="false"] .legend .long, #fuse-rows[data-open="true"] .legend .short { display: none; }
+/* the ground-handling note opens with the CG's detail; closed, the dock stays one line */
+#fuse-rows[data-open="false"] > #t-ground { display: none; }
+#fuse-rows[data-open="true"] > #t-ground { flex-wrap: wrap; }
+#ro-ground { font-weight: 600 !important; font-size: 12px !important; color: var(--ink-soft); }
+#ro-ground-sub { flex-basis: 100%; font-size: 11px; line-height: 1.35; color: var(--ink-dim); }
 #fuse-rows[data-open="true"] #t-cg { padding-right: calc(var(--hit) + 4px); }
 #fuse-more { all: unset; box-sizing: border-box; position: absolute; top: 0; right: 0; width: var(--hit); height: min(100%, var(--hit)); display: grid; place-items: center; cursor: pointer; border-radius: 8px; }
 #fuse-more:hover { background: var(--hover); }

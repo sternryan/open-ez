@@ -7,7 +7,7 @@
   variants: [both]
   requires: [c03.layup-skills]
   components: [gear.strut]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: UND, plies: 8, where: "gear strut at 30-40 degrees, 4 each face"}
   sources:
@@ -26,7 +26,7 @@
   variants: [both]
   requires: [f05.gear-extrusions]
   components: [gear.jig_blocks, fuselage.gear_extrusions]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 50}
     - {doc: scan-1980, scan_pp: 53}
@@ -42,7 +42,7 @@
   variants: [both]
   requires: [f09.jig-blocks, f09.strut-stiffen]
   components: [gear.strut, gear.jig_blocks, gear.datum_board, fuselage.gear_extrusions]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 50}
     - {doc: scan-1980, scan_pp: 51}
@@ -63,7 +63,7 @@
   variants: [both]
   requires: [f09.position-gear]
   components: [gear.tabs]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: UND, plies: 18, where: "per attach tab, pad 2.5 x 12 in, 4 tabs"}
     - {cloth: BID, plies: 18, where: "per tab, 2.5 x 3.5 over the leading edge"}
@@ -83,7 +83,7 @@
   variants: [both]
   requires: [f09.tab-layup]
   components: [gear.tabs, fuselage.gear_extrusions]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 2, where: "45 degree wrap round each tube"}
     - {cloth: BID, plies: 2, where: "over each washer"}
@@ -104,7 +104,7 @@
   variants: [both]
   requires: [f09.tab-assembly]
   components: [gear.axles]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 3, where: "inside and outside of lower leg at the axle"}
   sources:
@@ -128,7 +128,7 @@
   variants: [both]
   requires: [f09.axles-brakes, f04.firewall-fwd]
   components: [gear.brake_lines]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 1, where: "45 degree tape over the brake line, 1 in lap"}
   sources:

@@ -188,10 +188,10 @@ test('the ch4-6 fuselage tour visits every op in order, a card at each chapter c
   assert.ok(!s.some((x) => 'drag' in x))
 })
 
-test('the fuselage Tour button: the selected ch4-6 op\'s chapter, else all of 4-6', async () => {
+test('the fuselage Tour button: the selected fuselage op\'s chapter, else all of chapters 4-9', async () => {
   const { fuselageTourChapters } = await import('../src/director')
   assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.a'), [5])
   assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f06.bond-panel'), [6])
-  assert.deepEqual(fuselageTourChapters(FG, 'roncz', null), [4, 5, 6])
-  assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.s'), [4, 5, 6]) // a stub has no stop
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', null), [4, 5, 6, 7, 8, 9])
+  assert.deepEqual(fuselageTourChapters(FG, 'roncz', 'f05.s'), [4, 5, 6, 7, 8, 9]) // a stub has no stop
 })

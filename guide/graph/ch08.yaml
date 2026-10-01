@@ -7,7 +7,7 @@
   variants: [both]
   requires: [f04.front-seat-bkhd-back]
   components: [fuselage.rollover, fuselage.front_seat_bkhd]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 47}
   changes:
@@ -22,8 +22,8 @@
   summary: Cut the three small plywood inserts, set them flush with the inside faces of the foam, and lay one BID ply over the inside. Cure, then trim the edges.
   variants: [both]
   requires: [f08.roll-over-foam]
-  components: [fuselage.rollover]
-  geometry_visible: false
+  components: [fuselage.rollover, fuselage.rollover_inserts]
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 1, where: "inside faces"}
   sources:
@@ -42,7 +42,7 @@
   variants: [both]
   requires: [f08.roll-over-inside, f07.skin-left]
   components: [fuselage.rollover, fuselage.front_seat_bkhd]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 48}
   completion:
@@ -56,7 +56,7 @@
   variants: [both]
   requires: [f08.roll-over-bond]
   components: [fuselage.rollover]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 2, where: "outside skin, 1 in overlap onto seat bulkhead and sides"}
     - {cloth: BID, plies: 2, where: "local reinforcement"}
@@ -76,7 +76,7 @@
   variants: [both]
   requires: [f08.roll-over-outside]
   components: [fuselage.access_holes]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 48}
   completion:
@@ -90,7 +90,7 @@
   variants: [both]
   requires: [f08.roll-over-outside]
   components: [fuselage.harness_attach, fuselage.rollover]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 2, where: "over the shoulder-harness pads"}
   sources:
@@ -106,7 +106,7 @@
   variants: [both]
   requires: [f07.belt-insert, f07.skin-left]
   components: [fuselage.belt_attach, fuselage.belt_insert]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: BID, plies: 7, where: "each of 4 belt-attach pads"}
   sources:
@@ -123,7 +123,7 @@
   variants: [both]
   requires: [f08.belt-attach]
   components: [fuselage.step]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 49}
   completion:

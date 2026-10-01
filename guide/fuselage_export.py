@@ -1,14 +1,25 @@
-"""The fuselage box (plans chapters 4-6) for the lab: part solids, ply shells and the layup.json section.
+"""The fuselage box and main gear (plans chapters 4-9) for the lab: part solids, ply shells and the layup.json section.
 
     core.fuselage_book.build_fuselage() ─► one glb node per part  (fuselage.<part>)
+    core.landing_gear_book.build_gear() ─► one glb node per part  (gear.<part>)
     core.fuselage_plies.plies()         ─► one child per ply      (fuselage.<part>.p<n>), a thin shell on the
                                            same faces the ply's area is measured on (region_of / region_faces)
-                                        ─► layup.json "fuselage" (ops, parts, nodes, excluded rows, plan bend)
+                                        ─► layup.json "fuselage" (ops, parts, nodes, stages, excluded rows, plan bend)
 
-Frame (as exported, inches): x = FS, y = B.L., z = W.L. - 17.4, the frame core.fuselage_book builds in.
+Frame (as exported, inches): x = FS, y = B.L., z = W.L. - 17.4, the frame core.fuselage_book builds in. The gear is
+exported upright (hanging under the box); the lab turns the whole box over for chapter 9.
+
 Ply thickness is VISUAL, not to scale (a cured BID ply is about 0.01 in); plies stack outward from their face in
 the order they are laid on it. Every part and ply carries the part's fidelity; a representational part's label
 says "fitted shape".
+
+Stages. A few chapter 7-8 ops change a shape that already exists: the corners are carved round (f07.carve-corners),
+the canard opening comes out of the sides, longerons and F22 (f07.canard-cutout, and out of every ply laid on them
+before it), and the roll-over gets its two access holes (f08.access-holes). The part's own node carries its shape
+before the op; the shape after it is a separate top-level node (`<node>~carved`, `~cut`, `~holes`), and
+layup.json "stages" says from which op the lab shows it instead. The carved corners themselves are a thin
+representational band over the rounded faces (`carved_corners`), so the fitted radius is striped while the sides'
+book faces are not.
 """
 from __future__ import annotations
 
@@ -16,6 +27,8 @@ from functools import lru_cache
 
 import cadquery as cq
 
+from config import config
+from core import fuselage_book as fb
 from core import fuselage_plies as fp
 from core.fuselage_book import (
     FusePart,
@@ -25,30 +38,117 @@ from core.fuselage_book import (
     plan_bend_points,
 )
 
-CHAPTERS = (4, 5, 6)
-EXPORT_CHAPTERS = CHAPTERS  # the lab shows chapters 4-6 only; the ch7-9 lab is the next task (ply regions of other types are skipped)
-# Parts the chapter 7-8 model added (core.fuselage_book); the lab does not export them yet.
-_LATER_PARTS = frozenset({"canard_cutout", "belt_insert", "rollover", "rollover_inserts", "belt_attach", "step"})
+G = config.geometry
+CHAPTERS = (4, 5, 6, 7, 8, 9)
+EXPORT_CHAPTERS = CHAPTERS  # the lab shows chapters 4-9; every chapter 4-8 ply is exported (chapter 9 has no ply model)
 BULKHEADS = ("front_seat_bkhd", "rear_seat_bkhd", "f22", "f28", "panel", "firewall")
 PLY_T = 0.06  # in, VISUAL: thick enough to read in the section cut; not the cured thickness
+CARVE_T = 0.05  # in, VISUAL: the carved-corner band's thickness over the rounded faces
 
-# The graph's component for a part (guide/graph/components.yaml). Both top longerons belong to one component.
-_COMPONENT = {"top_longeron_left": "fuselage.longerons", "top_longeron_right": "fuselage.longerons"}
+CARVE_OP, CUTOUT_OP, HOLES_OP = "f07.carve-corners", "f07.canard-cutout", "f08.access-holes"
+# the parts the canard opening cuts (core.fuselage_book._canard_cutout); F28 stays
+CUT_PARTS = ("side_left", "side_right", "top_longeron_left", "top_longeron_right", "f22")
+# Chapter 7 rolls the box: the right skin goes on at "45 degrees of left bank" (plans-1980:p46), the left skin at 45 of right bank.
+# Sign as core.landing_gear_book.bank_pose: positive degrees = left bank, the right side up. The book's words are "45 degrees of
+# left bank"; the captain's reading: the side AND the bottom being glassed both face up 45 degrees (the right skin covers the right
+# side and the bottom to 1 in past the centre line, and the glass falls off an overhanging face), so the box is rolled 135 degrees
+# from upright (45 degrees past on its side, resting on its top-left corner). Judgement call, flagged for the owner.
+BANK_DEG = {"f07.skin-right": 135.0, "f07.skin-left": -135.0}
+
+# The graph's component for a part (guide/graph/components.yaml). Both top longerons belong to one component; the carved
+# band is the box's own skin of foam, made in the carve op whose components are the sides and bottom.
+_COMPONENT = {
+    "top_longeron_left": "fuselage.longerons",
+    "top_longeron_right": "fuselage.longerons",
+    "carved_corners": "fuselage.bottom",
+    # gear (chapter 9, and the chapter 5 extrusions): components.yaml ids
+    "strut": "gear.strut",
+    "extrusions": "fuselage.gear_extrusions",
+    "gear_tubes": "fuselage.gear_extrusions",
+    "jig_blocks": "gear.jig_blocks",
+    "datum_board": "gear.datum_board",
+    "axles": "gear.axles",
+}
+GEAR_NAMES = {
+    "strut": "Main gear strut",
+    "extrusions": "Gear extrusions",
+    "gear_tubes": "Gear tubes",
+    "jig_blocks": "Gear jig blocks",
+    "datum_board": "Datum boards at the spar aft face",
+    "axles": "Axles",
+}
+_NAMES = {"carved_corners": "Carved corners"}
+# When the lab shows a part that is not simply "from its component's first op on": a window of ops (until is exclusive),
+# or one op only. Nothing selected (the finished box) shows a part only if it has no `until` and no `only`.
+SHOW = {
+    "canard_cutout": {"only": CUTOUT_OP},  # the material the opening removes, lifted out at its op
+    "carved_corners": {"from": CARVE_OP},
+    "gear_tubes": {"from": "f09.jig-blocks"},  # bolted between the angles with the jig blocks (p50, p53)
+    "jig_blocks": {"until": "f09.tab-layup"},  # a tool: Bondo'd for the leg's positioning, gone once the tabs are laid
+    "datum_board": {"until": "f09.tab-layup"},  # a tool: the straight edge the axle is measured from
+}
+# chapter 9's material rows: the strut and its tabs are not modelled as plies (the strut outline is not printed)
+_CH9_REASON = {
+    "f09.strut-stiffen": "the strut's outline is not printed (strut mold), so the 8 UND wrap has no measured face; the strut is a fitted shape",
+    "f09.tab-layup": "the tab pads sit on the fitted strut; the pads' sizes are printed but not where they land on it",
+    "f09.tab-assembly": "the wraps and washer plies go round the tubes and washers, which are not placed on a printed outline",
+    "f09.axles-brakes": "the lower leg's faces are fitted (strut mold not printed)",
+    "f09.brake-lines": "the brake line's path along the fitted strut is not measured",
+}
+
+
+@lru_cache(maxsize=1)
+def _gear() -> dict[str, FusePart]:
+    from core.landing_gear_book import build_gear  # lazy: the canard-only callers never build the gear
+
+    return build_gear()
+
+
+def is_gear(name: str) -> bool:
+    return name in _COMPONENT and _COMPONENT[name].startswith(("gear.", "fuselage.gear_"))
+
+
+def node_of(name: str) -> str:
+    """The glb node of a part: `gear.<part>` for the landing gear, `fuselage.<part>` for the box."""
+    return f"gear.{name}" if is_gear(name) else f"fuselage.{name}"
 
 
 def _plies() -> list[fp.FusePly]:
-    """The plies of the exported chapters (a chapter 4-6 ply's op id starts f04, f05 or f06)."""
+    """The plies of the exported chapters (a ply's op id starts with its chapter, f04 to f08)."""
     keep = tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS)
     return [p for p in fp.plies() if p.op.startswith(keep)]
 
 
+def _carved_band() -> FusePart:
+    """The rounded faces the carve leaves on the sides and the bottom (core.fuselage_book.carved_box), as a thin shell."""
+    solids = []
+    for part in fb.carved_box().values():
+        for f in part.solid.faces().vals():
+            n = f.normalAt()
+            if f.geomType() != "PLANE" and abs(n.y) > 0.3 and abs(n.z) > 0.3:  # a fillet: neither a side, top nor bottom face
+                solids.append(f.thicken(CARVE_T))
+    return FusePart(
+        "carved_corners", cq.Workplane("XY").add(cq.Compound.makeCompound(solids)), "representational",
+        note=f"the rounded faces of the carve (radius {fb.FITTED_CORNER_RADIUS} fitted, template A2 not held), drawn {CARVE_T} in thick",
+    )
+
+
+@lru_cache(maxsize=1)
+def _all_parts() -> tuple[tuple[str, FusePart], ...]:
+    parts = dict(build_fuselage())
+    parts["carved_corners"] = _carved_band()
+    parts.update(_gear())
+    return tuple(parts.items())
+
+
 def _parts() -> dict[str, FusePart]:
-    return {n: p for n, p in build_fuselage().items() if n not in _LATER_PARTS}
+    """Every exported part by name: the box (chapters 4-8, the canard opening's removed material included), the carved band, the gear."""
+    return dict(_all_parts())
 
 
 def part_label(name: str, part: FusePart) -> str:
     """The lab's label: the plain name (core.fuselage_book.PART_NAMES), plus " (fitted shape)" for a representational part."""
-    base = part_name(name)
+    base = GEAR_NAMES.get(name) or _NAMES.get(name) or part_name(name)
     return base + " (fitted shape)" if part.fidelity == "representational" else base
 
 
@@ -56,6 +156,7 @@ def component_of(name: str) -> str:
     return _COMPONENT.get(name, f"fuselage.{name}")
 
 
+# ---- shells ----------------------------------------------------------------------------------------
 def _stack_dir(part_name: str, face: cq.Face, rule: str) -> cq.Vector:
     """Which way plies stack off a face: its own normal when it is flat, else the region's rule direction."""
     if face.geomType() == "PLANE":
@@ -63,10 +164,10 @@ def _stack_dir(part_name: str, face: cq.Face, rule: str) -> cq.Vector:
     return cq.Vector(*fp.region_direction(part_name, rule))
 
 
-def _face_shell(part_name: str, face_name: str, stack: int) -> cq.Workplane:
+def _face_shell(part_name: str, region: fp.Face, stack: int) -> cq.Workplane:
     solids = []
-    for f in fp.region_faces(part_name, face_name):
-        n = _stack_dir(part_name, f, face_name)
+    for f in region.faces(part_name):  # a ClipFace gives its clipped faces: the shell covers exactly what is measured
+        n = _stack_dir(part_name, f, region.name)
         solids.append(f.translate(n * (PLY_T * (stack - 1))).thicken(PLY_T))
     return cq.Workplane("XY").add(cq.Compound.makeCompound(solids))
 
@@ -90,15 +191,112 @@ def _tape_shell(part_name: str, tape: fp.CornerTape, stack: int) -> cq.Workplane
     return cq.Workplane("XY").add(shell).intersect(band)
 
 
+def rollover_glass_faces(kind: str) -> list[cq.Face]:
+    """The roll-over's glass faces, the same selection core.fuselage_book._rollover_faces measures (a test checks the areas)."""
+    pc = fb.rollover_pieces()
+    zs = pc["z_shoulder"]
+    out: list[cq.Face] = []
+
+    def planar(shape):
+        return [f for f in shape.faces().vals() if f.geomType() == "PLANE" and f.Area() >= 1.0]
+
+    def dot(f, n):
+        nf = f.normalAt()
+        return nf.x * n[0] + nf.y * n[1] + nf.z * n[2]
+
+    if kind == "inside":
+        out += [f for f in planar(pc["plate"]) if f.normalAt().x > 0.999]
+    else:
+        above = pc["plate_full"].intersect(fb._box(0, 500, -50, 50, zs, zs + 100))
+        out += [f for f in planar(above) if f.normalAt().x < -0.999]
+    for t in pc["tops"]:
+        out += [f for f in planar(t) if (f.normalAt().z < -0.999 if kind == "inside" else f.normalAt().z > 0.999)]
+    for sgn, roof in zip((-1, 1), pc["roofs"]):
+        n = pc["roof_geom"][sgn]["n"]
+        out += [f for f in planar(roof) if (dot(f, n) < -0.999 if kind == "inside" else dot(f, n) > 0.999)]
+    nt = pc["tri_normal"]
+    out += [f for f in planar(pc["triangle"]) if (dot(f, nt) < -0.999 if kind == "inside" else dot(f, nt) > 0.999)]
+    return out
+
+
+def _rollover_shell(kind: str, stack: int) -> cq.Workplane:
+    """Plies on the roll-over's inside or outside faces, stacked off each face along its own outward normal (away from the foam)."""
+    solids = [f.translate(f.normalAt() * (PLY_T * (stack - 1))).thicken(PLY_T) for f in rollover_glass_faces(kind)]
+    return cq.Workplane("XY").add(cq.Compound.makeCompound(solids))
+
+
+def _pad_shell(part_name: str, pad: fp.PadMargin, stack: int) -> cq.Workplane:
+    """A pad of glass over each block's top, grown by the margin fore and aft and inboard (outboard it would run into the side)."""
+    m = pad.margin
+    boxes = []
+    for f in fp.region_faces(part_name, pad.face):
+        bb = f.BoundingBox()
+        y0, y1 = (bb.ymin - m, bb.ymax) if bb.ymax > 0 else (bb.ymin, bb.ymax + m)
+        z0 = bb.zmax + PLY_T * (stack - 1)
+        boxes.append(fb._box(bb.xmin - m, bb.xmax + m, y0, y1, z0, z0 + PLY_T).val())
+    return cq.Workplane("XY").add(cq.Compound.makeCompound(boxes))
+
+
+def _stack_key(p: fp.FusePly) -> str:
+    reg = fp.region_of(p)
+    if isinstance(reg, fp.Face):
+        return reg.name
+    if isinstance(reg, fp.RolloverFaces):
+        return f"rollover:{reg.kind}"
+    if isinstance(reg, fp.PadMargin):
+        return reg.face
+    return "upper"  # a corner tape lies over the bottom's glass
+
+
+def _ply_shell(p: fp.FusePly, k: int) -> cq.Workplane:
+    reg = fp.region_of(p)
+    if isinstance(reg, fp.Face):
+        return _face_shell(p.part, reg, k)
+    if isinstance(reg, fp.CornerTape):
+        return _tape_shell(p.part, reg, k)
+    if isinstance(reg, fp.RolloverFaces):
+        return _rollover_shell(reg.kind, k)
+    if isinstance(reg, fp.PadMargin):
+        return _pad_shell(p.part, reg, k)
+    raise TypeError(f"{p.node}: no shell for region {reg!r}")  # a new region type must get a shell or be excluded
+
+
+# ---- stages ----------------------------------------------------------------------------------------
+def _cutout_region() -> cq.Workplane:
+    """The canard opening's box (core.fuselage_book._canard_cutout), 1 in further forward so F22's forward plies go with its tab."""
+    x1 = G.fs_f28 + fb.FITTED_F28_THICKNESS + fb.FITTED_CUTOUT_AFT_OF_F28
+    return fb._box(G.fs_f22 - 1.0, x1, -20.0, 20.0, fb.z_of_wl(fb.CANARD_CUTOUT_FLOOR_WL), fb.Z_TOP + 1.0)
+
+
+def _cut(wp: cq.Workplane) -> cq.Workplane:
+    return cq.Workplane("XY").add(wp.cut(_cutout_region()).val())
+
+
+def _vol(wp: cq.Workplane) -> float:
+    return sum(s.Volume() for s in wp.vals())
+
+
+@lru_cache(maxsize=1)
+def _op_index() -> dict[str, int]:
+    from pathlib import Path
+
+    from guide.schema import load_graph, topo_order
+
+    return {op: i for i, op in enumerate(topo_order(load_graph(Path(__file__).parent / "graph")))}
+
+
 @lru_cache(maxsize=1)
 def _shells() -> tuple[tuple[str, cq.Workplane, int], ...]:
+    """(ply node, shell as laid, its stack position). A ply laid on a part after the canard opening is cut is cut with it."""
     out = []
     seen: dict[tuple[str, str], int] = {}
+    after_cut = _op_index()[CUTOUT_OP]
     for p in _plies():
-        reg = fp.region_of(p)
-        base = reg.name if isinstance(reg, fp.Face) else "upper"  # a corner tape lies over the bottom's glass
-        k = seen[(p.part, base)] = seen.get((p.part, base), 0) + 1
-        shell = _face_shell(p.part, reg.name, k) if isinstance(reg, fp.Face) else _tape_shell(p.part, reg, k)
+        key = (p.part, _stack_key(p))
+        k = seen[key] = seen.get(key, 0) + 1
+        shell = _ply_shell(p, k)
+        if p.part in CUT_PARTS and _op_index()[p.op] > after_cut:
+            shell = _cut(shell)
         out.append((p.node, shell, k))
     return tuple(out)
 
@@ -108,16 +306,54 @@ def ply_shells() -> dict[str, cq.Workplane]:
     return {node: shell for node, shell, _ in _shells()}
 
 
+@lru_cache(maxsize=1)
+def _base_and_stages() -> tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]]:
+    """(the shape each part node shows first, {node: ((op, stage node, shape), ...)} in graph order)."""
+    parts = _parts()
+    base = {name: part.solid for name, part in parts.items()}
+    stages: dict[str, list[tuple[str, str, cq.Workplane]]] = {}
+    carved = fb.carved_box()
+    for name, c in carved.items():
+        stages.setdefault(node_of(name), []).append((CARVE_OP, f"{node_of(name)}~carved", c.solid))
+    for name in CUT_PARTS:
+        last = stages.get(node_of(name), [(None, None, base[name])])[-1][2]
+        stages.setdefault(node_of(name), []).append((CUTOUT_OP, f"{node_of(name)}~cut", _cut(last)))
+    # the belt insert is cut into the carved bottom (f07.belt-insert follows the carve)
+    base["belt_insert"] = cq.Workplane("XY").add(parts["belt_insert"].solid.intersect(carved["bottom"].solid).val())
+    # the roll-over before its access holes (f08.access-holes cuts the map slot and the baggage hole after the outside glass)
+    pc = fb.rollover_pieces()
+    base["rollover"] = cq.Workplane("XY").add(parts["rollover"].solid.union(pc["slot_fill"]).union(pc["hole_fill"]).val())
+    stages[node_of("rollover")] = [(HOLES_OP, f"{node_of('rollover')}~holes", parts["rollover"].solid)]
+    # plies laid on a cut part before the opening is cut lose what the opening takes
+    after_cut = _op_index()[CUTOUT_OP]
+    for p in _plies():
+        if p.part not in CUT_PARTS or _op_index()[p.op] > after_cut:
+            continue
+        shell = ply_shells()[p.node]
+        cut = _cut(shell)
+        if _vol(shell) - _vol(cut) > 1e-6:
+            stages[p.node] = [(CUTOUT_OP, f"{p.node}~cut", cut)]
+    order = _op_index()
+    return base, {n: tuple(sorted(s, key=lambda t: order[t[0]])) for n, s in stages.items()}
+
+
 def components() -> dict:
-    """glb components: a part with plies is (solid, {ply node: shell}); a part without plies is its solid."""
+    """glb components: a part with plies is (solid, {ply node: shell}); a part without plies is its solid; each stage is its own node."""
     # Deep copies: the glTF export tessellates what it is given, and a triangulation left on the cached part solids changes their
     # bounding boxes (BoundingBox uses it) for anything that measures them later in the same process.
     shells = ply_shells()
+    base, stages = _base_and_stages()
     by_part: dict[str, dict] = {}
     for p in _plies():
         by_part.setdefault(p.part, {})[p.node] = shells[p.node].val().copy()
-    return {f"fuselage.{name}": ((part.solid.val().copy(), by_part[name]) if name in by_part else part.solid.val().copy())
-            for name, part in _parts().items()}
+    out: dict = {}
+    for name in _parts():
+        solid = base[name].val().copy()
+        out[node_of(name)] = (solid, by_part[name]) if name in by_part else solid
+    for st in stages.values():
+        for _op, node, shape in st:
+            out[node] = shape.val().copy()
+    return out
 
 
 def _xrange(wp: cq.Workplane) -> tuple[float, float]:
@@ -125,12 +361,23 @@ def _xrange(wp: cq.Workplane) -> tuple[float, float]:
     return bb.xmin, bb.xmax
 
 
+def _ch9_excluded() -> list[dict]:
+    from pathlib import Path
+
+    from guide.schema import load_graph
+
+    g = load_graph(Path(__file__).parent / "graph")
+    return [{"op": op_id, "where": m["where"], "reason": _CH9_REASON[op_id], "parts": ["strut"]}
+            for op_id, op in g.ops.items() if op.chapter == 9 for m in op.materials]
+
+
 def layup_section() -> dict:
-    """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-6 plies."""
+    """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
     pl = _plies()
     stack = {node: k for node, _, k in _shells()}
     shells = ply_shells()
+    base, stages = _base_and_stages()
     ops: list[str] = []
     lay: dict[str, int] = {}
     nodes = {}
@@ -147,19 +394,29 @@ def layup_section() -> dict:
         }
     part_rows = {}
     for name, part in parts.items():
-        x0, x1 = _xrange(part.solid)
+        x0, x1 = _xrange(base[name])
         fwd = None
         if name in BULKHEADS:  # the lab lays a bulkhead flat with its forward or aft face up
             n = fp.region_faces(name, "fwd")[0].normalAt()
             fwd = [round(n.x, 6), round(n.y, 6), round(n.z, 6)]
-        part_rows[name] = {
-            "node": f"fuselage.{name}", "component": component_of(name), "fidelity": part.fidelity,
+        row = {
+            "node": node_of(name), "component": component_of(name), "fidelity": part.fidelity,
             "label": part_label(name, part), "cite": list(part.cite), "fs_min": round(x0, 4), "fs_max": round(x1, 4),
             "fwd_normal": fwd,
         }
+        if part.void:
+            row["void"] = True
+        if name in SHOW:
+            row["show"] = dict(SHOW[name])
+        part_rows[name] = row
+    keep = tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS)
     excluded = [{"op": op, "where": where, "reason": reason, "parts": list(affected)}
-                for (op, where), (reason, affected) in fp.EXCLUDED.items()
-                if op.startswith(tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS))]
+                for (op, where), (reason, affected) in fp.EXCLUDED.items() if op.startswith(keep)]
+    gh = {
+        "axle_fs": G.fs_main_axle, "board_fs": G.fs_spar_aft_face, "board_bl": G.bl_gear_datum,
+        "axle_fwd_of_board_in": G.main_axle_fwd_of_spar, "axle_z": round(fb.z_of_wl(G.wl_main_axle), 4),
+        "cite": "plans-1980:p50 figure 1A (axle C.L. F.S. 110.5, 15 in forward of the board at the spar aft face); plans-1980:p171",
+    }
     return {
         "chapters": list(CHAPTERS),
         "frame": "inches as exported: x = FS, y = B.L., z = W.L. - 17.4",
@@ -168,6 +425,10 @@ def layup_section() -> dict:
         "ops": ops,
         "parts": part_rows,
         "nodes": nodes,
-        "excluded": excluded,
+        "stages": {n: [{"from": op, "node": node} for op, node, _ in st] for n, st in stages.items()},
+        "bank_deg": dict(BANK_DEG),
+        "bank_note": "positive = left bank, the right side up (core.landing_gear_book.bank_pose); plans-1980:p46",
+        "gear_marks": gh,
+        "excluded": excluded + _ch9_excluded(),
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

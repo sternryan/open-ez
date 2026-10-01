@@ -242,6 +242,14 @@ export function initUI(h: UIHandlers, store: Store) {
       $('ro-cg-sub').textContent = cg.sub ?? ''
       $('t-cg').title = cg.sub ? `${cg.value}. ${cg.sub}` : cg.value
     },
+    /** the ground-handling note (book axle station and tip-back line; the checks "not yet computed"); it shows with the CG's detail */
+    setGround(g: { value: string; sub: string } | null) {
+      $('t-ground').hidden = g === null
+      if (!g) return
+      $('ro-ground').textContent = g.value
+      $('ro-ground-sub').textContent = g.sub
+      $('t-ground').title = `${g.value}. ${g.sub}`
+    },
     setVariant(v: Variant) {
       for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))
     },

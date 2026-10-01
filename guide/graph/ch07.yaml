@@ -7,7 +7,7 @@
   variants: [both]
   requires: [f06.bottom-tape]
   components: [fuselage.side_left, fuselage.side_right, fuselage.bottom]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 45}
   completion:
@@ -21,7 +21,7 @@
   variants: [both]
   requires: [f06.bond-firewall, f06.f28-install]
   components: [fuselage.canard_cutout, fuselage.longerons, fuselage.f22]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 45}
   changes:
@@ -38,7 +38,7 @@
   variants: [both]
   requires: [f07.carve-corners]
   components: [fuselage.side_left, fuselage.firewall]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 46}
   completion:
@@ -53,7 +53,7 @@
   variants: [both]
   requires: [f06.bottom-foam-fit]
   components: [fuselage.belt_insert, fuselage.bottom]
-  geometry_visible: false
+  geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 46}
   completion:
@@ -67,7 +67,7 @@
   variants: [both]
   requires: [f07.carve-corners, f07.canard-cutout, f07.fuel-gauge-area, f07.belt-insert, f05.gear-extrusions]
   components: [fuselage.skin_right]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: UND, plies: 2, where: "crossed 30 degrees to the longerons, whole skin"}
     - {cloth: UND, plies: 1, where: "forward of the front seat bulkhead only, along the longerons"}
@@ -87,7 +87,7 @@
   variants: [both]
   requires: [f07.skin-right]
   components: [fuselage.skin_left]
-  geometry_visible: false
+  geometry_visible: true
   materials:
     - {cloth: UND, plies: 2, where: "crossed 30 degrees to the longerons, whole skin"}
     - {cloth: UND, plies: 1, where: "forward of the front seat bulkhead only, along the longerons"}

@@ -2,7 +2,7 @@
 // Changes: kept the sim-time step list and the cursor that really clicks controls (move/click/drag); dropped their tours, brand and end card, took the camera out (shots fly when an op chip is clicked), added named actions, an orbit step, our own title and end cards, a busy flag so the page can tell the cursor's clicks from a person's, and the pure chapterTour builder.
 import { tourSteps } from './logic/tour'
 import { barOps, visibleOps } from './logic/graph'
-import { fuseBarOps } from './logic/fuselage'
+import { fuseBarOps, FUSE_CHAPTERS } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import type { GraphLite } from './logic/graph'
 
@@ -294,17 +294,17 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly' }
+const FUSE_CHAPTER_NAME: Record<number, string> = { 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Exterior skins', 8: 'Roll-over and attachments', 9: 'Main landing gear' }
 const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72
 /** the section slider's first stop, so the drag starts away from the cut and sweeps across the box (the page's own default is FS 70) */
 const FUSE_SWEEP_FS = 110
 
-/** Which chapters the fuselage Tour button plays: the selected op's chapter when it is a chapter 4-6 op, else all of 4-6. */
+/** Which chapters the fuselage Tour button plays: the selected op's chapter when it is a fuselage op (chapters 4-9), else all of them. */
 export function fuselageTourChapters(graph: GraphLite, variant: string, selectedId: string | null): number[] {
   const cur = fuseBarOps(graph, variant).find((o) => o.id === selectedId)
-  return cur ? [cur.chapter] : [4, 5, 6]
+  return cur ? [cur.chapter] : [...FUSE_CHAPTERS].sort((a, b) => a - b)
 }
 
 /**

@@ -611,6 +611,7 @@ def _rollover_pieces() -> dict[str, Any]:
         cq.Workplane(cq.Plane(origin=tuple(g_r["A"] + 0.1 * g_r["n"]), xDir=tuple(g_r["xd"]), normal=tuple(g_r["n"])))
         .center(s0, c0).rect(sl, sh).extrude(-(T + 0.2))
     )
+    roof_r_unslotted = roof_r
     roof_r = roof_r.cut(slot)
     # canopy insert, right roof, flush with the inside face: its top edge 1.5 below the peak (measured along the slope)
     ci_from, ci_len = G.rollover_canopy_insert_from_peak
@@ -653,6 +654,7 @@ def _rollover_pieces() -> dict[str, Any]:
         cq.Workplane(cq.Plane(origin=tuple(centre + 1.0 * np.array(nrm)), xDir=(0, 1, 0), normal=nrm))
         .circle(G.rollover_baggage_hole_dia / 2).extrude(-(T + 2.0))
     )
+    tri_unholed = tri
     tri = tri.cut(hole)
     main = plate.union(tops[0]).union(tops[1]).union(roof_r).union(roof_l)
     ins_tops = [h for h in harness]
@@ -662,6 +664,9 @@ def _rollover_pieces() -> dict[str, Any]:
         "roofs": (roof_l, roof_r), "roof_geom": {1: g_r, -1: roofs[-1][0]}, "x_front": xf, "z_shoulder": zs,
         "slant": slant, "lean_deg": math.degrees(lean), "tri_origin": hc, "tri_up": up, "tri_normal": nrm,
         "plate_full": plate_full,
+        # the foam the two access holes remove (f08.access-holes cuts them after the outside glass): the lab shows the box
+        # before that op with these filled back in
+        "slot_fill": roof_r_unslotted.intersect(slot), "hole_fill": tri_unholed.intersect(hole),
     }
 
 

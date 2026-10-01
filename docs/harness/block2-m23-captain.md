@@ -166,3 +166,36 @@ p50 9-1, p51 9-2, p52 9-3, p53 9-4; p8 is 2-1; p171 is the back cover.
   exporter's own `EXPORT_CHAPTERS` scope (4–6 until Task 5), so they widen when the lab does.
 - Gate: linux 737 passed, 3 skipped, 9 xfailed; mac 142 + 5 passed; local_render 5 passed; lab 117/117,
   typecheck clean; viewer 50/50; guide.check OK. Crew: lab e2e 146 passed locally.
+
+## Task 5: chapters 7–9 in the lab
+- Crew: one **opus** implementer (foreground, about 48 min), then an opus fix pass, then a sonnet pass
+  for the skinning pose. Why opus: cross-stack (export, build_site, the TS scene, sim-time poses, the
+  cut, e2e on two engines) with a visual bar.
+- Built: export of every ch4–9 part and ply (`EXPORT_CHAPTERS` 4–9, gear nodes `gear.*`), shape stages
+  (carved corners, canard opening, access holes), the fuselage bar over chapters 4–9, poses on sim time
+  (skinning rolls, ch9 inversion onto a fitted gear table), the two datum boards with a "15 in"
+  dimension and "Axle C.L. F.S. 110.5 (book)", representational stripes on strut, extrusions, tubes,
+  axles, jig blocks, carved band and cut-out piece, 21 op shots, the readout's gear rows and a
+  ground-handling line (main axle F.S. 110.5 book; 12° tip-back line p171; tip-back and tip-over
+  "not yet computed"; no track anywhere, an e2e checks no number follows "track").
+- Captain's look at the first screenshots (scratchpad `t5/shots/`): the finished airplane's gear bow
+  passed through the bench; the dry ply blew out white at skin-right; 17 labels at home. Fix pass
+  (`t5/shots2/`): the finished airplane stands on its gear on the floor beside the bench with the nose
+  on a stand, representational wheels striped and labelled fitted (no tyre diameter is printed);
+  home labels down to 10. An e2e checks no gear mesh intersects the bench and the wheels sit on the
+  floor.
+- **Skinning pose, captain's decision.** The first build rolled the box 45° from upright, which leaves
+  the bottom half (part of each side's skin, p46) facing 45° down. p46 warns the glass falls off
+  overhanging faces, and its cartoon shows the closed side and bottom facing up with the open top
+  away. The lab now rolls the box 135° (right side and bottom both 45° up, resting on its top-left
+  corner) for the right skin, and −135° for the left; the UI keeps the book's words "45° left bank".
+  Unit and Python tests pin both normals ≥ 0.7 up. **Judgement call for the owner to confirm.**
+  (`t5/shots3/`: the bottom and right side face up on two cradle boards; reads as supported.)
+- Review Focus 7: `git diff 1828d49 -- tests/guide/test_lab_e2e.py` removes one line, the `_fuse_ops`
+  helper's chapter tuple (4–6 → 4–9), mirroring `FUSE_CHAPTERS` as `_bar_ops` did; no assertion line
+  removed. Canard frames vs HEAD (scratch worktree): home and top-skin with cut, max diff 0. The new
+  e2e tests failed on HEAD's build (10/10 runs) and pass here.
+- Still weak: the dry ply at skin-right is pale; the datum boards read as tall poles; the axles and step
+  are small in frame; harness and tab steps show no new geometry (none modelled).
+- Gate: linux 741 passed, 3 skipped, 9 xfailed; mac 156 + 5 passed; local_render 5 passed; lab 129/129,
+  typecheck clean; viewer 50/50; guide.check OK. Crew locally: full tests/guide 259 + lab e2e 160 passed.

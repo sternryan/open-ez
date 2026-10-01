@@ -269,3 +269,21 @@ def test_blocks_sit_on_the_tube_outboard_of_the_angles_with_bevels_outboard(part
             z_probe = bb.zmax - 0.3  # near the sharp edge (the round top is at -z after the 180 roll)
             # the bevel is cut from the outboard face: near the sharp edge only the inboard face has material
             assert b.isInside(Vector(in_x, b.Center().y, z_probe)) and not b.isInside(Vector(out_x, b.Center().y, z_probe))
+
+
+def test_the_135_degree_chapter_7_roll_puts_the_right_side_and_the_bottom_both_facing_up():
+    # captain's reading of p46 ("45 degrees of left bank"): the side and the bottom being glassed both face up 45 degrees
+    import re
+    from pathlib import Path
+
+    from guide.fuselage_export import BANK_DEG
+
+    rot = lg.bank_pose(135).rotation
+    assert (rot @ np.array([0.0, 1.0, 0.0]))[2] >= 0.7  # the right side's outward normal (B.L. > 0)
+    assert (rot @ np.array([0.0, 0.0, -1.0]))[2] >= 0.7  # the bottom's outward normal (down)
+    rot_l = lg.bank_pose(-135).rotation
+    assert (rot_l @ np.array([0.0, -1.0, 0.0]))[2] >= 0.7 and (rot_l @ np.array([0.0, 0.0, -1.0]))[2] >= 0.7
+    ts = (Path(__file__).resolve().parent.parent / "guide/lab/src/logic/fuselage.ts").read_text()
+    m = re.search(r"export const BANK_DEG[^=]*=\s*\{\s*'f07\.skin-right':\s*(-?[\d.]+),\s*'f07\.skin-left':\s*(-?[\d.]+)\s*\}", ts)
+    assert m, "BANK_DEG not found in fuselage.ts"
+    assert BANK_DEG == {"f07.skin-right": float(m.group(1)), "f07.skin-left": float(m.group(2))}
