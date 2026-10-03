@@ -142,11 +142,8 @@ def test_components_exist_and_are_only_the_agreed_set(g):
             used.add(c)
     assert used <= COMPONENTS and used == COMPONENTS
     assert COMPONENTS <= set(g.components)
-    assert {"spar.box", "spar.cap_top", "spar.cap_bottom"} == {
-        c for c in COMPONENTS if g.components[c].fidelity == "unvalidated"
-    }
-    for c in COMPONENTS - {"spar.box", "spar.cap_top", "spar.cap_bottom"}:
-        assert g.components[c].fidelity == "no-geometry"
+    # M2.5 geometry: every component has a representational (graph word: unvalidated) display solid
+    assert all(g.components[c].fidelity == "unvalidated" for c in COMPONENTS)
 
 
 def test_stubs_are_required_by_the_two_ops(g):

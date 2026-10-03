@@ -15,26 +15,27 @@ plywood firewall loose until after the fit; it does not supersede the scanned-pl
 insertion direction. The graph therefore records the distinction explicitly. No
 geometry provenance status changes as a result.
 
-## Unfinished geometry
+## Implemented geometry
 
-The first OE1 slice has representational (`unvalidated` in the graph) display solids for `spar.box`,
-`spar.cap_top`, and `spar.cap_bottom`; their exact implementation is
-`core/spar_book.py`. Every other component below remains `no-geometry`. Labels and
-fidelity remain authoritative in `guide/graph/components.yaml`; this table makes the
-remaining implementation boundary reviewable.
+Every M2.5 component now has representational display geometry (`unvalidated` in
+`guide/graph/components.yaml`), at its installed position in the fuselage frame (x = FS, y = BL,
+z = WL less the wing plane). Code: `core/spar_book.py` (spar, fittings, jig),
+`core/firewall_book.py` (stainless face, belcranks, master cylinders) and
+`core/controls_book.py` (consoles, tube, sticks, pushrod, conduits, trim). `guide/export_glb.py`
+writes them into the lab glb as nodes named by component id. Placements the book does not print are
+`FITTED_` constants with a `# fitted, not book` comment; none is tagged book or derived.
 
-| Components | OE1 representation | Source-limited boundary |
+| Components | What exists | Source-limited boundary |
 |---|---|---|
-| `spar.box` | Implemented swept volumetric box from published stations and sections | Cap-trough profiles from A11 stay unavailable. |
-| `spar.cap_top`, `spar.cap_bottom` | Implemented separate 12/9-ply display bands from the published schedules | Trough shape is not inferred from template-only outlines. |
-| `spar.bulkheads` | CS5--CS8 volumes from published sections | Not implemented yet. |
-| `spar.lwa`, `spar.spruce_blocks`, `spar.em12`, `spar.sh1` | Published-size fittings, blocks, angles and harness plates where placement is supported | Wing-attach bolt FS and unavailable attachment detail remain representational. |
-| `spar.jig` | Display-only jig from its published top-view and shelf dimensions | It is workshop/display geometry, excluded from default visualization exports. |
-| `fuselage.firewall_stainless` | Stainless face over the existing fitted plywood firewall | The A4 firewall outline is unavailable; no manufacturing claim. |
-| `firewall.belcrank`, `firewall.master_cylinders` | Clearly striped representational volumes | Bracket, height and master-cylinder stations are template-only. |
-| `controls.consoles`, `controls.sticks`, `controls.torque_tube`, `controls.pitch_pushrod` | Pivot-plane, bearing-hole and kinematic display geometry | Console outline, stick fore/aft placement, Roncz arm and pitch stops are unavailable or fitted. |
-| `controls.rudder_conduit` | Conduit path at its sourced WL | Pedal/cable routing beyond available stations remains representational. |
-| `trim.pitch_handle`, `trim.roll_trim` | Handle, spring and lever display geometry from available stations | Trim conflict stays visible; unavailable hardware placement is representational. |
+| `spar.box`, `spar.cap_top`, `spar.cap_bottom` | Swept box and 12/9 cap bands from the published planform and schedules | Cap-trough profiles from A11 stay unavailable. |
+| `spar.bulkheads` | CS5/CS8 end plates and CS6/CS7 at BL 27 | Which CS number takes which side is not read; CS6/CS7 section is a fitted inset. |
+| `spar.lwa` | 16 plates on the aft face at the BL 25.0 and 53.5 hard points, CP-corrected sizes | Kind-to-point assignment and stacking are a stand-in; attach bolt FS is unsourced (chapter 19). |
+| `spar.spruce_blocks`, `spar.em12`, `spar.sh1` | Blocks at BL 7.5 under and over the caps; four angles aft of the firewall stack; two plates on the spar top | EM12 and SH1 stations are fitted. |
+| `spar.jig` | Upright and shelf from the printed widths | Workshop only: its glb node carries `extras.workshop`, and no installed view shows it. |
+| `fuselage.firewall_stainless` | Face over the fitted plywood outline, 1 in torque-tube hole at BL 6.2 R, WL 12.3 | A4 outline unavailable; sheet thickness fitted; the plywood is not cut. |
+| `firewall.belcrank`, `firewall.master_cylinders` | Plates, bushings and upright cylinders aft of the stainless | Heights are tick-read, cylinder size and stations fitted. |
+| `controls.*` | Troughs, tube from the front pivot plane to the firewall, sticks in the FS 45.5 and 89.7 planes, pushrod, conduits at WL 8 | Console positions, grip, pitch stops and the Roncz arm are fitted or unavailable; stick pitch uses the Roncz travel only. |
+| `trim.pitch_handle`, `trim.roll_trim` | Handle ending at FS 49.5 (panel 40 + 9.5), pivot WL 8.6, springs at installed length | The p106 49.8 label stays a flagged 0.3 in disagreement; roll-trim stations are fitted. |
 
 Independent review corrected three initial defects: the bottom loft now retains
 BL ±9, the planform clips to the square outboard end, and full cap bands stop at
@@ -43,17 +44,15 @@ envelope, not physical foam; cap volumes must not be added to its volume for mas
 The upper WL 21.7 corner interpretation and fitted A11 trough placement remain
 unresolved, so all three solids are representational and ineligible for manufacturing.
 
-`core/spar_stock.py` additionally provides 16 unplaced rectangular LWA blanks
-(spar-only quantities 6/2/2/4/2) and four unplaced spruce blocks. Stock dimensions
-and corrected citations are retained independently of installed geometry. All
-blanks declare `stock-only` eligibility; `spar.lwa` and `spar.spruce_blocks` remain
-`no-geometry` in the installed graph until their transforms are implemented.
+`core/spar_stock.py` still provides the 16 unplaced LWA blanks (spar-only quantities
+6/2/2/4/2) and four spruce blocks; they stay `stock-only`. The installed plates and blocks in
+`core/spar_book.py` are separate display solids and are not stock.
 
 ## OE1 acceptance boundary
 
-Before any component leaves `no-geometry`, add a component-specific positive-volume
-test and a fidelity expectation. Assert stations, symmetry, cap schedule and control
-travel independently. Keep the prototype spar mass distinct from calculated material
+Each component left `no-geometry` with a positive-volume test and a fidelity expectation
+(`tests/test_m25_geometry.py`), which assert stations, symmetry and control travel against
+literal book numbers. Keep the prototype spar mass distinct from calculated material
 mass. These display solids are not STEP/STL candidates merely because a GLB can show
 them.
 
@@ -67,5 +66,5 @@ Viewer unit tests passed (50); the lab's normal test command passed (190), inclu
 25 deterministic recorder failure tests, and its type check passed.
 Independent review accepted the display/stock boundaries and recorder failure
 handling. This does not certify an actual recorded video, hardware fidelity,
-source-private overlap checks or manufacturing eligibility. Installed spar export,
-remaining M2.5 solids and visual release evidence remain unfinished.
+source-private overlap checks or manufacturing eligibility. Visual release evidence
+for the new solids is still outstanding.

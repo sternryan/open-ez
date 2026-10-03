@@ -13,6 +13,10 @@ import cadquery as cq
 
 GRAPH_DIR = Path(__file__).parent / "graph"
 
+# Workshop-only geometry: kept in the glb so the lab can show it in its jig scene, flagged `extras.workshop` on its node (GLTFLoader
+# puts a node's extras in userData) so the lab hides it by default and an installed-airframe view never shows it.
+WORKSHOP_COMPONENTS = frozenset({"spar.jig"})
+
 
 def export_components(components: dict, out: Path) -> Path:
     """Top-level keys are component ids. A dict value becomes a sub-assembly named by the component
@@ -36,7 +40,34 @@ def export_components(components: dict, out: Path) -> Path:
         else:
             assy.add(v, name=cid)
     assy.export(str(out), exportType="GLTF")
+    flag_workshop_nodes(out, WORKSHOP_COMPONENTS.intersection(components))
     return out
+
+
+def flag_workshop_nodes(path: Path, ids) -> None:
+    """Set extras {"workshop": true} on the glb nodes of the given component ids (the node and any child named under it)."""
+    ids = set(ids)
+    if not ids:
+        return
+    data = path.read_bytes()
+    chunk_len, chunk_type = struct.unpack_from("<II", data, 12)
+    if chunk_type != 0x4E4F534A:  # 'JSON'
+        raise ValueError(f"{path}: first chunk is not JSON")
+    doc = json.loads(data[20 : 20 + chunk_len])
+    for n in doc.get("nodes", []):
+        name = n.get("name", "")
+        if name in ids or any(name.startswith(i + ".") for i in ids):
+            n["extras"] = {**n.get("extras", {}), "workshop": True}
+    body = json.dumps(doc, separators=(",", ":")).encode()
+    body += b" " * (-len(body) % 4)
+    rest = data[20 + chunk_len :]
+    total = 12 + 8 + len(body) + len(rest)
+    path.write_bytes(
+        struct.pack("<4sII", b"glTF", 2, total)
+        + struct.pack("<II", len(body), chunk_type)
+        + body
+        + rest
+    )
 
 
 def read_glb_node_names(path: Path) -> list[str]:
@@ -68,14 +99,15 @@ def canard_components() -> dict:
 def default_components() -> dict:
     from guide import fuselage_export
 
-    # The lab sorts the glb's nodes into subjects by prefix: canard.* and elevator.* are the canard subject, fuselage.*, gear.* and nose.*
-    # the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
+    # The lab sorts the glb's nodes into subjects by prefix: canard.* and elevator.* are the canard subject; fuselage.*, gear.*, nose.*,
+    # spar.*, firewall.*, controls.* and trim.* the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
     # (canard_components) stays canard alone.
     return {
         **canard_components(),
         **elevator_components(),
         **fuselage_export.components(),
         **nose_components(),
+        **m25_components(),
     }
 
 
@@ -117,6 +149,28 @@ def nose_components() -> dict:
     out["gear.nose_strut"] = {
         f"gear.nose_strut.{n}": gear[n] for n in ("strut", "fork", "wheel")
     }
+    return out
+
+
+def m25_components() -> dict:
+    """The centre-section spar, firewall face and accessories, controls and trim (chapters 14-17), one glb component per graph id, all at
+    their installed positions in the fuselage frame. In default_components(); not in the canard-only cutaway export. spar.jig is
+    workshop geometry: it is in the glb flagged extras.workshop (see WORKSHOP_COMPONENTS), for the lab's jig scene."""
+    from core import controls_book, firewall_book, spar_book
+
+    out: dict = {}
+    for build, mapping in (
+        (spar_book.build_spar, spar_book.COMPONENT_PARTS),
+        (firewall_book.build_firewall, firewall_book.COMPONENT_PARTS),
+        (controls_book.build_controls, controls_book.COMPONENT_PARTS),
+    ):
+        parts = {n: p.solid.val().copy() for n, p in build().items()}
+        for cid, names in mapping.items():
+            out[cid] = (
+                parts[names[0]]
+                if len(names) == 1
+                else {f"{cid}.{n}": parts[n] for n in names}
+            )
     return out
 
 

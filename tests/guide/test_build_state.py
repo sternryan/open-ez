@@ -48,10 +48,21 @@ def real(tmp_path_factory):
     ]
     # A glb node is a component mesh only if it is a graph component and holds no ply children;
     # group nodes (canard.shear_web, ...) and the scene root (longez) are not meshes.
-    # The fuselage box, gear, nose (chapters 4-9, 13) and the elevators (chapter 11) share the glb; this viewer skips their nodes
+    # The fuselage box, gear, nose (chapters 4-9, 13), the elevators (chapter 11) and the spar, firewall, controls and trim (chapters 14-17) share the glb; this viewer skips their nodes
     # (guide/viewer/js/app.js), so this does too.
     for n in names:
-        if n.startswith(("fuselage.", "gear.", "nose.", "elevator.")):
+        if n.startswith(
+            (
+                "fuselage.",
+                "gear.",
+                "nose.",
+                "elevator.",
+                "spar.",
+                "firewall.",
+                "controls.",
+                "trim.",
+            )
+        ):
             continue
         if (
             n in graph["components"]

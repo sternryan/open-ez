@@ -431,7 +431,17 @@ def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_s
     from guide.export_glb import canard_components, default_components
 
     comps = default_components()
-    fam = ("canard.", "elevator.", "fuselage.", "gear.", "nose.")
+    fam = (
+        "canard.",
+        "elevator.",
+        "fuselage.",
+        "gear.",
+        "nose.",
+        "spar.",
+        "firewall.",
+        "controls.",
+        "trim.",
+    )
     assert all(k.startswith(fam) for k in comps), [
         k for k in comps if not k.startswith(fam)
     ]
@@ -600,3 +610,64 @@ def test_the_cove_is_the_elevator_leading_edge_less_the_slot_gap_over_the_elevat
         "cove" not in (d / "layup.json").read_text()
         and "elevator" not in (d / "layup.json").read_text()
     )
+
+
+# ---- M2.5: spar, firewall face, controls and trim in the lab export ----
+M25_IDS = {
+    "spar.box",
+    "spar.cap_top",
+    "spar.cap_bottom",
+    "spar.bulkheads",
+    "spar.lwa",
+    "spar.spruce_blocks",
+    "spar.em12",
+    "spar.sh1",
+    "spar.jig",
+    "fuselage.firewall_stainless",
+    "firewall.belcrank",
+    "firewall.master_cylinders",
+    "controls.consoles",
+    "controls.torque_tube",
+    "controls.sticks",
+    "controls.pitch_pushrod",
+    "controls.rudder_conduit",
+    "trim.pitch_handle",
+    "trim.roll_trim",
+}
+
+
+def test_m25_components_are_glb_nodes_named_by_component_id_with_part_children(
+    fuse_export,
+):
+    j = _glb_json(fuse_export)
+    names = {n["name"] for n in j["nodes"]}
+    assert M25_IDS <= names
+    parent = _parents(j)
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    for child, par in (
+        ("spar.bulkheads.end_bulkheads", "spar.bulkheads"),
+        ("spar.lwa.lwa4", "spar.lwa"),
+        ("controls.sticks.front_stick", "controls.sticks"),
+        ("trim.pitch_handle.pth", "trim.pitch_handle"),
+    ):
+        assert parent[idx[child]] == par
+    graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    assert M25_IDS <= set(graph.components)
+    assert all(graph.components[c].fidelity != "no-geometry" for c in M25_IDS)
+
+
+def test_the_spar_jig_is_flagged_workshop_and_nothing_else_is(fuse_export):
+    j = _glb_json(fuse_export)
+    flagged = {
+        n["name"] for n in j["nodes"] if n.get("extras", {}).get("workshop") is True
+    }
+    assert flagged == {"spar.jig"}
+
+
+def test_m25_installed_nodes_sit_in_the_airframe_frame(fuse_export):
+    j = _glb_json(fuse_export)
+    acc = j["accessors"]
+    mesh_of = {n["name"]: n["mesh"] for n in j["nodes"] if "mesh" in n}
+    pos = j["meshes"][mesh_of["spar.box"]]["primitives"][0]["attributes"]["POSITION"]
+    assert acc[pos]["min"][0] == pytest.approx(118.5, abs=1e-3)  # FS, inches
+    assert acc[pos]["max"][0] == pytest.approx(129.898, abs=1e-2)
