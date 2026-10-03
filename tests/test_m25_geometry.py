@@ -104,9 +104,9 @@ def test_every_new_component_has_parts_and_the_graph_agrees(comps):
 
     g = load_graph(REPO / "guide" / "graph")
     for cid in EXPECTED_COMPONENTS:
-        assert g.components[cid].fidelity == "unvalidated", (
-            cid
-        )  # representational in the graph's words
+        assert (
+            g.components[cid].fidelity == "unvalidated"
+        ), cid  # representational in the graph's words
 
 
 def test_every_solid_has_positive_volume_a_valid_fidelity_and_valid_cites(parts):
