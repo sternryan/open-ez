@@ -92,17 +92,15 @@ def test_native_polars_not_mock(native_polars: dict) -> None:
 def test_native_polars_has_19_points(native_polars: dict) -> None:
     """Native polars must have exactly 19 alpha points from -4 to 14 degrees."""
     points = native_polars.get("points", [])
-    assert len(points) == 19, (
-        f"Expected 19 polar points, got {len(points)}"
-    )
+    assert len(points) == 19, f"Expected 19 polar points, got {len(points)}"
 
     alphas = [p["alpha_deg"] for p in points]
-    assert min(alphas) == pytest.approx(-4.0, abs=0.1), (
-        f"Alpha min expected -4.0, got {min(alphas)}"
-    )
-    assert max(alphas) == pytest.approx(14.0, abs=0.1), (
-        f"Alpha max expected 14.0, got {max(alphas)}"
-    )
+    assert min(alphas) == pytest.approx(
+        -4.0, abs=0.1
+    ), f"Alpha min expected -4.0, got {min(alphas)}"
+    assert max(alphas) == pytest.approx(
+        14.0, abs=0.1
+    ), f"Alpha max expected 14.0, got {max(alphas)}"
 
     # Each point must have required aerodynamic keys
     required_keys = {"alpha_deg", "cl", "cd", "cm"}
@@ -137,9 +135,15 @@ def test_cross_validation_json_exists_and_valid(cross_validation: dict) -> None:
     # Each comparison entry must have the expected columns
     required_cols = {
         "alpha_deg",
-        "cl_native", "cl_surrogate", "cl_delta",
-        "cd_native", "cd_surrogate", "cd_delta",
-        "cm_native", "cm_surrogate", "cm_delta",
+        "cl_native",
+        "cl_surrogate",
+        "cl_delta",
+        "cd_native",
+        "cd_surrogate",
+        "cd_delta",
+        "cm_native",
+        "cm_surrogate",
+        "cm_delta",
     }
     for i, entry in enumerate(comparison):
         missing_cols = required_cols - entry.keys()
@@ -155,15 +159,13 @@ def test_cross_validation_json_exists_and_valid(cross_validation: dict) -> None:
     for metric in required_metrics:
         stat = summary[metric]
         missing_stats = required_stat_fields - stat.keys()
-        assert not missing_stats, (
-            f"summary[{metric}] missing fields: {missing_stats}"
-        )
+        assert not missing_stats, f"summary[{metric}] missing fields: {missing_stats}"
         # Stats must be finite numbers
         for field in required_stat_fields:
             val = stat[field]
-            assert isinstance(val, (int, float)), (
-                f"summary[{metric}][{field}] must be numeric, got {type(val)}"
-            )
+            assert isinstance(
+                val, (int, float)
+            ), f"summary[{metric}][{field}] must be numeric, got {type(val)}"
 
 
 # ---------------------------------------------------------------------------
@@ -187,9 +189,9 @@ def test_cross_validation_alpha_arrays_match(
     )
 
     for i, (nat, cv) in enumerate(zip(native_alphas, cv_alphas)):
-        assert nat == pytest.approx(cv, abs=0.01), (
-            f"Alpha mismatch at index {i}: native={nat}, cross-val={cv}"
-        )
+        assert nat == pytest.approx(
+            cv, abs=0.01
+        ), f"Alpha mismatch at index {i}: native={nat}, cross-val={cv}"
 
 
 # ---------------------------------------------------------------------------

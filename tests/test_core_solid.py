@@ -13,4 +13,6 @@ def test_canard_core_has_volume_and_thickness():
     assert solid.Volume() > 100.0  # cubic inches; it was 0.0 before the fix
     assert abs(bb.ylen - gen.span / 2) < 1.0
     assert abs(bb.zlen - root_thickness) < 0.15 * root_thickness
-    assert bb.zmax > abs(bb.zmin)  # upper surface is +Z (a -90 deg rotation would flip it)
+    assert bb.zmax > abs(
+        bb.zmin
+    )  # upper surface is +Z (a -90 deg rotation would flip it)

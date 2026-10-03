@@ -1,4 +1,5 @@
 """Propose plans-change links per operation and score recall against the prior owner's annotations."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -31,17 +32,25 @@ def op_pages(op: Operation, g: Graph) -> set[str]:
     return out
 
 
-def candidates(g: Graph, lpcs: list[PlansChange], markers: list[Marker]) -> list[Candidate]:
+def candidates(
+    g: Graph, lpcs: list[PlansChange], markers: list[Marker]
+) -> list[Candidate]:
     out: list[Candidate] = []
     for op in g.ops.values():
         if op.stub:
             continue
         pages = op_pages(op, g)
         heads = {_norm(s.heading) for s in op.sources if s.heading}
-        out += [Candidate(op.id, c.cp, c.lpc, c.cls, "lpc") for c in lpcs
-                if c.chapter == op.chapter and c.page in pages]
-        out += [Candidate(op.id, m.cp, m.lpc, m.cls, "marker") for m in markers
-                if m.chapter == op.chapter and _norm(m.heading) in heads]
+        out += [
+            Candidate(op.id, c.cp, c.lpc, c.cls, "lpc")
+            for c in lpcs
+            if c.chapter == op.chapter and c.page in pages
+        ]
+        out += [
+            Candidate(op.id, m.cp, m.lpc, m.cls, "marker")
+            for m in markers
+            if m.chapter == op.chapter and _norm(m.heading) in heads
+        ]
     return out
 
 
@@ -51,9 +60,15 @@ def _chapter(page: str | None) -> int | None:
     return None
 
 
-def recall(g: Graph, cands: list[Candidate], chapters: set[int]) -> tuple[list[Annotation], list[Annotation]]:
+def recall(
+    g: Graph, cands: list[Candidate], chapters: set[int]
+) -> tuple[list[Annotation], list[Annotation]]:
     found = {(c.cp, c.lpc) for c in cands}
-    scoped = [a for a in g.annotations if a.confirmed and _chapter(g.pages.get(a.scan_pp)) in chapters]
+    scoped = [
+        a
+        for a in g.annotations
+        if a.confirmed and _chapter(g.pages.get(a.scan_pp)) in chapters
+    ]
     hits = [a for a in scoped if (a.cp, a.lpc) in found]
     misses = [a for a in scoped if (a.cp, a.lpc) not in found]
     return hits, misses

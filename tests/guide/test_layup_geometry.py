@@ -1,5 +1,6 @@
 # tests/guide/test_layup_geometry.py
 """Ply solids: valid, exact BL extents, stacked outward, and no overlap with the foam."""
+
 from pathlib import Path
 
 import pytest
@@ -19,7 +20,9 @@ def built():
 
 
 def ply_solids(built):
-    return {n: s for cid, v in built.items() if isinstance(v, dict) for n, s in v.items()}
+    return {
+        n: s for cid, v in built.items() if isinstance(v, dict) for n, s in v.items()
+    }
 
 
 def test_every_ply_is_a_valid_solid(built):
@@ -40,8 +43,12 @@ def test_bl_extents_are_exact(built):
 def test_skin_plies_stack_outward(built):
     top = [built["canard.skin_top"][f"canard.skin_top.p{i}"] for i in range(1, 5)]
     bot = [built["canard.skin_bottom"][f"canard.skin_bottom.p{i}"] for i in range(1, 4)]
-    assert [s.BoundingBox().zmax for s in top] == sorted(s.BoundingBox().zmax for s in top)
-    assert [s.BoundingBox().zmin for s in bot] == sorted((s.BoundingBox().zmin for s in bot), reverse=True)
+    assert [s.BoundingBox().zmax for s in top] == sorted(
+        s.BoundingBox().zmax for s in top
+    )
+    assert [s.BoundingBox().zmin for s in bot] == sorted(
+        (s.BoundingBox().zmin for s in bot), reverse=True
+    )
     for a, b in zip(top, top[1:]):
         assert a.intersect(b).Volume() < 1e-4
 
@@ -83,7 +90,9 @@ def test_foam_volume_is_core_minus_cutters(built):
     pf = Planform.from_generator(CanardGenerator())
     base = _loft(lambda bl: pf.outline(bl)[:-1], 0.0, pf.semi_span)
     assert abs(vol(base) - vol(core)) < 0.01 * vol(core)
-    removed = sum(vol(base.intersect(s)) for cid in CUTTERS for s in built[cid].values())
+    removed = sum(
+        vol(base.intersect(s)) for cid in CUTTERS for s in built[cid].values()
+    )
     assert vol(foam) <= vol(core) * 1.01
     assert abs(vol(foam) - (vol(base) - removed)) < 0.01 * vol(core)
 
@@ -109,11 +118,24 @@ def test_cavity_cutters_overshoot_the_surface():  # coplanar tool faces broke th
     pf = Planform.from_generator(CanardGenerator())
     for p in layup.plies(G):
         if p.component == "canard.shear_web":
-            plain, pad = _web_ply(pf, p).BoundingBox(), _web_ply(pf, p, CUT_PAD).BoundingBox()
-            assert pad.zmax > plain.zmax + CUT_PAD / 2 and pad.zmin < plain.zmin - CUT_PAD / 2, p.node
+            plain, pad = (
+                _web_ply(pf, p).BoundingBox(),
+                _web_ply(pf, p, CUT_PAD).BoundingBox(),
+            )
+            assert (
+                pad.zmax > plain.zmax + CUT_PAD / 2
+                and pad.zmin < plain.zmin - CUT_PAD / 2
+            ), p.node
         elif p.op in layup.SPAR_CAP_OPS:
-            plain, pad = _spar_cap(pf, p).BoundingBox(), _spar_cap(pf, p, CUT_PAD).BoundingBox()
-            out = pad.zmax - plain.zmax if p.component == "canard.spar_cap_top" else plain.zmin - pad.zmin
+            plain, pad = (
+                _spar_cap(pf, p).BoundingBox(),
+                _spar_cap(pf, p, CUT_PAD).BoundingBox(),
+            )
+            out = (
+                pad.zmax - plain.zmax
+                if p.component == "canard.spar_cap_top"
+                else plain.zmin - pad.zmin
+            )
             assert out > CUT_PAD / 2, p.node
 
 
@@ -123,6 +145,7 @@ def test_surface_survives_a_one_ulp_tie_at_the_leading_edge(side):
     # the first, so a bare argmin picked the LAST point and the surface slice was empty.
     import dataclasses
     import numpy as np
+
     pf = Planform.from_generator(CanardGenerator())
     xn = pf.xn.copy()
     xn[-1] = np.nextafter(xn[0], -np.inf)

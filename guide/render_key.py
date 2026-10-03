@@ -3,6 +3,7 @@
 key = sha256 over sorted "name sha256" lines of the data files (longez.glb, layup.json, shots.json)
 and the Blender scripts. The laptop computes it; the Blender job records per-file shas in manifest.json.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -27,10 +28,14 @@ def file_shas(export_dir: Path, scripts_dir: Path | None) -> dict[str, str]:
 
 
 def key_of(shas: dict[str, str]) -> str:
-    return hashlib.sha256("".join(f"{k} {shas[k]}\n" for k in sorted(shas)).encode()).hexdigest()
+    return hashlib.sha256(
+        "".join(f"{k} {shas[k]}\n" for k in sorted(shas)).encode()
+    ).hexdigest()
 
 
-def check_renders(renders: Path, export_dir: Path, scripts_dir: Path | None = None) -> list[str]:
+def check_renders(
+    renders: Path, export_dir: Path, scripts_dir: Path | None = None
+) -> list[str]:
     mf = renders / "manifest.json"
     if not mf.is_file():
         return ["no manifest.json (incomplete render run)"]

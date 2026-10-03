@@ -27,7 +27,9 @@ def parts():
 
 
 def test_material_rows_cover_chapters_4_to_8():
-    assert len(ROWS) == 38  # 25 in chapters 4-6, 6 skin rows in chapter 7, 7 in chapter 8
+    assert (
+        len(ROWS) == 38
+    )  # 25 in chapters 4-6, 6 skin rows in chapter 7, 7 in chapter 8
     assert {op.split(".")[0] for op, _ in ROWS} == {"f04", "f05", "f06", "f07", "f08"}
 
 
@@ -155,12 +157,19 @@ def test_rear_bulkhead_plies_count_the_access_hole_once(parts, plies):
     trapezoid = (g.rear_seat_bkhd_bottom_width + g.rear_seat_bkhd_top_width) / 2 * 16.5
     assert fwd < trapezoid - hole + 5  # the hole is in the solid's face
     und = [p for p in plies if p.part == "rear_seat_bkhd" and p.cloth == "UND"]
-    bid = [p for p in plies if p.part == "rear_seat_bkhd" and p.op == "f04.rear-seat-bkhd-hole"]
+    bid = [
+        p
+        for p in plies
+        if p.part == "rear_seat_bkhd" and p.op == "f04.rear-seat-bkhd-hole"
+    ]
     assert len(und) == 2 and len(bid) == 2
     for p in und:
         assert p.area_in2 == pytest.approx(fwd, rel=0.005)
-    for p in bid:  # p34 C-C: the BID covers the back face (pocket walls not counted: lower bound)
+    for p in (
+        bid
+    ):  # p34 C-C: the BID covers the back face (pocket walls not counted: lower bound)
         assert p.area_in2 == pytest.approx(aft, rel=0.005) and p.lower_bound
+
 
 def test_bottom_corner_tape_is_length_times_stated_width(plies):
     (tape,) = [p for p in plies if p.op == "f06.bottom-tape"]
@@ -261,7 +270,9 @@ def test_region_faces_are_the_faces_the_area_is_measured_on(plies, parts):
         reg = fp.region_of(p)
         if not isinstance(reg, fp.Face):
             continue
-        faces = fp.region_shape_faces(p)  # clipped for a ClipFace, the plain named faces otherwise
+        faces = fp.region_shape_faces(
+            p
+        )  # clipped for a ClipFace, the plain named faces otherwise
         area = sum(f.Area() for f in faces)
         if reg.less_circle_dia:
             area -= math.pi / 4 * reg.less_circle_dia**2

@@ -17,7 +17,6 @@ Published reference data:
 
 import sys
 import math
-import pytest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -45,9 +44,9 @@ class TestGeometryAgainstPublishedPlans:
         """Wing span should be 313.2 in (26.1 ft, om-1980:p3)."""
         span_in = config.geometry.wing_span
         # Published: 26.1 ft = 313.2 in (om-1980:p3); the 316.8 (26.4 ft) reference is retired
-        assert abs(span_in - 313.2) / 313.2 < 0.01, (
-            f"Wing span {span_in:.1f} in deviates >1% from published 313.2 in"
-        )
+        assert (
+            abs(span_in - 313.2) / 313.2 < 0.01
+        ), f"Wing span {span_in:.1f} in deviates >1% from published 313.2 in"
 
     def test_wing_area_within_published_range(self):
         """Wing area (full-span trapezoidal planform) should be in the 90-130 sq ft range.
@@ -82,9 +81,9 @@ class TestGeometryAgainstPublishedPlans:
     def test_wing_sweep_within_expected_range(self):
         """Wing LE sweep should be ~23-27 degrees for Long-EZ planform."""
         sweep = config.geometry.wing_sweep_le
-        assert 20.0 <= sweep <= 30.0, (
-            f"Wing LE sweep {sweep:.1f} deg outside expected range [20, 30]"
-        )
+        assert (
+            20.0 <= sweep <= 30.0
+        ), f"Wing LE sweep {sweep:.1f} deg outside expected range [20, 30]"
 
 
 # ---------------------------------------------------------------------------
@@ -123,9 +122,9 @@ class TestGrossWeightSanityCheck:
 
         engine = LycomingO235()
         # Engine dry weight alone (not all installation items)
-        assert 200 <= engine.DRY_WEIGHT_LB <= 280, (
-            f"O-235 dry weight {engine.DRY_WEIGHT_LB} lb outside plausible range"
-        )
+        assert (
+            200 <= engine.DRY_WEIGHT_LB <= 280
+        ), f"O-235 dry weight {engine.DRY_WEIGHT_LB} lb outside plausible range"
 
     def test_with_engine_empty_weight_within_range(self):
         """Empty weight including propulsion should be in the 700-1100 lb range."""
@@ -164,9 +163,9 @@ class TestAeroLimitsAgainstPublished:
         """Canard CLmax should be ~1.35 (Roncz wind tunnel, R1145MS airfoil)."""
         clmax = config.aero_limits.canard_clmax
         # Published: 1.35, allow ±0.10
-        assert abs(clmax - 1.35) <= 0.10, (
-            f"Canard CLmax {clmax:.3f} deviates from published Roncz value of 1.35"
-        )
+        assert (
+            abs(clmax - 1.35) <= 0.10
+        ), f"Canard CLmax {clmax:.3f} deviates from published Roncz value of 1.35"
 
     def test_canard_clmax_exceeds_wing_clmax(self):
         """Canard must NOT stall first — canard CLmax must be <= wing CLmax.
@@ -185,16 +184,16 @@ class TestAeroLimitsAgainstPublished:
     def test_vne_is_within_long_ez_range(self):
         """Vne should be in the published Long-EZ range of 185-210 KTAS."""
         vne = config.flight_condition.v_ne_ktas
-        assert 150 <= vne <= 220, (
-            f"Vne {vne:.0f} KTAS is outside expected Long-EZ range [150, 220]"
-        )
+        assert (
+            150 <= vne <= 220
+        ), f"Vne {vne:.0f} KTAS is outside expected Long-EZ range [150, 220]"
 
     def test_approach_speed_is_reasonable(self):
         """Approach speed should be below stall speed * 1.3 (typical ~55-70 KTAS)."""
         approach = config.flight_condition.approach_speed_ktas
-        assert 45 <= approach <= 90, (
-            f"Approach speed {approach:.0f} KTAS seems unreasonable for Long-EZ"
-        )
+        assert (
+            45 <= approach <= 90
+        ), f"Approach speed {approach:.0f} KTAS seems unreasonable for Long-EZ"
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +268,9 @@ class TestLiftCurveSlopeSanity:
         )
         a = 2 * math.pi * ar / (2 + math.sqrt(4 + ar**2 * (1 + tan_sweep_half**2)))
 
-        assert 3.0 <= a <= 5.5, (
-            f"Wing lift slope {a:.3f}/rad outside published range [3.0, 5.5]/rad"
-        )
+        assert (
+            3.0 <= a <= 5.5
+        ), f"Wing lift slope {a:.3f}/rad outside published range [3.0, 5.5]/rad"
 
     def test_canard_ar_is_reasonable(self):
         """Canard AR should be in the range 9-13 for Long-EZ proportions."""
@@ -279,9 +278,9 @@ class TestLiftCurveSlopeSanity:
         ar_canard = (geo.canard_span / 12) ** 2 / geo.canard_area
 
         # Published Long-EZ canard AR is typically ~9-12
-        assert 7.0 <= ar_canard <= 15.0, (
-            f"Canard AR {ar_canard:.2f} outside expected range [7, 15]"
-        )
+        assert (
+            7.0 <= ar_canard <= 15.0
+        ), f"Canard AR {ar_canard:.2f} outside expected range [7, 15]"
 
     def test_wing_ar_consistent_with_published(self):
         """Wing AR from config geometry should match config property."""
@@ -290,6 +289,6 @@ class TestLiftCurveSlopeSanity:
         area = geo.wing_area
         ar_computed = ((geo.wing_span / 12) ** 2) / area
 
-        assert abs(ar_computed - geo.wing_aspect_ratio) < 0.01, (
-            "wing_aspect_ratio property inconsistent with span/area"
-        )
+        assert (
+            abs(ar_computed - geo.wing_aspect_ratio) < 0.01
+        ), "wing_aspect_ratio property inconsistent with span/area"

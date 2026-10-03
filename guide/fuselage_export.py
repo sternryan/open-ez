@@ -21,6 +21,7 @@ layup.json "stages" says from which op the lab shows it instead. The carved corn
 representational band over the rounded faces (`carved_corners`), so the fitted radius is striped while the sides'
 book faces are not.
 """
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -42,12 +43,24 @@ G = config.geometry
 CHAPTERS = (4, 5, 6, 7, 8, 9)
 EXPORT_CHAPTERS = CHAPTERS  # the lab shows chapters 4-9; every chapter 4-8 ply is exported (chapter 9 has no ply model)
 BULKHEADS = ("front_seat_bkhd", "rear_seat_bkhd", "f22", "f28", "panel", "firewall")
-PLY_T = 0.06  # in, VISUAL: thick enough to read in the section cut; not the cured thickness
+PLY_T = (
+    0.06  # in, VISUAL: thick enough to read in the section cut; not the cured thickness
+)
 CARVE_T = 0.05  # in, VISUAL: the carved-corner band's thickness over the rounded faces
 
-CARVE_OP, CUTOUT_OP, HOLES_OP = "f07.carve-corners", "f07.canard-cutout", "f08.access-holes"
+CARVE_OP, CUTOUT_OP, HOLES_OP = (
+    "f07.carve-corners",
+    "f07.canard-cutout",
+    "f08.access-holes",
+)
 # the parts the canard opening cuts (core.fuselage_book._canard_cutout); F28 stays
-CUT_PARTS = ("side_left", "side_right", "top_longeron_left", "top_longeron_right", "f22")
+CUT_PARTS = (
+    "side_left",
+    "side_right",
+    "top_longeron_left",
+    "top_longeron_right",
+    "f22",
+)
 # Chapter 7 rolls the box: the right skin goes on at "45 degrees of left bank" (plans-1980:p46), the left skin at 45 of right bank.
 # Sign as core.landing_gear_book.bank_pose: positive degrees = left bank, the right side up. The book's words are "45 degrees of
 # left bank"; the captain's reading: the side AND the bottom being glassed both face up 45 degrees (the right skin covers the right
@@ -81,11 +94,19 @@ _NAMES = {"carved_corners": "Carved corners"}
 # When the lab shows a part that is not simply "from its component's first op on": a window of ops (until is exclusive),
 # or one op only. Nothing selected (the finished box) shows a part only if it has no `until` and no `only`.
 SHOW = {
-    "canard_cutout": {"only": CUTOUT_OP},  # the material the opening removes, lifted out at its op
+    "canard_cutout": {
+        "only": CUTOUT_OP
+    },  # the material the opening removes, lifted out at its op
     "carved_corners": {"from": CARVE_OP},
-    "gear_tubes": {"from": "f09.jig-blocks"},  # bolted between the angles with the jig blocks (p50, p53)
-    "jig_blocks": {"until": "f09.tab-layup"},  # a tool: Bondo'd for the leg's positioning, gone once the tabs are laid
-    "datum_board": {"until": "f09.tab-layup"},  # a tool: the straight edge the axle is measured from
+    "gear_tubes": {
+        "from": "f09.jig-blocks"
+    },  # bolted between the angles with the jig blocks (p50, p53)
+    "jig_blocks": {
+        "until": "f09.tab-layup"
+    },  # a tool: Bondo'd for the leg's positioning, gone once the tabs are laid
+    "datum_board": {
+        "until": "f09.tab-layup"
+    },  # a tool: the straight edge the axle is measured from
 }
 # chapter 9's material rows: the strut and its tabs are not modelled as plies (the strut outline is not printed)
 _CH9_REASON = {
@@ -99,13 +120,17 @@ _CH9_REASON = {
 
 @lru_cache(maxsize=1)
 def _gear() -> dict[str, FusePart]:
-    from core.landing_gear_book import build_gear  # lazy: the canard-only callers never build the gear
+    from core.landing_gear_book import (
+        build_gear,
+    )  # lazy: the canard-only callers never build the gear
 
     return build_gear()
 
 
 def is_gear(name: str) -> bool:
-    return name in _COMPONENT and _COMPONENT[name].startswith(("gear.", "fuselage.gear_"))
+    return name in _COMPONENT and _COMPONENT[name].startswith(
+        ("gear.", "fuselage.gear_")
+    )
 
 
 def node_of(name: str) -> str:
@@ -125,10 +150,14 @@ def _carved_band() -> FusePart:
     for part in fb.carved_box().values():
         for f in part.solid.faces().vals():
             n = f.normalAt()
-            if f.geomType() != "PLANE" and abs(n.y) > 0.3 and abs(n.z) > 0.3:  # a fillet: neither a side, top nor bottom face
+            if (
+                f.geomType() != "PLANE" and abs(n.y) > 0.3 and abs(n.z) > 0.3
+            ):  # a fillet: neither a side, top nor bottom face
                 solids.append(f.thicken(CARVE_T))
     return FusePart(
-        "carved_corners", cq.Workplane("XY").add(cq.Compound.makeCompound(solids)), "representational",
+        "carved_corners",
+        cq.Workplane("XY").add(cq.Compound.makeCompound(solids)),
+        "representational",
         note=f"the rounded faces of the carve (radius {fb.FITTED_CORNER_RADIUS} fitted, template A2 not held), drawn {CARVE_T} in thick",
     )
 
@@ -166,7 +195,9 @@ def _stack_dir(part_name: str, face: cq.Face, rule: str) -> cq.Vector:
 
 def _face_shell(part_name: str, region: fp.Face, stack: int) -> cq.Workplane:
     solids = []
-    for f in region.faces(part_name):  # a ClipFace gives its clipped faces: the shell covers exactly what is measured
+    for f in region.faces(
+        part_name
+    ):  # a ClipFace gives its clipped faces: the shell covers exactly what is measured
         n = _stack_dir(part_name, f, region.name)
         solids.append(f.translate(n * (PLY_T * (stack - 1))).thicken(PLY_T))
     return cq.Workplane("XY").add(cq.Compound.makeCompound(solids))
@@ -186,7 +217,12 @@ def _tape_shell(part_name: str, tape: fp.CornerTape, stack: int) -> cq.Workplane
     for sgn in (1, -1):
         outer = [(x, sgn * half_width(x)) for x in xs]
         inner = [(x, sgn * (half_width(x) - leg)) for x in reversed(xs)]
-        prism = cq.Workplane("XY", origin=(0, 0, bb.zmin - 1)).polyline(outer + inner).close().extrude(bb.zmax - bb.zmin + 2)
+        prism = (
+            cq.Workplane("XY", origin=(0, 0, bb.zmin - 1))
+            .polyline(outer + inner)
+            .close()
+            .extrude(bb.zmax - bb.zmin + 2)
+        )
         band = prism if band is None else band.union(prism)
     return cq.Workplane("XY").add(shell).intersect(band)
 
@@ -198,7 +234,11 @@ def rollover_glass_faces(kind: str) -> list[cq.Face]:
     out: list[cq.Face] = []
 
     def planar(shape):
-        return [f for f in shape.faces().vals() if f.geomType() == "PLANE" and f.Area() >= 1.0]
+        return [
+            f
+            for f in shape.faces().vals()
+            if f.geomType() == "PLANE" and f.Area() >= 1.0
+        ]
 
     def dot(f, n):
         nf = f.normalAt()
@@ -210,18 +250,33 @@ def rollover_glass_faces(kind: str) -> list[cq.Face]:
         above = pc["plate_full"].intersect(fb._box(0, 500, -50, 50, zs, zs + 100))
         out += [f for f in planar(above) if f.normalAt().x < -0.999]
     for t in pc["tops"]:
-        out += [f for f in planar(t) if (f.normalAt().z < -0.999 if kind == "inside" else f.normalAt().z > 0.999)]
+        out += [
+            f
+            for f in planar(t)
+            if (f.normalAt().z < -0.999 if kind == "inside" else f.normalAt().z > 0.999)
+        ]
     for sgn, roof in zip((-1, 1), pc["roofs"]):
         n = pc["roof_geom"][sgn]["n"]
-        out += [f for f in planar(roof) if (dot(f, n) < -0.999 if kind == "inside" else dot(f, n) > 0.999)]
+        out += [
+            f
+            for f in planar(roof)
+            if (dot(f, n) < -0.999 if kind == "inside" else dot(f, n) > 0.999)
+        ]
     nt = pc["tri_normal"]
-    out += [f for f in planar(pc["triangle"]) if (dot(f, nt) < -0.999 if kind == "inside" else dot(f, nt) > 0.999)]
+    out += [
+        f
+        for f in planar(pc["triangle"])
+        if (dot(f, nt) < -0.999 if kind == "inside" else dot(f, nt) > 0.999)
+    ]
     return out
 
 
 def _rollover_shell(kind: str, stack: int) -> cq.Workplane:
     """Plies on the roll-over's inside or outside faces, stacked off each face along its own outward normal (away from the foam)."""
-    solids = [f.translate(f.normalAt() * (PLY_T * (stack - 1))).thicken(PLY_T) for f in rollover_glass_faces(kind)]
+    solids = [
+        f.translate(f.normalAt() * (PLY_T * (stack - 1))).thicken(PLY_T)
+        for f in rollover_glass_faces(kind)
+    ]
     return cq.Workplane("XY").add(cq.Compound.makeCompound(solids))
 
 
@@ -258,14 +313,23 @@ def _ply_shell(p: fp.FusePly, k: int) -> cq.Workplane:
         return _rollover_shell(reg.kind, k)
     if isinstance(reg, fp.PadMargin):
         return _pad_shell(p.part, reg, k)
-    raise TypeError(f"{p.node}: no shell for region {reg!r}")  # a new region type must get a shell or be excluded
+    raise TypeError(
+        f"{p.node}: no shell for region {reg!r}"
+    )  # a new region type must get a shell or be excluded
 
 
 # ---- stages ----------------------------------------------------------------------------------------
 def _cutout_region() -> cq.Workplane:
     """The canard opening's box (core.fuselage_book._canard_cutout), 1 in further forward so F22's forward plies go with its tab."""
     x1 = G.fs_f28 + fb.FITTED_F28_THICKNESS + fb.FITTED_CUTOUT_AFT_OF_F28
-    return fb._box(G.fs_f22 - 1.0, x1, -20.0, 20.0, fb.z_of_wl(fb.CANARD_CUTOUT_FLOOR_WL), fb.Z_TOP + 1.0)
+    return fb._box(
+        G.fs_f22 - 1.0,
+        x1,
+        -20.0,
+        20.0,
+        fb.z_of_wl(fb.CANARD_CUTOUT_FLOOR_WL),
+        fb.Z_TOP + 1.0,
+    )
 
 
 def _cut(wp: cq.Workplane) -> cq.Workplane:
@@ -282,7 +346,10 @@ def _op_index() -> dict[str, int]:
 
     from guide.schema import load_graph, topo_order
 
-    return {op: i for i, op in enumerate(topo_order(load_graph(Path(__file__).parent / "graph")))}
+    return {
+        op: i
+        for i, op in enumerate(topo_order(load_graph(Path(__file__).parent / "graph")))
+    }
 
 
 @lru_cache(maxsize=1)
@@ -307,23 +374,35 @@ def ply_shells() -> dict[str, cq.Workplane]:
 
 
 @lru_cache(maxsize=1)
-def _base_and_stages() -> tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]]:
+def _base_and_stages() -> (
+    tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]]
+):
     """(the shape each part node shows first, {node: ((op, stage node, shape), ...)} in graph order)."""
     parts = _parts()
     base = {name: part.solid for name, part in parts.items()}
     stages: dict[str, list[tuple[str, str, cq.Workplane]]] = {}
     carved = fb.carved_box()
     for name, c in carved.items():
-        stages.setdefault(node_of(name), []).append((CARVE_OP, f"{node_of(name)}~carved", c.solid))
+        stages.setdefault(node_of(name), []).append(
+            (CARVE_OP, f"{node_of(name)}~carved", c.solid)
+        )
     for name in CUT_PARTS:
         last = stages.get(node_of(name), [(None, None, base[name])])[-1][2]
-        stages.setdefault(node_of(name), []).append((CUTOUT_OP, f"{node_of(name)}~cut", _cut(last)))
+        stages.setdefault(node_of(name), []).append(
+            (CUTOUT_OP, f"{node_of(name)}~cut", _cut(last))
+        )
     # the belt insert is cut into the carved bottom (f07.belt-insert follows the carve)
-    base["belt_insert"] = cq.Workplane("XY").add(parts["belt_insert"].solid.intersect(carved["bottom"].solid).val())
+    base["belt_insert"] = cq.Workplane("XY").add(
+        parts["belt_insert"].solid.intersect(carved["bottom"].solid).val()
+    )
     # the roll-over before its access holes (f08.access-holes cuts the map slot and the baggage hole after the outside glass)
     pc = fb.rollover_pieces()
-    base["rollover"] = cq.Workplane("XY").add(parts["rollover"].solid.union(pc["slot_fill"]).union(pc["hole_fill"]).val())
-    stages[node_of("rollover")] = [(HOLES_OP, f"{node_of('rollover')}~holes", parts["rollover"].solid)]
+    base["rollover"] = cq.Workplane("XY").add(
+        parts["rollover"].solid.union(pc["slot_fill"]).union(pc["hole_fill"]).val()
+    )
+    stages[node_of("rollover")] = [
+        (HOLES_OP, f"{node_of('rollover')}~holes", parts["rollover"].solid)
+    ]
     # plies laid on a cut part before the opening is cut lose what the opening takes
     after_cut = _op_index()[CUTOUT_OP]
     for p in _plies():
@@ -334,7 +413,9 @@ def _base_and_stages() -> tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[s
         if _vol(shell) - _vol(cut) > 1e-6:
             stages[p.node] = [(CUTOUT_OP, f"{p.node}~cut", cut)]
     order = _op_index()
-    return base, {n: tuple(sorted(s, key=lambda t: order[t[0]])) for n, s in stages.items()}
+    return base, {
+        n: tuple(sorted(s, key=lambda t: order[t[0]])) for n, s in stages.items()
+    }
 
 
 def components() -> dict:
@@ -357,7 +438,11 @@ def components() -> dict:
 
 
 def _xrange(wp: cq.Workplane) -> tuple[float, float]:
-    bb = wp.val().BoundingBox() if len(wp.vals()) == 1 else cq.Compound.makeCompound(wp.vals()).BoundingBox()
+    bb = (
+        wp.val().BoundingBox()
+        if len(wp.vals()) == 1
+        else cq.Compound.makeCompound(wp.vals()).BoundingBox()
+    )
     return bb.xmin, bb.xmax
 
 
@@ -367,13 +452,25 @@ def _ch9_excluded() -> list[dict]:
     from guide.schema import load_graph
 
     g = load_graph(Path(__file__).parent / "graph")
-    return [{"op": op_id, "where": m["where"], "reason": _CH9_REASON[op_id], "parts": ["strut"]}
-            for op_id, op in g.ops.items() if op.chapter == 9 for m in op.materials]
+    return [
+        {
+            "op": op_id,
+            "where": m["where"],
+            "reason": _CH9_REASON[op_id],
+            "parts": ["strut"],
+        }
+        for op_id, op in g.ops.items()
+        if op.chapter == 9
+        for m in op.materials
+    ]
 
 
 # ---- chapters 11-13 in the lab (M2.4 Task 5): the elevators, the nose, the nose gear --------------------------------------------------
 NOSE_GEAR_RETRACT_SECONDS = 6.0  # fitted: the lab's crank takes this long, inside the book's 5-7 s (plans-1980:p73)
-HANG_CG = (-1.5, 0.1)  # fitted (dx, dz) in from the hinge line, in: forward of the hinge. The elevator masses are NOT sourced, so the hang test
+HANG_CG = (
+    -1.5,
+    0.1,
+)  # fitted (dx, dz) in from the hinge line, in: forward of the hinge. The elevator masses are NOT sourced, so the hang test
 # is illustrative: the kernel (core.elevators_kin.hang_pitch_deg) gives the pitch for whatever CG it is handed
 CANARD_INCIDENCE_DEG = 0.0  # book: the canard is set level to the top longerons (plans-1980:p72 template G); config canard_incidence is unsourced, not used
 _CH13_NOSE_CITE = ("plans-1980:p73",)
@@ -389,7 +486,9 @@ def _labelled(cid: str, fidelity: str) -> str:
 
 
 def _extent(shapes) -> tuple[float, float]:
-    bb = cq.Compound.makeCompound([s.val() if hasattr(s, "val") else s for s in shapes]).BoundingBox()
+    bb = cq.Compound.makeCompound(
+        [s.val() if hasattr(s, "val") else s for s in shapes]
+    ).BoundingBox()
     return round(bb.xmin, 4), round(bb.xmax, 4)
 
 
@@ -409,11 +508,21 @@ def extras_section() -> dict:
     rows: dict[str, dict] = {}
 
     def add(cid: str, parts: list[FusePart]) -> None:
-        fid = "representational" if any(p.fidelity == "representational" for p in parts) else parts[0].fidelity
+        fid = (
+            "representational"
+            if any(p.fidelity == "representational" for p in parts)
+            else parts[0].fidelity
+        )
         lo, hi = _extent([p.solid for p in parts])
         rows[cid.replace(".", "_")] = {
-            "node": cid, "component": cid, "fidelity": fid, "label": _labelled(cid, fid),
-            "cite": sorted({c for p in parts for c in p.cite}), "fs_min": lo, "fs_max": hi, "fwd_normal": None,
+            "node": cid,
+            "component": cid,
+            "fidelity": fid,
+            "label": _labelled(cid, fid),
+            "cite": sorted({c for p in parts for c in p.cite}),
+            "fs_min": lo,
+            "fs_max": hi,
+            "fwd_normal": None,
         }
 
     for cid, names in COMPONENT_PARTS.items():
@@ -425,15 +534,27 @@ def extras_section() -> dict:
 
     el = build_elevators()
     elev_rows = {}
-    for cid, keys in (("elevator.right", ("elevator_right",)), ("elevator.left", ("elevator_left",)),
-                      ("elevator.tube", ("elevator_tube_right", "elevator_tube_left")), ("elevator.hinges", ("hinges_right", "hinges_left")),
-                      ("elevator.balance_weight", ("balance_weight_right", "balance_weight_left")),
-                      ("elevator.cs11_weight", ("cs11_weight_right", "cs11_weight_left"))):
-        fid = "representational" if any(el[k].fidelity == "representational" for k in keys) else el[keys[0]].fidelity
+    for cid, keys in (
+        ("elevator.right", ("elevator_right",)),
+        ("elevator.left", ("elevator_left",)),
+        ("elevator.tube", ("elevator_tube_right", "elevator_tube_left")),
+        ("elevator.hinges", ("hinges_right", "hinges_left")),
+        ("elevator.balance_weight", ("balance_weight_right", "balance_weight_left")),
+        ("elevator.cs11_weight", ("cs11_weight_right", "cs11_weight_left")),
+    ):
+        fid = (
+            "representational"
+            if any(el[k].fidelity == "representational" for k in keys)
+            else el[keys[0]].fidelity
+        )
         label = _labelled(cid, fid)
-        if cid == "elevator.hinges":  # the stations are placed from the text and the figure at low confidence (core.elevators_book); one parenthetical, short enough for a phone
+        if (
+            cid == "elevator.hinges"
+        ):  # the stations are placed from the text and the figure at low confidence (core.elevators_book); one parenthetical, short enough for a phone
             label = "Elevator hinges (from text, low confidence; fitted shape)"
-        elif cid == "elevator.tube":  # the tube is the book's 1 in; the airfoil file the canard section is fitted to is thinner than it (owner item, unresolved)
+        elif (
+            cid == "elevator.tube"
+        ):  # the tube is the book's 1 in; the airfoil file the canard section is fitted to is thinner than it (owner item, unresolved)
             label = "Elevator torque tubes (1 in OD book; section fitted, unresolved)"
         elev_rows[cid] = {"node": cid, "fidelity": fid, "label": label}
     hx, hz = hinge_axis_xz()
@@ -450,32 +571,56 @@ def extras_section() -> dict:
             # the canard's own core and skins are not drawn aft of x_cut over the elevators' span while the elevators show (lab only; the glb
             # and the canard-only cutaway export are untouched): the elevators' leading edge (the fitted tube LE) less the book's hinge slot gap
             "cove": {
-                "x_cut": round(x_tube_le() - G_.elevator_slot_gap_in, 6), "slot_gap": G_.elevator_slot_gap_in,
+                "x_cut": round(x_tube_le() - G_.elevator_slot_gap_in, 6),
+                "slot_gap": G_.elevator_slot_gap_in,
                 # the cove is limited to the FOAM span: |B.L.| from the foam inboard end (the drawn stock end, span vs fuselage sides unresolved) to the outboard end
-                "bl_start": round(min(ek.elevator_span("right")[0], -ek.elevator_span("left")[1]), 6),
+                "bl_start": round(
+                    min(ek.elevator_span("right")[0], -ek.elevator_span("left")[1]), 6
+                ),
                 "bl_end": G_.elevator_outboard_end_bl_in,
                 "label": "Cove cut for the elevators (fitted shape)",
             },
-            "travel": {"up_target_deg": up_t, "up_floor_deg": G_.elevator_travel_up_floor_deg, "down_deg": down},
-            "hang_cg": {"dx": HANG_CG[0], "dz": HANG_CG[1], "note": "illustrative CG: masses not sourced", "fitted": True},
+            "travel": {
+                "up_target_deg": up_t,
+                "up_floor_deg": G_.elevator_travel_up_floor_deg,
+                "down_deg": down,
+            },
+            "hang_cg": {
+                "dx": HANG_CG[0],
+                "dz": HANG_CG[1],
+                "note": "illustrative CG: masses not sourced",
+                "fitted": True,
+            },
             "jig_label": "NC-7 tube jig (fitted shape)",
             "installed_label": "Elevators (fitted shape; span vs fuselage sides unresolved)",
         },
         "canard_install": {
-            "fs_le": G_.fs_canard_le, "z_le": G_.canard_le_wl, "z_le_status": "conflict", "incidence_deg": CANARD_INCIDENCE_DEG,
+            "fs_le": G_.fs_canard_le,
+            "z_le": G_.canard_le_wl,
+            "z_le_status": "conflict",
+            "incidence_deg": CANARD_INCIDENCE_DEG,
             "incidence_note": "zero to the longerons (book, p72 template G); config canard_incidence is unsourced and is not used",
         },
         "nose_gear": {
             "strut_length": G_.nose_strut_pivot_to_pivot_in,
-            "axle_wl": G_.wl_nose_wheel, "pivot_wl": ngk.default_pivot_wl(),
+            "axle_wl": G_.wl_nose_wheel,
+            "pivot_wl": ngk.default_pivot_wl(),
             "clearance_wl": G_.wl_fuselage_bottom_3view + lgb.FITTED_TIRE_OD / 2,
             "wl_zero": -fb.z_of_wl(0.0),  # model z = W.L. - wl_zero
-            "crank_turns": G_.nose_crank_turns, "retract_seconds": NOSE_GEAR_RETRACT_SECONDS,
+            "crank_turns": G_.nose_crank_turns,
+            "retract_seconds": NOSE_GEAR_RETRACT_SECONDS,
             "book_seconds": list(ngk.crank_seconds_range()),
-            "tire_od": lgb.FITTED_TIRE_OD, "tire_width": lgb.FITTED_TIRE_WIDTH,
+            "tire_od": lgb.FITTED_TIRE_OD,
+            "tire_width": lgb.FITTED_TIRE_WIDTH,
             "candidates": {
-                "plans": {"axle_fs": lgb.NOSE_CANDIDATES["plans"], "cite": "plans-1980:p171"},
-                "manual": {"axle_fs": lgb.NOSE_CANDIDATES["manual"], "cite": "om-1980:p35"},
+                "plans": {
+                    "axle_fs": lgb.NOSE_CANDIDATES["plans"],
+                    "cite": "plans-1980:p171",
+                },
+                "manual": {
+                    "axle_fs": lgb.NOSE_CANDIDATES["manual"],
+                    "cite": "om-1980:p35",
+                },
             },
             "status": "conflict",
             "theta_down_deg": round(pts["theta_down_deg"], 6),
@@ -500,21 +645,40 @@ def layup_section() -> dict:
         lay[p.op] = lay.get(p.op, 0) + 1
         x0, x1 = _xrange(shells[p.node])
         nodes[p.node] = {
-            "part": p.part, "component": component_of(p.part), "op": p.op, "op_index": ops.index(p.op),
-            "op_order": lay[p.op], "order": p.order, "stack": stack[p.node], "cloth": p.cloth,
-            "orientation_deg": p.orientation_deg, "where": p.where, "region": p.region, "fidelity": p.fidelity,
-            "lower_bound": p.lower_bound, "area_in2": round(p.area_in2, 3), "fs_min": round(x0, 4), "fs_max": round(x1, 4),
+            "part": p.part,
+            "component": component_of(p.part),
+            "op": p.op,
+            "op_index": ops.index(p.op),
+            "op_order": lay[p.op],
+            "order": p.order,
+            "stack": stack[p.node],
+            "cloth": p.cloth,
+            "orientation_deg": p.orientation_deg,
+            "where": p.where,
+            "region": p.region,
+            "fidelity": p.fidelity,
+            "lower_bound": p.lower_bound,
+            "area_in2": round(p.area_in2, 3),
+            "fs_min": round(x0, 4),
+            "fs_max": round(x1, 4),
         }
     part_rows = {}
     for name, part in parts.items():
         x0, x1 = _xrange(base[name])
         fwd = None
-        if name in BULKHEADS:  # the lab lays a bulkhead flat with its forward or aft face up
+        if (
+            name in BULKHEADS
+        ):  # the lab lays a bulkhead flat with its forward or aft face up
             n = fp.region_faces(name, "fwd")[0].normalAt()
             fwd = [round(n.x, 6), round(n.y, 6), round(n.z, 6)]
         row = {
-            "node": node_of(name), "component": component_of(name), "fidelity": part.fidelity,
-            "label": part_label(name, part), "cite": list(part.cite), "fs_min": round(x0, 4), "fs_max": round(x1, 4),
+            "node": node_of(name),
+            "component": component_of(name),
+            "fidelity": part.fidelity,
+            "label": part_label(name, part),
+            "cite": list(part.cite),
+            "fs_min": round(x0, 4),
+            "fs_max": round(x1, 4),
             "fwd_normal": fwd,
         }
         if part.void:
@@ -523,11 +687,17 @@ def layup_section() -> dict:
             row["show"] = dict(SHOW[name])
         part_rows[name] = row
     keep = tuple(f"f{c:02d}." for c in EXPORT_CHAPTERS)
-    excluded = [{"op": op, "where": where, "reason": reason, "parts": list(affected)}
-                for (op, where), (reason, affected) in fp.EXCLUDED.items() if op.startswith(keep)]
+    excluded = [
+        {"op": op, "where": where, "reason": reason, "parts": list(affected)}
+        for (op, where), (reason, affected) in fp.EXCLUDED.items()
+        if op.startswith(keep)
+    ]
     gh = {
-        "axle_fs": G.fs_main_axle, "board_fs": G.fs_spar_aft_face, "board_bl": G.bl_gear_datum,
-        "axle_fwd_of_board_in": G.main_axle_fwd_of_spar, "axle_z": round(fb.z_of_wl(G.wl_main_axle), 4),
+        "axle_fs": G.fs_main_axle,
+        "board_fs": G.fs_spar_aft_face,
+        "board_bl": G.bl_gear_datum,
+        "axle_fwd_of_board_in": G.main_axle_fwd_of_spar,
+        "axle_z": round(fb.z_of_wl(G.wl_main_axle), 4),
         "cite": "plans-1980:p50 figure 1A (axle C.L. F.S. 110.5, 15 in forward of the board at the spar aft face); plans-1980:p171",
     }
     return {
@@ -538,7 +708,10 @@ def layup_section() -> dict:
         "ops": ops,
         "parts": part_rows,
         "nodes": nodes,
-        "stages": {n: [{"from": op, "node": node} for op, node, _ in st] for n, st in stages.items()},
+        "stages": {
+            n: [{"from": op, "node": node} for op, node, _ in st]
+            for n, st in stages.items()
+        },
         "bank_deg": dict(BANK_DEG),
         "bank_note": "positive = left bank, the right side up (core.landing_gear_book.bank_pose); plans-1980:p46",
         "gear_marks": gh,

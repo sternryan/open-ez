@@ -24,7 +24,9 @@ def test_two_method_disagreement_fails():
     assert two_method_np(110.0, 110.4, 1.0)["status"] == "pass"
 
 
-REPORT = Path(__file__).resolve().parents[1] / "data" / "validation" / "accuracy_report.json"
+REPORT = (
+    Path(__file__).resolve().parents[1] / "data" / "validation" / "accuracy_report.json"
+)
 
 
 def test_report_carries_both_checks():  # Review Focus 5, at report level
@@ -38,7 +40,9 @@ def test_report_carries_both_checks():  # Review Focus 5, at report level
     if tm["status"] == "not run":
         assert tm.get("reason", "").strip()
         # a not-run check must not be counted in the summary's pass total
-        metric_passes = sum(1 for m in report["metrics"] if m["grade"].lower() == "pass")
+        metric_passes = sum(
+            1 for m in report["metrics"] if m["grade"].lower() == "pass"
+        )
         assert report["summary"]["pass"] == metric_passes
         assert "two_method_np" not in {m["metric_id"] for m in report["metrics"]}
 
@@ -53,7 +57,9 @@ def test_static_margin_metric_is_the_check_number():  # one static margin
 
 
 def _vlm_fixture(tmp_path, np_fs, geometry):
-    (tmp_path / "vspaero_np.json").write_text(json.dumps({"np_fs": np_fs, "geometry": geometry, "timestamp": "t0"}))
+    (tmp_path / "vspaero_np.json").write_text(
+        json.dumps({"np_fs": np_fs, "geometry": geometry, "timestamp": "t0"})
+    )
 
 
 def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
@@ -66,7 +72,12 @@ def test_vlm_marker_requires_root_bl_and_panel_span(tmp_path):
     val, reason = current_vlm_np(tmp_path, good)
     assert val == 110.0 and reason == ""
     # the last two keys: a run of the exposed panels only (pre ledger C2) is stale
-    for key in ("wing_root_bl", "wing_panel_span_in", "wing_centerline_chord_in", "vlm_wing_inboard_bl"):
+    for key in (
+        "wing_root_bl",
+        "wing_panel_span_in",
+        "wing_centerline_chord_in",
+        "vlm_wing_inboard_bl",
+    ):
         _vlm_fixture(tmp_path, 110.0, {k: v for k, v in good.items() if k != key})
         val, reason = current_vlm_np(tmp_path, good)
         assert val is None and "predates" in reason
@@ -107,8 +118,13 @@ def test_two_method_current_vlm_file_grades_by_the_1in_bound(tmp_path):
     assert r["status"] == "fail" and abs(r["delta"] - 2.0) < 1e-9
 
 
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 53 and 54; analytic 110.68 vs VLM 112.36, delta +1.68 in against the 1.0 in bound (C4 partial-span downwash)")
+@pytest.mark.xfail(
+    strict=True,
+    reason="see docs/geometry-correction-ledger.md rows 53 and 54; analytic 110.68 vs VLM 112.36, delta +1.68 in against the 1.0 in bound (C4 partial-span downwash)",
+)
 def test_committed_report_two_method_np_agrees():
     """External check: the committed report's analytic and VLM NPs agree within the 1.0 in bound."""
     tm = json.loads(REPORT.read_text())["metadata"]["checks"]["two_method_np"]
-    assert tm["status"] == "pass", f"two-method NP {tm['status']}: delta {tm.get('delta')} in"
+    assert (
+        tm["status"] == "pass"
+    ), f"two-method NP {tm['status']}: delta {tm.get('delta')} in"

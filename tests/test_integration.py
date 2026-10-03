@@ -171,9 +171,9 @@ class TestGenerateCanardPipeline:
                 main.generate_canard()
 
         for subdir in ["STEP", "STL", "DXF", "docs"]:
-            assert (tmp_path / "output" / subdir).exists(), (
-                f"output/{subdir} not created"
-            )
+            assert (
+                tmp_path / "output" / subdir
+            ).exists(), f"output/{subdir} not created"
 
 
 class TestConfigToAnalysisPipeline:

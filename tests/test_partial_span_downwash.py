@@ -7,14 +7,6 @@ d eps/d alpha over the wing span. Every expected value below is computed by hand
 """
 
 import math
-import sys
-from pathlib import Path
-from unittest.mock import MagicMock
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.modules.setdefault("cadquery", MagicMock())
-sys.modules.setdefault("OCP", MagicMock())
-
 import numpy as np
 import pytest
 
@@ -26,7 +18,9 @@ def test_near_field_point_on_the_centreline_hand_computed():
     # Bound segment: rho = 1; -(1/(4 pi)) [1/sqrt(2) + 1/sqrt(2)] = -sqrt(2)/(4 pi) = -0.112540.
     # Each leg: r = 1, d_y = -+1, (1/(4 pi)) * 1 * (1 + 1/sqrt(2)) downward = -0.135847;
     # both legs -0.271694. Total w_z / Gamma = -0.384234 (downwash).
-    assert horseshoe_wz_per_gamma(1.0, 0.0, 0.0, 1.0) == pytest.approx(-0.384234, abs=1e-6)
+    assert horseshoe_wz_per_gamma(1.0, 0.0, 0.0, 1.0) == pytest.approx(
+        -0.384234, abs=1e-6
+    )
 
 
 def test_outboard_of_the_tip_vortex_is_upwash():
@@ -43,8 +37,13 @@ def test_far_field_centreline_matches_the_horseshoe_value():
     # 2 pi * 10 / (pi * 4) = 5.0.
     y = np.array([0.0])
     got = average_horseshoe_downwash_gradient(
-        a_c=2 * math.pi, area_c=10.0, span_c=8 / math.pi,
-        y=y, chord=np.array([1.0]), dx=np.array([1e9]), z=0.0,
+        a_c=2 * math.pi,
+        area_c=10.0,
+        span_c=8 / math.pi,
+        y=y,
+        chord=np.array([1.0]),
+        dx=np.array([1e9]),
+        z=0.0,
     )
     assert got == pytest.approx(5.0, rel=1e-6)
 
@@ -60,8 +59,13 @@ def test_spanwise_average_over_a_wider_aft_span_hand_computed():
     edges = np.linspace(-2.0, 2.0, n + 1)
     y = 0.5 * (edges[1:] + edges[:-1])
     got = average_horseshoe_downwash_gradient(
-        a_c=2 * math.pi, area_c=10.0, span_c=8 / math.pi,
-        y=y, chord=np.ones_like(y), dx=np.full_like(y, 1e9), z=0.1,
+        a_c=2 * math.pi,
+        area_c=10.0,
+        span_c=8 / math.pi,
+        y=y,
+        chord=np.ones_like(y),
+        dx=np.full_like(y, 1e9),
+        z=0.1,
     )
     assert got == pytest.approx(2 * math.pi * 10 / 4 * 0.087073062, rel=1e-4)
 
@@ -72,8 +76,13 @@ def test_average_over_a_very_wide_span_tends_to_zero():
     edges = np.linspace(-2000.0, 2000.0, 4_000_001)
     y = 0.5 * (edges[1:] + edges[:-1])
     got = average_horseshoe_downwash_gradient(
-        a_c=2 * math.pi, area_c=10.0, span_c=8 / math.pi,
-        y=y, chord=np.ones_like(y), dx=np.full_like(y, 1e9), z=0.1,
+        a_c=2 * math.pi,
+        area_c=10.0,
+        span_c=8 / math.pi,
+        y=y,
+        chord=np.ones_like(y),
+        dx=np.full_like(y, 1e9),
+        z=0.1,
     )
     assert abs(got) < 1e-2
 

@@ -139,7 +139,11 @@ def test_validate_sources_accepts_reference_data_source():
     }
     ref_data = {
         "aircraft_specs": {
-            "neutral_point_fs": {"status": "confirmed", "cite": "om-1980:p3", "value": 1.0}
+            "neutral_point_fs": {
+                "status": "confirmed",
+                "cite": "om-1980:p3",
+                "value": 1.0,
+            }
         },
         "airfoil_data": {},
     }
@@ -153,7 +157,11 @@ def test_validate_sources_rejects_confirmed_spec_with_bad_citation():
     report = {"metrics": []}
     ref_data = {
         "aircraft_specs": {
-            "neutral_point_fs": {"status": "confirmed", "cite": "nowhere:p1", "value": 1.0}
+            "neutral_point_fs": {
+                "status": "confirmed",
+                "cite": "nowhere:p1",
+                "value": 1.0,
+            }
         },
         "airfoil_data": {},
     }
@@ -180,7 +188,14 @@ def test_validate_sources_accepts_vspaero_native():
 def test_report_records_geometry_basis():
     import json
     from pathlib import Path
-    rep = json.loads((Path(__file__).resolve().parents[1] / "data/validation/accuracy_report.json").read_text())
-    assert rep["metadata"]["geometry_basis"].startswith("book (planform correction 2026-09-29)")
+
+    rep = json.loads(
+        (
+            Path(__file__).resolve().parents[1] / "data/validation/accuracy_report.json"
+        ).read_text()
+    )
+    assert rep["metadata"]["geometry_basis"].startswith(
+        "book (planform correction 2026-09-29)"
+    )
     np_m = next(m for m in rep["metrics"] if m["metric_id"] == "neutral_point_fs")
     assert np_m["computed"] != 108.0007  # no longer the fitted value

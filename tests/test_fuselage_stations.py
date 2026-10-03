@@ -1,5 +1,6 @@
 # tests/test_fuselage_stations.py
 """Fuselage book geometry (chapters 4-6): provenance, stations, side table, cross-checks."""
+
 import dataclasses
 import math
 from itertools import pairwise
@@ -10,19 +11,41 @@ from config.aircraft_config import GEOMETRY_PROVENANCE, GeometricParams, config
 from core.sources import check_citation
 
 NEW_FIELDS = (
-    "fs_f22", "fs_f28", "fs_panel",
-    "fs_front_seat_bkhd_bottom", "fs_front_seat_bkhd_top",
-    "fs_rear_seat_bkhd_bottom", "fs_rear_seat_bkhd_top",
-    "side_panel_length", "side_panel_top_wl", "side_panel_thickness", "side_panel_heights",
-    "side_spar_cutout", "side_sight_gauge", "side_dish",
-    "front_seat_bkhd_length", "front_seat_bkhd_width", "front_seat_bkhd_thickness",
-    "front_seat_bkhd_taper", "front_seat_bkhd_notch_top", "front_seat_bkhd_notch_bottom",
-    "rear_seat_bkhd_bottom_width", "rear_seat_bkhd_top_width", "rear_seat_bkhd_length",
-    "rear_seat_bkhd_thickness", "rear_seat_bkhd_side_taper", "rear_seat_bkhd_bevel_top_deg",
-    "rear_seat_bkhd_bevel_bottom_deg", "rear_seat_bkhd_notch", "rear_seat_bkhd_access_dia",
+    "fs_f22",
+    "fs_f28",
+    "fs_panel",
+    "fs_front_seat_bkhd_bottom",
+    "fs_front_seat_bkhd_top",
+    "fs_rear_seat_bkhd_bottom",
+    "fs_rear_seat_bkhd_top",
+    "side_panel_length",
+    "side_panel_top_wl",
+    "side_panel_thickness",
+    "side_panel_heights",
+    "side_spar_cutout",
+    "side_sight_gauge",
+    "side_dish",
+    "front_seat_bkhd_length",
+    "front_seat_bkhd_width",
+    "front_seat_bkhd_thickness",
+    "front_seat_bkhd_taper",
+    "front_seat_bkhd_notch_top",
+    "front_seat_bkhd_notch_bottom",
+    "rear_seat_bkhd_bottom_width",
+    "rear_seat_bkhd_top_width",
+    "rear_seat_bkhd_length",
+    "rear_seat_bkhd_thickness",
+    "rear_seat_bkhd_side_taper",
+    "rear_seat_bkhd_bevel_top_deg",
+    "rear_seat_bkhd_bevel_bottom_deg",
+    "rear_seat_bkhd_notch",
+    "rear_seat_bkhd_access_dia",
     "rear_seat_bkhd_foam_circle_dia",
-    "fuselage_inner_width_stations", "fuselage_inner_width_fwd",
-    "bottom_foam_thickness", "bottom_trim_outboard", "bottom_aft_trim",
+    "fuselage_inner_width_stations",
+    "fuselage_inner_width_fwd",
+    "bottom_foam_thickness",
+    "bottom_trim_outboard",
+    "bottom_aft_trim",
 )
 G = config.geometry
 P = GEOMETRY_PROVENANCE
@@ -63,12 +86,17 @@ def test_seat_bulkheads_sit_at_derived_stations():  # Review Focus 2
     assert G.fs_f22 == 22.0
     assert G.fs_f22 + G.side_panel_length == G.fs_firewall
     for name, x in (
-        ("fs_f28", 5.65), ("fs_panel", 17.75),
-        ("fs_front_seat_bkhd_bottom", 41.55), ("fs_front_seat_bkhd_top", 59.75),
-        ("fs_rear_seat_bkhd_bottom", 85.0), ("fs_rear_seat_bkhd_top", 96.5),
+        ("fs_f28", 5.65),
+        ("fs_panel", 17.75),
+        ("fs_front_seat_bkhd_bottom", 41.55),
+        ("fs_front_seat_bkhd_top", 59.75),
+        ("fs_rear_seat_bkhd_bottom", 85.0),
+        ("fs_rear_seat_bkhd_top", 96.5),
     ):
         assert getattr(G, name) == pytest.approx(22.0 + x), name
-    assert G.fs_rear_seat_bkhd_bottom == pytest.approx(G.fs_f22 + G.side_panel_length - 18.0)
+    assert G.fs_rear_seat_bkhd_bottom == pytest.approx(
+        G.fs_f22 + G.side_panel_length - 18.0
+    )
     assert G.fs_rear_seat_bkhd_top == pytest.approx(G.fs_front_seat_bkhd_top + 36.75)
     # occupant CG arms are unchanged and are not bulkhead stations
     assert G.fs_pilot_seat == 59.0 and G.fs_rear_seat == 103.0
@@ -78,8 +106,18 @@ def test_seat_bulkheads_sit_at_derived_stations():  # Review Focus 2
 
 def test_side_height_table_is_the_printed_one():
     assert G.side_panel_heights == (
-        (0, 19.8), (10, 20.3), (20, 20.5), (30, 20.5), (40, 20.5), (50, 20.5),
-        (60, 20.5), (70, 20.4), (80, 19.8), (90, 18.4), (100, 16.6), (103, 16.0),
+        (0, 19.8),
+        (10, 20.3),
+        (20, 20.5),
+        (30, 20.5),
+        (40, 20.5),
+        (50, 20.5),
+        (60, 20.5),
+        (70, 20.4),
+        (80, 19.8),
+        (90, 18.4),
+        (100, 16.6),
+        (103, 16.0),
     )
     xs = [x for x, _ in G.side_panel_heights]
     assert len(xs) == 12 and all(a < b for a, b in pairwise(xs))

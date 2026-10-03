@@ -18,16 +18,19 @@ compound of the path's parts (distance to the union of all listed parts, not to 
 Section centres are the bounding-box centre of a thin slab (SLAB in) cut out of the part's base ply (the
 ply that runs furthest along the span), so a ply ending mid-span never makes the line jump.
 """
+
 from __future__ import annotations
 
 import cadquery as cq
 
 from guide.layup_geometry import build_layup
 
-STEPS = 8            # cap-bending and web-shear: 8 steps = 9 points
-LIFT_STATIONS = 4    # lift-into-caps: stations spaced evenly along the caps
-LIFT_REACH = 3.0     # in: how far aft of the cap centre the skin end of a lift segment sits
-SLAB = 0.02          # in: thickness of the sectioning slab
+STEPS = 8  # cap-bending and web-shear: 8 steps = 9 points
+LIFT_STATIONS = 4  # lift-into-caps: stations spaced evenly along the caps
+LIFT_REACH = (
+    3.0  # in: how far aft of the cap centre the skin end of a lift segment sits
+)
+SLAB = 0.02  # in: thickness of the sectioning slab
 BIG = 100.0
 
 
@@ -38,7 +41,9 @@ def _solids(built: dict, cid: str) -> list:
 
 def _base(built: dict, cid: str):
     """The ply running furthest along the span (lowest ply order on a tie)."""
-    return max(_solids(built, cid), key=lambda s: round(s.BoundingBox().ymax, 6))  # max keeps the first of equals
+    return max(
+        _solids(built, cid), key=lambda s: round(s.BoundingBox().ymax, 6)
+    )  # max keeps the first of equals
 
 
 def _end(built: dict, cid: str) -> float:
@@ -49,10 +54,17 @@ def _centre(solids: list, bl: float, x: float | None = None) -> list[float]:
     """Bounding-box centre of `solids` cut by a thin slab at B.L. `bl` (and, if given, a thin chordwise slab at `x`)."""
     y0 = max(bl - SLAB, 0.0)
     xs = (-BIG, BIG) if x is None else (x - SLAB, x + SLAB)
-    slab = cq.Workplane("XY").box(xs[1] - xs[0], SLAB, 2 * BIG, centered=False).translate((xs[0], y0, -BIG)).val()
+    slab = (
+        cq.Workplane("XY")
+        .box(xs[1] - xs[0], SLAB, 2 * BIG, centered=False)
+        .translate((xs[0], y0, -BIG))
+        .val()
+    )
     boxes = [cut.BoundingBox() for s in solids if (cut := s.intersect(slab)).Solids()]
     if not boxes:
-        raise ValueError(f"no material at B.L. {bl}" + ("" if x is None else f", x {x}"))
+        raise ValueError(
+            f"no material at B.L. {bl}" + ("" if x is None else f", x {x}")
+        )
     lo = [min(b.xmin for b in boxes), min(b.zmin for b in boxes)]
     hi = [max(b.xmax for b in boxes), max(b.zmax for b in boxes)]
     return [round((lo[0] + hi[0]) / 2, 4), round(bl, 4), round((lo[1] + hi[1]) / 2, 4)]
@@ -79,12 +91,22 @@ def polylines(graph, built: dict | None = None) -> dict[str, dict]:
     out = {}
     for lp in graph.loadpaths:
         if lp.id == "cap-bending":
-            segs = [_along(built, c) for c in ("canard.spar_cap_top", "canard.spar_cap_bottom")]
+            segs = [
+                _along(built, c)
+                for c in ("canard.spar_cap_top", "canard.spar_cap_bottom")
+            ]
         elif lp.id == "web-shear":
             segs = [_along(built, "canard.shear_web")]
         elif lp.id == "lift-into-caps":
-            segs = _lift(built, "canard.skin_top", "canard.spar_cap_top") + _lift(built, "canard.skin_bottom", "canard.spar_cap_bottom")
+            segs = _lift(built, "canard.skin_top", "canard.spar_cap_top") + _lift(
+                built, "canard.skin_bottom", "canard.spar_cap_bottom"
+            )
         else:
             raise ValueError(f"no geometry rule for load path {lp.id}")
-        out[lp.id] = {"label": lp.label, "kind": lp.kind, "parts": list(lp.parts), "segments": segs}
+        out[lp.id] = {
+            "label": lp.label,
+            "kind": lp.kind,
+            "parts": list(lp.parts),
+            "segments": segs,
+        }
     return out

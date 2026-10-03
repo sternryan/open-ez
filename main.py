@@ -93,12 +93,15 @@ def run_analysis():
 
     # Run aerodynamic sweep (native VSPAERO or surrogate)
     from core.vsp_integration import vsp_bridge
+
     sweep_result = vsp_bridge.run_aerodynamic_sweep()
     mode = sweep_result.get("mode", "unknown")
     if mode == "native":
         print("  Aerodynamic sweep: Using native VSPAERO")
         n_pts = len(sweep_result.get("points", []))
-        print(f"  Polar data: {n_pts} points written to data/validation/vspaero_native_polars.json")
+        print(
+            f"  Polar data: {n_pts} points written to data/validation/vspaero_native_polars.json"
+        )
     else:
         print("  Aerodynamic sweep: Using surrogate (OpenVSP not installed)")
 
@@ -179,7 +182,8 @@ def generate_wing() -> None:
         name="main_wing",
         root_airfoil=wing_airfoil,
         tip_airfoil=wing_airfoil,
-        span=2 * config.geometry.wing_panel_span,  # generator span = 2 x panel (root BL to tip BL)
+        span=2
+        * config.geometry.wing_panel_span,  # generator span = 2 x panel (root BL to tip BL)
         root_chord=config.geometry.wing_root_chord,
         tip_chord=config.geometry.wing_tip_chord,
         sweep_angle=config.geometry.wing_sweep_le,

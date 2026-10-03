@@ -1,5 +1,6 @@
 # tests/guide/test_layup.py
 """Layup data from the REAL ch30 graph (fixtures can't catch premise defects in the data)."""
+
 import re
 from pathlib import Path
 
@@ -12,20 +13,31 @@ ROOT = Path(__file__).resolve().parents[2]
 G = load_graph(ROOT / "guide" / "graph")
 
 
-@pytest.mark.parametrize("where,expected", [
-    ("crossed, full span (108 in)", ("crossed", 54.0)),
-    ("crossed, inboard of BL 30", ("crossed", 30.0)),
-    ("45 degrees, inboard of BL 10", ("45 degrees", 10.0)),
-    ("45 degrees, full span", ("45 degrees", None)),
-    ("spanwise, first ply", ("spanwise", None)),
-    ("spanwise, final plies", ("spanwise", None)),
-])
+@pytest.mark.parametrize(
+    "where,expected",
+    [
+        ("crossed, full span (108 in)", ("crossed", 54.0)),
+        ("crossed, inboard of BL 30", ("crossed", 30.0)),
+        ("45 degrees, inboard of BL 10", ("45 degrees", 10.0)),
+        ("45 degrees, full span", ("45 degrees", None)),
+        ("spanwise, first ply", ("spanwise", None)),
+        ("spanwise, final plies", ("spanwise", None)),
+    ],
+)
 def test_parse_where_known(where, expected):
     assert layup.parse_where(where) == expected
 
 
-@pytest.mark.parametrize("where", ["crossed, most of the span", "diagonal, full span", "full span",
-                                   "crossed, full span (108)", ""])
+@pytest.mark.parametrize(
+    "where",
+    [
+        "crossed, most of the span",
+        "diagonal, full span",
+        "full span",
+        "crossed, full span (108)",
+        "",
+    ],
+)
 def test_parse_where_rejects_unknown(where):
     with pytest.raises(layup.LayupError):
         layup.parse_where(where)
@@ -44,12 +56,18 @@ def test_unscoped_row_is_a_problem():
     rows = layup.material_rows(G) + [("r30.top-skin", "spanwise, a new ply")]
     assert any("r30.top-skin" in p for p in layup.scope_problems(rows, set(G.ops)))
     rows = layup.material_rows(G) + [("r30.hinge-foam", "crossed, full span")]
-    assert any("not in LAYUP_SCOPE" in p for p in layup.scope_problems(rows, set(G.ops)))
+    assert any(
+        "not in LAYUP_SCOPE" in p for p in layup.scope_problems(rows, set(G.ops))
+    )
 
 
 def test_missing_included_op_is_a_problem():
-    assert any("r30.shear-web" in p
-               for p in layup.scope_problems(layup.material_rows(G), set(G.ops) - {"r30.shear-web"}))
+    assert any(
+        "r30.shear-web" in p
+        for p in layup.scope_problems(
+            layup.material_rows(G), set(G.ops) - {"r30.shear-web"}
+        )
+    )
 
 
 def test_acceptance_counts():  # spec §1: the numbers Ryan counts on the iPad
@@ -70,9 +88,15 @@ def test_ply_order_follows_yaml():
 
 def test_position_flags():
     pl = layup.plies(G)
-    assert all(not p.position_verified for p in pl
-               if p.component in ("canard.shear_web", "canard.spar_cap_bottom", "canard.spar_cap_top"))
-    assert all(p.position_verified for p in pl if p.component.startswith("canard.skin_"))
+    assert all(
+        not p.position_verified
+        for p in pl
+        if p.component
+        in ("canard.shear_web", "canard.spar_cap_bottom", "canard.spar_cap_top")
+    )
+    assert all(
+        p.position_verified for p in pl if p.component.startswith("canard.skin_")
+    )
     caps = [p for p in pl if p.op in layup.SPAR_CAP_OPS]
     assert len(caps) == 2 and all(p.bl_max == layup.SPAR_CAP_BL_MAX for p in caps)
 
@@ -90,16 +114,23 @@ def test_alt_text_is_generated_from_counts():
     hero = layup.shots()[0]
     assert layup.alt_text(G, pl, hero) == (
         "Section at BL 5: bottom skin 3 plies, top skin 4 plies, shear web 6 plies, "
-        "spar caps filled to the trough (not to scale)")
+        "spar caps filled to the trough (not to scale)"
+    )
     op = next(x for x in layup.shots() if x["highlight"] == "r30.bottom-skin")
-    assert layup.alt_text(G, pl, op).startswith(f"After {G.ops['r30.bottom-skin'].title}:")
+    assert layup.alt_text(G, pl, op).startswith(
+        f"After {G.ops['r30.bottom-skin'].title}:"
+    )
 
 
 def test_layup_json_shape():
     j = layup.layup_json(layup.plies(G), 63.0)
     assert j["ops"] == list(layup.INCLUDED_OPS) and j["semi_span"] == 63.0
     n = j["nodes"]["canard.shear_web.p1"]
-    assert n["component"] == "canard.shear_web" and n["cloth"] == "UND" and n["op_index"] == 0
+    assert (
+        n["component"] == "canard.shear_web"
+        and n["cloth"] == "UND"
+        and n["op_index"] == 0
+    )
 
 
 def test_other_chapters_are_out_of_scope():

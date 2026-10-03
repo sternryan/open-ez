@@ -26,7 +26,11 @@ import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
+
+if TYPE_CHECKING:
+    from core.analysis import PhysicsEngine
 
 # --- CadQuery/OCP mock MUST be set before any core/ imports -----------------
 # Analysis modules import CadQuery lazily. Without this mock, importing
@@ -129,7 +133,9 @@ def spec_fields(
             "grade": NOT_GRADED,
             "reason": "reference unverified",
         }
-    tol_abs = entry.get("tolerance_abs") if tolerance_abs is _USE_ENTRY else tolerance_abs
+    tol_abs = (
+        entry.get("tolerance_abs") if tolerance_abs is _USE_ENTRY else tolerance_abs
+    )
     tol_pct = entry.get("tolerance_pct") if tolerance_abs is _USE_ENTRY else None
     grade, err_abs, err_pct = grade_metric(
         computed, entry["value"], tolerance_abs=tol_abs, tolerance_pct=tol_pct
@@ -251,17 +257,29 @@ def stability_at_aft_limit(np_fs: float, aft_fs: float, mac_in: float) -> dict:
 def two_method_np(analytic: float, vlm: float | None, bound_in: float) -> dict:
     """Analytic vs vortex-lattice NP. None (no VLM run) is 'not run', never a pass."""
     if vlm is None:
-        return {"status": "not run", "analytic": analytic, "vlm": None,
-                "delta": None, "bound_in": bound_in}
+        return {
+            "status": "not run",
+            "analytic": analytic,
+            "vlm": None,
+            "delta": None,
+            "bound_in": bound_in,
+        }
     delta = abs(analytic - vlm)
-    return {"status": "pass" if delta <= bound_in else "fail", "analytic": analytic,
-            "vlm": vlm, "delta": delta, "bound_in": bound_in}
+    return {
+        "status": "pass" if delta <= bound_in else "fail",
+        "analytic": analytic,
+        "vlm": vlm,
+        "delta": delta,
+        "bound_in": bound_in,
+    }
 
 
 VLM_NP_FILE = "vspaero_np.json"  # written by `python3.13 scripts/vspaero_np.py`
 
 
-def current_vlm_np(data_dir: Path, marker: dict[str, float]) -> tuple[float | None, str]:
+def current_vlm_np(
+    data_dir: Path, marker: dict[str, float]
+) -> tuple[float | None, str]:
     """Return (VLM NP in published FS, reason). None means no CURRENT run.
 
     Conservative: vspaero_np.json must carry an explicit ``np_fs`` AND a ``geometry`` block in
@@ -272,11 +290,15 @@ def current_vlm_np(data_dir: Path, marker: dict[str, float]) -> tuple[float | No
     try:
         run = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None, f"{VLM_NP_FILE} missing or unreadable (run: python3.13 scripts/vspaero_np.py)"
+        return (
+            None,
+            f"{VLM_NP_FILE} missing or unreadable (run: python3.13 scripts/vspaero_np.py)",
+        )
     np_val = run.get("np_fs")
     geom = run.get("geometry") or {}
     stale = sorted(
-        k for k, v in marker.items()
+        k
+        for k, v in marker.items()
         if not isinstance(geom.get(k), (int, float)) or abs(float(geom[k]) - v) >= 0.05
     )
     why = []
@@ -311,17 +333,22 @@ def two_method_check(data_dir: Path, geo: object, analytic: float) -> dict:
     return two
 
 
-def compute_checks(engine: object, config_module: object, data_dir: Path) -> dict:
+def compute_checks(
+    engine: PhysicsEngine, config_module: object, data_dir: Path
+) -> dict:
     """Assemble metadata.checks."""
     from core.ledger import load_ledger  # noqa: E402
 
     geo = config_module.geometry  # type: ignore[attr-defined]
-    np_fs = geo.to_published_datum(engine.calculate_cg_envelope().neutral_point)  # type: ignore[attr-defined]
+    np_fs = geo.to_published_datum(engine.calculate_cg_envelope().neutral_point)
     # MAC: PhysicsEngine.calculate_mac() in core/analysis.py (the MAC used for static margin).
-    mac_in, _ = engine.calculate_mac()  # type: ignore[attr-defined]
+    mac_in, _ = engine.calculate_mac()
     aft_fs = float(load_ledger()["envelope"]["aft_fs"])
     return {
-        "stability": {**stability_at_aft_limit(np_fs, aft_fs, mac_in), "mac_in": mac_in},
+        "stability": {
+            **stability_at_aft_limit(np_fs, aft_fs, mac_in),
+            "mac_in": mac_in,
+        },
         "two_method_np": two_method_check(data_dir, geo, np_fs),
     }
 
@@ -329,7 +356,7 @@ def compute_checks(engine: object, config_module: object, data_dir: Path) -> dic
 def collect_metrics(
     ref_data: dict,
     config_module: object,
-    engine: object,
+    engine: PhysicsEngine,
 ) -> list[dict]:
     """
     Compute all validated metrics and assemble metric dicts.
@@ -354,7 +381,7 @@ def collect_metrics(
     # -------------------------------------------------------------------------
     # Stability metrics (from PhysicsEngine)
     # -------------------------------------------------------------------------
-    stability = engine.calculate_cg_envelope()  # type: ignore[union-attr]
+    stability = engine.calculate_cg_envelope()
 
     # --- Neutral Point ---
     computed_np_pub = geo.to_published_datum(stability.neutral_point)
@@ -398,7 +425,7 @@ def collect_metrics(
     # (StabilityMetrics.static_margin), which is a different quantity.
     from core.ledger import load_ledger  # noqa: E402
 
-    mac_in, _ = engine.calculate_mac()  # type: ignore[union-attr]
+    mac_in, _ = engine.calculate_mac()
     sm_check = stability_at_aft_limit(
         computed_np_pub, float(load_ledger()["envelope"]["aft_fs"]), mac_in
     )
@@ -449,7 +476,9 @@ def collect_metrics(
         {
             "metric_id": "max_gross_weight_lb",
             "description": "Maximum gross weight (hard limit)",
-            **spec_fields(specs, "max_gross_weight_lb", computed_mgw, tolerance_abs=0.0),
+            **spec_fields(
+                specs, "max_gross_weight_lb", computed_mgw, tolerance_abs=0.0
+            ),
             "source": "reference_data.json:aircraft_specs.max_gross_weight_lb",
             "units": "pounds",
         }
@@ -468,8 +497,8 @@ def collect_metrics(
         + sw.interior_weight_lb
         # Engine/propulsion: O-235 standard weights
         + 250.0  # Engine (O-235)
-        + 25.0   # Prop & Spinner
-        + 30.0   # Engine Accessories
+        + 25.0  # Prop & Spinner
+        + 30.0  # Engine Accessories
     )
     metrics.append(
         {
@@ -502,14 +531,46 @@ def collect_metrics(
         )
 
     al = config_module.aero_limits  # type: ignore[attr-defined]
-    _airfoil("canard_clmax", "Canard (Roncz R1145MS) maximum lift coefficient",
-             "roncz_r1145ms", "cl_max", al.canard_clmax, 0.05, None, "dimensionless")
-    _airfoil("wing_clmax", "Main wing (Eppler 1230) maximum lift coefficient",
-             "eppler_1230", "cl_max", al.wing_clmax, 0.05, None, "dimensionless")
-    _airfoil("canard_alpha_0l_deg", "Canard (Roncz R1145MS) zero-lift angle of attack",
-             "roncz_r1145ms", "alpha_zero_lift_deg", al.canard_alpha_0L, 0.5, None, "degrees")
-    _airfoil("wing_alpha_0l_deg", "Main wing (Eppler 1230) zero-lift angle of attack",
-             "eppler_1230", "alpha_zero_lift_deg", al.wing_alpha_0L, 0.5, None, "degrees")
+    _airfoil(
+        "canard_clmax",
+        "Canard (Roncz R1145MS) maximum lift coefficient",
+        "roncz_r1145ms",
+        "cl_max",
+        al.canard_clmax,
+        0.05,
+        None,
+        "dimensionless",
+    )
+    _airfoil(
+        "wing_clmax",
+        "Main wing (Eppler 1230) maximum lift coefficient",
+        "eppler_1230",
+        "cl_max",
+        al.wing_clmax,
+        0.05,
+        None,
+        "dimensionless",
+    )
+    _airfoil(
+        "canard_alpha_0l_deg",
+        "Canard (Roncz R1145MS) zero-lift angle of attack",
+        "roncz_r1145ms",
+        "alpha_zero_lift_deg",
+        al.canard_alpha_0L,
+        0.5,
+        None,
+        "degrees",
+    )
+    _airfoil(
+        "wing_alpha_0l_deg",
+        "Main wing (Eppler 1230) zero-lift angle of attack",
+        "eppler_1230",
+        "alpha_zero_lift_deg",
+        al.wing_alpha_0L,
+        0.5,
+        None,
+        "degrees",
+    )
 
     # -------------------------------------------------------------------------
     # Geometry metrics
@@ -537,7 +598,9 @@ def collect_metrics(
     return metrics
 
 
-def build_report(metrics: list[dict], vspaero_provenance: dict, checks: dict | None = None) -> dict:
+def build_report(
+    metrics: list[dict], vspaero_provenance: dict, checks: dict | None = None
+) -> dict:
     """
     Build the full accuracy report dict from graded metrics and provenance.
 
@@ -549,7 +612,13 @@ def build_report(metrics: list[dict], vspaero_provenance: dict, checks: dict | N
         Complete accuracy report dict ready for JSON serialization.
     """
     # Count grades
-    grade_counts: dict[str, int] = {"pass": 0, "marginal": 0, "fail": 0, "ungraded": 0, "not graded": 0}
+    grade_counts: dict[str, int] = {
+        "pass": 0,
+        "marginal": 0,
+        "fail": 0,
+        "ungraded": 0,
+        "not graded": 0,
+    }
     for m in metrics:
         g = m["grade"].lower()
         if g in grade_counts:
@@ -650,18 +719,24 @@ def main() -> None:
     print(f"  NOT GRADED (unverified reference): {summary['not_graded']}")
     print()
     st = report["metadata"]["checks"]["stability"]
-    print(f"CHECK stability at aft limit FS {st['aft_limit_fs']}: "
-          f"{'PASS' if st['pass'] else 'FAIL'} (NP FS {st['np_fs']:.2f}, margin {st['static_margin_pct']:.2f}% MAC)")
+    print(
+        f"CHECK stability at aft limit FS {st['aft_limit_fs']}: "
+        f"{'PASS' if st['pass'] else 'FAIL'} (NP FS {st['np_fs']:.2f}, margin {st['static_margin_pct']:.2f}% MAC)"
+    )
     tm = report["metadata"]["checks"]["two_method_np"]
     if tm["status"] == "not run":
         print(f"CHECK two-method NP: NOT RUN ({tm['reason']})")
     else:
-        print(f"CHECK two-method NP: {tm['status'].upper()} (analytic FS {tm['analytic']:.2f}, VLM FS {tm['vlm']:.2f}, "
-              f"delta {tm['delta']:.3f} in, bound {tm['bound_in']} in)")
+        print(
+            f"CHECK two-method NP: {tm['status'].upper()} (analytic FS {tm['analytic']:.2f}, VLM FS {tm['vlm']:.2f}, "
+            f"delta {tm['delta']:.3f} in, bound {tm['bound_in']} in)"
+        )
     print()
 
     # Print metric table
-    print(f"{'Metric ID':<35} {'Grade':<10} {'Computed':>12} {'Reference':>12} {'Error Abs':>12}")
+    print(
+        f"{'Metric ID':<35} {'Grade':<10} {'Computed':>12} {'Reference':>12} {'Error Abs':>12}"
+    )
     print("-" * 90)
     for m in report["metrics"]:
         print(

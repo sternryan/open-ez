@@ -1,4 +1,5 @@
 """Assemble the static site: viewer + graph.json + config.json + model + rendered docs."""
+
 from __future__ import annotations
 
 import argparse
@@ -16,7 +17,13 @@ from guide.schema import SchemaError, load_graph, topo_order, validate
 
 VIEWER = Path(__file__).parent / "viewer"
 LAB = Path(__file__).parent / "lab"
-_LAB_INPUTS = ("package.json", "package-lock.json", "index.html", "tsconfig.json", "vite.config.mjs")
+_LAB_INPUTS = (
+    "package.json",
+    "package-lock.json",
+    "index.html",
+    "tsconfig.json",
+    "vite.config.mjs",
+)
 
 
 def _digest(paths: list[Path]) -> str:
@@ -36,7 +43,9 @@ def build_lab() -> Path:
     """Build guide/lab with npm (only when its inputs changed) and return its dist directory. Never skips silently."""
     npm = shutil.which("npm")
     if not npm:
-        raise RuntimeError("building the lab needs node and npm on PATH (install Node 20+); it is not skipped silently")
+        raise RuntimeError(
+            "building the lab needs node and npm on PATH (install Node 20+); it is not skipped silently"
+        )
     dist, mods = LAB / "dist", LAB / "node_modules"
     lock_stamp = mods / ".lock-stamp"
     lock = _digest([LAB / "package-lock.json"])
@@ -44,7 +53,11 @@ def build_lab() -> Path:
         subprocess.run([npm, "--prefix", str(LAB), "ci"], check=True)
         lock_stamp.write_text(lock)
     stamp = _lab_stamp()
-    if not (dist / "index.html").is_file() or not (dist / ".stamp").is_file() or (dist / ".stamp").read_text() != stamp:
+    if (
+        not (dist / "index.html").is_file()
+        or not (dist / ".stamp").is_file()
+        or (dist / ".stamp").read_text() != stamp
+    ):
         subprocess.run([npm, "--prefix", str(LAB), "run", "build"], check=True)
         (dist / ".stamp").write_text(stamp)
     return dist
@@ -62,14 +75,22 @@ def _render_docs(docs: Path, out: Path) -> None:
 
     out.mkdir(parents=True, exist_ok=True)
     items = []
-    for md in sorted(list((docs / "specs").glob("*build-guide*.md")) + list((docs / "plans").glob("*build-guide*.md"))):
+    for md in sorted(
+        list((docs / "specs").glob("*build-guide*.md"))
+        + list((docs / "plans").glob("*build-guide*.md"))
+    ):
         body = markdown.markdown(md.read_text(), extensions=["tables", "fenced_code"])
         (out / f"{md.stem}.html").write_text(
             f"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>"
             f"<title>{html.escape(md.stem)}</title><link rel=stylesheet href='../classic/css/app.css'>"
-            f"<main style='display:block;max-width:860px;margin:auto;padding:16px;height:auto'>{body}</main>")
+            f"<main style='display:block;max-width:860px;margin:auto;padding:16px;height:auto'>{body}</main>"
+        )
         items.append(f"<li><a href='{md.stem}.html'>{html.escape(md.stem)}</a></li>")
-    (out / "index.html").write_text("<!doctype html><meta charset=utf-8><title>docs</title><ul>" + "".join(items) + "</ul>")
+    (out / "index.html").write_text(
+        "<!doctype html><meta charset=utf-8><title>docs</title><ul>"
+        + "".join(items)
+        + "</ul>"
+    )
 
 
 LEGEND = [
@@ -79,7 +100,10 @@ LEGEND = [
     {"swatch": "unverified", "text": "Striped: web/spar position not verified"},
     {"swatch": None, "text": "Numbers = lay order"},
     {"swatch": None, "text": "Spar caps: plies as required to fill trough"},
-    {"swatch": None, "text": "Canard planform: GU size from the Owner's Manual; Roncz planform unconfirmed"},
+    {
+        "swatch": None,
+        "text": "Canard planform: GU size from the Owner's Manual; Roncz planform unconfirmed",
+    },
     {"swatch": None, "text": "Not to scale"},
 ]
 
@@ -91,8 +115,15 @@ def _plies(models: Path | None) -> dict:
     out: dict = {}
     for node, n in json.loads(lj.read_text())["nodes"].items():
         out.setdefault(n["component"], []).append(
-            {"node": node, "op": n["op"], "order": n["order"], "cloth": n["cloth"], "where": n["where"],
-             "position_verified": n["position_verified"]})
+            {
+                "node": node,
+                "op": n["op"],
+                "order": n["order"],
+                "cloth": n["cloth"],
+                "where": n["where"],
+                "position_verified": n["position_verified"],
+            }
+        )
     for rows in out.values():
         rows.sort(key=lambda r: r["order"])
     return out
@@ -108,12 +139,23 @@ def _loadpaths(g, models: Path | None) -> list[dict]:
     if not g.loadpaths:
         return []
     if models:
-        from guide import loadpaths  # CadQuery: imported only when there is geometry to compute
+        from guide import (
+            loadpaths,
+        )  # CadQuery: imported only when there is geometry to compute
+
         poly = loadpaths.polylines(g)
     else:
         poly = {}
-    return [{"id": lp.id, "label": lp.label, "kind": lp.kind, "parts": list(lp.parts),
-             "segments": poly[lp.id]["segments"] if lp.id in poly else []} for lp in g.loadpaths]
+    return [
+        {
+            "id": lp.id,
+            "label": lp.label,
+            "kind": lp.kind,
+            "parts": list(lp.parts),
+            "segments": poly[lp.id]["segments"] if lp.id in poly else [],
+        }
+        for lp in g.loadpaths
+    ]
 
 
 def _cutaway_export(models: Path) -> Path:
@@ -126,7 +168,9 @@ def _cutaway_export(models: Path) -> Path:
 def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
     exp = _cutaway_export(models)
     if not all((exp / f).is_file() for f in ("layup.json", "shots.json")):
-        raise SchemaError("--renders needs layup.json and shots.json next to --models (run guide.export_glb)")
+        raise SchemaError(
+            "--renders needs layup.json and shots.json next to --models (run guide.export_glb)"
+        )
     probs = render_key.check_renders(renders, exp, None)
     if probs:
         raise SchemaError("renders: " + "; ".join(probs))
@@ -137,20 +181,37 @@ def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
         shutil.copy(renders / f"{s['id']}.png", out / "renders" / f"{s['id']}.png")
     src = lambda s: f"renders/{s['id']}.png"  # noqa: E731
     return {
-        "ops": {s["highlight"]: {"src": src(s), "alt": layup.alt_text(g, pl, s)} for s in shots if s["kind"] == "op"},
-        "heroes": [{"bl": s["bl"], "src": src(s), "alt": layup.alt_text(g, pl, s)} for s in shots if s["kind"] == "hero"],
+        "ops": {
+            s["highlight"]: {"src": src(s), "alt": layup.alt_text(g, pl, s)}
+            for s in shots
+            if s["kind"] == "op"
+        },
+        "heroes": [
+            {"bl": s["bl"], "src": src(s), "alt": layup.alt_text(g, pl, s)}
+            for s in shots
+            if s["kind"] == "hero"
+        ],
         "legend": LEGEND,
         "count_note": layup.count_note(pl),
     }
 
 
-def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None, docs: Path | None,
-          renders: Path | None = None, public: bool = False) -> None:
+def build(
+    graph_dir: Path,
+    out: Path,
+    models: Path | None,
+    scan_base: str | None,
+    docs: Path | None,
+    renders: Path | None = None,
+    public: bool = False,
+) -> None:
     """public=True: a site safe for a public host. No scan base, no plans figure/page references, no classic viewer, no docs."""
     if public:
         scan_base, docs = None, None
     if renders and not models:
-        raise SchemaError("--renders needs --models (the renders are checked against its layup.json/shots.json)")
+        raise SchemaError(
+            "--renders needs --models (the renders are checked against its layup.json/shots.json)"
+        )
     g = load_graph(graph_dir)
     errs = validate(g)
     if errs:
@@ -164,12 +225,23 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
         shutil.copytree(VIEWER, out / "classic", ignore=shutil.ignore_patterns("tests"))
         ci = out / "classic" / "index.html"
         html_in = ci.read_text()
-        assert '<meta charset="utf-8">' in html_in, "classic/index.html lost its charset meta; the data-base tag has nowhere to go"
-        ci.write_text(html_in.replace('<meta charset="utf-8">', '<meta charset="utf-8">\n  <meta name="data-base" content="../">', 1))
+        assert (
+            '<meta charset="utf-8">' in html_in
+        ), "classic/index.html lost its charset meta; the data-base tag has nowhere to go"
+        ci.write_text(
+            html_in.replace(
+                '<meta charset="utf-8">',
+                '<meta charset="utf-8">\n  <meta name="data-base" content="../">',
+                1,
+            )
+        )
     payload = {
         "ops": [_op_json(g.ops[i]) for i in topo_order(g)],
         "order": topo_order(g),
-        "components": {c.id: {"label": c.label, "fidelity": c.fidelity} for c in g.components.values()},
+        "components": {
+            c.id: {"label": c.label, "fidelity": c.fidelity}
+            for c in g.components.values()
+        },
         "pages": {str(k): v for k, v in g.pages.items()},
         "annotations": [dataclasses.asdict(a) for a in g.annotations if a.confirmed],
         "plies": _plies(models),
@@ -180,16 +252,24 @@ def build(graph_dir: Path, out: Path, models: Path | None, scan_base: str | None
     }
     if public:
         for o in payload["ops"]:
-            o["sources"] = [{k: v for k, v in s.items() if k in ("doc", "page")} for s in o["sources"] if s["doc"] != "cobelu"]
+            o["sources"] = [
+                {k: v for k, v in s.items() if k in ("doc", "page")}
+                for s in o["sources"]
+                if s["doc"] != "cobelu"
+            ]
         payload["pages"], payload["annotations"] = {}, []
     if renders:
         payload["cutaway"] = _cutaway(g, models, renders, out)
     (out / "graph.json").write_text(json.dumps(payload, indent=1))
-    (out / "config.json").write_text(json.dumps({"scanBase": scan_base, "model": "models/longez.glb"}))
+    (out / "config.json").write_text(
+        json.dumps({"scanBase": scan_base, "model": "models/longez.glb"})
+    )
     (out / "models").mkdir()
     if models:
         shutil.copy(models, out / "models" / "longez.glb")
-        ledger = models.parent / "ledger.json"  # the fuselage mass ledger (guide.export_glb writes it beside layup.json)
+        ledger = (
+            models.parent / "ledger.json"
+        )  # the fuselage mass ledger (guide.export_glb writes it beside layup.json)
         if ledger.is_file():
             shutil.copy(ledger, out / "ledger.json")
     if docs:
@@ -203,10 +283,22 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", type=Path, default=None)
     ap.add_argument("--scan-base", default=None)
     ap.add_argument("--renders", type=Path, default=None)
-    ap.add_argument("--public", action="store_true", help="public-safe build: no plans figures/scans/annotations, no classic viewer or docs")
+    ap.add_argument(
+        "--public",
+        action="store_true",
+        help="public-safe build: no plans figures/scans/annotations, no classic viewer or docs",
+    )
     ap.add_argument("--docs", type=Path, default=Path("docs/superpowers"))
     a = ap.parse_args(argv)
-    build(a.graph, a.out, a.models, a.scan_base, a.docs, renders=a.renders, public=a.public)
+    build(
+        a.graph,
+        a.out,
+        a.models,
+        a.scan_base,
+        a.docs,
+        renders=a.renders,
+        public=a.public,
+    )
     print(f"built {a.out}")
     return 0
 

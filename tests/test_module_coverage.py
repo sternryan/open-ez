@@ -194,9 +194,9 @@ class TestAircraftAssembly:
         sig = inspect.signature(AircraftAssembly.get_mass_properties)
         # Only 'self' parameter
         params = [p for p in sig.parameters if p != "self"]
-        assert len(params) == 0, (
-            f"get_mass_properties() should take no args, got: {params}"
-        )
+        assert (
+            len(params) == 0
+        ), f"get_mass_properties() should take no args, got: {params}"
 
     def test_assembly_inherits_aircraft_component(self):
         """AircraftAssembly must subclass AircraftComponent."""
@@ -263,9 +263,9 @@ class TestLycomingO235:
         engine = LycomingO235()
         thrust_sl = engine.calculate_thrust(altitude_ft=0, velocity_kts=120)
         thrust_hi = engine.calculate_thrust(altitude_ft=12000, velocity_kts=120)
-        assert thrust_sl > thrust_hi, (
-            "Sea-level thrust should exceed high-altitude thrust"
-        )
+        assert (
+            thrust_sl > thrust_hi
+        ), "Sea-level thrust should exceed high-altitude thrust"
 
     def test_power_available_decreases_with_altitude(self):
         """Normally aspirated engine loses ~3%/1000 ft."""

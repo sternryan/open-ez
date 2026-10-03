@@ -13,7 +13,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
@@ -37,16 +36,16 @@ class TestDatumOffset:
     def test_datum_offset_field_exists(self):
         """config.geometry.datum_offset_in must be a float equal to 0.0 (code uses the published datum)."""
         offset = config.geometry.datum_offset_in
-        assert isinstance(offset, float), (
-            f"datum_offset_in should be float, got {type(offset)}"
-        )
+        assert isinstance(
+            offset, float
+        ), f"datum_offset_in should be float, got {type(offset)}"
         assert offset == 0.0, f"datum_offset_in should be 0.0, got {offset}"
 
     def test_to_published_datum_method_exists(self):
         """to_published_datum() must be callable on GeometricParams."""
-        assert callable(config.geometry.to_published_datum), (
-            "config.geometry.to_published_datum() is not callable"
-        )
+        assert callable(
+            config.geometry.to_published_datum
+        ), "config.geometry.to_published_datum() is not callable"
 
     def test_to_published_datum_is_identity(self):
         """With datum_offset_in = 0, to_published_datum(x) == x."""
@@ -66,9 +65,9 @@ class TestDatumOffset:
 
     def test_offset_is_zero(self):
         """datum_offset_in == 0: internal FS values are the published FS values."""
-        assert config.geometry.datum_offset_in == 0.0, (
-            f"datum_offset_in should be 0.0, got {config.geometry.datum_offset_in}"
-        )
+        assert (
+            config.geometry.datum_offset_in == 0.0
+        ), f"datum_offset_in should be 0.0, got {config.geometry.datum_offset_in}"
 
 
 # ---------------------------------------------------------------------------
@@ -89,30 +88,24 @@ class TestReferenceDataSchema:
 
     def test_reference_data_file_exists(self):
         """data/validation/reference_data.json must exist."""
-        assert REF_DATA_PATH.exists(), (
-            f"reference_data.json not found at {REF_DATA_PATH}"
-        )
+        assert (
+            REF_DATA_PATH.exists()
+        ), f"reference_data.json not found at {REF_DATA_PATH}"
 
     def test_top_level_structure(self):
         """Top-level keys: metadata, sources, aircraft_specs, airfoil_data (community_builds removed 2026-09-29)."""
         data = _load_ref_data()
         required_keys = {"metadata", "sources", "aircraft_specs", "airfoil_data"}
         missing = required_keys - set(data.keys())
-        assert not missing, (
-            f"reference_data.json missing top-level keys: {missing}"
-        )
+        assert not missing, f"reference_data.json missing top-level keys: {missing}"
 
     def test_sources_have_required_fields(self):
         """Each source entry must have title and type fields."""
         data = _load_ref_data()
         sources = data["sources"]
         for source_id, source in sources.items():
-            assert "title" in source, (
-                f"Source '{source_id}' missing 'title' field"
-            )
-            assert "type" in source, (
-                f"Source '{source_id}' missing 'type' field"
-            )
+            assert "title" in source, f"Source '{source_id}' missing 'title' field"
+            assert "type" in source, f"Source '{source_id}' missing 'type' field"
 
     def test_aircraft_specs_have_provenance(self):
         """Each aircraft_specs entry has an audit status and its matching provenance field."""
@@ -120,24 +113,34 @@ class TestReferenceDataSchema:
         specs = data["aircraft_specs"]
         assert len(specs) > 0, "aircraft_specs is empty"
         for spec_name, spec in specs.items():
-            assert "source_id" not in spec, f"Spec '{spec_name}' still carries retired 'source_id'"
+            assert (
+                "source_id" not in spec
+            ), f"Spec '{spec_name}' still carries retired 'source_id'"
             status = spec.get("status")
-            assert status in {"confirmed", "derived", "unverified"}, (
-                f"Spec '{spec_name}' has no valid 'status'"
-            )
-            field = {"confirmed": "cite", "derived": "formula", "unverified": "was_cited"}[status]
-            assert spec.get(field), f"Spec '{spec_name}' ({status}) missing '{field}' field"
+            assert status in {
+                "confirmed",
+                "derived",
+                "unverified",
+            }, f"Spec '{spec_name}' has no valid 'status'"
+            field = {
+                "confirmed": "cite",
+                "derived": "formula",
+                "unverified": "was_cited",
+            }[status]
+            assert spec.get(
+                field
+            ), f"Spec '{spec_name}' ({status}) missing '{field}' field"
 
     def test_airfoil_data_has_both_profiles(self):
         """airfoil_data must contain roncz_r1145ms and eppler_1230 entries."""
         data = _load_ref_data()
         airfoil_data = data["airfoil_data"]
-        assert "roncz_r1145ms" in airfoil_data, (
-            "airfoil_data missing 'roncz_r1145ms' entry (safety critical canard airfoil)"
-        )
-        assert "eppler_1230" in airfoil_data, (
-            "airfoil_data missing 'eppler_1230' entry (main wing airfoil)"
-        )
+        assert (
+            "roncz_r1145ms" in airfoil_data
+        ), "airfoil_data missing 'roncz_r1145ms' entry (safety critical canard airfoil)"
+        assert (
+            "eppler_1230" in airfoil_data
+        ), "airfoil_data missing 'eppler_1230' entry (main wing airfoil)"
 
     def test_community_builds_removed(self):
         """community_builds was unsourced and is removed (Block 1 reference audit)."""
@@ -198,8 +201,12 @@ class TestDatumReferenceDataConsistency:
         engine = PhysicsEngine()
         metrics = engine.calculate_cg_envelope()
 
-        computed_fwd_published = config.geometry.to_published_datum(metrics.cg_range_fwd)
-        computed_aft_published = config.geometry.to_published_datum(metrics.cg_range_aft)
+        computed_fwd_published = config.geometry.to_published_datum(
+            metrics.cg_range_fwd
+        )
+        computed_aft_published = config.geometry.to_published_datum(
+            metrics.cg_range_aft
+        )
 
         fwd_delta = abs(computed_fwd_published - ref_fwd)
         aft_delta = abs(computed_aft_published - ref_aft)

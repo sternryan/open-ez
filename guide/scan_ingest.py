@@ -1,5 +1,6 @@
 """Render the owner's plans scan to private page images + OCR text + a proposed page map.
 All outputs go OUTSIDE the repo (default ~/.cache/long-ez/scan-1980). Never commit them."""
+
 from __future__ import annotations
 
 import argparse
@@ -31,7 +32,12 @@ def render_pages(pdf: Path, out_dir: Path, dpi: int = 150) -> int:
 
 
 def _ocr(img: Path) -> str:
-    return subprocess.run(["tesseract", str(img), "-", "--psm", "6"], capture_output=True, text=True, check=True).stdout
+    return subprocess.run(
+        ["tesseract", str(img), "-", "--psm", "6"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
 
 
 def ocr_pages(pages_dir: Path, text_dir: Path) -> int:
@@ -51,7 +57,10 @@ def propose_page_map(pdf: Path) -> dict[int, str | None]:
             for i, page in enumerate(doc, start=1):
                 r = page.rect
                 ref = None
-                for clip in (fitz.Rect(0, r.height * 0.86, r.width, r.height), fitz.Rect(0, 0, r.width, r.height * 0.10)):
+                for clip in (
+                    fitz.Rect(0, r.height * 0.86, r.width, r.height),
+                    fitz.Rect(0, 0, r.width, r.height * 0.10),
+                ):
                     page.get_pixmap(dpi=150, clip=clip).save(tmp)
                     ref = parse_page_ref(_ocr(tmp))
                     if ref:
@@ -63,7 +72,9 @@ def propose_page_map(pdf: Path) -> dict[int, str | None]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="guide.scan_ingest")
     ap.add_argument("pdf", type=Path)
-    ap.add_argument("--out", type=Path, default=Path("~/.cache/long-ez/scan-1980").expanduser())
+    ap.add_argument(
+        "--out", type=Path, default=Path("~/.cache/long-ez/scan-1980").expanduser()
+    )
     a = ap.parse_args(argv)
 
     # Check if tesseract is available
@@ -78,12 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError:
         pass  # outside the repo, as required
     else:
-        print(f"error: --out must be outside the git repo (repo root: {REPO_ROOT})", file=sys.stderr)
+        print(
+            f"error: --out must be outside the git repo (repo root: {REPO_ROOT})",
+            file=sys.stderr,
+        )
         return 2
 
     n = render_pages(a.pdf, a.out / "pages")
     ocr_pages(a.out / "pages", a.out / "text")
-    (a.out / "page_map.proposed.yaml").write_text(yaml.safe_dump(propose_page_map(a.pdf)))
+    (a.out / "page_map.proposed.yaml").write_text(
+        yaml.safe_dump(propose_page_map(a.pdf))
+    )
     print(f"rendered {n} pages -> {a.out}")
     return 0
 

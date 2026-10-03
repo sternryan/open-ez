@@ -47,8 +47,9 @@ from .openvsp_runner import (  # noqa: F401
 )
 
 
-
-def half_chord_sweep_tan(tan_sweep_le: float, root_chord: float, tip_chord: float, span: float) -> float:
+def half_chord_sweep_tan(
+    tan_sweep_le: float, root_chord: float, tip_chord: float, span: float
+) -> float:
     """tan of the half-chord sweep of a straight-tapered trapezoid.
 
     span is the full span of the trapezoid (tip to tip); root_chord is its chord at the
@@ -86,7 +87,9 @@ def horseshoe_wz_per_gamma(x, y, z, s):
     return float(w) if w.ndim == 0 else w
 
 
-def average_horseshoe_downwash_gradient(a_c, area_c, span_c, y, chord, dx, z, width=None):
+def average_horseshoe_downwash_gradient(
+    a_c, area_c, span_c, y, chord, dx, z, width=None
+):
     """Chord-weighted average d eps/d alpha of a forward surface's horseshoe over an aft span.
 
     Ledger C4 (method fixed before it was run). Vortex span b' = (pi/4) span_c (elliptic loading;
@@ -241,8 +244,12 @@ class PhysicsEngine:
         x_mac_le = x_le_centerline + y_mac * tan_le
         return mac, x_mac_le
 
-    def canard_downwash_gradient_on_wing(self, a_canard: float, x_bound_canard: float,
-                                         strips_per_vortex_semispan: int = 40_000) -> float:
+    def canard_downwash_gradient_on_wing(
+        self,
+        a_canard: float,
+        x_bound_canard: float,
+        strips_per_vortex_semispan: int = 40_000,
+    ) -> float:
         """Chord-weighted average canard d eps/d alpha over the reference wing (ledger C4).
 
         Wing strips span the reference trapezoid (BL 0 to the tip, both halves); each is placed
@@ -259,7 +266,9 @@ class PhysicsEngine:
         s_v = (math.pi / 8) * self.geo.canard_span  # vortex semi-span b'/2
         step = s_v / strips_per_vortex_semispan
         outer = s_v + step * np.arange(1, int(math.ceil((half - s_v) / step)))
-        right = np.concatenate([np.arange(0, strips_per_vortex_semispan + 1) * step, outer, [half]])
+        right = np.concatenate(
+            [np.arange(0, strips_per_vortex_semispan + 1) * step, outer, [half]]
+        )
         edges = np.concatenate([-right[:0:-1], right])
         y = 0.5 * (edges[1:] + edges[:-1])
         width = np.diff(edges)
@@ -332,14 +341,20 @@ class PhysicsEngine:
         # Half-chord sweep from LE sweep and taper ratio
         # tan(sweep_c/2) = tan(sweep_LE) - (c_r - c_t)/b (Raymer sec. 7; half_chord_sweep_tan)
         tan_sweep_le_wing = math.tan(math.radians(self.geo.wing_sweep_le))
-        tan_sweep_half_wing = half_chord_sweep_tan(  # reference trapezoid (same line as the panel)
-            tan_sweep_le_wing, self.geo.wing_centerline_chord, self.geo.wing_tip_chord,
-            self.geo.wing_span,
+        tan_sweep_half_wing = (
+            half_chord_sweep_tan(  # reference trapezoid (same line as the panel)
+                tan_sweep_le_wing,
+                self.geo.wing_centerline_chord,
+                self.geo.wing_tip_chord,
+                self.geo.wing_span,
+            )
         )
 
         tan_sweep_le_canard = math.tan(math.radians(self.geo.canard_sweep_le))
         tan_sweep_half_canard = half_chord_sweep_tan(
-            tan_sweep_le_canard, self.geo.canard_root_chord, self.geo.canard_tip_chord,
+            tan_sweep_le_canard,
+            self.geo.canard_root_chord,
+            self.geo.canard_tip_chord,
             self.geo.canard_span,
         )
 
@@ -562,14 +577,18 @@ class PhysicsEngine:
 
         tan_le_wing = math.tan(math.radians(self.geo.wing_sweep_le))
         tan_half_wing = half_chord_sweep_tan(
-            tan_le_wing, self.geo.wing_root_chord, self.geo.wing_tip_chord,
+            tan_le_wing,
+            self.geo.wing_root_chord,
+            self.geo.wing_tip_chord,
             2 * self.geo.wing_panel_span,
         )
 
         taper_canard = self.geo.canard_tip_chord / self.geo.canard_root_chord
         tan_le_canard = math.tan(math.radians(self.geo.canard_sweep_le))
         tan_half_canard = half_chord_sweep_tan(
-            tan_le_canard, self.geo.canard_root_chord, self.geo.canard_tip_chord,
+            tan_le_canard,
+            self.geo.canard_root_chord,
+            self.geo.canard_tip_chord,
             self.geo.canard_span,
         )
 
