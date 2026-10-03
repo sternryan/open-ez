@@ -69,11 +69,11 @@
 - {id: nose.nb_box, label: NB nose gear box, fidelity: unvalidated}
 - {id: nose.skin, label: Nose skin, fidelity: unvalidated}
 - {id: nose.door, label: Nose door, fidelity: unvalidated}
-# Centre-section spar, firewall accessories, controls and trim (chapters 14-17). No geometry yet; the model tasks that follow add it.
+# Centre-section spar, firewall accessories, controls and trim (chapters 14-17). Initial spar display envelopes are representational; other geometry remains pending.
 # Cap trough templates (A11), the firewall outline (A4), consoles, stick positions, master cylinders and the pitch stops are not printed, so those will be representational.
-- {id: spar.box, label: Centre-section spar box, fidelity: no-geometry}
-- {id: spar.cap_top, label: Top spar cap (12 UND plies), fidelity: no-geometry}
-- {id: spar.cap_bottom, label: Bottom spar cap (9 UND plies), fidelity: no-geometry}
+- {id: spar.box, label: Centre-section spar display envelope (upper profile unresolved), fidelity: unvalidated}
+- {id: spar.cap_top, label: Top spar cap (12 UND plies; fitted trough bands), fidelity: unvalidated}
+- {id: spar.cap_bottom, label: Bottom spar cap (9 UND plies; fitted trough bands), fidelity: unvalidated}
 - {id: spar.bulkheads, label: Spar bulkheads (CS5 to CS8), fidelity: no-geometry}
 - {id: spar.lwa, label: Wing attach fittings (LWA1 to LWA5), fidelity: no-geometry}
 - {id: spar.spruce_blocks, label: Spar spruce engine-mount blocks, fidelity: no-geometry}
