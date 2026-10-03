@@ -363,7 +363,8 @@ export function fuselageTour(graph: TourGraph, variant: string, plies: (opId: st
     }
   })
   // a chapter that ends on a station cut finishes in its own last op's state (the box as that chapter leaves it), not the finished airplane on its gear
-  const lastOp = cutFs !== undefined || (single && CLOSE_ON_LAST_OP.has(chs[0])) ? tourSteps(graph, variant, chs[0]).at(-1)?.op : undefined
+  const m25Tour = chs.length > 0 && chs.every((c) => M25_TOUR_CHAPTERS.includes(c)) // the ch14-17 tour closes on its last op (the spar, firewall face, controls and trim are drawn on those ops only)
+  const lastOp = m25Tour ? tourSteps(graph, variant, chs[chs.length - 1]).at(-1)?.op : cutFs !== undefined || (single && CLOSE_ON_LAST_OP.has(chs[0])) ? tourSteps(graph, variant, chs[0]).at(-1)?.op : undefined
   s.push(lastOp ? { t, act: 'finish', op: lastOp } : { t, act: 'finish' })
   if (cutFs !== undefined) { // the station cut through the chapter's own part, the cursor on the real slider
     s.push({ t: t + 0.2, move: SEC_ON, dur: 0.4 }, { t: t + 0.7, click: SEC_ON })

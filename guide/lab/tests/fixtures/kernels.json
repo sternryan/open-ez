@@ -1,4 +1,69 @@
 {
+ "controls": {
+  "stick": [
+   {
+    "defl": -40.0,
+    "angle": 16.090523642,
+    "stroke": -0.95
+   },
+   {
+    "defl": -30.0,
+    "angle": 16.090523642,
+    "stroke": -0.95
+   },
+   {
+    "defl": -12.5,
+    "angle": 9.753098182,
+    "stroke": -0.411235266
+   },
+   {
+    "defl": 0.0,
+    "angle": 5.0,
+    "stroke": 0.0
+   },
+   {
+    "defl": 12.5,
+    "angle": 0.281248318,
+    "stroke": 0.411235266
+   },
+   {
+    "defl": 15.0,
+    "angle": -0.641467979,
+    "stroke": 0.491756186
+   },
+   {
+    "defl": 22.0,
+    "angle": -0.641467979,
+    "stroke": 0.491756186
+   }
+  ],
+  "clamp": [
+   {
+    "d": -31.0,
+    "out": -30.0
+   },
+   {
+    "d": -30.0,
+    "out": -30.0
+   },
+   {
+    "d": 0.0,
+    "out": 0.0
+   },
+   {
+    "d": 15.0,
+    "out": 15.0
+   },
+   {
+    "d": 20.0,
+    "out": 15.0
+   },
+   {
+    "d": 22.0,
+    "out": 15.0
+   }
+  ]
+ },
  "elevators": {
   "hinge": [
    9.664,
@@ -672,6 +737,29 @@
    "status": "conflict",
    "theta_down_deg": 18.727047,
    "theta_up_deg": 97.322319
+  },
+  "controls": {
+   "arm_in": 1.9,
+   "lever_in": 5.0,
+   "cant_forward_deg": 5.0,
+   "cant_inboard_deg": 5.0,
+   "up_target_deg": 15.0,
+   "up_floor_deg": 12.5,
+   "down_deg": 30.0,
+   "pivot_fs": {
+    "front": 45.5,
+    "rear": 89.7
+   },
+   "tube_bl": 6.2,
+   "tube_wl": 12.3,
+   "wl_zero": 17.4,
+   "stop_label": "Pitch stops (not printed; fitted shape)",
+   "stop_size_in": [
+    1.0,
+    1.0,
+    0.6
+   ],
+   "note": "stick pitch from the Roncz travel row only (15 up, 30 down; 12.5 is the floor); the arm and stop positions are fitted"
   }
  }
 }

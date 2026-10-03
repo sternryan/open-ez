@@ -111,3 +111,34 @@ test('a film dwells on the ops that move long enough for the motion to play out'
   assert.ok(KIN_HOLD[HANG_OP] > 7 && KIN_HOLD[RIG_OP] >= RIG_WAIT + 6, 'the crank takes 6 s after the camera comes round')
   assert.equal(RIG_OP, 'f13.rig-nose-gear')
 })
+
+// ---- chapters 16-17: the pitch control (core/controls_kin.py), Roncz travel only ----
+import { stickAngleDeg, clampDeflectionDeg, pushrodStrokeIn, stickDir, stickText, type ControlsKin } from '../src/logic/kin'
+const ck: ControlsKin = fx.extras.controls
+
+test('the stick kinematics are core.controls_kin (angle, stroke and the Roncz clamp)', () => {
+  assert.ok(fx.controls.stick.length >= 7 && fx.controls.clamp.length >= 6)
+  for (const r of fx.controls.stick) {
+    const d = clampDeflectionDeg(r.defl, ck)
+    near(stickAngleDeg(d, ck), r.angle, 1e-8, JSON.stringify(r))
+    near(pushrodStrokeIn(d, ck.arm_in), r.stroke, 1e-8, JSON.stringify(r))
+  }
+  for (const r of fx.controls.clamp) near(clampDeflectionDeg(r.d, ck), r.out, 0, JSON.stringify(r))
+})
+
+test('the travel is the Roncz row only: 15 up, 30 down, 12.5 the floor; never 20 or 22', () => {
+  assert.equal(ck.up_target_deg, 15); assert.equal(ck.down_deg, 30); assert.equal(ck.up_floor_deg, 12.5)
+  assert.equal(clampDeflectionDeg(22, ck), 15); assert.equal(clampDeflectionDeg(-40, ck), -30)
+  for (const d of [-30, -12.5, 0, 15]) assert.ok(!/\b(20|22)\b/.test(stickText(d, ck)), stickText(d, ck))
+  assert.equal(stickText(15, ck), 'Up 15.0 deg  (target 15, floor 12.5)')
+  assert.equal(stickText(-30, ck), 'Down 30.0 deg  (limit 30)')
+})
+
+test('the stick leans forward at neutral and goes aft toward full up; its direction is a unit vector', () => {
+  const a0 = stickAngleDeg(0, ck)
+  near(a0, ck.cant_forward_deg, 1e-9)
+  assert.ok(stickAngleDeg(15, ck) < a0 && stickAngleDeg(-30, ck) > a0)
+  const d = stickDir(a0, ck.cant_inboard_deg)
+  near(Math.hypot(...d), 1, 1e-12)
+  assert.ok(d[0] < 0 && d[2] > 0)
+})

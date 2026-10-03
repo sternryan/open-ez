@@ -86,7 +86,27 @@ def build() -> dict:
                 "rows": rows,
             }
         )
+    from core import controls_kin as ck
+
+    ctl = fe.m25_section()["controls"]
+    controls = {
+        "stick": [
+            {
+                "defl": d,
+                "angle": ck.stick_angle_deg(ck.clamp_deflection_deg(d)),
+                "stroke": ck.pushrod_stroke_in(
+                    ck.clamp_deflection_deg(d), ctl["arm_in"]
+                ),
+            }
+            for d in (-40.0, -30.0, -12.5, 0.0, 12.5, 15.0, 22.0)
+        ],
+        "clamp": [
+            {"d": d, "out": ck.clamp_deflection_deg(d)}
+            for d in (-31.0, -30.0, 0.0, 15.0, 20.0, 22.0)
+        ],
+    }
     return {
+        "controls": controls,
         "elevators": {
             "hinge": hinge,
             "rotate": rot,
@@ -95,7 +115,11 @@ def build() -> dict:
             "poses": poses,
         },
         "nose": nose,
-        "extras": {"elevators": ex["elevators"], "nose_gear": ng},
+        "extras": {
+            "elevators": ex["elevators"],
+            "nose_gear": ng,
+            "controls": ctl,
+        },
     }
 
 

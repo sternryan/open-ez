@@ -87,6 +87,8 @@ const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foa
 }
 /** the spar's parts that slide into the box as one (the bench's, less the jig) */
 const SLIDES = (cid: string) => SPAR_COMPONENTS.has(cid) && cid !== 'spar.jig'
+/** the parts bolted on the firewall's aft face: the glass plies lie on that face (the aft ply to F.S. 125.31), where the stainless sheet is exported, so the lab sets them that far aft (display only) */
+const FIREWALL_FACE = new Set(['fuselage.firewall_stainless', 'firewall.belcrank', 'firewall.master_cylinders'])
 const STICKS = new Set(['controls_sticks_front_stick', 'controls_sticks_rear_stick'])
 /** how far the canard opening's removed material is lifted out of the box at its op (inches), so it reads as taken out */
 const VOID_LIFT = 5
@@ -157,6 +159,8 @@ export class FuselageBay {
   readonly stops = new THREE.Group()
   private sparBenchM = new Map<string, THREE.Matrix4>()
   private m25Chapter = false
+  /** how far aft the firewall face's parts are drawn (inches): the aft glass ply's thickness over the stainless sheet's station, plus a hair */
+  private firewallAside = 0
 
   constructor(parts: { cid: string; node: string | null; geo: THREE.BufferGeometry; name: string }[], readonly data: FuseLayup, graph: GraphLite) {
     this.group.name = 'fuselage'
@@ -276,6 +280,11 @@ export class FuselageBay {
     this.buildMarks()
     this.buildGhost()
     this.buildStops()
+    {
+      const ply = Math.max(...Object.values(data.nodes).filter((n) => n.part === 'firewall').map((n) => n.fs_max), -Infinity)
+      const sheet = data.extras?.m25?.parts.fuselage_firewall_stainless?.fs_min
+      this.firewallAside = sheet !== undefined && ply > sheet ? ply - sheet + 0.02 : 0
+    }
     this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
     this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops)
     this.installed.name = 'installedCanard'
@@ -941,7 +950,8 @@ export class FuselageBay {
     for (const m of this.meshes) {
       if (!m.m25) continue
       const mat = new THREE.Matrix4()
-      if (SLIDES(m.cid)) mat.makeTranslation(0, 0, this.slide)
+      if (FIREWALL_FACE.has(m.cid)) mat.makeTranslation(this.firewallAside, 0, 0)
+      else if (SLIDES(m.cid)) mat.makeTranslation(0, 0, this.slide)
       else if (k && STICKS.has(m.part)) {
         const base = this.pm(this.stickBase(m.part === 'controls_sticks_front_stick' ? 'front' : 'rear'))
         mat.makeTranslation(base.x, base.y, base.z).multiply(new THREE.Matrix4().makeRotationZ(((a - a0) * Math.PI) / 180)).multiply(new THREE.Matrix4().makeTranslation(-base.x, -base.y, -base.z))
