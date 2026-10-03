@@ -17,6 +17,8 @@ export interface UIHandlers {
   onQuality(q: 'high' | 'mid' | 'low' | 'auto'): void
   /** the canard or the fuselage box (optional: a page without the control never calls it) */
   onSubject?(s: Subject): void
+  /** the stick control (chapter 16's pitch pushrod op): the elevator deflection the person set, degrees, up positive */
+  onStick?(deflUp: number): void
 }
 /** How the section slider reads: the canard's B.L. (the default) or the fuselage's FS. */
 export interface SectionScale { min: number; max: number; fmt: (v: number) => string; label: string }
@@ -116,6 +118,8 @@ export function initUI(h: UIHandlers, store: Store) {
   const secChange = () => h.onSection(secOn.checked, +secBl.value)
   secOn.addEventListener('change', secChange)
   secBl.addEventListener('input', secChange)
+  const stickEl = $('stick-defl') as HTMLInputElement
+  stickEl.addEventListener('input', () => h.onStick?.(+stickEl.value))
   $('quality-seg').addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-q]') as HTMLElement | null
     if (b) h.onQuality(b.dataset.q as 'high' | 'mid' | 'low' | 'auto')
@@ -226,6 +230,12 @@ export function initUI(h: UIHandlers, store: Store) {
         const q = (b as HTMLElement).dataset.q
         b.setAttribute('aria-pressed', String(q === 'auto' ? auto : !auto && q === tier))
       }
+    },
+    /** the stick control: shown only on the op that has it; `defl` is the elevator deflection (degrees, up positive), `text` its short reading */
+    setStick(show: boolean, defl: number, text: string) {
+      $('stick').hidden = !show
+      if (+stickEl.value !== defl) stickEl.value = String(defl)
+      $('stick-val').textContent = text
     },
     setSubject(s: Subject) {
       for (const b of document.querySelectorAll('#subject button[data-subject]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.subject === s))

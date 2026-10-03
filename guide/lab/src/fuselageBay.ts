@@ -14,6 +14,8 @@ import { matte } from './core/materials'
 import { buildFuselageStation, STATION, INCH, blockTopY, fsToX } from './scene/fuselageStation'
 import { nosePoints, nosePose, noseAxleAt, type Candidate, type NosePoints, type NoseGearKin } from './logic/kin'
 import { fuseView, viewOffset } from './fuseShots'
+import { M25_CHAPTERS, M25_FIRST_OP, SPAR_BENCH_LAST, ELEV_OPS, STOPS_FROM, SPAR_FIT_OP, SPAR_COMPONENTS, m25Place, boxGhostAt } from './logic/m25'
+import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -51,6 +53,8 @@ export interface FMesh {
   void: boolean
   /** a chapter 13 nose or nose-gear part (layup.json "extras"): shown only while a chapter 13 op is selected */
   extra: boolean
+  /** a chapter 14-17 part (layup.json "extras".m25): the spar (on the bench, then in the box), the firewall face, the controls and the trim; shown on those chapters' ops only */
+  m25: boolean
 }
 
 // Representational colours (the canard's rule: tell materials apart, not a measured product colour).
@@ -69,6 +73,21 @@ const BOX = new Set(['side_left', 'side_right', 'front_seat_bkhd', 'rear_seat_bk
 const CARRIER: Record<string, string> = { rollover_inserts: 'rollover' }
 /** fitted parts that are thin bands, not plates: their bounding box says nothing about how large their faces are */
 const NARROW = new Set(['carved_corners'])
+/** the chapter 14-17 parts' looks (colour, metalness, roughness; 'foam' parts are drawn as foam): REPRESENTATIONAL colours, as the box's */
+const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foam'> = {
+  spar_box: 'foam', spar_bulkheads_end_bulkheads: 'foam', spar_bulkheads_interior_bulkheads: 'foam',
+  spar_lwa_lwa1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa2: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa3: ['metal', 0xc4c8cd, 0.85, 0.35],
+  spar_lwa_lwa4: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa5: ['metal', 0xc4c8cd, 0.85, 0.35],
+  spar_spruce_blocks: ['wood', 0xdcc08e, 0, 0.6], spar_em12: ['metal', 0x8d939a, 0.9, 0.3], spar_sh1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_jig: ['wood', 0xb98f5c, 0, 0.62],
+  fuselage_firewall_stainless: ['metal', 0xd5d8dc, 0.9, 0.3], firewall_belcrank: ['metal', 0x8d939a, 0.9, 0.3], firewall_master_cylinders: ['metal', 0x6d737a, 0.7, 0.4],
+  controls_consoles_front_console: 'foam', controls_consoles_rear_console: 'foam', controls_torque_tube: ['metal', 0x8d939a, 0.9, 0.3],
+  controls_sticks_front_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_sticks_rear_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_pitch_pushrod: ['metal', 0xc4c8cd, 0.85, 0.35],
+  controls_rudder_conduit: ['wood', 0x2e2e30, 0, 0.7], trim_pitch_handle_pth: ['metal', 0xc4c8cd, 0.85, 0.35], trim_pitch_handle_pth_pivot: ['metal', 0x8d939a, 0.9, 0.3],
+  trim_pitch_handle_pth_springs: ['metal', 0x9aa0a6, 0.9, 0.35], trim_roll_trim_roll_trim: ['metal', 0xc4c8cd, 0.85, 0.35], trim_roll_trim_roll_trim_springs: ['metal', 0x9aa0a6, 0.9, 0.35],
+}
+/** the spar's parts that slide into the box as one (the bench's, less the jig) */
+const SLIDES = (cid: string) => SPAR_COMPONENTS.has(cid) && cid !== 'spar.jig'
+const STICKS = new Set(['controls_sticks_front_stick', 'controls_sticks_rear_stick'])
 /** how far the canard opening's removed material is lifted out of the box at its op (inches), so it reads as taken out */
 const VOID_LIFT = 5
 /** the bulkheads' row on the table, packed left to right from the nose end, and the two sides' rows (table-local inches) */
@@ -123,12 +142,21 @@ export class FuselageBay {
   /** the nose gear's other axle candidate, drawn as a ghost wheel and strut beside the one the export draws (the p171 / Owner's Manual conflict) */
   readonly ghost = new THREE.Group()
   private opChapter = new Map<string, number>()
+  private opOf = new Map<string, { id: string; components: string[] }>()
   private noseK: NoseGearKin | null = null
   private nosePts: Record<Candidate, NosePoints> | null = null
   private noseT = 0
   private noseShown = false
   private ghostWheel: THREE.Mesh | null = null
   private ghostStrut: THREE.Mesh | null = null
+  /** chapters 14-17: the control kinematics' inputs, the spar's slide-in (inches along the span, 0 = installed), the stick's deflection (elevator, up positive) */
+  private ctl: ControlsKin | null = null
+  private slide = 0
+  private deflUp = 0
+  /** the pitch stops (fitted, unprinted): two small blocks at the stick's travel limits, shown from STOPS_FROM */
+  readonly stops = new THREE.Group()
+  private sparBenchM = new Map<string, THREE.Matrix4>()
+  private m25Chapter = false
 
   constructor(parts: { cid: string; node: string | null; geo: THREE.BufferGeometry; name: string }[], readonly data: FuseLayup, graph: GraphLite) {
     this.group.name = 'fuselage'
@@ -137,7 +165,7 @@ export class FuselageBay {
     this.jigFrame.name = 'fuselageJig'
     this.jigFrame.matrixAutoUpdate = false
     this.order = graph.order
-    for (const o of graph.ops) this.opChapter.set(o.id, o.chapter)
+    for (const o of graph.ops) { this.opChapter.set(o.id, o.chapter); this.opOf.set(o.id, o) }
     this.dry = graph.ops.find((o) => o.id === TRIAL_FIT)?.components ?? []
     const byId = new Map(graph.ops.map((o) => [o.id, o]))
     this.order.forEach((id, i) => { for (const c of byId.get(id)?.components ?? []) if (!this.firstIdx.has(c)) this.firstIdx.set(c, i) })
@@ -145,6 +173,8 @@ export class FuselageBay {
     this.cut.amount = 0
     this.bank = data.bank_deg ?? BANK_DEG
     const extraParts = new Set(Object.keys(data.extras?.nose_parts ?? {}))
+    const m25Parts = new Set(Object.keys(data.extras?.m25?.parts ?? {}))
+    this.ctl = data.extras?.m25?.controls ?? null
     const ng = data.extras?.nose_gear
     if (ng) {
       this.noseK = ng as NoseGearKin
@@ -178,6 +208,12 @@ export class FuselageBay {
         const fj = plyFrame(p.geo), ft = plyFrame(flat)
         jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch, hatchSoft, dryTone: this.dryTone })
         tableMat = compositeMaterial(spec, null, ft.web, ft.span, { axis: ft.axis, hatch, hatchSoft })
+      } else if (M25_LOOK[part] !== undefined && M25_LOOK[part] !== 'foam') {
+        const [kind, color, metalness, roughness] = M25_LOOK[part] as ['wood' | 'metal', number, number, number]
+        spec = { kind: 'part', angles: [] }
+        jigMat = partMaterial(this.cut, { color, metalness, roughness, hatch, hatchSoft, name: part })
+        tableMat = partMaterial(null, { color, metalness, roughness, hatch, hatchSoft, name: part })
+        void kind
       } else if (WOOD[part] !== undefined) {
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, hatchSoft, name: part })
@@ -212,7 +248,7 @@ export class FuselageBay {
       const cid = row ? row.component : prow.component
       this.meshes.push({
         name: p.name, part, cid, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier,
-        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part),
+        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part), m25: m25Parts.has(part),
       })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
     }
@@ -239,8 +275,9 @@ export class FuselageBay {
     this.buildNoseStand()
     this.buildMarks()
     this.buildGhost()
+    this.buildStops()
     this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
-    this.jigFrame.add(this.marks, this.installed, this.ghost)
+    this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops)
     this.installed.name = 'installedCanard'
     this.installed.visible = false
     this.setPose('upright')
@@ -587,6 +624,7 @@ export class FuselageBay {
   }
 
   placeOf(m: FMesh, opId: string | null): Placement {
+    if (m.m25) return m25Place(m.cid, opId, this.order) === 'bench' ? 'table' : 'jig'
     return placement(m.cid, opId, this.order, this.dry)
   }
 
@@ -607,6 +645,12 @@ export class FuselageBay {
     if (pose !== this.pose) this.setPose(pose)
     const chapter = sel ? this.opChapter.get(sel) ?? -1 : -1
     const noseOn = chapter === NOSE_CHAPTER
+    const m25On = M25_CHAPTERS.has(chapter) && !!state
+    this.m25Chapter = m25On
+    const selOp = sel ? this.opOf.get(sel) ?? null : null
+    const boxGhost = m25On && boxGhostAt(selOp)
+    // the spar is built on the layup table (chapter 14's bench ops): the box stands on the jig bench between the camera and it, so it is not drawn then
+    const benchOps = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(M25_FIRST_OP) && this.order.indexOf(sel) <= this.order.indexOf(SPAR_BENCH_LAST)
     const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
     const bi = back ? this.order.indexOf(back) : -1
     const madeBy = (m: FMesh) => (m.ply ? this.order.indexOf(m.ply.op) : this.firstIdx.get(m.cid) ?? Infinity) <= bi
@@ -621,7 +665,7 @@ export class FuselageBay {
       // the nose-gear box lies on the jig bench until it is mounted on F22 (logic/fuselage.ts onBench): drawn there from its own op on
       const benched = st !== 'ghost' && !m.ply && onBench(m.cid, sel, this.order)
       const where = st === 'ghost' ? 'jig' : benched ? 'table' : this.placeOf(m, sel)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || shownAt(m.show, sel, this.order)) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn)
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || shownAt(m.show, sel, this.order)) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn) && (!m.m25 || m25On) && !(benchOps && !m.m25 && where === 'jig')
       // the shape for this op: the node's own, or a later stage (carved, cut, holed)
       const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
       const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
@@ -633,13 +677,13 @@ export class FuselageBay {
       if (m.part === 'datum_board' && m.jig.visible) boards = true
       if (m.table.visible) {
         const face = this.faceFor(m.carrier, sel)
-        m.table.matrix.copy(benched ? this.benchMatrix() : this.tableMatrix(m.carrier, face))
+        m.table.matrix.copy(benched ? this.benchMatrix() : m.m25 ? this.sparBenchMatrix(this.sparStand(sel)) : this.tableMatrix(m.carrier, face))
         m.table.matrixWorldNeedsUpdate = true
         sig += m.carrier + face + (benched ? 'b' : '')
       }
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
-      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' }
+      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') }
       setPlyLook(m.jigMat, look)
       setPlyLook(m.tableMat, look)
       sig += (m.jig.visible ? 'j' : m.table.visible ? 't' : '-') + (cast ? '1' : '0')
@@ -651,7 +695,9 @@ export class FuselageBay {
     sig += this.wheels.visible ? 'w' : ''
     this.marksOn = boards
     // chapters 12-13: the canard and the elevators stand installed on the airplane (never on a chapter 4-9 op, nor on the finished ch 4-9 box)
-    this.installed.visible = !!state && CANARD_INSTALLED_CHAPTERS.has(chapter)
+    this.installed.visible = !!state && (CANARD_INSTALLED_CHAPTERS.has(chapter) || (!!sel && ELEV_OPS.has(sel)))
+    this.stops.visible = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM)
+    this.applyM25()
     sig += this.installed.visible ? 'c' : ''
     const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
     this.noseShown = !!strut?.jig.visible
@@ -703,7 +749,7 @@ export class FuselageBay {
     const where = this.placeOf(m, opId)
     const mat = where === 'jig'
       ? this.restMatrix(this.poseFor(opId))
-      : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
+      : m.m25 ? this.sparBenchMatrix(this.sparStand(opId)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
     const g = where === 'jig' ? m.base : m.table.geometry
     return g.boundingBox!.clone().applyMatrix4(mat)
   }
@@ -718,6 +764,12 @@ export class FuselageBay {
         target.copy(this.benchAssemblyBox().getCenter(new THREE.Vector3()))
       } else if (v.focus === 'marks' && this.markAt) {
         target.copy(this.markAt.dim).lerp(this.markAt.axle, 0.5).applyMatrix4(this.restMatrix(this.poseFor(id))) // both marks' words in frame
+      } else if (typeof v.focus === 'object' && 'spar' in v.focus) {
+        // the spar at B.L. `bl` (model z = -bl): on the bench, or (ops from the fit on) installed in the box
+        const bench = m25Place('spar.box', id, this.order) === 'bench'
+        // the span runs the other way on the bench once the box is turned about (sparBenchMatrix): the same B.L. stays at the same end of the spar
+        const p = new THREE.Vector3(121.7, 0.35, -v.focus.spar)
+        target.copy(p).applyMatrix4(bench ? this.sparBenchMatrix(this.sparStand(id)) : this.restMatrix(this.poseFor(id)))
       } else if (typeof v.focus === 'object' && 'at' in v.focus) {
         target.set(...v.focus.at).applyMatrix4(this.restMatrix(this.poseFor(id)))
       } else if (v.focus === 'box' || v.focus === 'marks') {
@@ -795,7 +847,7 @@ export class FuselageBay {
   /** the finished box on its own feet (world metres): every part of it, the wheels and the nose stand, for its home shot */
   finishedBox(): THREE.Box3 {
     const M = this.restMatrix('on-gear'), bx = new THREE.Box3()
-    for (const m of this.meshes) if (!m.ply && this.placeOf(m, null) === 'jig' && shownAt(m.show, null, this.order)) bx.union(m.base.boundingBox!.clone().applyMatrix4(M))
+    for (const m of this.meshes) if (!m.ply && !m.m25 && this.placeOf(m, null) === 'jig' && shownAt(m.show, null, this.order)) bx.union(m.base.boundingBox!.clone().applyMatrix4(M))
     for (const w of this.wheels.children) bx.union(((w as THREE.Mesh).geometry.boundingBox ?? ((w as THREE.Mesh).geometry.computeBoundingBox(), (w as THREE.Mesh).geometry.boundingBox!)).clone().translate(w.position).applyMatrix4(M))
     bx.expandByPoint(new THREE.Vector3(bx.min.x, 0, bx.min.z))
     return bx
@@ -811,6 +863,146 @@ export class FuselageBay {
   wheelAnchor(out: THREE.Vector3): THREE.Vector3 | null {
     if (!this.wheels.visible || !this.wheelTop) return null
     return out.copy(this.wheelTop).applyMatrix4(this.jigFrame.matrixWorld)
+  }
+
+  // ---- chapters 14-17: the spar on the bench and sliding in, the stick and the elevators it drives, the pitch stops ----
+
+  /** the spar's parts (the jig too, while it is shown) as a box in the model frame, inches */
+  private sparBox(withJig: boolean, withCaps = true): THREE.Box3 {
+    const bx = new THREE.Box3()
+    for (const m of this.meshes) if (m.m25 && SPAR_COMPONENTS.has(m.cid) && (withJig || m.cid !== 'spar.jig') && (withCaps || !m.cid.startsWith('spar.cap_'))) bx.union(m.base.boundingBox!)
+    return bx
+  }
+  /** the bench stand of the spar for an op: whether its jig is there and whether the caps are laid (the box rests on its bottom cap once that is on) */
+  sparStand(opId: string | null): { jig: boolean; caps: boolean } {
+    return { jig: shownAt(this.data.parts.spar_jig?.show, opId, this.order), caps: !!opId && this.order.indexOf(opId) >= this.order.indexOf('f14.spar-caps') }
+  }
+
+  /**
+   * The spar on the layup table (REPRESENTATIONAL: the book builds it in a jig on a bench, and does not say where): its span along the table's
+   * length, the aft face (and the jig's upright) toward the wall while it is in its jig, and turned about to face the room (the aft face is
+   * where the fittings, the web and the caps go) once the box is lifted out; the lowest thing it stands on (the jig's shelf, or the spar's own bottom
+   * once the box is lifted from the jig) on the table top. Rotated a quarter turn about the vertical from the installed frame.
+   */
+  sparBenchMatrix(stand: { jig: boolean; caps: boolean }): THREE.Matrix4 {
+    const key = `${stand.jig}${stand.caps}`
+    let M = this.sparBenchM.get(key)
+    if (M) return M
+    const T = STATION.table, bx = this.sparBox(stand.jig, stand.caps), c = this.sparBox(true, true).getCenter(new THREE.Vector3())
+    M = new THREE.Matrix4().makeTranslation(T.x, T.topY + 0.002, T.z + 0.5).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeRotationY(stand.jig ? Math.PI / 2 : -Math.PI / 2)).multiply(new THREE.Matrix4().makeTranslation(-c.x, -bx.min.y, -c.z))
+    this.sparBenchM.set(key, M)
+    return M
+  }
+
+  /** the spar as it stands on the bench for `opId`, in the world (metres); null with no spar parts */
+  sparBenchWorldBox(stand: { jig: boolean; caps: boolean }): THREE.Box3 {
+    return this.sparBox(stand.jig, true).clone().applyMatrix4(this.sparBenchMatrix(stand))
+  }
+
+  /** how far (inches along the span) the spar starts from, clear of the box on the room side, for the slide-in */
+  slideDistance(): number {
+    const bx = this.sparBox(false)
+    return (bx.max.z - bx.min.z) / 2 + this.half.w + 6
+  }
+
+  /** the slide-in's progress (0 clear of the box, 1 installed) */
+  setSparSlide(progress: number) {
+    const s = (1 - Math.min(1, Math.max(0, progress))) * this.slideDistance()
+    if (s === this.slide) return
+    this.slide = s
+    this.applyM25()
+  }
+  get sparSlideInches(): number { return this.slide }
+
+  /** the elevator deflection the stick sits at (up positive, Roncz travel) */
+  setStick(deflUp: number) {
+    if (deflUp === this.deflUp) return
+    this.deflUp = deflUp
+    this.applyM25()
+  }
+  get stickDeflUp(): number { return this.deflUp }
+
+  /** a point in the box frame (python frame: x = F.S., y = B.L., z up) as the model frame */
+  private pm(p: [number, number, number]): THREE.Vector3 { return new THREE.Vector3(p[0], p[2], -p[1]) }
+  private stickBase(which: 'front' | 'rear'): [number, number, number] {
+    const k = this.ctl!
+    return [k.pivot_fs[which], k.tube_bl, k.tube_wl - k.wl_zero]
+  }
+
+  /** set every chapter 14-17 mesh's own motion: the spar's slide, the sticks' pitch about their pivot, the pushrod with the stick's lever, the elevators */
+  private applyM25() {
+    const k = this.ctl
+    const a0 = k ? stickAngleDeg(0, k) : 0, a = k ? stickAngleDeg(this.deflUp, k) : 0
+    const rod = (ang: number, which: 'front' | 'rear') => {
+      const d = stickDir(ang, k!.cant_inboard_deg), b = this.stickBase(which)
+      return [b[0] + d[0] * k!.lever_in, b[1] + d[1] * k!.lever_in, b[2] + d[2] * k!.lever_in] as [number, number, number]
+    }
+    for (const m of this.meshes) {
+      if (!m.m25) continue
+      const mat = new THREE.Matrix4()
+      if (SLIDES(m.cid)) mat.makeTranslation(0, 0, this.slide)
+      else if (k && STICKS.has(m.part)) {
+        const base = this.pm(this.stickBase(m.part === 'controls_sticks_front_stick' ? 'front' : 'rear'))
+        mat.makeTranslation(base.x, base.y, base.z).multiply(new THREE.Matrix4().makeRotationZ(((a - a0) * Math.PI) / 180)).multiply(new THREE.Matrix4().makeTranslation(-base.x, -base.y, -base.z))
+      } else if (k && m.part === 'controls_pitch_pushrod') {
+        const r0 = this.pm(rod(a0, 'front')), r1 = this.pm(rod(a, 'front'))
+        mat.makeTranslation(r1.x - r0.x, r1.y - r0.y, r1.z - r0.z)
+      }
+      m.jig.matrixAutoUpdate = false
+      m.jig.matrix.copy(mat)
+      m.jig.matrixWorldNeedsUpdate = true
+    }
+    this.applyElevators()
+    this.jigFrame.updateMatrixWorld(true)
+  }
+
+  /** the installed elevators turn about their hinge line with the stick (TE down = the stick forward); the hinges stay on the canard */
+  private applyElevators() {
+    const el = this.data.extras?.elevators
+    if (!el) return
+    const [hx, hz] = el.hinge_xz
+    const degDown = -this.deflUp
+    const m = new THREE.Matrix4().makeTranslation(hx, hz, 0).multiply(new THREE.Matrix4().makeRotationZ((-degDown * Math.PI) / 180)).multiply(new THREE.Matrix4().makeTranslation(-hx, -hz, 0))
+    for (const mesh of this.installedMeshes()) {
+      if (!mesh.name.startsWith('installed:elevator.') || mesh.name.includes('hinges')) continue
+      mesh.matrixAutoUpdate = false
+      mesh.matrix.copy(m)
+      mesh.matrixWorldNeedsUpdate = true
+    }
+  }
+
+  /** the stick's pitch stops: two small blocks at the front stick's travel limits (fitted, striped; the book prints none) */
+  private buildStops() {
+    const k = this.ctl
+    if (!k) return
+    const mat = partMaterial(this.cut, { color: 0xb98f5c, hatch: true, name: 'pitch-stop' })
+    const [sx, sy, sz] = k.stop_size_in
+    const base = this.stickBase('front')
+    for (const defl of [k.up_target_deg, -k.down_deg]) {
+      const sgn = defl > 0 ? 1 : -1 // beyond the limit: further aft for the up limit, further forward for the down
+      const ang = stickAngleDeg(defl, k) + (defl > 0 ? -1 : 1) * 4
+      void sgn
+      const d = stickDir(ang, k.cant_inboard_deg)
+      const p = this.pm([base[0] + d[0] * k.lever_in, base[1] + d[1] * k.lever_in, base[2] + d[2] * k.lever_in])
+      const b = new THREE.Mesh(new THREE.BoxGeometry(sx, sz, sy), mat)
+      b.position.copy(p)
+      b.castShadow = true; b.receiveShadow = true
+      this.stops.add(b)
+    }
+    this.stops.name = 'controls.pitch_stops'
+    this.stops.visible = false
+    this.stops.userData.representational = true
+    this.stops.userData.hatch = true
+  }
+
+  /** the stops' label anchor (world metres), or null while they are not drawn */
+  stopsAnchor(out: THREE.Vector3): THREE.Vector3 | null {
+    if (!this.stops.visible || !this.stops.children.length) return null
+    const c = new THREE.Vector3()
+    for (const b of this.stops.children) c.add(b.position)
+    c.multiplyScalar(1 / this.stops.children.length).add(new THREE.Vector3(0, 1.4, 0))
+    return out.copy(c).applyMatrix4(this.jigFrame.matrixWorld)
   }
 
   // ---- chapters 12-13: the installed canard, the nose gear's retraction and its other axle candidate ----

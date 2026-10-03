@@ -26,8 +26,9 @@ import { lowerLift, lowerProgress, LOWER_HEIGHT, LOWER_HOLD, LOWER_SECONDS, LOWE
 import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
+import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
-import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, type NoseGearKin } from './logic/kin'
+import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
 import { STATION, fsToX } from './scene/fuselageStation'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
 import './style.css'
@@ -129,6 +130,9 @@ interface LabHook {
   elevators(): { mode: string; degDown: number; slide: number; hangPitch: number; noseDown: boolean; jigs: boolean; installed: boolean; boxes: Record<string, number[][]> } | null
   /** the nose gear now (fuselage subject): retraction progress, crank text, whether the strut is drawn, both candidates' wheel centres (box frame, inches) and world boxes */
   noseGear(): { t: number; crank: string; shown: boolean; wheel: Record<string, number[]>; ghostShown: boolean; stand: boolean } | null
+  /** chapters 14-17: the stick control now (elevator deflection, up positive; whether a person has set it), its readout and whether its row shows; the spar's slide-in (inches still to go, and the start distance) */
+  stick(): { deflUp: number; manual: boolean; text: string; shown: boolean } | null; setStick(deflUp: number): void
+  sparSlide(): { inches: number; distance: number } | null
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
   installedCanard(): { shown: boolean; at: number[]; nodes: number; boxes: Record<string, number[][]> } | null
 }
@@ -155,7 +159,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
-  stateAll: () => ({}), kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -508,7 +512,8 @@ async function boot() {
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
-    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}) } } : null
+    // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) join them the same way, the cap plies among the box's plies
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}) } } : null
     // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
     const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
@@ -516,7 +521,7 @@ async function boot() {
     const allParts = mergeModel(gltf.scene, graph, fuseNodes)
     // the glb holds three families: canard.* and elevator.* (the canard subject), fuselage.*, gear.* and nose.* (the fuselage subject). Everything below
     // `root` is the canard, exactly as before the fuselage came; the elevators join it after the canard's box is measured, so its framing is unchanged.
-    const isFuse = (cid: string) => cid.startsWith('fuselage.') || cid.startsWith('gear.') || cid.startsWith('nose.')
+    const isFuse = (cid: string) => FUSE_PREFIXES.some((p) => cid.startsWith(p))
     const isElev = (cid: string) => cid.startsWith('elevator.')
     const parts = allParts.filter((p) => !isFuse(p.cid) && !isElev(p.cid))
     const elevParts = allParts.filter((p) => isElev(p.cid))
@@ -835,14 +840,33 @@ async function boot() {
         if (mode === 'hang') return { label: 'Elevator hang', value: hangText(hangPitch, hangNose, opT > hangDuration()), sub: `Hung on its hinge line; ${ELEV.hang_cg.note}` }
         return null
       }
+      if (subject === 'fuselage' && bay && CTL && selected === STICK_OP) {
+        return { label: 'Pitch stick and elevators', value: stickText(stickNow(), CTL), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
+      }
+      if (subject === 'fuselage' && bay && selected === SPAR_FIT_OP) {
+        const p = slideNow()
+        return { label: 'Spar slide-in', value: p >= 1 ? 'In the box' : `${Math.round(p * 100)}% in`, sub: 'Entering from the side; the plywood firewall is still loose' }
+      }
       if (subject === 'fuselage' && bay && noseGear && bay.nosePresent) {
         const c = noseGear.candidates
         return { label: 'Nose gear', value: crankText(bay.noseProgress, noseGear.crank_turns), sub: `Axle station is a conflict: F.S. ${c.plans.axle_fs} (plans, drawn) or about ${c.manual.axle_fs} (manual, ghost)` }
       }
       return null
     }
-    const updateKin = () => ui.setKin(kinNow())
+    // chapters 14-17: the spar slides in on the fit op; the pitch stick (a slider, or the op's own sweep until it is touched) drives the pushrod and the elevators
+    const CTL = fuseRaw?.extras?.m25?.controls ?? null
+    let stickManual: number | null = null
+    const slideNow = (): number => (selected === SPAR_FIT_OP ? slideProgress(opT) : 1)
+    const stickNow = (): number => {
+      if (!CTL || !ELEV) return 0
+      const d = stickManual ?? (selected === STICK_OP ? -travelAngle(opT, ELEV.travel) : 0)
+      return clampDeflectionDeg(d, CTL)
+    }
+    const stickShort = (d: number) => (Math.abs(d) < 0.05 ? 'Neutral' : d > 0 ? `${d.toFixed(1)} up` : `${(-d).toFixed(1)} down`)
+    const updateStick = () => ui.setStick(subject === 'fuselage' && selected === STICK_OP && !!CTL, stickNow(), stickShort(stickNow()))
+    const updateKin = () => { ui.setKin(kinNow()); updateStick() }
     const snapKin = () => { // a page opened on an op (no flight): the elevators start where the op has them
+      if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()) }
       elevDx = elevMode() === 'apart' ? APART_IN : 0
       elevDeg = 0
       applyElev()
@@ -861,6 +885,12 @@ async function boot() {
       if (subject === 'fuselage' && bay) {
         const t = noseTNow()
         if (t !== bay.noseProgress) { bay.setNose(t); pipeline.shadowDirty = true }
+        if (CTL) {
+          const sl = slideNow(), st = stickNow()
+          if (Math.abs(bay.sparSlideInches - (1 - sl) * bay.slideDistance()) > 1e-9 || st !== bay.stickDeflUp) pipeline.shadowDirty = true
+          bay.setSparSlide(sl)
+          bay.setStick(st)
+        }
       }
       updateKin()
     }
@@ -1184,7 +1214,7 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
-    const budgetOn = () => subject === 'fuselage' && [12, 13].includes(chapterOf(selected))
+    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
@@ -1238,6 +1268,40 @@ async function boot() {
           tie: () => row.fs_max - row.fs_min, // equal priority: the more specific (shorter) part keeps its words
         })
       }
+    }
+    // a part made only of plies (the spar caps: no mesh of its own) is labelled over the plies that are drawn, like any fitted part
+    if (bay) {
+      const byPartNow = new Set<string>()
+      for (const m of bay.meshes) if (!m.row) byPartNow.add(m.part)
+      const plyParts = new Map<string, typeof bay.meshes>()
+      for (const m of bay.meshes) if (m.row && !byPartNow.has(m.part)) plyParts.set(m.part, [...(plyParts.get(m.part) ?? []), m])
+      for (const [part, ms] of plyParts) {
+        const row = bay.data.parts[part]
+        const drawn = () => ms.filter((m) => bay.shown(m.name) && ['built', 'current'].includes(bstate.get(m.name) ?? ''))
+        const op = () => (selected ? graph.ops.find((o) => o.id === selected) ?? null : null)
+        const wants = () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && !!op() && drawn().length > 0 && !fsecOn
+        flabels.add({
+          id: part, text: row.label, color: hex(HATCH_COLOR), cls: 'fitted',
+          at: () => {
+            fbox.makeEmpty()
+            for (const m of drawn()) fbox.union(new THREE.Box3().setFromObject(bay.shown(m.name)!))
+            if (fbox.isEmpty()) return null
+            const t = part.endsWith('bottom') ? 0.78 : 0.22 // the two caps' pills stand apart along the span
+            return fwp.set((fbox.min.x + fbox.max.x) / 2, part.endsWith('bottom') ? fbox.min.y - 0.02 : fbox.max.y + 0.02, fbox.min.z + (fbox.max.z - fbox.min.z) * t)
+          },
+          vis: budgeted(part, wants, () => (bay.isNewOn(row.component, selected) ? 90 : op()?.components.includes(row.component) ? 80 : 10)),
+          priority: () => labelPriority({ inOp: !!op()?.components.includes(row.component), cut: false, fitted: true }),
+          tie: () => row.fs_max - row.fs_min,
+        })
+      }
+    }
+    if (bay && CTL) {
+      flabels.add({
+        id: 'controls.pitch_stops', text: CTL.stop_label, color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => bay.stopsAnchor(fwp),
+        vis: budgeted('controls.pitch_stops', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.stops.visible, () => 60),
+        priority: () => labelPriority({ inOp: false, cut: false, fitted: true }), tie: () => 0,
+      })
     }
     // the main wheels on the finished box: fitted (logic/fuselage.ts FITTED_TYRE_OD), so labelled as such; at the home view this one
     // label speaks for the whole main gear (the strut, extrusions, tubes and axles are still drawn and striped)
@@ -1329,6 +1393,7 @@ async function boot() {
       selected = id
       lastSel[subject] = id
       opT = 0 // the elevators' and the nose gear's motions run from here, in sim time
+      stickManual = null
       ui.setSelected(id)
       // the fuselage box turns over (animated, as the canard's turnover) when the step crosses the bottom bond, either way
       if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey(); bay.setNose(noseTNow()); fitCutRange() }
@@ -1506,6 +1571,7 @@ async function boot() {
         select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
       },
       onSubject(s) { if (s !== subject) { userAct(); setSubject(s) } },
+      onStick(d) { userAct(); stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() },
       onHome: () => goto(homeShot(), true),
       onTour: () => (director.active ? stopTour() : startTour()),
       onSelect: (id) => { userAct(); select(id) },
@@ -1547,6 +1613,9 @@ async function boot() {
     hook.placement = () => {
       const out: Record<string, 'table' | 'jig' | 'none'> = {}
       for (const m of bay?.meshes ?? []) if (!m.row) out[m.part] = m.jig.visible ? 'jig' : m.table.visible ? 'table' : 'none'
+      // a part made of plies alone (the spar caps) is where its plies are: any ply drawn
+      for (const m of bay?.meshes ?? []) if (m.row && !(m.part in out) && out[m.part] === undefined) out[m.part] = 'none'
+      for (const m of bay?.meshes ?? []) if (m.row && m.m25) { const w = m.jig.visible ? 'jig' : m.table.visible ? 'table' : null; if (w) out[m.part] = w }
       return out
     }
     hook.jigPose = () => bay?.pose ?? 'upright'
@@ -1571,6 +1640,9 @@ async function boot() {
       if (bay.wheels.visible) gear['gear.wheels'] = arr(new THREE.Box3().setFromObject(bay.wheels, true))
       return { bench: arr(bay.benchBox()), gear, noseStand: bay.noseStand.visible }
     }
+    hook.stick = () => (bay && CTL ? { deflUp: bay.stickDeflUp, manual: stickManual !== null, text: stickText(bay.stickDeflUp, CTL), shown: !document.getElementById('stick')!.hidden } : null)
+    hook.setStick = (d) => { stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected
@@ -1718,7 +1790,7 @@ async function boot() {
       ;(window as unknown as Record<string, unknown>).__rec = {
         /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6`, `fuselage8` and `fuselage9` the fuselage's chapters 6, 8 and 9, `canard12` the canard lowering onto F22 (chapter 12) */
         start(name: string) {
-          const fuse = /^fuselage([689])$/.exec(name)
+          const fuse = /^fuselage(6|8|9|14)$/.exec(name)
           if (name !== 'canard' && name !== 'canard12' && !fuse) throw new Error(`no film called ${name}`)
           if (name === 'canard12') { setSubject('fuselage', false, false); startFilm('canard12') } // the airplane's subject: the canard lowers onto it
           else if (fuse) { setSubject('fuselage', false, false); startTour(Number(fuse[1])) } // the box's own subject (never saved), its chapter tour

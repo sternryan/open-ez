@@ -3,7 +3,7 @@
 /**
  * Render the canard-chapter film to a 1080p MP4, frame by frame, so it never drops a frame.
  *
- *   npm --prefix guide/lab run record -- canard|canard12|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url>
+ *   npm --prefix guide/lab run record -- canard|canard12|fuselage6|fuselage8|fuselage9|fuselage14 <out.mp4> [fps] <url>
  *
  * `canard` is the Roncz chapter 30 film; `fuselage6` is the fuselage's chapter 6 (jig assembly) film; `fuselage9` its chapter 9 (main landing gear) film; `canard12` is the canard lowering onto F22 (chapter 12) on the fuselage subject.
  *
@@ -17,7 +17,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const FILMS = ['canard', 'canard12', 'fuselage6', 'fuselage8', 'fuselage9']
+const FILMS = ['canard', 'canard12', 'fuselage6', 'fuselage8', 'fuselage9', 'fuselage14']
 const MAX_RUNTIME_MS = 1800000
 
 async function settleWithin(promise, milliseconds) {
@@ -157,7 +157,7 @@ export async function recordFilm({ film, out, fps = 60, url, timeoutMs = MAX_RUN
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const [film, out, fps = '60', url] = process.argv.slice(2)
   if (!FILMS.includes(film) || !out || !url) {
-    console.error('usage: record canard|canard12|fuselage6|fuselage8|fuselage9 <out.mp4> [fps] <url of the served /lab/ page>')
+    console.error('usage: record canard|canard12|fuselage6|fuselage8|fuselage9|fuselage14 <out.mp4> [fps] <url of the served /lab/ page>')
     process.exitCode = 2
   } else {
     const controller = new AbortController()

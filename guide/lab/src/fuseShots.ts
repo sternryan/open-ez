@@ -7,7 +7,7 @@
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
  * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -116,8 +116,58 @@ export const NOSE_VIEWS: Record<string, FuseView> = {
   'f13.shock-strut': nose(24, 5, 100, 14, 40, 8), // the strut is stowed in the NB box here (F.S. 9 to 39): aim at it, not at the empty floor
 }
 
+/**
+ * Chapters 14-17. The spar ops on the bench aim at the spar on the layup table (`spar`: the B.L. along it the camera looks at; the span runs
+ * along the table, the aft face toward the wall, so the room-side camera sees the forward face and the top); the slide-in and the ops after it
+ * aim at points of the airplane. The finished box stands on its gear (chapters 15-17) with the nose toward -X.
+ */
+const spar = (bl: number, dist: number, el = 52, az = 0, pan = 0, up = 0): FuseView => ({ focus: { spar: bl }, dist, el, az, pan, up })
+export const M25_VIEWS: Record<string, FuseView> = {
+  'f14.jig': spar(0, 124, 42, 0, 0, 7),
+  'f14.foam-box': spar(0, 124, 42, 0, 0, 7),
+  'f14.cs4-forward': spar(0, 124, 42, 0, 0, 7),
+  'f14.lwa-fabricate': spar(-25, 100, 42, 0, 0, 7),
+  'f14.interior-layups': spar(-27, 100, 42, 0, 0, 7),
+  'f14.close-box': spar(0, 124, 42, 0, 0, 7),
+  'f14.cap-troughs': spar(0, 124, 42, 0, 0, 7),
+  'f14.shearweb-lwa45': spar(-53, 100, 42, 0, 0, 7),
+  'f14.spar-caps': spar(-32, 104, 42, 0, 0, 7),
+  'f14.spruce-layup6': spar(-7.5, 100, 42, 0, 0, 7),
+  'f14.lwa23-layup7': spar(-53, 100, 42, 0, 0, 7),
+  'f14.baggage-hole': spar(0, 124, 42, 0, 0, 7),
+  'f14.end-bulkhead-layup9': spar(-56, 100, 42, 0, 0, 7),
+  'f14.nut-access-hole': spar(-53, 100, 42, 0, 0, 7),
+  // the slide-in: from the nose end and above, the spar entering the box from the room side (the left), the box in the middle of the frame
+  'f14.fit-fuselage': { focus: at(121.7, 17.75), dist: 232, el: 42, az: 52 },
+  'f14.bond-spar': { focus: at(121.7, 17.75), dist: 78, el: 46, az: 24 },
+  'f14.sh1-tabs': { focus: at(120.6, 22, 5), dist: 46, el: 52, az: 20 },
+  // chapter 15: the firewall from behind and above (the aft end of the box is the +X end)
+  'f15.parts-fab': { focus: at(125, 15), dist: 90, el: 30, az: -50 },
+  'f15.stainless-firewall': { focus: at(125.5, 15), dist: 70, el: 22, az: -62 },
+  'f15.belcrank-brackets': { focus: at(126, 10, 4), dist: 40, el: 20, az: -62 },
+  'f15.master-cylinders': { focus: at(127, 17.75, 3), dist: 40, el: 22, az: -60 },
+  // chapter 16: the cockpit from above and behind
+  'f16.side-consoles': { focus: at(75, 14, 6), dist: 120, el: 50, az: -24 },
+  'f16.pivot-bulkheads': { focus: at(75, 14, 6), dist: 120, el: 50, az: -24 },
+  'f16.firewall-bearing': { focus: at(118, 12.3, 6), dist: 46, el: 40, az: -34 },
+  'f16.torque-tubes': { focus: at(85, 12.3, 6), dist: 100, el: 44, az: -26 },
+  'f16.sticks-pushrods': { focus: at(67, 15, 6), dist: 78, el: 36, az: -26 },
+  'f16.pitch-pushrod': { focus: at(50, 16, 2), dist: 112, el: 30, az: -34 },
+  'f16.aileron-linkage': { focus: at(67, 15, 6), dist: 120, el: 44, az: -26 },
+  'f16.rudder-conduit': { focus: at(100, 8, 5), dist: 76, el: 38, az: -30 },
+  'f16.rudder-cable-rig': { focus: at(110, 10, 5), dist: 70, el: 36, az: -36 },
+  'f16.brake-cables': { focus: at(118, 14, 3), dist: 54, el: 30, az: -50 },
+  'f16.adjustable-pedals': { focus: at(20, 8, 0), dist: 80, el: 20, az: 40 },
+  // chapter 17: the trim handle on the left, the roll trim on the torque tube between the consoles
+  'f17.mount-blocks': { focus: at(60, 10, -4), dist: 90, el: 40, az: 22 },
+  'f17.parts': { focus: at(60, 10, -4), dist: 120, el: 40, az: 22 },
+  'f17.pitch-trim': { focus: at(47, 9, -9.5), dist: 56, el: 26, az: 34 },
+  'f17.roll-trim': { focus: at(82, 13, 6), dist: 56, el: 38, az: -24 },
+  'f17.fixed-trim-tab': { focus: at(47, 9, -9.5), dist: 90, el: 26, az: 34 },
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {
