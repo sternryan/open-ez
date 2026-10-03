@@ -69,24 +69,24 @@
 - {id: nose.nb_box, label: NB nose gear box, fidelity: unvalidated}
 - {id: nose.skin, label: Nose skin, fidelity: unvalidated}
 - {id: nose.door, label: Nose door, fidelity: unvalidated}
-# Centre-section spar, firewall accessories, controls and trim (chapters 14-17). Initial spar display envelopes are representational; other geometry remains pending.
+# Centre-section spar, firewall accessories, controls and trim (chapters 14-17). Every component below has representational (unvalidated) display geometry.
 # Cap trough templates (A11), the firewall outline (A4), consoles, stick positions, master cylinders and the pitch stops are not printed, so those will be representational.
 - {id: spar.box, label: Centre-section spar display envelope (upper profile unresolved), fidelity: unvalidated}
 - {id: spar.cap_top, label: Top spar cap (12 UND plies; fitted trough bands), fidelity: unvalidated}
 - {id: spar.cap_bottom, label: Bottom spar cap (9 UND plies; fitted trough bands), fidelity: unvalidated}
-- {id: spar.bulkheads, label: Spar bulkheads (CS5 to CS8), fidelity: no-geometry}
-- {id: spar.lwa, label: Wing attach fittings (LWA1 to LWA5), fidelity: no-geometry}
-- {id: spar.spruce_blocks, label: Spar spruce engine-mount blocks, fidelity: no-geometry}
-- {id: spar.em12, label: Engine-mount angles (EM12), fidelity: no-geometry}
-- {id: spar.sh1, label: Aft harness plates (SH1), fidelity: no-geometry}
-- {id: spar.jig, label: Spar building jig, fidelity: no-geometry}
-- {id: fuselage.firewall_stainless, label: Firewall stainless face, fidelity: no-geometry}
-- {id: firewall.belcrank, label: Rudder and brake belcrank, fidelity: no-geometry}
-- {id: firewall.master_cylinders, label: Brake master cylinders, fidelity: no-geometry}
-- {id: controls.consoles, label: Right front and rear consoles, fidelity: no-geometry}
-- {id: controls.torque_tube, label: Control torque tube, fidelity: no-geometry}
-- {id: controls.sticks, label: Control sticks, fidelity: no-geometry}
-- {id: controls.pitch_pushrod, label: Pitch pushrod, fidelity: no-geometry}
-- {id: controls.rudder_conduit, label: Rudder cable conduits, fidelity: no-geometry}
-- {id: trim.pitch_handle, label: Pitch trim handle and springs, fidelity: no-geometry}
-- {id: trim.roll_trim, label: Roll trim levers and springs, fidelity: no-geometry}
+- {id: spar.bulkheads, label: Spar bulkheads (CS5 to CS8), fidelity: unvalidated}
+- {id: spar.lwa, label: Wing attach fittings (LWA1 to LWA5), fidelity: unvalidated}
+- {id: spar.spruce_blocks, label: Spar spruce engine-mount blocks, fidelity: unvalidated}
+- {id: spar.em12, label: Engine-mount angles (EM12), fidelity: unvalidated}
+- {id: spar.sh1, label: Aft harness plates (SH1), fidelity: unvalidated}
+- {id: spar.jig, label: Spar building jig, fidelity: unvalidated}
+- {id: fuselage.firewall_stainless, label: Firewall stainless face, fidelity: unvalidated}
+- {id: firewall.belcrank, label: Rudder and brake belcrank, fidelity: unvalidated}
+- {id: firewall.master_cylinders, label: Brake master cylinders, fidelity: unvalidated}
+- {id: controls.consoles, label: Right front and rear consoles, fidelity: unvalidated}
+- {id: controls.torque_tube, label: Control torque tube, fidelity: unvalidated}
+- {id: controls.sticks, label: Control sticks, fidelity: unvalidated}
+- {id: controls.pitch_pushrod, label: Pitch pushrod, fidelity: unvalidated}
+- {id: controls.rudder_conduit, label: Rudder cable conduits, fidelity: unvalidated}
+- {id: trim.pitch_handle, label: Pitch trim handle and springs, fidelity: unvalidated}
+- {id: trim.roll_trim, label: Roll trim levers and springs, fidelity: unvalidated}

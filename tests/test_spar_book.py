@@ -15,15 +15,31 @@ def parts():
     return build_spar()
 
 
-def test_only_sourced_display_parts_exist_with_citations(parts):
-    assert set(parts) == {"box", "cap_top", "cap_bottom"}
+def test_every_part_has_a_representational_tag_citations_and_the_display_notes(parts):
+    assert set(parts) == {
+        "box",
+        "cap_top",
+        "cap_bottom",
+        "end_bulkheads",
+        "interior_bulkheads",
+        "spruce_blocks",
+        "em12",
+        "sh1",
+        "jig",
+        "lwa1",
+        "lwa2",
+        "lwa3",
+        "lwa4",
+        "lwa5",
+    }
     for part in parts.values():
         assert (
             part.fidelity == "representational"
             and part.cite
             and part.solid.val().Volume() > 0
         )
-        assert "fabrication" in part.note or "trough" in part.note
+    for name in ("box", "cap_top", "cap_bottom"):
+        assert "fabrication" in parts[name].note or "trough" in parts[name].note
 
 
 def test_box_planform_and_wl_stations_are_independent_of_the_builder(parts):
