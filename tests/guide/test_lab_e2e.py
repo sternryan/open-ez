@@ -2780,15 +2780,19 @@ _BOOK_BOND_ORDER = (
 )  # plans-1980:p40, then F28 (p41)
 
 
-def _fuse_ops(g):
+def _fuse_ops(g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17)):
     byid = {o["id"]: o for o in g["ops"]}
     return [
         i
         for i in g["order"]
-        if byid[i]["chapter"] in (4, 5, 6, 7, 8, 9, 12, 13)
+        if byid[i]["chapter"] in chapters
         and not byid[i]["stub"]
         and ("both" in byid[i]["variants"] or "roncz" in byid[i]["variants"])
     ]
+
+
+# the all-chapters tour (nothing selected) covers chapters 4-13; chapters 14-17 have their own tour (the ch14-17 tour)
+_TOUR_CH = (4, 5, 6, 7, 8, 9, 12, 13)
 
 
 def _by_chapter(g, ops):
@@ -3045,8 +3049,9 @@ def test_fuselage_tour_button_follows_the_selected_chapter_and_the_ch6_film_ends
             pg.evaluate("__lab.select(null)")
             pg.click("#tour")  # nothing selected: all of chapters 4-6
             assert (
-                _tour_seen(pg, len(_fuse_ops(g))) == _by_chapter(g, _fuse_ops(g))
-                and len(_fuse_ops(g)) >= 31
+                _tour_seen(pg, len(_fuse_ops(g, _TOUR_CH)))
+                == _by_chapter(g, _fuse_ops(g, _TOUR_CH))
+                and len(_fuse_ops(g, _TOUR_CH)) >= 31
             )
             pg.click("#tour")
             b.close()
@@ -5484,6 +5489,442 @@ def test_the_root_notch_is_gone_the_cove_is_the_foam_span_only(rsite):
             assert cv["installed"] and cv["blIn"] == pytest.approx(
                 ex["cove"]["bl_start"]
             )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.5: chapters 14-17 in the lab. The spar built on the layup table in its jig and slid into the box from the side, the firewall's
+# stainless face, the controls (the stick drives the Roncz elevators), the trim. Every part is a fitted shape (striped, labelled).
+# ======================================================================================================================
+_M25_SPAR = {
+    "spar.box",
+    "spar.cap_top",
+    "spar.cap_bottom",
+    "spar.bulkheads",
+    "spar.lwa",
+    "spar.spruce_blocks",
+    "spar.jig",
+}
+
+
+def _m25_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [
+        i
+        for i in g["order"]
+        if byid[i]["chapter"] in (14, 15, 16, 17) and not byid[i]["stub"]
+    ], byid
+
+
+def _m25_rows(g):
+    return g["layup"]["fuselage"]["extras"]["m25"]["parts"]
+
+
+def _m25_expect(g, row, op):
+    """'table' | 'jig' | 'none': where a chapter 14-17 part is on `op` (a chapter 14-17 op): on or after its component's first op and
+    inside its own show window; the spar's parts are on the table through the last bench op."""
+    order, byid, first = _first_ops(g)
+    i = order.index(op)
+    if i < order.index(first[row["component"]]):
+        return "none"
+    w = row.get("show") or {}
+    if (w.get("from") and i < order.index(w["from"])) or (
+        w.get("until") and i >= order.index(w["until"])
+    ):
+        return "none"
+    if row["component"] in _M25_SPAR and i <= order.index("f14.nut-access-hole"):
+        return "table"
+    return "jig"
+
+
+def test_m25_every_chapter_14_to_17_op_shows_its_parts_in_build_order_striped_and_labelled_and_the_jig_only_on_the_bench(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m25_ops(g)
+    rows = _m25_rows(g)
+    order = g["order"]
+    assert len(ops) >= 30 and len(rows) >= 28
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            assert set(ops) <= set(_chips(pg))  # the bar carries every chapter 14-17 op
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    want = _m25_expect(g, row, op)
+                    assert pl[name] == want, (op, name, pl[name], want)
+            # the jig is on the bench ops only: from its first op until the box is lifted out (f14.cap-troughs), never in the airplane
+            for op in ops:
+                on = (
+                    order.index("f14.jig")
+                    <= order.index(op)
+                    < order.index("f14.cap-troughs")
+                )
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.2)
+                assert (
+                    pg.evaluate("window.__lab.placement()")["spar_jig"] == "table"
+                ) == on, op
+            # nothing of it before chapter 14's ops, nor on the finished box
+            for op in ("f09.brake-lines", "r30.f22-drill-tabs", "f13.nose-door", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.4)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (
+                    op,
+                    {n: pl[n] for n in rows if pl[n] != "none"},
+                )
+            # every part is a fitted shape: striped, representational, and says so on screen
+            pg.evaluate("window.__lab.select('f16.pitch-pushrod')")
+            _run(pg, 1)
+            for name, row in rows.items():
+                assert (
+                    row["fidelity"] == "representational"
+                    and row["label"].endswith("(fitted shape)")
+                    or "(fitted shape;" in row["label"]
+                ), name
+                node = row["node"]
+                m = pg.evaluate(
+                    f"window.__lab.material('{node}') || window.__lab.material('{node}.p1')"
+                )
+                assert m and m["hatch"] and m["fidelity"] == "representational", (
+                    name,
+                    m,
+                )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _pixels_of(pg, hide, w=1180, h=820):
+    """How many pixels of the 3D view change when meshes starting with `hide` are left out of the scene: the cards, bar, labels and glow are off."""
+    from PIL import Image, ImageChops
+
+    pg.evaluate("window.__lab.hide([]); window.__lab.advance(0.02)")
+    on = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate(f"window.__lab.hide({json.dumps(hide)}); window.__lab.advance(0.02)")
+    off = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+    pg.evaluate("window.__lab.hide([]); window.__lab.advance(0.02)")
+    d = (
+        ImageChops.difference(on, off)
+        .convert("L")
+        .point(lambda v: 255 if v > 30 else 0)
+    )
+    return sum(d.histogram()[255:])
+
+
+def _bare(pg):
+    pg.add_style_tag(
+        content="#controls,#dock,#opbar,#labels,#status,#viewpop{visibility:hidden !important}"
+    )
+
+
+def test_m25_every_op_with_parts_puts_them_on_screen_not_hidden_inside_another_solid(
+    rsite,
+):
+    """M2.4's review shipped parts drawn inside other solids: positions passed, pixels did not. Here the pixels decide: the frame with the op's
+    parts and the same frame without them must differ, on every chapter 14-17 op that lists a component."""
+    g = _graph(rsite)
+    ops, byid = _m25_ops(g)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            seen = {}
+            for op in ops:
+                comps = byid[op]["components"]
+                if not comps:
+                    continue
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                seen[op] = _pixels_of(pg, comps)
+            weak = {o: n for o, n in seen.items() if n < 150}
+            print({o: n for o, n in seen.items()})
+            assert not weak, f"the op's own parts are not visible on screen: {weak}"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("op", ["f14.fit-fuselage", "f16.pitch-pushrod"])
+def test_m25_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsite, op):
+    g = _graph(rsite)
+    comps = {o["id"]: o for o in g["ops"]}[op]["components"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 390, 844, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate(f"window.__lab.select('{op}')")
+            _run(pg, 6)
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert pg.evaluate("document.documentElement.scrollHeight") <= 844
+            if (
+                op == "f16.pitch-pushrod"
+            ):  # the stick control is reachable and inside the viewport
+                r = pg.evaluate(
+                    "(() => { const r = document.getElementById('stick-defl').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] })()"
+                )
+                assert (
+                    r[0] >= 0 and r[2] <= 390 and r[3] <= 844 and r[2] - r[0] > 100
+                ), r
+            labs = pg.evaluate("window.__lab.labelsAll()")
+            assert sum(1 for x in labs if _legible(x)) <= 10
+            _bare(pg)
+            assert _pixels_of(pg, comps, 390, 844) >= 150
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_spar_slides_in_from_the_side_in_sim_time_and_ends_installed(rsite):
+    g = _graph(rsite)
+    order = g["order"]
+    assert order.index("f14.fit-fuselage") < order.index("f06.bond-firewall")
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f14.nut-access-hole')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.placement()")["spar_box"] == "table"
+            pg.evaluate("window.__lab.select('f14.fit-fuselage')")
+            sl = pg.evaluate("window.__lab.sparSlide()")
+            assert sl["distance"] > 56.46 and sl["inches"] == pytest.approx(
+                sl["distance"]
+            ), sl
+            assert pg.evaluate("window.__lab.placement()")["spar_box"] == "jig"
+            zs, last = [], None
+            for _ in range(70):
+                _run(pg, 0.1)
+                box = pg.evaluate("window.__lab.meshBox('spar.box')")
+                zs.append((box[0][2] + box[1][2]) / 2)
+                cur = pg.evaluate("window.__lab.sparSlide()")["inches"]
+                assert last is None or cur <= last + 1e-9, (last, cur)
+                last = cur
+            assert pg.evaluate("window.__lab.sparSlide()")["inches"] == 0
+            # it entered along the span (world Z), from the room side, and ended centred on the box
+            assert zs[0] > zs[-1] + 1.0 and max(zs) - min(zs) > 1.0, (zs[0], zs[-1])
+            assert pg.evaluate("window.__lab.kin()")["value"] == "In the box"
+            pg.evaluate("window.__lab.select('f14.bond-spar')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.sparSlide()")["inches"] == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_the_stick_drives_the_roncz_elevators_through_30_down_and_15_up_and_never_shows_20_or_22(
+    rsite,
+):
+    import re
+
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f16.pitch-pushrod')")
+            assert pg.evaluate("window.__lab.stick()")["shown"] is True
+            texts, box = set(), {}
+            for _ in range(120):  # the op's own sweep: 30 down, then 15 up
+                _run(pg, 0.1)
+                st = pg.evaluate("window.__lab.stick()")
+                texts.add(pg.evaluate("window.__lab.kin().value"))
+                for d in (-30.0, 15.0):
+                    if st["deflUp"] == pytest.approx(d, abs=1e-6) and d not in box:
+                        box[d] = (
+                            pg.evaluate("window.__lab.installedCanard()")["boxes"][
+                                "installed:elevator.right"
+                            ],
+                            pg.evaluate(
+                                "window.__lab.meshBox('controls.pitch_pushrod')"
+                            ),
+                            pg.evaluate(
+                                "window.__lab.meshBox('controls.sticks.front_stick')"
+                            ),
+                        )
+            assert set(box) == {-30.0, 15.0}, box.keys()
+            assert "Down 30.0 deg  (limit 30)" in texts
+            assert "Up 15.0 deg  (target 15, floor 12.5)" in texts
+            # the limits the readout states are the Roncz row alone (a live angle passing through 20 or 22 on its way is not a limit)
+            nums = {
+                n
+                for t in texts
+                for grp in re.findall(r"\(([^)]*)\)", t)
+                for n in re.findall(r"[\d.]+", grp)
+            }
+            assert nums == {"30", "15", "12.5"}, nums
+            sub = pg.evaluate("document.getElementById('ro-kin-sub').textContent")
+            assert "30 down, 15 up" in sub and not re.search(r"\b(20|22)\b", sub), sub
+            # the elevator, the pushrod and the stick all moved between the two limits
+            for i in range(3):
+                assert box[-30.0][i] != box[15.0][i], i
+            # a person's slider takes over, is clamped to the Roncz travel, and says so
+            pg.evaluate("window.__lab.setStick(40)")
+            assert pg.evaluate("window.__lab.stick()")["deflUp"] == 15
+            pg.evaluate("window.__lab.setStick(-60)")
+            st = pg.evaluate("window.__lab.stick()")
+            assert st["deflUp"] == -30 and st["manual"] is True
+            pg.evaluate("window.__lab.select('f16.torque-tubes')")
+            assert pg.evaluate("window.__lab.stick()")["shown"] is False
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_pitch_stops_are_striped_labelled_as_unprinted_and_only_from_the_pushrod_op(
+    rsite,
+):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f16.sticks-pushrods')")
+            _run(pg, 1)
+            assert "controls.pitch_stops" not in {
+                x["id"] for x in pg.evaluate("window.__lab.labelsAll()") if _legible(x)
+            }
+            pg.evaluate("window.__lab.select('f16.pitch-pushrod')")
+            _run(pg, 4)
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+            assert labs["controls.pitch_stops"]["text"] == (
+                "Pitch stops (not printed; fitted shape)"
+            )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_stainless_face_follows_the_plywood_and_the_firewall_bond_comes_after_the_spar_fit(
+    rsite,
+):
+    g = _graph(rsite)
+    order, byid, first = _first_ops(g)
+    assert order.index("f14.fit-fuselage") < order.index("f06.bond-firewall")
+    assert order.index("f06.bond-firewall") < order.index("f14.bond-spar")
+    assert order.index("f15.stainless-firewall") > order.index("f14.bond-spar")
+    assert first["fuselage.firewall_stainless"] == "f15.stainless-firewall"
+    rows = _m25_rows(g)
+    assert rows["fuselage_firewall_stainless"]["fs_min"] >= 125.0
+
+
+def test_m25_tour_visits_every_chapter_14_to_17_op_in_order_holds_the_slide_and_the_stick_and_ends_on_the_last(
+    rsite,
+):
+    g = _graph(rsite)
+    want = [o for ch in (14, 15, 16, 17) for o in _chapter_ops(g, "roncz", ch)]
+    assert len(want) >= 30
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            _to_fuselage(pg)
+            pg.evaluate(f"__lab.select('{want[0]}')")
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is True
+            probes = {
+                "f14.fit-fuselage": "__lab.sparSlide().inches",
+                "f16.pitch-pushrod": "__lab.kin().value",
+            }
+            seen, last = _tour_probe(pg, want, probes, after="never")
+            assert seen == want, seen
+            assert (
+                last["f14.fit-fuselage"] == 0
+            ), last  # the spar had gone in before the tour left the op
+            assert (
+                last["f16.pitch-pushrod"] == "Up 15.0 deg  (target 15, floor 12.5)"
+            ), last
+            assert pg.evaluate("__lab.touring()") is False
+            assert pg.evaluate("__lab.selected()") == want[-1]
+            assert pg.evaluate("__lab.subject()") == "fuselage"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_cap_plies_lay_down_in_build_order_top_12_then_bottom_9(rsite):
+    g = _graph(rsite)
+    nodes = g["layup"]["fuselage"]["extras"]["m25"]["nodes"]
+    top = sorted(
+        (k for k in nodes if k.startswith("spar.cap_top.")),
+        key=lambda k: nodes[k]["op_order"],
+    )
+    bot = sorted(
+        (k for k in nodes if k.startswith("spar.cap_bottom.")),
+        key=lambda k: nodes[k]["op_order"],
+    )
+    assert (len(top), len(bot)) == (12, 9)
+    assert all(
+        nodes[k]["op"] == "f14.spar-caps" and nodes[k]["cloth"] == "UND"
+        for k in top + bot
+    )
+    assert sorted(n["op_order"] for n in nodes.values()) == list(range(1, 22))
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f14.spar-caps')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.lay()") == 21
+            pg.evaluate("window.__lab.setLay(5)")
+            _run(pg, 4)
+            st = pg.evaluate("window.__lab.stateAll()")
+            built = [k for k in top if st[k] in ("built", "current")]
+            assert (
+                built == top[:5]
+            ), built  # the first five plies of the op, in lay order
+            assert all(st[k] == "hidden" for k in top[5:] + bot)
+            pg.evaluate("window.__lab.setLay(21)")
+            _run(pg, 4)
+            st = pg.evaluate("window.__lab.stateAll()")
+            assert all(st[k] in ("built", "current") for k in top + bot)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_the_station_cut_passes_through_the_installed_spar_and_the_slider_reaches_its_swept_aft_face(
+    rsite,
+):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f14.sh1-tabs')")
+            _run(pg, 0.5)
+            assert float(pg.get_attribute("#section-bl", "max")) >= 129.9
+            pg.evaluate("window.__lab.setSection(true, 121.7)")
+            _run(pg, 1)
+            c = pg.evaluate("window.__lab.cut()")
+            assert c["enabled"] and c["keepsAft"] and c["removesForward"], c
+            assert "spar.box" in c["cappedNodes"], c["cappedNodes"]
+            # a bench op has the spar on the table: the cut (the box's) does not open it
+            pg.evaluate("window.__lab.select('f14.close-box')")
+            _run(pg, 0.5)
+            assert "spar.box" not in pg.evaluate("window.__lab.cut()")["cappedNodes"]
             assert not errors, errors
             b.close()
     finally:

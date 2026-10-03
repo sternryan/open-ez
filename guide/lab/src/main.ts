@@ -133,6 +133,8 @@ interface LabHook {
   /** chapters 14-17: the stick control now (elevator deflection, up positive; whether a person has set it), its readout and whether its row shows; the spar's slide-in (inches still to go, and the start distance) */
   stick(): { deflUp: number; manual: boolean; text: string; shown: boolean } | null; setStick(deflUp: number): void
   sparSlide(): { inches: number; distance: number } | null
+  /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
+  hide(prefixes: string[]): void
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
   installedCanard(): { shown: boolean; at: number[]; nodes: number; boxes: Record<string, number[][]> } | null
 }
@@ -159,7 +161,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
-  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -924,6 +926,7 @@ async function boot() {
         bayStale = false
       }
       if (bay && hide.length) for (const m of bay.installedMeshes()) m.visible = !hide.some((h) => m.name.startsWith(h)) // ?hide= reaches the installed canard's meshes too
+      if (bay && hide.length) for (const m of bay.meshes) if (hide.some((h) => m.name.startsWith(h))) m.jig.visible = m.table.visible = false // and the fuselage's own meshes (chapters 14-17's pixel checks)
       sig += bayFsig
       if (sig !== shadowSig) { shadowSig = sig; pipeline.shadowDirty = true }
     }
@@ -1399,6 +1402,7 @@ async function boot() {
       if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey(); bay.setNose(noseTNow()); fitCutRange() }
       openOp()
       if (!fly) snapKin()
+      if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()); paint() } // the spar starts clear of the box on its fit op; the stick at the op's own start
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
@@ -1494,7 +1498,7 @@ async function boot() {
         if (name === 'reset') { endLower(); stopPlay(); select(null, !REC); tourOv.labels = true; tourOv.paths = true; syncPaths(); if (subject === 'canard' ? secOn : fsecOn) setSection(false, subject === 'canard' ? secBl : fsecFs) }
         else if (name === 'finish') { stopPlay(); select(op ?? null, true) }
         else if (name === 'cutclose') goto(subject === 'canard' ? 'cutclose' : arg !== undefined && rig.shots[`fcut${arg}`] ? `fcut${arg}` : 'fcut', true)
-        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : chapterOf(selected) === 12 && rig.shots.fwide12 ? 'fwide12' : chapterOf(selected) === 13 && rig.shots.fwide13 ? 'fwide13' : homeShot(), true)
+        else if (name === 'closeup') goto(subject === 'canard' ? 'cutclose' : chapterOf(selected) === 12 && rig.shots.fwide12 ? 'fwide12' : chapterOf(selected) === 13 && rig.shots.fwide13 ? 'fwide13' : M25_CHAPTERS.has(chapterOf(selected)) && selected && rig.shots[selected] ? selected : homeShot(), true)
         else if (name === 'lower') beginLower(op)
       },
       orbit(k, deg, first) {
@@ -1642,6 +1646,7 @@ async function boot() {
     }
     hook.stick = () => (bay && CTL ? { deflUp: bay.stickDeflUp, manual: stickManual !== null, text: stickText(bay.stickDeflUp, CTL), shown: !document.getElementById('stick')!.hidden } : null)
     hook.setStick = (d) => { stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
