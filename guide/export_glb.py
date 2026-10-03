@@ -1,4 +1,5 @@
 """Export open-ez components to a single .glb whose node names are guide component IDs."""
+
 from __future__ import annotations
 
 import argparse
@@ -70,7 +71,12 @@ def default_components() -> dict:
     # The lab sorts the glb's nodes into subjects by prefix: canard.* and elevator.* are the canard subject, fuselage.*, gear.* and nose.*
     # the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
     # (canard_components) stays canard alone.
-    return {**canard_components(), **elevator_components(), **fuselage_export.components(), **nose_components()}
+    return {
+        **canard_components(),
+        **elevator_components(),
+        **fuselage_export.components(),
+        **nose_components(),
+    }
 
 
 def elevator_components() -> dict:
@@ -78,9 +84,16 @@ def elevator_components() -> dict:
     from core.elevators_book import build_elevators
 
     p = {n: part.solid.val().copy() for n, part in build_elevators().items()}
-    out: dict = {"elevator.right": p["elevator_right"], "elevator.left": p["elevator_left"]}
-    for cid, key in (("elevator.tube", "elevator_tube"), ("elevator.hinges", "hinges"),
-                     ("elevator.balance_weight", "balance_weight"), ("elevator.cs11_weight", "cs11_weight")):
+    out: dict = {
+        "elevator.right": p["elevator_right"],
+        "elevator.left": p["elevator_left"],
+    }
+    for cid, key in (
+        ("elevator.tube", "elevator_tube"),
+        ("elevator.hinges", "hinges"),
+        ("elevator.balance_weight", "balance_weight"),
+        ("elevator.cs11_weight", "cs11_weight"),
+    ):
         out[cid] = {f"{cid}.{side}": p[f"{key}_{side}"] for side in ("right", "left")}
     return out
 
@@ -119,9 +132,13 @@ def write_layup_files(graph, out_dir: Path) -> None:
     from guide import fuselage_export, layup
 
     lj = _canard_layup(graph)
-    lj["fuselage"] = fuselage_export.layup_section()  # chapters 4-6, beside the canard's keys (which are unchanged)
+    lj["fuselage"] = (
+        fuselage_export.layup_section()
+    )  # chapters 4-6, beside the canard's keys (which are unchanged)
     (out_dir / "layup.json").write_text(json.dumps(lj, indent=1, sort_keys=True))
-    (out_dir / "ledger.json").write_text(json.dumps(fuselage_ledger_json(), indent=1, sort_keys=True))
+    (out_dir / "ledger.json").write_text(
+        json.dumps(fuselage_ledger_json(), indent=1, sort_keys=True)
+    )
     (out_dir / "shots.json").write_text(json.dumps(layup.shots(), indent=1))
 
 
@@ -131,7 +148,9 @@ def write_cutaway_export(graph, out_dir: Path) -> Path:
 
     d = out_dir / CUTAWAY_DIR
     export_components(canard_components(), d / "longez.glb")
-    (d / "layup.json").write_text(json.dumps(_canard_layup(graph), indent=1, sort_keys=True))
+    (d / "layup.json").write_text(
+        json.dumps(_canard_layup(graph), indent=1, sort_keys=True)
+    )
     (d / "shots.json").write_text(json.dumps(layup.shots(), indent=1))
     return d
 
@@ -146,8 +165,10 @@ def main(argv: list[str] | None = None) -> int:
     g = load_graph(GRAPH_DIR)
     write_layup_files(g, out.parent)
     cut = write_cutaway_export(g, out.parent)
-    print(f"wrote {out} (+ layup.json, ledger.json, shots.json) nodes={len(read_glb_node_names(out))}; "
-          f"cutaway inputs (canard only) in {cut}")
+    print(
+        f"wrote {out} (+ layup.json, ledger.json, shots.json) nodes={len(read_glb_node_names(out))}; "
+        f"cutaway inputs (canard only) in {cut}"
+    )
     return 0
 
 

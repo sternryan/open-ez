@@ -12,18 +12,7 @@ The D-box adds upper/lower skins (BID) from LE to 25% chord plus a shear web,
 increasing I by 3-4 orders of magnitude and producing realistic 5-15" deflection.
 """
 
-import sys
-from pathlib import Path
-from unittest.mock import MagicMock
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT))
-
-# Mock cadquery before importing core modules (cadquery is a heavy C++ dependency)
-sys.modules.setdefault("cadquery", MagicMock())
-sys.modules.setdefault("OCP", MagicMock())
-
-import pytest  # noqa: E402
+import pytest
 
 from config import config
 
@@ -33,30 +22,30 @@ class TestDBoxConfigFields:
 
     def test_dbox_chord_fraction_exists(self):
         """MaterialParams must have dbox_chord_fraction field."""
-        assert hasattr(config.materials, "dbox_chord_fraction"), (
-            "MaterialParams missing dbox_chord_fraction"
-        )
+        assert hasattr(
+            config.materials, "dbox_chord_fraction"
+        ), "MaterialParams missing dbox_chord_fraction"
         assert config.materials.dbox_chord_fraction == 0.25
 
     def test_dbox_skin_plies_exists(self):
         """MaterialParams must have dbox_skin_plies field."""
-        assert hasattr(config.materials, "dbox_skin_plies"), (
-            "MaterialParams missing dbox_skin_plies"
-        )
+        assert hasattr(
+            config.materials, "dbox_skin_plies"
+        ), "MaterialParams missing dbox_skin_plies"
         assert config.materials.dbox_skin_plies == 2
 
     def test_dbox_web_foam_thickness_exists(self):
         """MaterialParams must have dbox_web_foam_thickness_in field."""
-        assert hasattr(config.materials, "dbox_web_foam_thickness_in"), (
-            "MaterialParams missing dbox_web_foam_thickness_in"
-        )
+        assert hasattr(
+            config.materials, "dbox_web_foam_thickness_in"
+        ), "MaterialParams missing dbox_web_foam_thickness_in"
         assert config.materials.dbox_web_foam_thickness_in == 0.25
 
     def test_spar_cap_ply_schedule_exists(self):
         """MaterialParams must have spar_cap_ply_schedule field."""
-        assert hasattr(config.materials, "spar_cap_ply_schedule"), (
-            "MaterialParams missing spar_cap_ply_schedule"
-        )
+        assert hasattr(
+            config.materials, "spar_cap_ply_schedule"
+        ), "MaterialParams missing spar_cap_ply_schedule"
         schedule = config.materials.spar_cap_ply_schedule
         assert isinstance(schedule, list)
         assert len(schedule) >= 5, "Schedule must have at least 5 stations"
@@ -143,9 +132,9 @@ class TestDBoxBeamAdapter:
         half_span = config.geometry.wing_panel_span  # cantilever length
         result = adapter.analyze_elliptic_dbox(span_in=half_span, total_load_lbf=450.0)
 
-        assert result.n_stations >= 5, (
-            f"Used {result.n_stations} stations, need at least 5 for accuracy"
-        )
+        assert (
+            result.n_stations >= 5
+        ), f"Used {result.n_stations} stations, need at least 5 for accuracy"
 
     def test_station_ei_varies(self):
         """EI must vary along the span (not constant — tapered wing)."""
@@ -156,9 +145,9 @@ class TestDBoxBeamAdapter:
         result = adapter.analyze_elliptic_dbox(span_in=half_span, total_load_lbf=450.0)
 
         ei_values = result.station_ei
-        assert len(set(ei_values)) > 1, (
-            "All station EI values are identical — section properties must vary with taper"
-        )
+        assert (
+            len(set(ei_values)) > 1
+        ), "All station EI values are identical — section properties must vary with taper"
         # Root EI should be largest (widest chord, most plies)
         assert ei_values[0] == max(ei_values), (
             f"Root EI ({ei_values[0]:.0f}) should be the maximum, "
@@ -182,13 +171,17 @@ class TestDBoxBeamAdapter:
         adapter = DBoxBeamAdapter()
         half_span = config.geometry.wing_panel_span  # cantilever length
 
-        result_1 = adapter.analyze_elliptic_dbox(span_in=half_span, total_load_lbf=225.0)
-        result_2 = adapter.analyze_elliptic_dbox(span_in=half_span, total_load_lbf=450.0)
+        result_1 = adapter.analyze_elliptic_dbox(
+            span_in=half_span, total_load_lbf=225.0
+        )
+        result_2 = adapter.analyze_elliptic_dbox(
+            span_in=half_span, total_load_lbf=450.0
+        )
 
         ratio = result_2.tip_deflection_in / result_1.tip_deflection_in
-        assert abs(ratio - 2.0) < 0.05, (
-            f"Deflection should scale linearly. Ratio: {ratio:.4f} (expected ~2.0)"
-        )
+        assert (
+            abs(ratio - 2.0) < 0.05
+        ), f"Deflection should scale linearly. Ratio: {ratio:.4f} (expected ~2.0)"
 
 
 class TestNominalSparCheckDBox:
@@ -200,9 +193,9 @@ class TestNominalSparCheckDBox:
 
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
-        assert "dbox_tip_deflection_in" in result, (
-            f"Missing 'dbox_tip_deflection_in' key. Keys: {list(result.keys())}"
-        )
+        assert (
+            "dbox_tip_deflection_in" in result
+        ), f"Missing 'dbox_tip_deflection_in' key. Keys: {list(result.keys())}"
 
     def test_dbox_tip_deflection_range(self):
         """D-box tip deflection should be in 1-15 inch range."""
@@ -211,9 +204,9 @@ class TestNominalSparCheckDBox:
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
         defl = result["dbox_tip_deflection_in"]
-        assert 1.0 <= defl <= 15.0, (
-            f"D-box tip deflection = {defl:.2f} in, expected 1-15 in range"
-        )
+        assert (
+            1.0 <= defl <= 15.0
+        ), f"D-box tip deflection = {defl:.2f} in, expected 1-15 in range"
 
     def test_legacy_tip_deflection_preserved(self):
         """nominal_spar_check() must still return 'tip_deflection_in' (cap-only, backward compat)."""
@@ -221,12 +214,12 @@ class TestNominalSparCheckDBox:
 
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
-        assert "tip_deflection_in" in result, (
-            "Missing legacy 'tip_deflection_in' key — breaks RegressionRunner"
-        )
-        assert "max_stress_psi" in result, (
-            "Missing legacy 'max_stress_psi' key — breaks RegressionRunner"
-        )
+        assert (
+            "tip_deflection_in" in result
+        ), "Missing legacy 'tip_deflection_in' key — breaks RegressionRunner"
+        assert (
+            "max_stress_psi" in result
+        ), "Missing legacy 'max_stress_psi' key — breaks RegressionRunner"
 
     def test_dbox_spar_cap_tsai_wu_margin(self):
         """Spar cap Tsai-Wu margin must be positive (structure adequate)."""
@@ -235,9 +228,9 @@ class TestNominalSparCheckDBox:
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
         assert "dbox_spar_cap_tsai_wu_margin" in result
-        assert result["dbox_spar_cap_tsai_wu_margin"] > 0, (
-            f"Spar cap Tsai-Wu margin = {result['dbox_spar_cap_tsai_wu_margin']:.4f}, must be > 0"
-        )
+        assert (
+            result["dbox_spar_cap_tsai_wu_margin"] > 0
+        ), f"Spar cap Tsai-Wu margin = {result['dbox_spar_cap_tsai_wu_margin']:.4f}, must be > 0"
 
     def test_dbox_skin_tsai_wu_margin(self):
         """D-box skin Tsai-Wu margin must be positive."""
@@ -246,9 +239,9 @@ class TestNominalSparCheckDBox:
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
         assert "dbox_skin_tsai_wu_margin" in result
-        assert result["dbox_skin_tsai_wu_margin"] > 0, (
-            f"D-box skin Tsai-Wu margin = {result['dbox_skin_tsai_wu_margin']:.4f}, must be > 0"
-        )
+        assert (
+            result["dbox_skin_tsai_wu_margin"] > 0
+        ), f"D-box skin Tsai-Wu margin = {result['dbox_skin_tsai_wu_margin']:.4f}, must be > 0"
 
     def test_dbox_web_shear_margin(self):
         """Shear web margin must be positive."""
@@ -257,9 +250,9 @@ class TestNominalSparCheckDBox:
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
         assert "dbox_web_shear_margin" in result
-        assert result["dbox_web_shear_margin"] > 0, (
-            f"Web shear margin = {result['dbox_web_shear_margin']:.4f}, must be > 0"
-        )
+        assert (
+            result["dbox_web_shear_margin"] > 0
+        ), f"Web shear margin = {result['dbox_web_shear_margin']:.4f}, must be > 0"
 
     def test_dbox_foam_compression_margin(self):
         """Foam compression margin must be positive."""
@@ -268,9 +261,9 @@ class TestNominalSparCheckDBox:
         adapter = BeamFEAAdapter()
         result = adapter.nominal_spar_check()
         assert "dbox_foam_compression_margin" in result
-        assert result["dbox_foam_compression_margin"] > 0, (
-            f"Foam compression margin = {result['dbox_foam_compression_margin']:.4f}, must be > 0"
-        )
+        assert (
+            result["dbox_foam_compression_margin"] > 0
+        ), f"Foam compression margin = {result['dbox_foam_compression_margin']:.4f}, must be > 0"
 
 
 class TestDBoxFlutterIntegration:
@@ -331,11 +324,14 @@ class TestDBoxWeight:
         from core.simulation.fea_adapter import DBoxBeamAdapter
 
         adapter = DBoxBeamAdapter()
-        assert hasattr(adapter, "estimate_dbox_weight_lb"), (
-            "DBoxBeamAdapter missing estimate_dbox_weight_lb method"
-        )
+        assert hasattr(
+            adapter, "estimate_dbox_weight_lb"
+        ), "DBoxBeamAdapter missing estimate_dbox_weight_lb method"
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row 37; 4.72 lb vs floor 5.0")
+    @pytest.mark.xfail(
+        strict=True,
+        reason="book geometry: see docs/geometry-correction-ledger.md row 37; 4.72 lb vs floor 5.0",
+    )
     def test_dbox_weight_range(self):
         """D-box weight (skins + web, one wing half) should be 5-25 lb.
 
@@ -349,9 +345,9 @@ class TestDBoxWeight:
         adapter = DBoxBeamAdapter()
         half_span = config.geometry.wing_panel_span  # cantilever length, root BL to tip
         weight = adapter.estimate_dbox_weight_lb(half_span)
-        assert 5.0 <= weight <= 25.0, (
-            f"D-box weight = {weight:.2f} lb, expected 5-25 lb per wing half"
-        )
+        assert (
+            5.0 <= weight <= 25.0
+        ), f"D-box weight = {weight:.2f} lb, expected 5-25 lb per wing half"
 
 
 class TestDBoxExports:
@@ -360,14 +356,17 @@ class TestDBoxExports:
     def test_dbox_section_importable(self):
         """DBoxSection must be importable from core.simulation."""
         from core.simulation import DBoxSection
+
         assert DBoxSection is not None
 
     def test_dbox_result_importable(self):
         """DBoxResult must be importable from core.simulation."""
         from core.simulation import DBoxResult
+
         assert DBoxResult is not None
 
     def test_dbox_beam_adapter_importable(self):
         """DBoxBeamAdapter must be importable from core.simulation."""
         from core.simulation import DBoxBeamAdapter
+
         assert DBoxBeamAdapter is not None

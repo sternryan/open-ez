@@ -1,4 +1,5 @@
 """Registered source documents and the citation form `<id>:p<page>`."""
+
 from __future__ import annotations
 
 import re

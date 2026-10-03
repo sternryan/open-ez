@@ -5,14 +5,6 @@ the trapezoid's own A = 2b/(c_r(1 + lam)) this is tan L_LE - (c_r - c_t)/b, b th
 """
 
 import math
-import sys
-from pathlib import Path
-from unittest.mock import MagicMock
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.modules.setdefault("cadquery", MagicMock())
-sys.modules.setdefault("OCP", MagicMock())
-
 import pytest
 
 from core.analysis import half_chord_sweep_tan
@@ -32,7 +24,9 @@ def test_matches_the_raymer_form_with_the_trapezoids_own_aspect_ratio():
     lam = ct / cr
     ar = b**2 / (b * (cr + ct) / 2)
     raymer = math.tan(math.radians(le)) - (4 * 0.5 / ar) * (1 - lam) / (1 + lam)
-    assert half_chord_sweep_tan(math.tan(math.radians(le)), cr, ct, b) == pytest.approx(raymer, abs=1e-12)
+    assert half_chord_sweep_tan(math.tan(math.radians(le)), cr, ct, b) == pytest.approx(
+        raymer, abs=1e-12
+    )
 
 
 def test_constant_chord_keeps_the_le_sweep():
@@ -44,6 +38,10 @@ def test_panel_and_gross_trapezoid_share_the_half_chord_line():
 
     g = config.geometry
     tan_le = math.tan(math.radians(g.wing_sweep_le))
-    panel = half_chord_sweep_tan(tan_le, g.wing_root_chord, g.wing_tip_chord, 2 * g.wing_panel_span)
-    gross = half_chord_sweep_tan(tan_le, g.wing_centerline_chord, g.wing_tip_chord, g.wing_span)
+    panel = half_chord_sweep_tan(
+        tan_le, g.wing_root_chord, g.wing_tip_chord, 2 * g.wing_panel_span
+    )
+    gross = half_chord_sweep_tan(
+        tan_le, g.wing_centerline_chord, g.wing_tip_chord, g.wing_span
+    )
     assert panel == pytest.approx(gross, abs=1e-9)

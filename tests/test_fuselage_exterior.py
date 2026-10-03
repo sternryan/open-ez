@@ -21,7 +21,14 @@ from guide.schema import load_graph
 G = fb.G
 ROOT = Path(__file__).resolve().parents[1]
 GRAPH = load_graph(ROOT / "guide" / "graph")
-NEW_PARTS = ("canard_cutout", "belt_insert", "rollover", "rollover_inserts", "belt_attach", "step")
+NEW_PARTS = (
+    "canard_cutout",
+    "belt_insert",
+    "rollover",
+    "rollover_inserts",
+    "belt_attach",
+    "step",
+)
 
 
 @pytest.fixture(scope="module")
@@ -85,7 +92,11 @@ def test_rollover_note_names_the_fitted_reading_and_the_12_7_check(fuse):
     p = fuse["rollover"]
     assert p.fidelity == "derived"
     assert {"plans-1980:p47", "plans-1980:p48"} <= set(p.cite)
-    assert "FITTED_ROLLOVER_SHOULDER_WL" in p.note and "fitted" in p.note and "12.7" in p.note
+    assert (
+        "FITTED_ROLLOVER_SHOULDER_WL" in p.note
+        and "fitted" in p.note
+        and "12.7" in p.note
+    )
     assert not hasattr(fb, "FITTED_ROLLOVER_TILT_DEG")
     assert fb.FITTED_ROLLOVER_SHOULDER_WL == G.side_panel_top_wl
 
@@ -116,8 +127,12 @@ def test_lower_aft_corner_stays_sharp_where_the_gear_bolts_pass(fuse):
     assert fuse["bottom"].solid.val().BoundingBox().xmax < 125.0 - 15.3
     carved = fb.carved_box()
     for n in ("side_left", "side_right"):
-        lo = max(f.Area() for f in carved[n].solid.faces().vals() if f.normalAt().z < -0.9)
-        lo0 = max(f.Area() for f in fuse[n].solid.faces().vals() if f.normalAt().z < -0.9)
+        lo = max(
+            f.Area() for f in carved[n].solid.faces().vals() if f.normalAt().z < -0.9
+        )
+        lo0 = max(
+            f.Area() for f in fuse[n].solid.faces().vals() if f.normalAt().z < -0.9
+        )
         assert lo == pytest.approx(lo0, rel=1e-6), n
 
 
@@ -129,8 +144,13 @@ def test_belt_insert_is_left_only_5_in_long_in_the_lower_corner(fuse):
     assert y1 < 0  # left side only
     out = half_width(x0) + G.bottom_trim_outboard
     assert y0 == pytest.approx(-out, abs=0.05)  # at the bottom's outer edge
-    assert z0 == pytest.approx(fuse["bottom"].solid.val().BoundingBox().zmin, abs=0.1)  # at the lower corner
-    assert fuse["belt_insert"].fidelity == "derived" and "plans-1980:p46" in fuse["belt_insert"].cite
+    assert z0 == pytest.approx(
+        fuse["bottom"].solid.val().BoundingBox().zmin, abs=0.1
+    )  # at the lower corner
+    assert (
+        fuse["belt_insert"].fidelity == "derived"
+        and "plans-1980:p46" in fuse["belt_insert"].cite
+    )
 
 
 # --- belt pads ----------------------------------------------------------------------------------------------------
@@ -141,13 +161,23 @@ def test_belt_attach_pads_front_5_forward_and_rear_8_forward(fuse):
     assert front == pytest.approx(G.fs_front_seat_bkhd_bottom - 5.0)
     assert rear == pytest.approx(G.fs_rear_seat_bkhd_bottom - 8.0)
     centres = sorted((s.Center().x, 1 if s.Center().y > 0 else -1) for s in solids)
-    assert [c[0] for c in centres] == pytest.approx([front, front, rear, rear], abs=0.05)
-    assert sorted(c[1] for c in centres) == [-1, -1, 1, 1]  # a pad on each side at each station
+    assert [c[0] for c in centres] == pytest.approx(
+        [front, front, rear, rear], abs=0.05
+    )
+    assert sorted(c[1] for c in centres) == [
+        -1,
+        -1,
+        1,
+        1,
+    ]  # a pad on each side at each station
     for s in solids:  # against the side's inside face, on the bottom foam
         bb = s.BoundingBox()
         hw = half_width(s.Center().x)
         assert max(abs(bb.ymin), abs(bb.ymax)) == pytest.approx(hw, abs=0.05)
-    assert fuse["belt_attach"].fidelity == "derived" and "plans-1980:p49" in fuse["belt_attach"].cite
+    assert (
+        fuse["belt_attach"].fidelity == "derived"
+        and "plans-1980:p49" in fuse["belt_attach"].cite
+    )
 
 
 # --- step -----------------------------------------------------------------------------------------------------------
@@ -157,7 +187,9 @@ def test_step_is_a_bent_eighth_plate_on_the_left_at_the_front_belt(fuse):
     w, a, b = G.step_size
     front = fb.belt_attach_stations()[0]
     assert x1 - x0 == pytest.approx(w, abs=0.01)
-    assert y1 - y0 == pytest.approx(a, abs=0.01) and z1 - z0 == pytest.approx(b, abs=0.01)
+    assert y1 - y0 == pytest.approx(a, abs=0.01) and z1 - z0 == pytest.approx(
+        b, abs=0.01
+    )
     assert (x0 + x1) / 2 == pytest.approx(front, abs=0.01)
     assert y1 < 0  # left side
     # plate volume: legs 4.5 + 4.5 less the shared corner, 1/8 thick, 1.8 wide, with a rounded inside bend
@@ -168,7 +200,9 @@ def test_step_is_a_bent_eighth_plate_on_the_left_at_the_front_belt(fuse):
 
 
 # --- roll-over ---------------------------------------------------------------------------------------------------
-X_FRONT = G.fs_front_seat_bkhd_top - G.rollover_shoulder_top[1]  # 79.05, derived: the tops run 2.7 back to the bulkhead top
+X_FRONT = (
+    G.fs_front_seat_bkhd_top - G.rollover_shoulder_top[1]
+)  # 79.05, derived: the tops run 2.7 back to the bulkhead top
 HB, PH = G.rollover_base_height, G.rollover_peak_height
 
 
@@ -187,13 +221,17 @@ def test_rollover_front_piece_is_vertical_at_fs_79_05_and_23_wide():
 
 def test_rollover_peak_is_at_wl_35_6_and_12_6_above_the_shoulder_line():
     pc = fb.rollover_pieces()
-    assert pc["z_shoulder"] == pytest.approx(fb.z_of_wl(23.0))  # fitted: level with the top longerons
+    assert pc["z_shoulder"] == pytest.approx(
+        fb.z_of_wl(23.0)
+    )  # fitted: level with the top longerons
     z1 = _bb(pc["plate"])[5]
     assert z1 == pytest.approx(fb.z_of_wl(35.6), abs=0.05)
     assert z1 - pc["z_shoulder"] == pytest.approx(PH, abs=0.05)
     # the shoulder line on the plate: the top edge between the peak's foot and the notches
     vs = [(v.Y, v.Z) for v in pc["plate"].vertices().vals()]
-    assert max(z for y, z in vs if 4.1 < abs(y) < 10.9) == pytest.approx(pc["z_shoulder"], abs=1e-6)
+    assert max(z for y, z in vs if 4.1 < abs(y) < 10.9) == pytest.approx(
+        pc["z_shoulder"], abs=1e-6
+    )
 
 
 def test_rollover_front_piece_outline():
@@ -202,51 +240,81 @@ def test_rollover_front_piece_outline():
     zs = fb.rollover_pieces()["z_shoulder"]
     face = [f for f in plate.faces().vals() if f.normalAt().x < -0.999][0]
     vs = [(round(v.Y, 6), round(v.Z, 6)) for v in face.Vertices()]
-    shoulder_line = sorted(y for y, z in vs if abs(z - zs) < 1e-6)  # notch inner corners, peak base, mirrored
+    shoulder_line = sorted(
+        y for y, z in vs if abs(z - zs) < 1e-6
+    )  # notch inner corners, peak base, mirrored
     peak_base = [y for y in shoulder_line if abs(y) < 5.0]
     assert max(peak_base) - min(peak_base) == pytest.approx(G.rollover_peak_base)  # 8.4
-    assert G.rollover_width / 2 - max(peak_base) == pytest.approx(G.rollover_shoulder)  # 7.3 out to the edge
+    assert G.rollover_width / 2 - max(peak_base) == pytest.approx(
+        G.rollover_shoulder
+    )  # 7.3 out to the edge
     assert max(y for y, _ in vs) - min(y for y, _ in vs) == pytest.approx(23.0)
-    notch = {z for y, z in vs if abs(y - (G.rollover_width / 2 - G.rollover_notch[0])) < 1e-6}
-    assert round(zs - G.rollover_notch[1], 6) in notch  # the notch floor, 1.4 below the shoulder line
-    assert min(z for _, z in vs) == pytest.approx(zs - HB)  # the printed 4 in base, before it is carved to the bulkhead
+    notch = {
+        z for y, z in vs if abs(y - (G.rollover_width / 2 - G.rollover_notch[0])) < 1e-6
+    }
+    assert (
+        round(zs - G.rollover_notch[1], 6) in notch
+    )  # the notch floor, 1.4 below the shoulder line
+    assert min(z for _, z in vs) == pytest.approx(
+        zs - HB
+    )  # the printed 4 in base, before it is carved to the bulkhead
 
 
 def test_rollover_base_is_carved_to_the_bulkhead():
     pc = fb.rollover_pieces()
     carved_bottom = _bb(pc["plate"])[4]
-    assert carved_bottom > pc["z_shoulder"] - HB + 0.5  # it meets the bulkhead above its printed bottom
+    assert (
+        carved_bottom > pc["z_shoulder"] - HB + 0.5
+    )  # it meets the bulkhead above its printed bottom
     # the bulkhead's back face crosses the plane 0.75 above the printed bottom (the captain's "about 1 in"); the piece
     # that remains starts where the bulkhead's front face leaves it, 1.56 above
     assert carved_bottom < pc["z_shoulder"] - HB + 2.0
-    assert len(pc["plate"].solids().vals()) == 1  # no loose strip left under the bulkhead
+    assert (
+        len(pc["plate"].solids().vals()) == 1
+    )  # no loose strip left under the bulkhead
 
 
 def test_rollover_depth_is_4_5_at_the_shoulder_line_and_3_at_the_peak():
     pc = fb.rollover_pieces()
     x_front, zs = pc["x_front"], pc["z_shoulder"]
     tri = pc["triangle"]
-    aft = [f for f in tri.faces().vals() if f.geomType() == "PLANE" and f.normalAt().x > 0.9 and f.Area() > 10][0]
+    aft = [
+        f
+        for f in tri.faces().vals()
+        if f.geomType() == "PLANE" and f.normalAt().x > 0.9 and f.Area() > 10
+    ][0]
     pts = [(v.X, v.Z) for v in aft.Vertices()]
     base = [x for x, z in pts if abs(z - zs) < 0.05]
     apex = max(pts, key=lambda p: p[1])
-    assert max(base) - x_front == pytest.approx(max(G.rollover_side_ends), abs=0.05)  # 4.5 at the shoulder line
-    assert apex[0] - x_front == pytest.approx(min(G.rollover_side_ends), abs=0.05)  # 3.0 at the peak
+    assert max(base) - x_front == pytest.approx(
+        max(G.rollover_side_ends), abs=0.05
+    )  # 4.5 at the shoulder line
+    assert apex[0] - x_front == pytest.approx(
+        min(G.rollover_side_ends), abs=0.05
+    )  # 3.0 at the peak
     assert apex[1] - zs == pytest.approx(PH, abs=0.05)
 
 
 def test_back_triangle_slant_is_the_printed_12_7_and_it_leans_forward():
     pc = fb.rollover_pieces()
     tri = pc["triangle"]
-    aft = [f for f in tri.faces().vals() if f.geomType() == "PLANE" and f.normalAt().x > 0.9 and f.Area() > 10][0]
+    aft = [
+        f
+        for f in tri.faces().vals()
+        if f.geomType() == "PLANE" and f.normalAt().x > 0.9 and f.Area() > 10
+    ][0]
     pts = [(v.X, v.Y, v.Z) for v in aft.Vertices()]
     apex = max(pts, key=lambda p: p[2])
     base = [p for p in pts if abs(p[2] - pc["z_shoulder"]) < 0.05]
     slant = math.dist(apex, (sum(p[0] for p in base) / 2, 0.0, base[0][2]))
-    assert slant == pytest.approx(12.7, abs=0.05)  # 12.69: sqrt(12.6**2 + 1.5**2) checks the 4.5 -> 3 depth
+    assert slant == pytest.approx(
+        12.7, abs=0.05
+    )  # 12.69: sqrt(12.6**2 + 1.5**2) checks the 4.5 -> 3 depth
     assert slant == pytest.approx(math.hypot(PH, 4.5 - 3.0))
     assert pc["lean_deg"] == pytest.approx(math.degrees(math.atan(1.5 / PH)), abs=1e-6)
-    assert max(p[1] for p in base) - min(p[1] for p in base) == pytest.approx(G.rollover_back_triangle[0], abs=0.02)  # 8.1 base
+    assert max(p[1] for p in base) - min(p[1] for p in base) == pytest.approx(
+        G.rollover_back_triangle[0], abs=0.02
+    )  # 8.1 base
 
 
 def test_rollover_roof_sides_run_4_5_wide_at_the_bottom_3_at_the_top():
@@ -254,9 +322,15 @@ def test_rollover_roof_sides_run_4_5_wide_at_the_bottom_3_at_the_top():
     for sgn, roof in zip((-1, 1), pc["roofs"]):
         g = pc["roof_geom"][sgn]
         # in the roof's plane: the front edge A-B, the back edge D-C, the end widths 4.5 and 3.0
-        assert math.dist(g["A"], g["D"]) == pytest.approx(max(G.rollover_side_ends), abs=0.05)
-        assert math.dist(g["B"], g["C"]) == pytest.approx(min(G.rollover_side_ends), abs=0.05)
-        assert g["length"] == pytest.approx(G.rollover_side_length, abs=0.35)  # printed 13 (CP26 LPC 37); 13.28 from 8.4 x 12.6
+        assert math.dist(g["A"], g["D"]) == pytest.approx(
+            max(G.rollover_side_ends), abs=0.05
+        )
+        assert math.dist(g["B"], g["C"]) == pytest.approx(
+            min(G.rollover_side_ends), abs=0.05
+        )
+        assert g["length"] == pytest.approx(
+            G.rollover_side_length, abs=0.35
+        )  # printed 13 (CP26 LPC 37); 13.28 from 8.4 x 12.6
         assert roof.val().isValid()
 
 
@@ -273,12 +347,33 @@ def test_map_slot_in_the_right_roof_side_only():
     g = pc["roof_geom"][1]
     s0, c0 = fb.FITTED_ROLLOVER_SLOT_CENTRE
     import numpy as np
+
     xd, yd, n = g["xd"], g["yd"], g["n"]
     centre = g["A"] + s0 * xd + c0 * yd - n * T / 2
-    ball = fb._box(*(centre[0] - 0.2, centre[0] + 0.2, centre[1] - 0.2, centre[1] + 0.2, centre[2] - 0.2, centre[2] + 0.2))
-    assert not right.intersect(ball).vals() or right.intersect(ball).val().Volume() < 1e-9
+    ball = fb._box(
+        *(
+            centre[0] - 0.2,
+            centre[0] + 0.2,
+            centre[1] - 0.2,
+            centre[1] + 0.2,
+            centre[2] - 0.2,
+            centre[2] + 0.2,
+        )
+    )
+    assert (
+        not right.intersect(ball).vals() or right.intersect(ball).val().Volume() < 1e-9
+    )
     mirror = centre * np.array([1, -1, 1])
-    ball_l = fb._box(*(mirror[0] - 0.2, mirror[0] + 0.2, mirror[1] - 0.2, mirror[1] + 0.2, mirror[2] - 0.2, mirror[2] + 0.2))
+    ball_l = fb._box(
+        *(
+            mirror[0] - 0.2,
+            mirror[0] + 0.2,
+            mirror[1] - 0.2,
+            mirror[1] + 0.2,
+            mirror[2] - 0.2,
+            mirror[2] + 0.2,
+        )
+    )
     assert left.intersect(ball_l).val().Volume() > 0.01  # the left roof is whole there
     # no round hole anywhere but the back triangle
     assert not [f for f in pc["main"].faces().vals() if f.geomType() == "CYLINDER"]
@@ -286,13 +381,17 @@ def test_map_slot_in_the_right_roof_side_only():
 
 def test_baggage_hole_in_the_back_triangle_only(fuse):
     pc = fb.rollover_pieces()
-    cyl = [f for f in fuse["rollover"].solid.faces().vals() if f.geomType() == "CYLINDER"]
+    cyl = [
+        f for f in fuse["rollover"].solid.faces().vals() if f.geomType() == "CYLINDER"
+    ]
     assert cyl
     assert [f for f in pc["triangle"].faces().vals() if f.geomType() == "CYLINDER"]
     for f in cyl:
         cy = f._geomAdaptor().Cylinder()
         assert cy.Radius() == pytest.approx(G.rollover_baggage_hole_dia / 2)
-        d = cy.Axis().Direction()  # through the back triangle, along its normal (leaning 6.8 degrees)
+        d = (
+            cy.Axis().Direction()
+        )  # through the back triangle, along its normal (leaning 6.8 degrees)
         assert abs(d.X()) > 0.99 and abs(d.Y()) < 1e-6
 
 
@@ -309,7 +408,9 @@ def test_rollover_touches_the_front_seat_bulkhead_without_entering_it(fuse):
     inter = r.intersect(bk)
     assert (inter.val().Volume() if inter.vals() else 0.0) <= 0.01
     # the box overhangs the bulkhead top aft: 4.5 - 2.7 = 1.8 at the peak base
-    assert _bb(r)[1] - G.fs_front_seat_bkhd_top == pytest.approx(max(G.rollover_side_ends) - G.rollover_shoulder_top[1], abs=0.05)
+    assert _bb(r)[1] - G.fs_front_seat_bkhd_top == pytest.approx(
+        max(G.rollover_side_ends) - G.rollover_shoulder_top[1], abs=0.05
+    )
 
 
 @pytest.mark.parametrize("name", ["top_longeron_left", "top_longeron_right"])
@@ -324,12 +425,16 @@ def test_rollover_shell_is_one_solid(fuse):
 
 def test_rollover_inserts_three_flush_with_the_inside_face(fuse):
     ins = fuse["rollover_inserts"]
-    assert ins.fidelity == "derived" and {"plans-1980:p47", "plans-1980:p48"} <= set(ins.cite)
+    assert ins.fidelity == "derived" and {"plans-1980:p47", "plans-1980:p48"} <= set(
+        ins.cite
+    )
     solids = ins.solid.solids().vals()
     assert len(solids) == 3
     ix, iy, it = G.rollover_insert
     for s in solids:
-        assert s.Volume() == pytest.approx(ix * iy * it, rel=0.03)  # a harness insert loses a sliver to the bevel at the bulkhead
+        assert s.Volume() == pytest.approx(
+            ix * iy * it, rel=0.03
+        )  # a harness insert loses a sliver to the bevel at the bulkhead
     pc = fb.rollover_pieces()
     T = G.rollover_foam_thickness
     harness = [s for s in solids if s.Center().z < pc["z_shoulder"]]
@@ -339,19 +444,43 @@ def test_rollover_inserts_three_flush_with_the_inside_face(fuse):
     for s in harness:  # in the shoulder tops: lower face flush with the underside; outboard edge 4.0 from the outer end
         bb = s.BoundingBox()
         assert bb.zmin == pytest.approx(pc["z_shoulder"] - T, abs=1e-6)
-        assert W - max(abs(bb.ymin), abs(bb.ymax)) == pytest.approx(G.rollover_harness_insert_spacing, abs=0.02)  # 4.0
-        assert max(abs(bb.ymin), abs(bb.ymax)) - min(abs(bb.ymin), abs(bb.ymax)) == pytest.approx(ix, abs=0.02)
-        assert (bb.xmin + bb.xmax) / 2 == pytest.approx(pc["x_front"] + G.rollover_shoulder_top[1] / 2, abs=0.05)
+        assert W - max(abs(bb.ymin), abs(bb.ymax)) == pytest.approx(
+            G.rollover_harness_insert_spacing, abs=0.02
+        )  # 4.0
+        assert max(abs(bb.ymin), abs(bb.ymax)) - min(
+            abs(bb.ymin), abs(bb.ymax)
+        ) == pytest.approx(ix, abs=0.02)
+        assert (bb.xmin + bb.xmax) / 2 == pytest.approx(
+            pc["x_front"] + G.rollover_shoulder_top[1] / 2, abs=0.05
+        )
     assert sorted(1 if s.Center().y > 0 else -1 for s in harness) == [-1, 1]
     # canopy insert: right roof only, 1.5 below the peak (along the slope), flush with the inside face
     (c,) = canopy
     assert c.Center().y > 0
     g = pc["roof_geom"][1]
-    along = [(v.X - g["A"][0]) * g["xd"][0] + (v.Y - g["A"][1]) * g["xd"][1] + (v.Z - g["A"][2]) * g["xd"][2] for v in c.Vertices()]
-    assert g["length"] - max(along) == pytest.approx(G.rollover_canopy_insert_from_peak[0], abs=0.02)
-    assert max(along) - min(along) == pytest.approx(G.rollover_canopy_insert_from_peak[1], abs=0.02)
-    depth = [-((v.X - g["A"][0]) * g["n"][0] + (v.Y - g["A"][1]) * g["n"][1] + (v.Z - g["A"][2]) * g["n"][2]) for v in c.Vertices()]
-    assert max(depth) == pytest.approx(T, abs=1e-6)  # its inner face is the foam's inside face
+    along = [
+        (v.X - g["A"][0]) * g["xd"][0]
+        + (v.Y - g["A"][1]) * g["xd"][1]
+        + (v.Z - g["A"][2]) * g["xd"][2]
+        for v in c.Vertices()
+    ]
+    assert g["length"] - max(along) == pytest.approx(
+        G.rollover_canopy_insert_from_peak[0], abs=0.02
+    )
+    assert max(along) - min(along) == pytest.approx(
+        G.rollover_canopy_insert_from_peak[1], abs=0.02
+    )
+    depth = [
+        -(
+            (v.X - g["A"][0]) * g["n"][0]
+            + (v.Y - g["A"][1]) * g["n"][1]
+            + (v.Z - g["A"][2]) * g["n"][2]
+        )
+        for v in c.Vertices()
+    ]
+    assert max(depth) == pytest.approx(
+        T, abs=1e-6
+    )  # its inner face is the foam's inside face
     # the pockets leave the insert and the foam non-overlapping
     inter = fuse["rollover"].solid.intersect(ins.solid)
     assert (inter.val().Volume() if inter.vals() else 0.0) < 1e-6
@@ -359,11 +488,18 @@ def test_rollover_inserts_three_flush_with_the_inside_face(fuse):
 
 # --- Review Focus 6: the skin schedule ------------------------------------------------------------------------
 def _third(side):
-    return fp.SCOPE[(f"f07.skin-{side}", "forward of the front seat bulkhead only, along the longerons")].targets[0]
+    return fp.SCOPE[
+        (
+            f"f07.skin-{side}",
+            "forward of the front seat bulkhead only, along the longerons",
+        )
+    ].targets[0]
 
 
 def _strip(side):
-    return fp.SCOPE[(f"f07.skin-{side}", "3 in strip, tapered 52/50/48 in, FS 60 to 110")].targets[0]
+    return fp.SCOPE[
+        (f"f07.skin-{side}", "3 in strip, tapered 52/50/48 in, FS 60 to 110")
+    ].targets[0]
 
 
 @pytest.mark.parametrize("side", ["right", "left"])
@@ -378,7 +514,12 @@ def test_third_ply_ends_on_the_front_seat_bulkhead_line(side):
             for i in range(21):
                 q = e.positionAt(i / 20)
                 pts.append((q.x, q.z))
-    for x, z in pts:  # nothing aft of the slanted line (63.55 at the floor to 81.75 at the top)
+    for (
+        x,
+        z,
+    ) in (
+        pts
+    ):  # nothing aft of the slanted line (63.55 at the floor to 81.75 at the top)
         assert x <= fb.front_bulkhead_line_fs(z) + 1e-6, (x, z)
     # and the ply reaches it: at the top edge the ply ends at FS 81.75, at the side's bottom at FS 63.55
     top = [x for x, z in pts if abs(z - fb.Z_TOP) < 1e-6]
@@ -387,8 +528,10 @@ def test_third_ply_ends_on_the_front_seat_bulkhead_line(side):
     low = [x for x, z in pts if abs(z - zb) < 0.05]
     assert max(low) == pytest.approx(G.fs_front_seat_bkhd_bottom, abs=0.1)
     # no area at all aft of the line
-    aft = fp._clip_solid(("fwd_of_front_bkhd",))
-    side_face_area = sum(f.Area() for f in fp._faces(t.part, build_fuselage()[t.part], "outside"))
+    _aft = fp._clip_solid(("fwd_of_front_bkhd",))
+    side_face_area = sum(
+        f.Area() for f in fp._faces(t.part, build_fuselage()[t.part], "outside")
+    )
     in_area = sum(f.Area() for f in faces)
     assert 0 < in_area < side_face_area
 
@@ -405,7 +548,9 @@ def test_strip_spans_fs_60_to_110_and_is_3_in_wide(side):
     assert max(zs) == pytest.approx(fb.Z_TOP, abs=1e-6)  # along the top of the side
     area = sum(f.Area() for f in faces)
     assert area == pytest.approx(3.0 * 50.0, rel=0.01)
-    assert sum(G.skin_strip_lengths) == pytest.approx(3 * 50.0)  # taper 52/50/48: nominal 50 is exact for the three
+    assert sum(G.skin_strip_lengths) == pytest.approx(
+        3 * 50.0
+    )  # taper 52/50/48: nominal 50 is exact for the three
 
 
 def test_skin_rows_are_mapped_in_book_order(plies):
@@ -416,20 +561,37 @@ def test_skin_rows_are_mapped_in_book_order(plies):
     by_part = {}
     for p in right:
         by_part.setdefault(p.part, []).append(p)
-    assert [p.orientation_deg for p in by_part["side_right"]] == [30.0, -30.0, 0.0, None, None, None]
+    assert [p.orientation_deg for p in by_part["side_right"]] == [
+        30.0,
+        -30.0,
+        0.0,
+        None,
+        None,
+        None,
+    ]
     assert [p.orientation_deg for p in by_part["bottom"]] == [30.0, -30.0]
     assert all(p.cloth == "UND" for p in right)
     assert all(p.cite == "plans-1980:p46" for p in right)
-    assert all(p.lower_bound for p in right if p.where.startswith("crossed"))  # wrap and aft lap not counted
+    assert all(
+        p.lower_bound for p in right if p.where.startswith("crossed")
+    )  # wrap and aft lap not counted
 
 
 def test_bottom_skin_runs_one_inch_past_the_centre_line_from_each_side():
     for side, sgn in (("right", 1), ("left", -1)):
-        t = [x for x in fp.SCOPE[(f"f07.skin-{side}", "crossed 30 degrees to the longerons, whole skin")].targets if x.part == "bottom"][0]
+        t = [
+            x
+            for x in fp.SCOPE[
+                (f"f07.skin-{side}", "crossed 30 degrees to the longerons, whole skin")
+            ].targets
+            if x.part == "bottom"
+        ][0]
         ys = [v.Y for f in t.region.faces("bottom") for v in f.Vertices()]
         assert min(ys) * sgn if sgn < 0 else True
         far = -min(ys) if sgn > 0 else max(ys)
-        assert far == pytest.approx(G.skin_bottom_overlap / 2, abs=0.05)  # 2 in overlap in all
+        assert far == pytest.approx(
+            G.skin_bottom_overlap / 2, abs=0.05
+        )  # 2 in overlap in all
 
 
 def test_skin_shell_covers_one_side_and_the_bottom_to_one_inch_past_the_centre_line():
@@ -437,7 +599,11 @@ def test_skin_shell_covers_one_side_and_the_bottom_to_one_inch_past_the_centre_l
         sh = fp.skin_shell(side)
         for s in sh.solids().vals():
             assert s.isValid()
-        bb = sh.val().BoundingBox() if len(sh.vals()) == 1 else __import__("cadquery").Compound.makeCompound(sh.vals()).BoundingBox()
+        bb = (
+            sh.val().BoundingBox()
+            if len(sh.vals()) == 1
+            else __import__("cadquery").Compound.makeCompound(sh.vals()).BoundingBox()
+        )
         assert (bb.ymax if sgn > 0 else -bb.ymin) > 12.0  # the side's outer face
         far = -bb.ymin if sgn > 0 else bb.ymax
         assert far == pytest.approx(1.0, abs=0.1)
@@ -453,7 +619,9 @@ def test_scope_problems_empty_for_chapters_4_to_8():
 
 
 def test_chapter_7_and_8_rows_mapped_or_excluded_with_reasons():
-    rows = [(o, w) for o, w in fp.material_rows(GRAPH) if GRAPH.ops[o].chapter in (7, 8)]
+    rows = [
+        (o, w) for o, w in fp.material_rows(GRAPH) if GRAPH.ops[o].chapter in (7, 8)
+    ]
     assert len(rows) == 13
     mapped = [r for r in rows if r in fp.SCOPE]
     excluded = [r for r in rows if r in fp.EXCLUDED]
@@ -483,7 +651,9 @@ def test_rollover_ply_areas_follow_the_rebuilt_faces(plies):
 
 def test_rollover_plies_inside_and_outside(plies):
     ro = [p for p in plies if p.part == "rollover"]
-    assert [p.where for p in ro] == ["inside faces"] + ["outside skin, 1 in overlap onto seat bulkhead and sides"] * 2
+    assert [p.where for p in ro] == ["inside faces"] + [
+        "outside skin, 1 in overlap onto seat bulkhead and sides"
+    ] * 2
     assert ro[0].area_in2 > 0 and not ro[0].lower_bound
     assert ro[1].lower_bound  # the 1 in lap onto the bulkhead and sides is not counted
     assert all(p.fidelity == "derived" for p in ro)
@@ -527,5 +697,9 @@ def test_chapter_4_to_6_plies_unchanged(plies):
     assert [(p.node, round(p.area_in2, 6)) for p in now] == CH46_AREAS
     # chapter 4-6 plies keep their node numbers: new plies on the same parts come after them
     for p in plies:
-        if p.op[:3] in {"f07", "f08"} and p.part in {"side_left", "side_right", "bottom"}:
+        if p.op[:3] in {"f07", "f08"} and p.part in {
+            "side_left",
+            "side_right",
+            "bottom",
+        }:
             assert p.order > max(q.order for q in now if q.part == p.part)

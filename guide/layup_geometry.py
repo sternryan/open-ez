@@ -10,6 +10,7 @@ two-section ruled loft between its outline at BL 0 and at its end BL.
 
 Thicknesses are VISUAL (not to scale): at true scale a 4-ply skin is ~0.04 in on a 17 in chord.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -19,13 +20,15 @@ import numpy as np
 
 from guide import layup
 
-PLY_T = 0.10       # in, visual
-PLY_GAP = 0.03     # in, visual separator between plies
-WEB_XC = 0.25      # open-ez placeholder; the real trough edge is on template page C-3 (TODOS.md)
-TROUGH_W = 3.0     # in: the spar cap is 3 in UND tape (cobelu ch 30 Step 22)
-TROUGH_D_ROOT = 0.30   # in, visual cap depth at BL 0 ...
-TROUGH_D_END = 0.10    # ... tapering to this at the trough end ("uniformly tapered")
-CUT_PAD = 0.05     # in: cavity tools overshoot the skin surface so booleans never see coplanar faces
+PLY_T = 0.10  # in, visual
+PLY_GAP = 0.03  # in, visual separator between plies
+WEB_XC = (
+    0.25  # open-ez placeholder; the real trough edge is on template page C-3 (TODOS.md)
+)
+TROUGH_W = 3.0  # in: the spar cap is 3 in UND tape (cobelu ch 30 Step 22)
+TROUGH_D_ROOT = 0.30  # in, visual cap depth at BL 0 ...
+TROUGH_D_END = 0.10  # ... tapering to this at the trough end ("uniformly tapered")
+CUT_PAD = 0.05  # in: cavity tools overshoot the skin surface so booleans never see coplanar faces
 TE_TRIM_XC = 0.97  # skins stop short of the sharp trailing edge so offsets stay simple
 
 
@@ -41,10 +44,14 @@ class Planform:
     @classmethod
     def from_generator(cls, gen) -> "Planform":
         x, y = gen.root_airfoil.coordinates
-        return cls(gen.span / 2, gen.root_chord, gen.tip_chord, float(gen.sweep_angle), x, y)
+        return cls(
+            gen.span / 2, gen.root_chord, gen.tip_chord, float(gen.sweep_angle), x, y
+        )
 
     def chord(self, bl: float) -> float:
-        return self.root_chord + (bl / self.semi_span) * (self.tip_chord - self.root_chord)
+        return self.root_chord + (bl / self.semi_span) * (
+            self.tip_chord - self.root_chord
+        )
 
     def le_x(self, bl: float) -> float:
         return bl * float(np.tan(np.radians(self.sweep_deg)))
@@ -64,7 +71,9 @@ class Planform:
         b = np.vstack([o[i_te:], o[: i_le + 1]])[::-1]
         top, bottom = (a, b) if a[:, 1].mean() > b[:, 1].mean() else (b, a)
         pts = top if side == "top" else bottom
-        keep = np.r_[True, np.linalg.norm(np.diff(pts, axis=0), axis=1) > 1e-9]  # closed loop repeats the LE point
+        keep = np.r_[
+            True, np.linalg.norm(np.diff(pts, axis=0), axis=1) > 1e-9
+        ]  # closed loop repeats the LE point
         pts = pts[keep]
         xc = (pts[:, 0] - self.le_x(bl)) / self.chord(bl)
         return pts[xc <= TE_TRIM_XC]
@@ -78,7 +87,9 @@ def _normals(p: np.ndarray, side: str) -> np.ndarray:
     return n if (n[:, 1].mean() * want) > 0 else -n
 
 
-def _band(p: np.ndarray, side: str, d0: float, d1: float, le_forward: bool = False) -> np.ndarray:
+def _band(
+    p: np.ndarray, side: str, d0: float, d1: float, le_forward: bool = False
+) -> np.ndarray:
     n = _normals(p, side)
     if le_forward:  # skins start at the LE: offset straight forward there so top and bottom meet at the nose
         n[0] = (-1.0, 0.0)
@@ -91,7 +102,9 @@ def _wire(poly: np.ndarray, bl: float) -> cq.Wire:
 
 
 def _loft(poly_at, bl0: float, bl1: float) -> cq.Solid:
-    return cq.Solid.makeLoft([_wire(poly_at(bl0), bl0), _wire(poly_at(bl1), bl1)], ruled=True)
+    return cq.Solid.makeLoft(
+        [_wire(poly_at(bl0), bl0), _wire(poly_at(bl1), bl1)], ruled=True
+    )
 
 
 def _z_at(pf: Planform, bl: float, x: float, side: str) -> float:
@@ -107,7 +120,11 @@ def _skin_ply(pf: Planform, p: layup.Ply) -> cq.Solid:
     side = "top" if p.component == "canard.skin_top" else "bottom"
     d0 = (p.order - 1) * (PLY_T + PLY_GAP)
     end = p.bl_max if p.bl_max is not None else pf.semi_span
-    return _loft(lambda bl: _band(pf.surface(bl, side), side, d0, d0 + PLY_T, le_forward=True), 0.0, end)
+    return _loft(
+        lambda bl: _band(pf.surface(bl, side), side, d0, d0 + PLY_T, le_forward=True),
+        0.0,
+        end,
+    )
 
 
 def _web_ply(pf: Planform, p: layup.Ply, pad: float = 0.0) -> cq.Solid:
@@ -117,6 +134,7 @@ def _web_ply(pf: Planform, p: layup.Ply, pad: float = 0.0) -> cq.Solid:
         x0 = x1 - PLY_T
         zb, zt = _z_at(pf, bl, x0, "bottom") - pad, _z_at(pf, bl, x0, "top") + pad
         return np.array([[x0, zb], [x1, zb], [x1, zt], [x0, zt]])
+
     return _loft(rect, 0.0, p.bl_max)
 
 
@@ -130,6 +148,7 @@ def _spar_cap(pf: Planform, p: layup.Ply, pad: float = 0.0) -> cq.Solid:
         xs = np.linspace(x0, x0 + TROUGH_W, 24)
         seg = np.column_stack([xs, np.interp(xs, s[:, 0], s[:, 1])])
         return _band(seg, side, -depth, pad)
+
     return _loft(region, 0.0, p.bl_max)
 
 
@@ -152,6 +171,8 @@ def build_layup(graph) -> dict:
         out.setdefault(p.component, {})[p.node] = solid
     # The generator core is a BSPLINE-faced solid that OCCT's boolean cut mangles (volume grows, fragments);
     # cut a ruled loft of the same planform outlines instead (planform is linear in BL, so it is the same solid).
-    base = _loft(lambda bl: pf.outline(bl)[:-1], 0.0, pf.semi_span)  # outline repeats its first point
+    base = _loft(
+        lambda bl: pf.outline(bl)[:-1], 0.0, pf.semi_span
+    )  # outline repeats its first point
     out["canard.core"] = base.cut(*cutters)
     return out

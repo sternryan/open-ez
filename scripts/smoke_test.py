@@ -100,7 +100,8 @@ def run_smoke(
         name="main_wing",
         root_airfoil=wing_airfoil,
         tip_airfoil=wing_airfoil,
-        span=2 * config.geometry.wing_panel_span,  # generator span = 2 x panel (root BL to tip BL)
+        span=2
+        * config.geometry.wing_panel_span,  # generator span = 2 x panel (root BL to tip BL)
         root_chord=config.geometry.wing_root_chord,
         tip_chord=config.geometry.wing_tip_chord,
         sweep_angle=config.geometry.wing_sweep_le,

@@ -1,4 +1,5 @@
 """Real-data check of viewer build state: guide/viewer/js/build.js on the real graph + export."""
+
 import json
 import subprocess
 from pathlib import Path
@@ -37,8 +38,14 @@ def real(tmp_path_factory):
     build(ROOT / "guide" / "graph", site, tmp / "longez.glb", None, None)
     graph = json.loads((site / "graph.json").read_text())
     names = read_glb_node_names(tmp / "longez.glb")
-    meshes = [{"name": n, "component": p["component"], "ply": {"op": p["op"], "order": p["order"]}}
-              for n, p in layup.items()]
+    meshes = [
+        {
+            "name": n,
+            "component": p["component"],
+            "ply": {"op": p["op"], "order": p["order"]},
+        }
+        for n, p in layup.items()
+    ]
     # A glb node is a component mesh only if it is a graph component and holds no ply children;
     # group nodes (canard.shear_web, ...) and the scene root (longez) are not meshes.
     # The fuselage box, gear, nose (chapters 4-9, 13) and the elevators (chapter 11) share the glb; this viewer skips their nodes
@@ -46,15 +53,33 @@ def real(tmp_path_factory):
     for n in names:
         if n.startswith(("fuselage.", "gear.", "nose.", "elevator.")):
             continue
-        if n in graph["components"] and n not in layup and not any(k.startswith(n + ".") for k in layup):
+        if (
+            n in graph["components"]
+            and n not in layup
+            and not any(k.startswith(n + ".") for k in layup)
+        ):
             meshes.append({"name": n, "component": n, "ply": None})
     (tmp / "meshes.json").write_text(json.dumps(meshes))
     js = tmp / "run.mjs"
-    js.write_text(JS % {"build_js": BUILD_JS, "graph_js": (ROOT / "guide" / "viewer" / "js" / "graph.js").as_uri()})
-    r = subprocess.run(["node", str(js), str(site / "graph.json"), str(tmp / "meshes.json")],
-                       capture_output=True, text=True)
+    js.write_text(
+        JS
+        % {
+            "build_js": BUILD_JS,
+            "graph_js": (ROOT / "guide" / "viewer" / "js" / "graph.js").as_uri(),
+        }
+    )
+    r = subprocess.run(
+        ["node", str(js), str(site / "graph.json"), str(tmp / "meshes.json")],
+        capture_output=True,
+        text=True,
+    )
     assert r.returncode == 0, r.stderr
-    return {"states": json.loads(r.stdout), "layup": layup, "meshes": meshes, "graph": graph}
+    return {
+        "states": json.loads(r.stdout),
+        "layup": layup,
+        "meshes": meshes,
+        "graph": graph,
+    }
 
 
 def test_component_meshes_are_the_leaf_components(real):
@@ -91,10 +116,12 @@ def test_gu_hides_every_roncz_ply(real):
 
 def test_roncz_states_are_monotonic_over_the_build(real):
     ops = list(real["states"]["roncz"])
-    assert ops == [o["id"] for o in real["graph"]["ops"] if o["id"] in real["states"]["roncz"]]
+    assert ops == [
+        o["id"] for o in real["graph"]["ops"] if o["id"] in real["states"]["roncz"]
+    ]
     for m in real["meshes"]:
         seq = [real["states"]["roncz"][op][m["name"]] for op in ops]
         assert seq.count("current") == 1, (m["name"], seq)
         i = seq.index("current")
         assert set(seq[:i]) <= {"hidden"}, (m["name"], seq)
-        assert set(seq[i + 1:]) == {"built"} or i == len(seq) - 1, (m["name"], seq)
+        assert set(seq[i + 1 :]) == {"built"} or i == len(seq) - 1, (m["name"], seq)

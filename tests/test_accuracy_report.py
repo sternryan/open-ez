@@ -119,25 +119,25 @@ def test_report_schema(accuracy_report: dict) -> None:
 
     for m in metrics:
         missing = REQUIRED_METRIC_KEYS - set(m.keys())
-        assert not missing, (
-            f"Metric '{m.get('metric_id', '?')}' missing required keys: {missing}"
-        )
+        assert (
+            not missing
+        ), f"Metric '{m.get('metric_id', '?')}' missing required keys: {missing}"
         # computed and reference must be numeric
-        assert isinstance(m["computed"], (int, float)), (
-            f"Metric '{m['metric_id']}' 'computed' must be numeric, got {type(m['computed'])}"
-        )
+        assert isinstance(
+            m["computed"], (int, float)
+        ), f"Metric '{m['metric_id']}' 'computed' must be numeric, got {type(m['computed'])}"
         if m["grade"] == "NOT GRADED":
             # Unverified reference: no reference value, and the reason is recorded.
-            assert m["reference"] is None, (
-                f"Metric '{m['metric_id']}' is NOT GRADED but carries a reference"
-            )
-            assert m.get("reason") == "reference unverified", (
-                f"Metric '{m['metric_id']}' NOT GRADED without reason 'reference unverified'"
-            )
+            assert (
+                m["reference"] is None
+            ), f"Metric '{m['metric_id']}' is NOT GRADED but carries a reference"
+            assert (
+                m.get("reason") == "reference unverified"
+            ), f"Metric '{m['metric_id']}' NOT GRADED without reason 'reference unverified'"
         else:
-            assert isinstance(m["reference"], (int, float)), (
-                f"Metric '{m['metric_id']}' 'reference' must be numeric, got {type(m['reference'])}"
-            )
+            assert isinstance(
+                m["reference"], (int, float)
+            ), f"Metric '{m['metric_id']}' 'reference' must be numeric, got {type(m['reference'])}"
 
 
 def test_source_traceability(accuracy_report: dict, ref_data: dict) -> None:
@@ -161,7 +161,9 @@ def test_source_traceability(accuracy_report: dict, ref_data: dict) -> None:
         )
 
         # Source must start with reference_data.json: or equal vspaero_native
-        assert source.startswith("reference_data.json:") or source == "vspaero_native", (
+        assert (
+            source.startswith("reference_data.json:") or source == "vspaero_native"
+        ), (
             f"Metric '{metric_id}' source '{source}' does not trace to "
             f"reference_data.json or vspaero_native. "
             f"All sources must have external provenance."
@@ -193,25 +195,25 @@ def test_summary_counts(accuracy_report: dict) -> None:
         grade = m.get("grade", "UNGRADED")
         grade_counts[grade] = grade_counts.get(grade, 0) + 1
 
-    assert summary["total"] == len(metrics), (
-        f"summary.total={summary['total']} != len(metrics)={len(metrics)}"
-    )
+    assert summary["total"] == len(
+        metrics
+    ), f"summary.total={summary['total']} != len(metrics)={len(metrics)}"
     # NOT GRADED (unverified reference) is counted on its own, never as PASS/FAIL.
-    assert summary["not_graded"] == grade_counts["NOT GRADED"], (
-        f"summary.not_graded={summary['not_graded']} != counted NOT GRADED={grade_counts['NOT GRADED']}"
-    )
-    assert summary["pass"] == grade_counts["PASS"], (
-        f"summary.pass={summary['pass']} != counted PASS grades={grade_counts['PASS']}"
-    )
-    assert summary.get("marginal", 0) == grade_counts["MARGINAL"], (
-        f"summary.marginal={summary.get('marginal', 0)} != counted MARGINAL={grade_counts['MARGINAL']}"
-    )
-    assert summary.get("fail", 0) == grade_counts["FAIL"], (
-        f"summary.fail={summary.get('fail', 0)} != counted FAIL grades={grade_counts['FAIL']}"
-    )
-    assert summary.get("ungraded", 0) == grade_counts["UNGRADED"], (
-        f"summary.ungraded={summary.get('ungraded', 0)} != counted UNGRADED={grade_counts['UNGRADED']}"
-    )
+    assert (
+        summary["not_graded"] == grade_counts["NOT GRADED"]
+    ), f"summary.not_graded={summary['not_graded']} != counted NOT GRADED={grade_counts['NOT GRADED']}"
+    assert (
+        summary["pass"] == grade_counts["PASS"]
+    ), f"summary.pass={summary['pass']} != counted PASS grades={grade_counts['PASS']}"
+    assert (
+        summary.get("marginal", 0) == grade_counts["MARGINAL"]
+    ), f"summary.marginal={summary.get('marginal', 0)} != counted MARGINAL={grade_counts['MARGINAL']}"
+    assert (
+        summary.get("fail", 0) == grade_counts["FAIL"]
+    ), f"summary.fail={summary.get('fail', 0)} != counted FAIL grades={grade_counts['FAIL']}"
+    assert (
+        summary.get("ungraded", 0) == grade_counts["UNGRADED"]
+    ), f"summary.ungraded={summary.get('ungraded', 0)} != counted UNGRADED={grade_counts['UNGRADED']}"
 
 
 def test_calibration_log_schema(calibration_log: dict) -> None:
@@ -229,16 +231,16 @@ def test_calibration_log_schema(calibration_log: dict) -> None:
 
     calibrations = calibration_log["calibrations"]
     assert isinstance(calibrations, list), "'calibrations' must be a list"
-    assert len(calibrations) >= 1, (
-        "calibrations list must have at least 1 entry — Phase 5 must have changed something"
-    )
+    assert (
+        len(calibrations) >= 1
+    ), "calibrations list must have at least 1 entry — Phase 5 must have changed something"
 
     required_keys = {"parameter", "old_value", "new_value", "source"}
     for cal in calibrations:
         missing = required_keys - set(cal.keys())
-        assert not missing, (
-            f"Calibration entry '{cal.get('parameter', '?')}' missing keys: {missing}"
-        )
+        assert (
+            not missing
+        ), f"Calibration entry '{cal.get('parameter', '?')}' missing keys: {missing}"
         assert cal["old_value"] != cal["new_value"], (
             f"Calibration '{cal['parameter']}': old_value == new_value "
             f"({cal['old_value']}) — no actual change was made"

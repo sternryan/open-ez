@@ -1,4 +1,5 @@
 """python -m guide.check — schema + verbatim-overlap gate + annotation recall. Full mode is the pre-commit gate."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,13 @@ from guide.linker import candidates, recall
 from guide.lpc import parse_lpcs
 from guide.overlap import SourceIndex
 from guide.schema import SchemaError, authored_texts, load_graph, validate
-from guide.sources import ENV, load_markers, load_source_texts, source_paths, source_problems
+from guide.sources import (
+    ENV,
+    load_markers,
+    load_source_texts,
+    source_paths,
+    source_problems,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -33,7 +40,9 @@ def main(argv: list[str] | None = None) -> int:
         try:
             chapters_set = {int(c) for c in a.chapters.split(",")}
         except ValueError:
-            print(f"--chapters parse error: '{a.chapters}' is not a comma-separated list of integers")
+            print(
+                f"--chapters parse error: '{a.chapters}' is not a comma-separated list of integers"
+            )
             return 2
 
         paths = source_paths()
@@ -42,7 +51,9 @@ def main(argv: list[str] | None = None) -> int:
 
         if missing or problems:
             if missing:
-                print(f"SOURCES MISSING: {', '.join(missing)} — full-mode gate cannot run")
+                print(
+                    f"SOURCES MISSING: {', '.join(missing)} — full-mode gate cannot run"
+                )
             for p in problems:
                 print(p)
             return 2
@@ -63,7 +74,11 @@ def main(argv: list[str] | None = None) -> int:
                 truncated = " ".join(words) + "…"
                 fails.append(f"OVERLAP: {loc}: '{truncated}'")
 
-        cands = candidates(g, parse_lpcs(paths["cp"].read_text(errors="ignore")), load_markers(paths["cobelu"]))
+        cands = candidates(
+            g,
+            parse_lpcs(paths["cp"].read_text(errors="ignore")),
+            load_markers(paths["cobelu"]),
+        )
         hits, misses = recall(g, cands, chapters_set)
 
         total = len(hits) + len(misses)
@@ -72,7 +87,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"RECALL: {len(hits)}/{total} confirmed annotations recovered")
 
-        fails += [f"RECALL MISS: scan_pp {m.scan_pp} CP {m.cp} LPC {m.lpc}" for m in misses]
+        fails += [
+            f"RECALL MISS: scan_pp {m.scan_pp} CP {m.cp} LPC {m.lpc}" for m in misses
+        ]
 
     for f in fails:
         print(f)

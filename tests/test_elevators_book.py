@@ -29,9 +29,9 @@ def test_every_part_has_fidelity_note_and_valid_cites(parts):
     assert set(parts) == NAMES
     for n, p in parts.items():
         assert p.fidelity in FIDELITIES, n
-        assert p.fidelity == "representational" and p.note, (
-            n
-        )  # no book/derived without a registry citation
+        assert (
+            p.fidelity == "representational" and p.note
+        ), n  # no book/derived without a registry citation
         for c in p.cite:
             check_citation(c)
         assert p.solid.val().isValid(), n
@@ -47,7 +47,9 @@ def test_elevator_spans_match_the_kernel_and_sides(parts):
         )
         tlo, thi = ek.tube_span(side)
         tb = _bb(parts[f"elevator_tube_{side}"])
-        assert tb.ymin == pytest.approx(tlo, abs=1e-6) and tb.ymax == pytest.approx(thi, abs=1e-6)
+        assert tb.ymin == pytest.approx(tlo, abs=1e-6) and tb.ymax == pytest.approx(
+            thi, abs=1e-6
+        )
         assert (
             tb.zmax - tb.zmin
             == pytest.approx(G.elevator_tube_od_in)
@@ -55,7 +57,11 @@ def test_elevator_spans_match_the_kernel_and_sides(parts):
         )
     # the left FOAM no longer crosses Y=0; the left TUBE does (cobelu C-1: 72.7 in tube, 55.7 in foam)
     assert _bb(parts["elevator_left"]).ymax < 0
-    assert _bb(parts["elevator_tube_left"]).ymin < 0 < _bb(parts["elevator_tube_left"]).ymax
+    assert (
+        _bb(parts["elevator_tube_left"]).ymin
+        < 0
+        < _bb(parts["elevator_tube_left"]).ymax
+    )
     assert _bb(parts["elevator_tube_left"]).ymax == pytest.approx(7.7, abs=1e-6)
     assert _bb(parts["elevator_right"]).ymin > 0
     assert eb.FITTED_ELEV_LE_XC == 0.70 and eb.FITTED_SLEEVE == 0.03
@@ -126,7 +132,9 @@ def test_elevator_components_have_the_six_ids_and_canard_only_does_not():
     assert ids == set(eg.elevator_components())
     import inspect
 
-    assert "elevator_components()" in inspect.getsource(eg.default_components)  # in the default export: the lab sorts them into the canard subject by prefix (tests/guide/test_export_glb.py builds it)
+    assert (
+        "elevator_components()" in inspect.getsource(eg.default_components)
+    )  # in the default export: the lab sorts them into the canard subject by prefix (tests/guide/test_export_glb.py builds it)
     assert not any(k.startswith("elevator.") for k in eg.canard_components())
 
 

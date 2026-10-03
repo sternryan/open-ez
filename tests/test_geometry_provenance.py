@@ -1,5 +1,6 @@
 # tests/test_geometry_provenance.py
 """Every planform/station geometry value is sourced from the book or visibly flagged."""
+
 import dataclasses
 import math
 import re
@@ -16,13 +17,27 @@ from config.aircraft_config import (
     config,
 )
 
-PATTERN = re.compile(r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_|spar_|ctl_|trim_)")
+PATTERN = re.compile(
+    r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_|spar_|ctl_|trim_)"
+)
 
 
 # Read-only properties that still carry provenance (no stored field to match PATTERN).
-TRACKED_PROPERTIES = {"fuselage_length", "wing_centerline_chord", "fs_main_axle", "fs_static_port", "fs_ng31_min", "fs_ng31_max",
-                      "elevator_inboard_bl_right_in", "elevator_inboard_bl_left_in", "elevator_tube_end_bl_left_in",
-                      "spar_chord_square_outboard_in", "spar_fwd_face_fs_tip", "spar_aft_face_fs_bl_55_5", "trim_pth_leftmost_fs"}
+TRACKED_PROPERTIES = {
+    "fuselage_length",
+    "wing_centerline_chord",
+    "fs_main_axle",
+    "fs_static_port",
+    "fs_ng31_min",
+    "fs_ng31_max",
+    "elevator_inboard_bl_right_in",
+    "elevator_inboard_bl_left_in",
+    "elevator_tube_end_bl_left_in",
+    "spar_chord_square_outboard_in",
+    "spar_fwd_face_fs_tip",
+    "spar_aft_face_fs_bl_55_5",
+    "trim_pth_leftmost_fs",
+}
 
 
 def geometry_fields() -> set[str]:
@@ -40,7 +55,10 @@ def test_provenance_entries_are_well_formed():
     for field, e in GEOMETRY_PROVENANCE.items():
         assert set(e) == {"status", "source", "confidence", "note"}, field
         assert e["status"] in PROVENANCE_STATUSES, (field, e["status"])
-        assert e["confidence"] in {"high", "medium", "low", "n/a"}, (field, e["confidence"])
+        assert e["confidence"] in {"high", "medium", "low", "n/a"}, (
+            field,
+            e["confidence"],
+        )
         if e["status"] in {"book", "cp-corrected", "derived"}:
             assert e["source"].strip(), f"{field}: a {e['status']} value needs a source"
 
@@ -82,7 +100,9 @@ def test_book_stations():
     assert (fs, bl) == (113.9, 58.0)
     expect = 113.9 - (58.0 - g.wing_root_bl) * math.tan(math.radians(g.wing_sweep_le))
     assert g.fs_wing_le == pytest.approx(expect)
-    assert g.fs_wing_le == pytest.approx(99.19, abs=0.01)  # 22.98 deg sweep, root BL 23.3
+    assert g.fs_wing_le == pytest.approx(
+        99.19, abs=0.01
+    )  # 22.98 deg sweep, root BL 23.3
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["status"] == "cp-corrected"
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["source"].startswith("cp-text:p25")
 
@@ -122,9 +142,11 @@ def test_book_stations_block1():
 
 def test_weight_arms_shift_uniformly():
     old = {
-        "wing_arm_in": 140.0, "fuselage_arm_in": 100.0,
+        "wing_arm_in": 140.0,
+        "fuselage_arm_in": 100.0,
         "electrical_arm_in": 165.0,
-        "instruments_arm_in": 75.0, "interior_arm_in": 95.0,
+        "instruments_arm_in": 75.0,
+        "interior_arm_in": 95.0,
     }
     w = StructuralWeightParams()
     for name, o in old.items():
@@ -145,16 +167,33 @@ def test_wing_planform_is_the_book():  # Task 7
     assert g.wing_tip_chord == 20.0
     assert g.wing_dihedral == 0.0
     assert g.wing_root_bl == 23.3
-    assert (P["wing_span"]["status"], P["wing_span"]["source"]) == ("book", "om-1980:p3 wing span 26.1 ft")
-    assert (P["wing_sweep_le"]["status"], P["wing_sweep_le"]["source"]) == ("book", "plans-1980:p126 22.98 deg LE sweep")
-    assert (P["wing_tip_chord"]["status"], P["wing_tip_chord"]["source"]) == ("book", "plans-1980:p126 chord 20.0 at B.L. 157")
+    assert (P["wing_span"]["status"], P["wing_span"]["source"]) == (
+        "book",
+        "om-1980:p3 wing span 26.1 ft",
+    )
+    assert (P["wing_sweep_le"]["status"], P["wing_sweep_le"]["source"]) == (
+        "book",
+        "plans-1980:p126 22.98 deg LE sweep",
+    )
+    assert (P["wing_tip_chord"]["status"], P["wing_tip_chord"]["source"]) == (
+        "book",
+        "plans-1980:p126 chord 20.0 at B.L. 157",
+    )
     assert (P["wing_dihedral"]["status"], P["wing_dihedral"]["source"]) == (
-        "book", "plans-1980:p134 wing flat at 17.4 waterline plane")
+        "book",
+        "plans-1980:p134 wing flat at 17.4 waterline plane",
+    )
     assert P["wing_root_bl"]["status"] == "unsourced"
 
 
 def test_wing_root_chord_is_derived_from_the_printed_chords():
-    inputs = (42.7, 55.5, 20.0, 157.0, 23.3)  # chord at 55.5, BL, tip chord, tip BL, root BL
+    inputs = (
+        42.7,
+        55.5,
+        20.0,
+        157.0,
+        23.3,
+    )  # chord at 55.5, BL, tip chord, tip BL, root BL
     c1, bl1, c2, bl2, bl0 = inputs
     root = c1 + (bl1 - bl0) * (c1 - c2) / (bl2 - bl1)
     assert config.geometry.wing_root_chord == pytest.approx(round(root, 2), abs=1e-9)
@@ -164,19 +203,29 @@ def test_wing_root_chord_is_derived_from_the_printed_chords():
     assert e["source"] == "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157"
     assert "42.7 + (55.5-23.3)*(42.7-20.0)/(157-55.5)" in e["note"]
     # the printed mid chord (31.35 at BL 106.25) lies on the same straight taper
-    assert c1 + (106.25 - bl1) * (c2 - c1) / (bl2 - bl1) == pytest.approx(31.35, abs=0.01)
+    assert c1 + (106.25 - bl1) * (c2 - c1) / (bl2 - bl1) == pytest.approx(
+        31.35, abs=0.01
+    )
 
 
 def test_canard_planform_is_the_gu_planform_flagged_conflict():
     g = config.geometry
     P = GEOMETRY_PROVENANCE
     import config.aircraft_config as ac
-    assert (ac.CHORD, ac.CHORD_STATUS, ac.CHORD_SOURCE) == (13.02, "conflict", "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft")
+
+    assert (ac.CHORD, ac.CHORD_STATUS, ac.CHORD_SOURCE) == (
+        13.02,
+        "conflict",
+        "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft",
+    )
     assert g.canard_chord == 13.02
     assert g.canard_span == 141.6
     assert P["canard_chord"]["status"] == "conflict"
     assert P["canard_chord"]["source"] == "om-1980:p3 GU canard 11.8 ft, 12.8 sq ft"
-    assert P["canard_chord"]["note"] == "GU planform (om-1980 p3); Roncz planform unconfirmed; chord = 12.8*144/141.6"
+    assert (
+        P["canard_chord"]["note"]
+        == "GU planform (om-1980 p3); Roncz planform unconfirmed; chord = 12.8*144/141.6"
+    )
     assert P["canard_span"]["status"] == "conflict"
     assert P["canard_span"]["source"] == "om-1980:p3 canard span 11.8 ft"
     assert 12.8 * 144 / 141.6 == pytest.approx(13.02, abs=0.005)
@@ -213,6 +262,8 @@ def test_derived_status_is_recognised():
 
 
 def test_fuselage_length_is_a_read_only_property_not_a_stored_field():
-    assert "fuselage_length" not in {f.name for f in dataclasses.fields(GeometricParams)}
+    assert "fuselage_length" not in {
+        f.name for f in dataclasses.fields(GeometricParams)
+    }
     with pytest.raises(AttributeError):
         config.geometry.fuselage_length = 214.0

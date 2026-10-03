@@ -8,8 +8,11 @@ SCRIPTS = ("layup_cutaway.py", "fabric_blender.py", "layup_contract.py")
 
 def make_export(d: Path, shots=None) -> Path:
     d.mkdir(parents=True, exist_ok=True)
-    (d / "longez.glb").write_bytes(b"glTF-x"); (d / "layup.json").write_text('{"nodes":{}}')
-    (d / "shots.json").write_text(json.dumps(shots or [{"id": "hero-bl5"}, {"id": "op-r30-top-skin"}]))
+    (d / "longez.glb").write_bytes(b"glTF-x")
+    (d / "layup.json").write_text('{"nodes":{}}')
+    (d / "shots.json").write_text(
+        json.dumps(shots or [{"id": "hero-bl5"}, {"id": "op-r30-top-skin"}])
+    )
     return d
 
 
@@ -27,8 +30,13 @@ def make_renders(d: Path, export: Path, scripts: Path, drop: str | None = None) 
         if s["id"] == drop:
             continue
         (d / f"{s['id']}.png").write_bytes(s["id"].encode())
-        shots[s["id"]] = {"file": f"{s['id']}.png", "sha256": rk.sha256(d / f"{s['id']}.png")}
-    (d / "manifest.json").write_text(json.dumps({"inputs": rk.file_shas(export, scripts), "shots": shots}))
+        shots[s["id"]] = {
+            "file": f"{s['id']}.png",
+            "sha256": rk.sha256(d / f"{s['id']}.png"),
+        }
+    (d / "manifest.json").write_text(
+        json.dumps({"inputs": rk.file_shas(export, scripts), "shots": shots})
+    )
     return d
 
 
@@ -58,11 +66,15 @@ def test_check_missing_shot_and_stale_data(tmp_path):
 def test_check_without_scripts_still_requires_script_shas(tmp_path):
     e, s = make_export(tmp_path / "e"), make_scripts(tmp_path / "s")
     r = make_renders(tmp_path / "r", e, s)
-    m = json.loads((r / "manifest.json").read_text()); del m["inputs"]["fabric_blender.py"]
+    m = json.loads((r / "manifest.json").read_text())
+    del m["inputs"]["fabric_blender.py"]
     (r / "manifest.json").write_text(json.dumps(m))
     assert any("fabric_blender.py" in p for p in rk.check_renders(r, e, None))
 
 
 def test_check_missing_manifest(tmp_path):
-    e = make_export(tmp_path / "e"); (tmp_path / "r").mkdir()
-    assert rk.check_renders(tmp_path / "r", e, None) == ["no manifest.json (incomplete render run)"]
+    e = make_export(tmp_path / "e")
+    (tmp_path / "r").mkdir()
+    assert rk.check_renders(tmp_path / "r", e, None) == [
+        "no manifest.json (incomplete render run)"
+    ]

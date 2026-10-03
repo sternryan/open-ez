@@ -247,7 +247,9 @@ def test_rear_seat_bulkhead_sits_between_the_sides_and_tops_at_the_cutout(fuse):
     (x0, z0), (x1, z1) = _rear_segment()
     slope = math.atan2(z1 - z0, x1 - x0)
     z_mid = Z_TOP - G.side_spar_cutout[1]
-    assert bb.zmax == pytest.approx(z_mid + (G.rear_seat_bkhd_thickness / 2) / math.cos(slope), abs=0.02)
+    assert bb.zmax == pytest.approx(
+        z_mid + (G.rear_seat_bkhd_thickness / 2) / math.cos(slope), abs=0.02
+    )
 
 
 def test_rear_seat_bulkhead_has_the_access_hole_and_the_foam_pocket(fuse):

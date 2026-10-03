@@ -1,4 +1,5 @@
 """Mass/CG ledger: cited rows, the manual's CG envelope, and its sample loadings."""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -60,7 +61,9 @@ def _core(part: str, mats: dict) -> tuple[str | None, float | None, str | None]:
     return mat, float(dens["value"]), None
 
 
-def _ply_mass_lb(cloth: str, area_in2: float, mats: dict) -> tuple[float | None, str | None]:
+def _ply_mass_lb(
+    cloth: str, area_in2: float, mats: dict
+) -> tuple[float | None, str | None]:
     c = mats.get("cloth", {}).get(cloth)
     if c is None:
         return None, _NYC + f"areal weight of {cloth} cloth not sourced"
@@ -123,9 +126,16 @@ def fuselage_ledger() -> list[dict]:
         elif glass is None:
             t_why = g_why
         elif partial:
-            t_why = _NYC + "glass rows not fully placed (" + (
-                f"{len(missing_rows)} excluded row(s)" if missing_rows else "under-counted regions"
-            ) + ")"
+            t_why = (
+                _NYC
+                + "glass rows not fully placed ("
+                + (
+                    f"{len(missing_rows)} excluded row(s)"
+                    if missing_rows
+                    else "under-counted regions"
+                )
+                + ")"
+            )
         if core is not None and glass is not None:
             lower = core + glass
             arm_lb = (core * arm_core + g_moment) / lower
@@ -145,7 +155,9 @@ def fuselage_ledger() -> list[dict]:
                 "glass_mass_reason": g_why,
                 "glass_complete": complete,
                 "glass_unplaced_rows": list(missing_rows),
-                "glass_lower_bound_regions": sorted({p.op for p in mine if p.lower_bound}),
+                "glass_lower_bound_regions": sorted(
+                    {p.op for p in mine if p.lower_bound}
+                ),
                 "total_mass_lb": total,
                 "total_mass_reason": t_why,
                 "total_mass_lower_bound_lb": lower,
@@ -157,25 +169,40 @@ def fuselage_ledger() -> list[dict]:
     return rows
 
 
-def fuselage_cg(lower_bound: bool = False) -> tuple[float, float | None, list[str], dict[str, str]]:
+def fuselage_cg(
+    lower_bound: bool = False,
+) -> tuple[float, float | None, list[str], dict[str, str]]:
     """Empty-structure CG so far: (weight_lb, arm_in, included parts, {excluded part: reason}).
 
     Strict (default) uses total_mass_lb, so only parts whose core and glass are fully sourced and
     fully placed. lower_bound=True uses total_mass_lower_bound_lb (core plus the placed glass), the
     most that can be said while rows remain unplaced.
     """
-    key, arm_key = ("total_mass_lower_bound_lb", "arm_lower_bound_in") if lower_bound else ("total_mass_lb", "arm_in")
+    key, arm_key = (
+        ("total_mass_lower_bound_lb", "arm_lower_bound_in")
+        if lower_bound
+        else ("total_mass_lb", "arm_in")
+    )
     inc: list[str] = []
     exc: dict[str, str] = {}
     w = m = 0.0
     proto = load_ledger().get("prototype_weights", {}).get("rows", {})
     for r in fuselage_ledger():
         if r[key] is None:
-            exc[r["part"]] = r["total_mass_reason"] or r["core_mass_reason"] or r["glass_mass_reason"] or _NYC + "mass"
+            exc[r["part"]] = (
+                r["total_mass_reason"]
+                or r["core_mass_reason"]
+                or r["glass_mass_reason"]
+                or _NYC + "mass"
+            )
             continue
         # A lower bound may not contain a term a cited source contradicts: a part modelled heavier than its CP26 prototype
         # weight is left out (not replaced by the prototype number) until the excess is understood (ledger-closure test).
-        if lower_bound and r["part"] in proto and r[key] > proto[r["part"]]["weight_lb"]:
+        if (
+            lower_bound
+            and r["part"] in proto
+            and r[key] > proto[r["part"]]["weight_lb"]
+        ):
             exc[r["part"]] = (
                 f"modelled {r[key]:.2f} lb is above the CP26 prototype weight {proto[r['part']]['weight_lb']:.2f} lb: under review"
             )
@@ -211,8 +238,16 @@ def gear_rows() -> list[GearRow]:
         if r["status"] != "unsourced" and not r["cite"]:
             raise ValueError(f"gear row {r['name']}: a sourced row needs a citation")
         rows.append(
-            GearRow(r["name"], r["label"], float(r["weight_lb"]), float(r["arm_in"]), r["status"],
-                    r["arm_status"], tuple(r["cite"]), r["note"])
+            GearRow(
+                r["name"],
+                r["label"],
+                float(r["weight_lb"]),
+                float(r["arm_in"]),
+                r["status"],
+                r["arm_status"],
+                tuple(r["cite"]),
+                r["note"],
+            )
         )
     return rows
 
@@ -225,14 +260,17 @@ def gear_cg(sourced_only: bool = False) -> tuple[float, float | None]:
 
 
 def gear_json() -> dict:
-    from .landing_gear_book import ground_handling  # lazy: landing_gear_book pulls in CadQuery
+    from .landing_gear_book import (
+        ground_handling,
+    )  # lazy: landing_gear_book pulls in CadQuery
     from .nose_gear_kin import AXLE_FS_CANDIDATES
-
 
     cand = load_ledger()["gear"]["nose_arm_candidates"]
     values = [float(v) for v in cand["values_in"]]
     if values != [float(v) for v in AXLE_FS_CANDIDATES]:
-        raise ValueError(f"nose_arm_candidates {values} disagree with config {AXLE_FS_CANDIDATES}")
+        raise ValueError(
+            f"nose_arm_candidates {values} disagree with config {AXLE_FS_CANDIDATES}"
+        )
     rows = []
     for r in gear_rows():
         d = r._asdict() | {"cite": list(r.cite)}
@@ -261,17 +299,28 @@ def _lower_bound_with_gear() -> dict:
         inc.append(r.name)
         w += r.weight_lb
         m += r.weight_lb * r.arm_in
-    return {"weight_lb": w, "arm_in": (m / w if w else None), "included": inc, "excluded": exc}
+    return {
+        "weight_lb": w,
+        "arm_in": (m / w if w else None),
+        "included": inc,
+        "excluded": exc,
+    }
 
 
 def fuselage_ledger_json() -> dict:
     """Plain, JSON-serialisable ledger for the lab readout: per-part rows and both CG results."""
+
     def cg_dict(lower: bool) -> dict:
         w, arm, inc, exc = fuselage_cg(lower_bound=lower)
         return {"weight_lb": w, "arm_in": arm, "included": inc, "excluded": exc}
 
     return {
-        "units": {"mass": "lb", "arm": "in (fuselage station)", "area": "in^2", "volume": "in^3"},
+        "units": {
+            "mass": "lb",
+            "arm": "in (fuselage station)",
+            "area": "in^2",
+            "volume": "in^3",
+        },
         "parts": fuselage_ledger(),
         "cg": cg_dict(False),
         "cg_lower_bound": _lower_bound_with_gear(),

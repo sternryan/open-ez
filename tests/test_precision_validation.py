@@ -60,7 +60,10 @@ def test_np_reference_is_unverified_not_graded():
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG fwd limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 12, 47, 52 and 54; gap +6.75 in (103.75 vs 97.0)")
+@pytest.mark.xfail(
+    strict=True,
+    reason="book geometry: see docs/geometry-correction-ledger.md rows 12, 47, 52 and 54; gap +6.75 in (103.75 vs 97.0)",
+)
 def test_cg_fwd_limit_precision():
     """VAL-01: Computed CG forward limit (published datum) must be within 1\" of 97.0.
 
@@ -84,15 +87,18 @@ def test_cg_fwd_limit_precision():
 
     assert delta <= tolerance, (
         f"CG fwd limit precision check FAILED (expected for Phase 4): "
-        f"computed CG fwd = {computed_cg_fwd_published:.2f}\" (published datum), "
-        f"reference = {ref_cg_fwd:.1f}\", delta = {delta:.2f}\" exceeds {tolerance:.1f}\" tolerance. "
-        f"Internal CG fwd = {metrics.cg_range_fwd:.2f}\". "
-        f"Phase 5 target: calibrate geometry parameters to reduce delta to <{tolerance:.1f}\"."
+        f'computed CG fwd = {computed_cg_fwd_published:.2f}" (published datum), '
+        f'reference = {ref_cg_fwd:.1f}", delta = {delta:.2f}" exceeds {tolerance:.1f}" tolerance. '
+        f'Internal CG fwd = {metrics.cg_range_fwd:.2f}". '
+        f'Phase 5 target: calibrate geometry parameters to reduce delta to <{tolerance:.1f}".'
     )
 
 
 # Resolved Phase 5: calibrated fs_wing_le corrects CG aft limit (delta <1")
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md row 54; gap +4.60 in (107.60 vs 103.0)")
+@pytest.mark.xfail(
+    strict=True,
+    reason="see docs/geometry-correction-ledger.md row 54; gap +4.60 in (107.60 vs 103.0)",
+)
 def test_cg_aft_limit_precision():
     """VAL-01: Computed CG aft limit (published datum) must be within 1\" of 103.0.
 
@@ -118,10 +124,10 @@ def test_cg_aft_limit_precision():
 
     assert delta <= tolerance, (
         f"CG aft limit precision check FAILED (expected for Phase 4): "
-        f"computed CG aft = {computed_cg_aft_published:.2f}\" (published datum), "
-        f"reference = {ref_cg_aft:.1f}\", delta = {delta:.2f}\" exceeds {tolerance:.1f}\" tolerance. "
-        f"Internal CG aft = {metrics.cg_range_aft:.2f}\". "
-        f"Phase 5 target: calibrate geometry parameters to reduce delta to <{tolerance:.1f}\"."
+        f'computed CG aft = {computed_cg_aft_published:.2f}" (published datum), '
+        f'reference = {ref_cg_aft:.1f}", delta = {delta:.2f}" exceeds {tolerance:.1f}" tolerance. '
+        f'Internal CG aft = {metrics.cg_range_aft:.2f}". '
+        f'Phase 5 target: calibrate geometry parameters to reduce delta to <{tolerance:.1f}".'
     )
 
 
@@ -150,7 +156,10 @@ def test_roncz_alpha_0l_reference_is_unverified_not_graded():
     from core.reference import truth_airfoil
 
     data = _load_ref_data()
-    assert data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert (
+        data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"]
+        == "unverified"
+    )
     assert "alpha_zero_lift_deg" not in truth_airfoil(data)["roncz_r1145ms"]
 
 
@@ -174,7 +183,10 @@ def test_eppler_alpha_0l_reference_is_unverified_not_graded():
     from core.reference import truth_airfoil
 
     data = _load_ref_data()
-    assert data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert (
+        data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"]
+        == "unverified"
+    )
     assert "alpha_zero_lift_deg" not in truth_airfoil(data)["eppler_1230"]
 
 
@@ -199,12 +211,12 @@ def test_airfoil_cm_zero_in_reference_data():
         "Wind tunnel Cm0 is required for Phase 5 pitching moment validation."
     )
     roncz_cm0 = airfoil_data["roncz_r1145ms"]["cm_zero"]["value"]
-    assert isinstance(roncz_cm0, (int, float)), (
-        f"roncz_r1145ms.cm_zero.value must be numeric, got {type(roncz_cm0)}"
-    )
-    assert roncz_cm0 < 0, (
-        f"Roncz R1145MS cm_zero should be negative (nose-down), got {roncz_cm0}"
-    )
+    assert isinstance(
+        roncz_cm0, (int, float)
+    ), f"roncz_r1145ms.cm_zero.value must be numeric, got {type(roncz_cm0)}"
+    assert (
+        roncz_cm0 < 0
+    ), f"Roncz R1145MS cm_zero should be negative (nose-down), got {roncz_cm0}"
 
     # Eppler 1230 cm_zero must exist and be numeric
     assert "cm_zero" in airfoil_data["eppler_1230"], (
@@ -212,12 +224,12 @@ def test_airfoil_cm_zero_in_reference_data():
         "Wind tunnel Cm0 is required for Phase 5 pitching moment validation."
     )
     eppler_cm0 = airfoil_data["eppler_1230"]["cm_zero"]["value"]
-    assert isinstance(eppler_cm0, (int, float)), (
-        f"eppler_1230.cm_zero.value must be numeric, got {type(eppler_cm0)}"
-    )
-    assert eppler_cm0 < 0, (
-        f"Eppler 1230 cm_zero should be negative (nose-down tendency), got {eppler_cm0}"
-    )
+    assert isinstance(
+        eppler_cm0, (int, float)
+    ), f"eppler_1230.cm_zero.value must be numeric, got {type(eppler_cm0)}"
+    assert (
+        eppler_cm0 < 0
+    ), f"Eppler 1230 cm_zero should be negative (nose-down tendency), got {eppler_cm0}"
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +254,9 @@ def test_stall_speed_reference_is_unverified_not_graded():
     W = config.flight_condition.gross_weight_lb
     rho = 0.002377  # slug/ft^3 (sea-level standard atmosphere)
     v_ktas = math.sqrt(2.0 * W / (rho * S * config.aero_limits.canard_clmax)) / 1.6878
-    assert 30.0 < v_ktas < 100.0, f"computed stall speed {v_ktas:.1f} KTAS is not physical"
+    assert (
+        30.0 < v_ktas < 100.0
+    ), f"computed stall speed {v_ktas:.1f} KTAS is not physical"
 
 
 def test_gross_weight_matches_published():

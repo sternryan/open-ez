@@ -4,12 +4,20 @@ against them, and this test checks the fixture against the kernels, so neither s
 
 Regenerate after a deliberate kernel change:  .venv/bin/python -m tests.guide.test_lab_kernels_fixture
 """
+
 import json
 from pathlib import Path
 
 import numpy as np
 
-FIXTURE = Path(__file__).resolve().parents[2] / "guide" / "lab" / "tests" / "fixtures" / "kernels.json"
+FIXTURE = (
+    Path(__file__).resolve().parents[2]
+    / "guide"
+    / "lab"
+    / "tests"
+    / "fixtures"
+    / "kernels.json"
+)
 
 
 def build() -> dict:
@@ -22,11 +30,33 @@ def build() -> dict:
     ex = fe.extras_section()
     hinge = list(eb.hinge_axis_xz())
     pts_in = [[3.0, 0.5], [12.0, -0.4], [9.664, 0.2245], [-1.0, 2.0]]
-    rot = [{"pt": p, "deg": d, "out": list(ek.rotate_about_hinge(tuple(p), tuple(hinge), d))} for p in pts_in for d in (-15.0, 0.0, 12.5, 30.0)]
-    hang = [{"dx": dx, "dz": dz, "pitch": ek.hang_pitch_deg(dx, dz), "nose_down": ek.hangs_nose_down(dx, dz)}
-            for dx, dz in ((-1.5, 0.1), (-1.5, -0.1), (-2.0, 0.0), (1.0, 0.3), (0.2, -1.0))]
-    classes = [{"deg": d, "cls": ek.classify_up_travel(d)} for d in (10.0, 12.4, 12.5, 14.99, 15.0, 20.0)]
-    poses = [{"side": s, "deg": d, "m": eb.elevator_pose(s, d).tolist()} for s in ("right", "left") for d in (-15.0, 30.0)]
+    rot = [
+        {
+            "pt": p,
+            "deg": d,
+            "out": list(ek.rotate_about_hinge(tuple(p), tuple(hinge), d)),
+        }
+        for p in pts_in
+        for d in (-15.0, 0.0, 12.5, 30.0)
+    ]
+    hang = [
+        {
+            "dx": dx,
+            "dz": dz,
+            "pitch": ek.hang_pitch_deg(dx, dz),
+            "nose_down": ek.hangs_nose_down(dx, dz),
+        }
+        for dx, dz in ((-1.5, 0.1), (-1.5, -0.1), (-2.0, 0.0), (1.0, 0.3), (0.2, -1.0))
+    ]
+    classes = [
+        {"deg": d, "cls": ek.classify_up_travel(d)}
+        for d in (10.0, 12.4, 12.5, 14.99, 15.0, 20.0)
+    ]
+    poses = [
+        {"side": s, "deg": d, "m": eb.elevator_pose(s, d).tolist()}
+        for s in ("right", "left")
+        for d in (-15.0, 30.0)
+    ]
     ng = ex["nose_gear"]
     nose = []
     for cand in ("plans", "manual"):
@@ -36,12 +66,37 @@ def build() -> dict:
         for t in (0.0, 0.25, 0.5, 0.75, 1.0):
             m = lgb.nose_gear_pose(t, cand)
             axle = m @ np.array([*pts["axle"], 1.0])
-            rows.append({"t": t, "theta": ngk.retraction_theta_deg(t, pts["theta_down_deg"], up), "crank": ngk.crank_turns(t),
-                         "rot": [m[0, 0], m[0, 2], m[2, 0], m[2, 2]], "trans": [m[0, 3], m[2, 3]], "axle_xz": [axle[0], axle[2]]})
-        nose.append({"cand": cand, "pivot": [pts["pivot"][0], pts["pivot"][2]], "axle": [pts["axle"][0], pts["axle"][2]],
-                     "theta_down": pts["theta_down_deg"], "theta_up": up, "rows": rows})
-    return {"elevators": {"hinge": hinge, "rotate": rot, "hang": hang, "classify": classes, "poses": poses},
-            "nose": nose, "extras": {"elevators": ex["elevators"], "nose_gear": ng}}
+            rows.append(
+                {
+                    "t": t,
+                    "theta": ngk.retraction_theta_deg(t, pts["theta_down_deg"], up),
+                    "crank": ngk.crank_turns(t),
+                    "rot": [m[0, 0], m[0, 2], m[2, 0], m[2, 2]],
+                    "trans": [m[0, 3], m[2, 3]],
+                    "axle_xz": [axle[0], axle[2]],
+                }
+            )
+        nose.append(
+            {
+                "cand": cand,
+                "pivot": [pts["pivot"][0], pts["pivot"][2]],
+                "axle": [pts["axle"][0], pts["axle"][2]],
+                "theta_down": pts["theta_down_deg"],
+                "theta_up": up,
+                "rows": rows,
+            }
+        )
+    return {
+        "elevators": {
+            "hinge": hinge,
+            "rotate": rot,
+            "hang": hang,
+            "classify": classes,
+            "poses": poses,
+        },
+        "nose": nose,
+        "extras": {"elevators": ex["elevators"], "nose_gear": ng},
+    }
 
 
 def _round(x, n=9):

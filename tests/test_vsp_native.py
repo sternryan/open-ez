@@ -6,8 +6,6 @@ Python 3.13 (with openvsp, native path).
 """
 
 import json
-import sys
-import textwrap
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -161,7 +159,9 @@ def test_native_return_schema_with_mock_vsp(tmp_path):
 
     # Use tmp_path to avoid overwriting real data/validation/vspaero_native_polars.json
     # with mock data (vsp_version would contain "mock", breaking test_cross_validation.py)
-    result = bridge._run_native_sweep((-4, 14, 19), polar_output=tmp_path / "native_polars.json")
+    result = bridge._run_native_sweep(
+        (-4, 14, 19), polar_output=tmp_path / "native_polars.json"
+    )
 
     assert result["mode"] == "native"
     assert result["source"] == "vspaero_native"
@@ -194,7 +194,9 @@ def test_native_alpha_sweep_range(tmp_path):
 
     # Use tmp_path to avoid overwriting real data/validation/vspaero_native_polars.json
     # with mock data (same isolation fix as test_native_return_schema_with_mock_vsp)
-    result = bridge._run_native_sweep((-4, 14, 19), polar_output=tmp_path / "native_polars.json")
+    result = bridge._run_native_sweep(
+        (-4, 14, 19), polar_output=tmp_path / "native_polars.json"
+    )
 
     pts = result["points"]
     assert len(pts) == 19
@@ -219,7 +221,7 @@ def test_polar_file_written_after_native_sweep(tmp_path):
 
     # Point output to tmp_path so we don't pollute the real data dir
     polar_path = tmp_path / "vspaero_native_polars.json"
-    result = bridge._run_native_sweep((-4, 14, 19), polar_output=polar_path)
+    _result = bridge._run_native_sweep((-4, 14, 19), polar_output=polar_path)
 
     assert polar_path.exists(), "Polar JSON file was not created"
     data = json.loads(polar_path.read_text())
@@ -269,7 +271,9 @@ def test_runtime_exception_falls_back_to_surrogate():
     bridge = VSPIntegration()
     bridge._vsp = vsp_mock  # Has VSP (so native path chosen)
 
-    with patch.object(bridge, "_run_native_sweep", side_effect=RuntimeError("VSPAERO crash")):
+    with patch.object(
+        bridge, "_run_native_sweep", side_effect=RuntimeError("VSPAERO crash")
+    ):
         result = bridge.run_aerodynamic_sweep()
 
     assert result["mode"] == "surrogate"

@@ -22,9 +22,9 @@ def test_every_nose_gear_part_is_valid_and_never_book_or_derived(cand, fs):
     assert set(parts) == {"ng6_block", "strut", "fork", "wheel"}
     for name, p in parts.items():
         assert p.fidelity in FIDELITIES and p.note, name
-        assert p.fidelity == "representational", (
-            name
-        )  # the axle station is a conflict; the pivot is solved from it
+        assert (
+            p.fidelity == "representational"
+        ), name  # the axle station is a conflict; the pivot is solved from it
         for c in p.cite:
             check_citation(c)
         assert p.solid.val().isValid() and p.solid.val().Volume() > 0, name
@@ -174,7 +174,9 @@ def test_nose_components_keys_and_canard_only_export_has_none():
         assert not (k.startswith("nose.") or k == "gear.nose_strut")
     import inspect
 
-    assert "nose_components()" in inspect.getsource(eg.default_components)  # the lab's fuselage subject shows them (M2.4 Task 5; tests/guide/test_export_glb.py builds the export)
+    assert (
+        "nose_components()" in inspect.getsource(eg.default_components)
+    )  # the lab's fuselage subject shows them (M2.4 Task 5; tests/guide/test_export_glb.py builds the export)
 
 
 def test_nose_export_writes_one_node_per_graph_id(tmp_path):

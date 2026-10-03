@@ -1,4 +1,5 @@
 """Review Focus 3: the viewer's layersAt agrees with Python's counts_at on the real layup."""
+
 import json
 import subprocess
 from collections import Counter
@@ -32,7 +33,11 @@ def parity(tmp_path_factory):
     lj = layup.layup_json(pl, CanardGenerator().span / 2)
     (tmp / "layup.json").write_text(json.dumps(lj))
     (tmp / "run.mjs").write_text(JS % {"section_js": SECTION_JS, "bls": list(BLS)})
-    r = subprocess.run(["node", str(tmp / "run.mjs"), str(tmp / "layup.json")], capture_output=True, text=True)
+    r = subprocess.run(
+        ["node", str(tmp / "run.mjs"), str(tmp / "layup.json")],
+        capture_output=True,
+        text=True,
+    )
     assert r.returncode == 0, r.stderr
     return pl, {int(k): v for k, v in json.loads(r.stdout).items()}
 

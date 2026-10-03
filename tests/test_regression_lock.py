@@ -46,20 +46,13 @@ EXCLUDED METRICS (known convention gaps, not locked):
 
 import json
 import math
-import sys
 from pathlib import Path
 
+import pytest
+
+from config import config
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT))
-
-from unittest.mock import MagicMock  # noqa: E402
-
-sys.modules.setdefault("cadquery", MagicMock())
-sys.modules.setdefault("OCP", MagicMock())
-
-import pytest  # noqa: E402
-
-from config import config  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Data file paths
@@ -93,30 +86,31 @@ def _load_ref_data() -> dict:
 # Phase 5 calibrated values — from data/validation/accuracy_report.json (2026-03-13)
 # Each traces to reference_data.json (RAF CP-29, wind tunnel data)
 # DO NOT UPDATE unless re-calibrating against external reference data
-LOCKED_NP_PUBLISHED = 110.6822       # accuracy_report neutral_point_fs.computed
+LOCKED_NP_PUBLISHED = 110.6822  # accuracy_report neutral_point_fs.computed
 # re-locked 2026-09-29, planform correction (was 108.0007); re-locked again, fuselage stations (was 125.8549); re-locked again, wing and canard planform (was 123.1360); re-locked again, wing panel convention (was 112.5622); re-locked again, wing aspect ratio (was 106.6750); re-locked again, gross reference area (was 105.9382); re-locked again, two-method reconciliation C1-C3 (was 108.5007); re-locked again, partial-span canard downwash C4 (was 106.5020)
-LOCKED_CG_FWD_PUBLISHED = 103.7465   # accuracy_report cg_range_fwd_fs.computed
+LOCKED_CG_FWD_PUBLISHED = 103.7465  # accuracy_report cg_range_fwd_fs.computed
 # re-locked 2026-09-29, planform correction (was 98.999); re-locked again, fuselage stations (was 116.8532); re-locked again, wing and canard planform (was 113.9798); re-locked again, wing panel convention (was 105.8012); re-locked again, wing aspect ratio (was 99.8609); re-locked again, gross reference area (was 99.1241); re-locked again, two-method reconciliation C1-C3 (was 101.6866); re-locked again, partial-span canard downwash C4 (was 99.5663)
-LOCKED_CG_AFT_PUBLISHED = 107.5993   # accuracy_report cg_range_aft_fs.computed
+LOCKED_CG_AFT_PUBLISHED = 107.5993  # accuracy_report cg_range_aft_fs.computed
 # re-locked 2026-09-29, planform correction (was 103.9994); re-locked again, fuselage stations (was 121.8536); re-locked again, wing and canard planform (was 119.0659); re-locked again, wing panel convention (was 109.5569); re-locked again, wing aspect ratio (was 103.6461); re-locked again, gross reference area (was 102.9092); re-locked again, two-method reconciliation C1-C3 (was 105.4718); re-locked again, partial-span canard downwash C4 (was 103.4190)
-LOCKED_STALL_KTAS = 55.3018          # accuracy_report stall_speed_ktas.computed
+LOCKED_STALL_KTAS = 55.3018  # accuracy_report stall_speed_ktas.computed
 # re-locked 2026-09-29, reference audit (areas now 81.99 + 12.8 sqft, om-1980:p3); was 53.2867; re-locked again, flight-condition gross weight 1325 lb (was 57.3507)
 
 # Config values — locked to prevent accidental modification; exact matches expected
-LOCKED_GROSS_WEIGHT_LB = 1325.0      # accuracy_report max_gross_weight_lb.computed
-LOCKED_CANARD_CLMAX = 1.35           # accuracy_report canard_clmax.computed
-LOCKED_WING_CLMAX = 1.45             # accuracy_report wing_clmax.computed
-LOCKED_CANARD_ALPHA_0L_DEG = -3.0    # accuracy_report canard_alpha_0l_deg.computed
-LOCKED_WING_ALPHA_0L_DEG = -2.0      # accuracy_report wing_alpha_0l_deg.computed
+LOCKED_GROSS_WEIGHT_LB = 1325.0  # accuracy_report max_gross_weight_lb.computed
+LOCKED_CANARD_CLMAX = 1.35  # accuracy_report canard_clmax.computed
+LOCKED_WING_CLMAX = 1.45  # accuracy_report wing_clmax.computed
+LOCKED_CANARD_ALPHA_0L_DEG = -3.0  # accuracy_report canard_alpha_0l_deg.computed
+LOCKED_WING_ALPHA_0L_DEG = -2.0  # accuracy_report wing_alpha_0l_deg.computed
 
 # Drift detection tolerances (much tighter than external reference tolerances)
-DRIFT_TOLERANCE_FS_IN = 0.01         # inches — catches sub-millimeter FS drift
-DRIFT_TOLERANCE_SPEED_KTAS = 0.5     # knots — catches minor stall speed drift
+DRIFT_TOLERANCE_FS_IN = 0.01  # inches — catches sub-millimeter FS drift
+DRIFT_TOLERANCE_SPEED_KTAS = 0.5  # knots — catches minor stall speed drift
 
 
 # ---------------------------------------------------------------------------
 # Helper: compute stall speed using same first-principles method as accuracy report
 # ---------------------------------------------------------------------------
+
 
 def _compute_stall_ktas(ref_data: dict) -> float:
     """Replicate the stall speed calculation from generate_accuracy_report.py.
@@ -127,17 +121,17 @@ def _compute_stall_ktas(ref_data: dict) -> float:
     from core.reference import truth_specs
 
     truth = truth_specs(ref_data)
-    wing_area_sqft = truth["wing_area_sqft"]["value"]     # 81.99 sqft
+    wing_area_sqft = truth["wing_area_sqft"]["value"]  # 81.99 sqft
     canard_area_sqft = truth["canard_area_sqft"]["value"]  # 12.8 sqft
-    total_area_sqft = wing_area_sqft + canard_area_sqft    # 94.79 sqft
+    total_area_sqft = wing_area_sqft + canard_area_sqft  # 94.79 sqft
 
-    W = config.flight_condition.gross_weight_lb                                 # 1325 lb
-    rho = 0.002377      # slug/ft^3 (sea-level standard atmosphere)
+    W = config.flight_condition.gross_weight_lb  # 1325 lb
+    rho = 0.002377  # slug/ft^3 (sea-level standard atmosphere)
     S = total_area_sqft
-    cl_max = config.aero_limits.canard_clmax                                    # 1.35
+    cl_max = config.aero_limits.canard_clmax  # 1.35
 
     v_fps = math.sqrt(2.0 * W / (rho * S * cl_max))
-    v_ktas = v_fps / 1.6878     # 1 knot = 1.6878 ft/s
+    v_ktas = v_fps / 1.6878  # 1 knot = 1.6878 ft/s
     return v_ktas
 
 
@@ -157,7 +151,9 @@ def test_regression_neutral_point_external_truth():
     assert ref_data["aircraft_specs"]["neutral_point_fs"]["status"] == "unverified"
     assert "neutral_point_fs" not in truth_specs(ref_data)
     np_metric = next(
-        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "neutral_point_fs"
+        m
+        for m in _load_accuracy_report()["metrics"]
+        if m["metric_id"] == "neutral_point_fs"
     )
     assert np_metric["grade"] == "NOT GRADED"
 
@@ -177,15 +173,18 @@ def test_regression_neutral_point_drift():
     delta_from_locked = abs(computed_np_published - LOCKED_NP_PUBLISHED)
     assert delta_from_locked <= DRIFT_TOLERANCE_FS_IN, (
         f"REGRESSION: NP drift detected. "
-        f"Computed NP = {computed_np_published:.4f}\" (published datum), "
-        f"Phase 5 locked value = {LOCKED_NP_PUBLISHED:.4f}\", "
-        f"drift = {delta_from_locked:.6f}\" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}\" tolerance. "
+        f'Computed NP = {computed_np_published:.4f}" (published datum), '
+        f'Phase 5 locked value = {LOCKED_NP_PUBLISHED:.4f}", '
+        f'drift = {delta_from_locked:.6f}" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}" tolerance. '
         f"If this is intentional, re-run Phase 5 calibration before updating locked value. "
         f"DO NOT update LOCKED_NP_PUBLISHED without re-calibrating against external data."
     )
 
 
-@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 16, 47, 52 and 54; gap +6.75 in (103.75 vs 97.0)")
+@pytest.mark.xfail(
+    strict=True,
+    reason="book geometry: see docs/geometry-correction-ledger.md rows 16, 47, 52 and 54; gap +6.75 in (103.75 vs 97.0)",
+)
 def test_regression_cg_fwd_external_truth():
     """REGRESSION LOCK: Forward CG limit (published datum) locked to Phase 5 calibrated value.
 
@@ -198,8 +197,10 @@ def test_regression_cg_fwd_external_truth():
     from core.analysis import PhysicsEngine
 
     ref_data = _load_ref_data()
-    ref_cg_fwd = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["value"]              # 97.0
-    ref_tolerance = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["tolerance_abs"]   # 1.0
+    ref_cg_fwd = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["value"]  # 97.0
+    ref_tolerance = ref_data["aircraft_specs"]["cg_range_fwd_fs"][
+        "tolerance_abs"
+    ]  # 1.0
 
     engine = PhysicsEngine()
     metrics = engine.calculate_cg_envelope()
@@ -209,9 +210,9 @@ def test_regression_cg_fwd_external_truth():
     delta_from_ref = abs(computed_cg_fwd_published - ref_cg_fwd)
     assert delta_from_ref <= ref_tolerance, (
         f"REGRESSION: CG fwd external truth check FAILED. "
-        f"Computed CG fwd = {computed_cg_fwd_published:.4f}\" (published datum), "
-        f"reference = {ref_cg_fwd:.1f}\", delta = {delta_from_ref:.4f}\" "
-        f"exceeds {ref_tolerance:.1f}\" tolerance (RAF CP-29). "
+        f'Computed CG fwd = {computed_cg_fwd_published:.4f}" (published datum), '
+        f'reference = {ref_cg_fwd:.1f}", delta = {delta_from_ref:.4f}" '
+        f'exceeds {ref_tolerance:.1f}" tolerance (RAF CP-29). '
         f"Physics model has drifted outside validated bounds."
     )
 
@@ -228,8 +229,10 @@ def test_regression_cg_fwd_drift():
     from core.analysis import PhysicsEngine
 
     ref_data = _load_ref_data()
-    ref_cg_fwd = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["value"]              # 97.0
-    ref_tolerance = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["tolerance_abs"]   # 1.0
+    _ref_cg_fwd = ref_data["aircraft_specs"]["cg_range_fwd_fs"]["value"]  # 97.0
+    _ref_tolerance = ref_data["aircraft_specs"]["cg_range_fwd_fs"][
+        "tolerance_abs"
+    ]  # 1.0
 
     engine = PhysicsEngine()
     metrics = engine.calculate_cg_envelope()
@@ -239,14 +242,17 @@ def test_regression_cg_fwd_drift():
     delta_from_locked = abs(computed_cg_fwd_published - LOCKED_CG_FWD_PUBLISHED)
     assert delta_from_locked <= DRIFT_TOLERANCE_FS_IN, (
         f"REGRESSION: CG fwd drift detected. "
-        f"Computed CG fwd = {computed_cg_fwd_published:.4f}\" (published datum), "
-        f"Phase 5 locked value = {LOCKED_CG_FWD_PUBLISHED:.4f}\", "
-        f"drift = {delta_from_locked:.6f}\" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}\" tolerance. "
+        f'Computed CG fwd = {computed_cg_fwd_published:.4f}" (published datum), '
+        f'Phase 5 locked value = {LOCKED_CG_FWD_PUBLISHED:.4f}", '
+        f'drift = {delta_from_locked:.6f}" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}" tolerance. '
         f"If intentional, re-run Phase 5 calibration before updating locked value."
     )
 
 
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md row 54; gap +4.60 in (107.60 vs 103.0); NP minus the retired MAC fraction, not independent evidence")
+@pytest.mark.xfail(
+    strict=True,
+    reason="see docs/geometry-correction-ledger.md row 54; gap +4.60 in (107.60 vs 103.0); NP minus the retired MAC fraction, not independent evidence",
+)
 def test_regression_cg_aft_external_truth():
     """REGRESSION LOCK: Aft CG limit (published datum) versus the published limit.
 
@@ -261,8 +267,10 @@ def test_regression_cg_aft_external_truth():
     from core.analysis import PhysicsEngine
 
     ref_data = _load_ref_data()
-    ref_cg_aft = ref_data["aircraft_specs"]["cg_range_aft_fs"]["value"]              # 103.0
-    ref_tolerance = ref_data["aircraft_specs"]["cg_range_aft_fs"]["tolerance_abs"]   # 1.0
+    ref_cg_aft = ref_data["aircraft_specs"]["cg_range_aft_fs"]["value"]  # 103.0
+    ref_tolerance = ref_data["aircraft_specs"]["cg_range_aft_fs"][
+        "tolerance_abs"
+    ]  # 1.0
 
     engine = PhysicsEngine()
     metrics = engine.calculate_cg_envelope()
@@ -272,9 +280,9 @@ def test_regression_cg_aft_external_truth():
     delta_from_ref = abs(computed_cg_aft_published - ref_cg_aft)
     assert delta_from_ref <= ref_tolerance, (
         f"REGRESSION: CG aft external truth check FAILED. "
-        f"Computed CG aft = {computed_cg_aft_published:.4f}\" (published datum), "
-        f"reference = {ref_cg_aft:.1f}\", delta = {delta_from_ref:.4f}\" "
-        f"exceeds {ref_tolerance:.1f}\" tolerance (RAF CP-29). "
+        f'Computed CG aft = {computed_cg_aft_published:.4f}" (published datum), '
+        f'reference = {ref_cg_aft:.1f}", delta = {delta_from_ref:.4f}" '
+        f'exceeds {ref_tolerance:.1f}" tolerance (RAF CP-29). '
         f"Physics model has drifted outside validated bounds."
     )
 
@@ -290,8 +298,10 @@ def test_regression_cg_aft_drift():
     from core.analysis import PhysicsEngine
 
     ref_data = _load_ref_data()
-    ref_cg_aft = ref_data["aircraft_specs"]["cg_range_aft_fs"]["value"]              # 103.0
-    ref_tolerance = ref_data["aircraft_specs"]["cg_range_aft_fs"]["tolerance_abs"]   # 1.0
+    _ref_cg_aft = ref_data["aircraft_specs"]["cg_range_aft_fs"]["value"]  # 103.0
+    _ref_tolerance = ref_data["aircraft_specs"]["cg_range_aft_fs"][
+        "tolerance_abs"
+    ]  # 1.0
 
     engine = PhysicsEngine()
     metrics = engine.calculate_cg_envelope()
@@ -301,9 +311,9 @@ def test_regression_cg_aft_drift():
     delta_from_locked = abs(computed_cg_aft_published - LOCKED_CG_AFT_PUBLISHED)
     assert delta_from_locked <= DRIFT_TOLERANCE_FS_IN, (
         f"REGRESSION: CG aft drift detected. "
-        f"Computed CG aft = {computed_cg_aft_published:.4f}\" (published datum), "
-        f"Phase 5 locked value = {LOCKED_CG_AFT_PUBLISHED:.4f}\", "
-        f"drift = {delta_from_locked:.6f}\" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}\" tolerance. "
+        f'Computed CG aft = {computed_cg_aft_published:.4f}" (published datum), '
+        f'Phase 5 locked value = {LOCKED_CG_AFT_PUBLISHED:.4f}", '
+        f'drift = {delta_from_locked:.6f}" exceeds {DRIFT_TOLERANCE_FS_IN:.2f}" tolerance. '
         f"If intentional, re-run Phase 5 calibration before updating locked value."
     )
 
@@ -324,7 +334,9 @@ def test_regression_stall_speed_external_truth():
     assert ref_data["aircraft_specs"]["stall_speed_ktas"]["status"] == "unverified"
     assert "stall_speed_ktas" not in truth_specs(ref_data)
     stall_metric = next(
-        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "stall_speed_ktas"
+        m
+        for m in _load_accuracy_report()["metrics"]
+        if m["metric_id"] == "stall_speed_ktas"
     )
     assert stall_metric["grade"] == "NOT GRADED"
 
@@ -386,7 +398,9 @@ def test_regression_canard_clmax_external_truth():
     assert ref_data["airfoil_data"]["roncz_r1145ms"]["cl_max"]["status"] == "unverified"
     assert "cl_max" not in truth_airfoil(ref_data)["roncz_r1145ms"]
     metric = next(
-        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "canard_clmax"
+        m
+        for m in _load_accuracy_report()["metrics"]
+        if m["metric_id"] == "canard_clmax"
     )
     assert metric["grade"] == "NOT GRADED"
     assert metric["reason"] == "reference unverified"
@@ -452,10 +466,15 @@ def test_regression_canard_alpha_0l_external_truth():
     from core.reference import truth_airfoil
 
     ref_data = _load_ref_data()
-    assert ref_data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert (
+        ref_data["airfoil_data"]["roncz_r1145ms"]["alpha_zero_lift_deg"]["status"]
+        == "unverified"
+    )
     assert "alpha_zero_lift_deg" not in truth_airfoil(ref_data)["roncz_r1145ms"]
     metric = next(
-        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "canard_alpha_0l_deg"
+        m
+        for m in _load_accuracy_report()["metrics"]
+        if m["metric_id"] == "canard_alpha_0l_deg"
     )
     assert metric["grade"] == "NOT GRADED"
     assert metric["reason"] == "reference unverified"
@@ -486,10 +505,15 @@ def test_regression_wing_alpha_0l_external_truth():
     from core.reference import truth_airfoil
 
     ref_data = _load_ref_data()
-    assert ref_data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"] == "unverified"
+    assert (
+        ref_data["airfoil_data"]["eppler_1230"]["alpha_zero_lift_deg"]["status"]
+        == "unverified"
+    )
     assert "alpha_zero_lift_deg" not in truth_airfoil(ref_data)["eppler_1230"]
     metric = next(
-        m for m in _load_accuracy_report()["metrics"] if m["metric_id"] == "wing_alpha_0l_deg"
+        m
+        for m in _load_accuracy_report()["metrics"]
+        if m["metric_id"] == "wing_alpha_0l_deg"
     )
     assert metric["grade"] == "NOT GRADED"
     assert metric["reason"] == "reference unverified"
@@ -563,9 +587,9 @@ def test_regression_baselines_not_self_referential():
                 break
 
     assert not violations, (
-        f"TRACEABILITY VIOLATION: test_regression_lock.py loads physics_baseline.json "
-        f"as a data source. This creates a self-referential loop. "
-        f"Remove these data-loading references:\n" + "\n".join(violations)
+        "TRACEABILITY VIOLATION: test_regression_lock.py loads physics_baseline.json "
+        "as a data source. This creates a self-referential loop. "
+        "Remove these data-loading references:\n" + "\n".join(violations)
     )
 
 
@@ -587,9 +611,9 @@ def test_regression_values_match_accuracy_report():
 
     mismatches = []
     for metric_id, locked_value, const_name in LOCKED_CHECKS:
-        assert metric_id in computed, (
-            f"TRACEABILITY: Metric '{metric_id}' not found in accuracy_report.json metrics."
-        )
+        assert (
+            metric_id in computed
+        ), f"TRACEABILITY: Metric '{metric_id}' not found in accuracy_report.json metrics."
         if locked_value != computed[metric_id]:
             mismatches.append(
                 f"  {const_name} = {locked_value!r} "
@@ -597,22 +621,23 @@ def test_regression_values_match_accuracy_report():
             )
 
     assert not mismatches, (
-        f"TRACEABILITY VIOLATION: Locked constants are out of sync with accuracy_report.json.\n"
-        f"Update the LOCKED_* constants to match the report computed values:\n"
+        "TRACEABILITY VIOLATION: Locked constants are out of sync with accuracy_report.json.\n"
+        "Update the LOCKED_* constants to match the report computed values:\n"
         + "\n".join(mismatches)
     )
 
 
-@pytest.mark.xfail(strict=True, reason="see docs/geometry-correction-ledger.md rows 20, 39-42, 47, 52 and 54; 1 PASS of 9 locked (max gross); CG fwd +6.75 in and CG aft +4.60 in FAIL; NP, stall and the 4 airfoil metrics NOT GRADED")
+@pytest.mark.xfail(
+    strict=True,
+    reason="see docs/geometry-correction-ledger.md rows 20, 39-42, 47, 52 and 54; 1 PASS of 9 locked (max gross); CG fwd +6.75 in and CG aft +4.60 in FAIL; NP, stall and the 4 airfoil metrics NOT GRADED",
+)
 def test_regression_locked_metrics_all_pass():
     """External truth: every locked metric grades PASS in accuracy_report.json (9 PASS metrics)."""
     report = _load_accuracy_report()
 
     # Build lookup of metric_id -> computed value for PASS metrics only
     pass_metrics = {
-        m["metric_id"]: m["computed"]
-        for m in report["metrics"]
-        if m["grade"] == "PASS"
+        m["metric_id"]: m["computed"] for m in report["metrics"] if m["grade"] == "PASS"
     }
 
     expected_count = 9
@@ -629,13 +654,13 @@ def test_regression_locked_metrics_all_pass():
 
 # Each drift-locked constant and the accuracy_report metric it traces to.
 LOCKED_CHECKS = [
-    ("neutral_point_fs",      LOCKED_NP_PUBLISHED,        "LOCKED_NP_PUBLISHED"),
-    ("cg_range_fwd_fs",       LOCKED_CG_FWD_PUBLISHED,    "LOCKED_CG_FWD_PUBLISHED"),
-    ("cg_range_aft_fs",       LOCKED_CG_AFT_PUBLISHED,    "LOCKED_CG_AFT_PUBLISHED"),
-    ("stall_speed_ktas",      LOCKED_STALL_KTAS,          "LOCKED_STALL_KTAS"),
-    ("max_gross_weight_lb",   LOCKED_GROSS_WEIGHT_LB,     "LOCKED_GROSS_WEIGHT_LB"),
-    ("canard_clmax",          LOCKED_CANARD_CLMAX,        "LOCKED_CANARD_CLMAX"),
-    ("wing_clmax",            LOCKED_WING_CLMAX,          "LOCKED_WING_CLMAX"),
-    ("canard_alpha_0l_deg",   LOCKED_CANARD_ALPHA_0L_DEG, "LOCKED_CANARD_ALPHA_0L_DEG"),
-    ("wing_alpha_0l_deg",     LOCKED_WING_ALPHA_0L_DEG,   "LOCKED_WING_ALPHA_0L_DEG"),
+    ("neutral_point_fs", LOCKED_NP_PUBLISHED, "LOCKED_NP_PUBLISHED"),
+    ("cg_range_fwd_fs", LOCKED_CG_FWD_PUBLISHED, "LOCKED_CG_FWD_PUBLISHED"),
+    ("cg_range_aft_fs", LOCKED_CG_AFT_PUBLISHED, "LOCKED_CG_AFT_PUBLISHED"),
+    ("stall_speed_ktas", LOCKED_STALL_KTAS, "LOCKED_STALL_KTAS"),
+    ("max_gross_weight_lb", LOCKED_GROSS_WEIGHT_LB, "LOCKED_GROSS_WEIGHT_LB"),
+    ("canard_clmax", LOCKED_CANARD_CLMAX, "LOCKED_CANARD_CLMAX"),
+    ("wing_clmax", LOCKED_WING_CLMAX, "LOCKED_WING_CLMAX"),
+    ("canard_alpha_0l_deg", LOCKED_CANARD_ALPHA_0L_DEG, "LOCKED_CANARD_ALPHA_0L_DEG"),
+    ("wing_alpha_0l_deg", LOCKED_WING_ALPHA_0L_DEG, "LOCKED_WING_ALPHA_0L_DEG"),
 ]

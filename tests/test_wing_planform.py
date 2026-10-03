@@ -1,5 +1,6 @@
 # tests/test_wing_planform.py
 """Wing panel convention: each panel runs BL wing_root_bl (root chord) to BL span/2 (tip chord)."""
+
 import math
 import re
 from pathlib import Path
@@ -31,13 +32,17 @@ def test_panel_runs_from_the_root_bl_not_span_over_two_outboard_of_it():
 
 
 def test_exposed_wing_area_matches_independent_trapezoid_from_config_fields():
-    one_panel = _trapezoid_sqin(G.wing_root_bl, G.wing_span / 2, G.wing_root_chord, G.wing_tip_chord)
+    one_panel = _trapezoid_sqin(
+        G.wing_root_bl, G.wing_span / 2, G.wing_root_chord, G.wing_tip_chord
+    )
     assert G.wing_exposed_area_sqft == pytest.approx(2 * one_panel / 144, abs=0.01)
 
 
 def test_aspect_ratio_pairs_the_gross_span_with_the_gross_area():
     """AR computed independently from the gross trapezoid; same planform for b and S."""
-    area_sqin = 2 * _trapezoid_sqin(0.0, G.wing_span / 2, G.wing_centerline_chord, G.wing_tip_chord)
+    area_sqin = 2 * _trapezoid_sqin(
+        0.0, G.wing_span / 2, G.wing_centerline_chord, G.wing_tip_chord
+    )
     expect = G.wing_span**2 / area_sqin
     assert G.wing_aspect_ratio == pytest.approx(expect, rel=1e-9)
     # guard the retired mixed definition (full tip-to-tip span over the exposed-panel area)
@@ -48,7 +53,9 @@ def test_aspect_ratio_pairs_the_gross_span_with_the_gross_area():
 def test_tip_leading_edge_fs_is_wing_le_plus_panel_times_tan_sweep():
     """CadQuery-independent geometry fact: the tip LE sits panel*tan(sweep) aft of the root LE."""
     tip_le = G.fs_wing_le + G.wing_panel_span * math.tan(math.radians(G.wing_sweep_le))
-    assert tip_le - G.fs_wing_le == pytest.approx(133.3 * math.tan(math.radians(G.wing_sweep_le)), abs=0.05)
+    assert tip_le - G.fs_wing_le == pytest.approx(
+        133.3 * math.tan(math.radians(G.wing_sweep_le)), abs=0.05
+    )
     assert tip_le > G.fs_wing_le
 
 
@@ -63,10 +70,14 @@ def test_calculate_mac_uses_the_same_planform():
     engine = PhysicsEngine()
     tan_le = math.tan(math.radians(G.wing_sweep_le))
     # centreline chord by hand: extend the panel taper from BL wing_root_bl to BL 0
-    c0 = G.wing_root_chord + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / (G.wing_tip_bl - G.wing_root_bl)
+    c0 = G.wing_root_chord + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / (
+        G.wing_tip_bl - G.wing_root_bl
+    )
     ct = G.wing_tip_chord
     # the planform is the one whose area is the reference area
-    assert _trapezoid_sqin(0.0, G.wing_tip_bl, c0, ct) * 2 / 144 == pytest.approx(G.wing_area_sqft, abs=0.01)
+    assert _trapezoid_sqin(0.0, G.wing_tip_bl, c0, ct) * 2 / 144 == pytest.approx(
+        G.wing_area_sqft, abs=0.01
+    )
 
     # MAC by direct integration of c(y)^2 over the semispan (no closed form reused)
     n = 20000
@@ -87,15 +98,25 @@ def test_vsp_script_wing_runs_root_bl_to_tip_bl(tmp_path):
     out = VSPBridge.export_vsp_script(tmp_path / "s.vsp")
     text = Path(out).read_text()
     assert re.search(rf'"Span", "XSec_1", {re.escape(str(G.wing_panel_span))}\)', text)
-    assert re.search(rf'wid, "Y_Rel_Location", "XForm", {re.escape(str(G.wing_root_bl))}\)', text)
-    assert re.search(rf'vid, "Y_Rel_Location", "XForm", {re.escape(str(G.wing_tip_bl))}\)', text)
+    assert re.search(
+        rf'wid, "Y_Rel_Location", "XForm", {re.escape(str(G.wing_root_bl))}\)', text
+    )
+    assert re.search(
+        rf'vid, "Y_Rel_Location", "XForm", {re.escape(str(G.wing_tip_bl))}\)', text
+    )
 
 
 def test_no_code_uses_a_literal_214_fuselage_length():
     offenders = []
-    for path in list((REPO / "core").rglob("*.py")) + [REPO / "config" / "aircraft_config.py"]:
+    for path in list((REPO / "core").rglob("*.py")) + [
+        REPO / "config" / "aircraft_config.py"
+    ]:
         for i, line in enumerate(path.read_text().splitlines(), 1):
-            if re.search(r"\b214(\.0)?\b", line) and "fuselage" in line.lower() and "internal 214.0" not in line:
+            if (
+                re.search(r"\b214(\.0)?\b", line)
+                and "fuselage" in line.lower()
+                and "internal 214.0" not in line
+            ):
                 offenders.append(f"{path.name}:{i}")
     assert offenders == []
 
@@ -115,16 +136,27 @@ def _printed_taper_chord_at(bl):
 
 def test_centerline_chord_extends_the_printed_taper_to_bl_zero():
     # the model's own line (root 49.90 at BL 23.3, tip 20.0 at BL 156.6) extended to BL 0
-    own = G.wing_root_chord + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / G.wing_panel_span
+    own = (
+        G.wing_root_chord
+        + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / G.wing_panel_span
+    )
     assert G.wing_centerline_chord == pytest.approx(own, rel=1e-12)
     # the printed line puts the 20.0 tip at BL 157, not 156.6, so the two differ by ~0.014 in
-    assert G.wing_centerline_chord == pytest.approx(_printed_taper_chord_at(0.0), abs=0.02)
+    assert G.wing_centerline_chord == pytest.approx(
+        _printed_taper_chord_at(0.0), abs=0.02
+    )
     # the root chord at BL 23.3 lies on the same line
-    assert G.wing_root_chord == pytest.approx(_printed_taper_chord_at(G.wing_root_bl), abs=0.01)
+    assert G.wing_root_chord == pytest.approx(
+        _printed_taper_chord_at(G.wing_root_bl), abs=0.01
+    )
 
 
 def test_reference_area_is_the_gross_trapezoid_to_the_centerline():
-    gross = 2 * _trapezoid_sqin(0.0, G.wing_tip_bl, G.wing_centerline_chord, G.wing_tip_chord) / 144
+    gross = (
+        2
+        * _trapezoid_sqin(0.0, G.wing_tip_bl, G.wing_centerline_chord, G.wing_tip_chord)
+        / 144
+    )
     assert G.wing_area_sqft == pytest.approx(gross, abs=0.01)
     assert G.wing_area == G.wing_area_sqft
     assert _within_1pct_of_manual(G.wing_area_sqft)
@@ -132,7 +164,13 @@ def test_reference_area_is_the_gross_trapezoid_to_the_centerline():
 
 def test_exposed_area_fails_the_1pct_reference_check():
     """Gate fails first: the exposed-panel area (the old reference) must not pass the 1% check."""
-    exposed = 2 * _trapezoid_sqin(G.wing_root_bl, G.wing_tip_bl, G.wing_root_chord, G.wing_tip_chord) / 144
+    exposed = (
+        2
+        * _trapezoid_sqin(
+            G.wing_root_bl, G.wing_tip_bl, G.wing_root_chord, G.wing_tip_chord
+        )
+        / 144
+    )
     assert G.wing_exposed_area_sqft == pytest.approx(exposed, abs=0.01)
     assert G.wing_exposed_area_sqft == pytest.approx(64.71, abs=0.01)
     assert not _within_1pct_of_manual(G.wing_exposed_area_sqft)
