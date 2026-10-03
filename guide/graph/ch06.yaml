@@ -196,7 +196,7 @@
 - id: f06.bond-firewall
   chapter: 6
   title: Bond the firewall
-  summary: The firewall stays dry-fit and loose until the spar has slid in from the rear (chapter 14), so this step now follows the spar fit. Flox it to both sides, lap one BID ply round its edges, check it is still square to the top longeron, then leave the assembly untouched for twelve hours.
+  summary: The firewall stays dry-fit and loose until the spar fit (chapter 14), so this step now follows it. The scanned plan's fit step inserts from one side; CP25's separate builder-order hint describes it as rearward. Flox it to both sides, lap one BID ply round its edges, check it is still square to the top longeron, then leave the assembly untouched for twelve hours.
   variants: [both]
   requires: [f06.bond-rear-seat, f14.fit-fuselage]
   components: [fuselage.firewall, fuselage.side_left, fuselage.side_right]
@@ -205,9 +205,9 @@
     - {doc: scan-1980, scan_pp: 40}
     - {doc: scan-1980, scan_pp: 41}
   changes:
-    - {cp: 25, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Newsletter hint for new builds: keep the plywood firewall loose through chapters 6 and 7. Once the spar has gone in from behind, bond the firewall."}
+    - {cp: 25, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Newsletter hint for new builds: keep the plywood firewall loose through chapters 6 and 7, then bond it after spar fit. Its rearward wording does not override the scanned plan's side-insertion operation."}
   completion:
-    - Spar already fitted from the rear (chapter 14) before the firewall is bonded
+    - Spar already fitted by the scanned plan's side-insertion operation (chapter 14) before the firewall is bonded
     - Firewall square to the top longeron after bonding, one BID ply lapped round its edges
     - All five bulkheads bonded and the jig checks still hold
     - Left undisturbed for twelve hours

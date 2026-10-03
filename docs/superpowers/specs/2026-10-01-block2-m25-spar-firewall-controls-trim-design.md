@@ -43,9 +43,10 @@ in place, and the mass ledger gains its heaviest sourced structural row (the spa
 ## 3. Rulings made by the lead
 
 - **Firewall bonding order follows the CP25 builder hint:** the firewall stays unbonded until the
-  spar slides in from the rear. If the graph bonds the firewall in chapter 6, the bond moves to
-  after `f14.fit-fuselage` and the move is recorded as a `cp-hint` change. Rationale: the plans
-  change is the builder-verified order, and the rehearsal should show the order that works.
+  spar fit. CP25 describes that order as rearward, while the scanned-plan operation says to insert
+  from one side. The animation and operation retain the scanned-plan side insertion; CP25 only
+  supplies the deferred firewall-bond order. If the graph bonds the firewall in chapter 6, the bond
+  moves to after `f14.fit-fuselage` and the move is recorded as a `cp-hint` change.
 - **No double counting of the firewall face:** `f04.firewall-aft` keeps the plywood work;
   `f15.stainless-firewall` owns the stainless and insulation (deferred per CP25 LPC 25).
 - **New edges into existing ops:** `f09.position-gear` requires `f14.fit-fuselage` (the gear datum
