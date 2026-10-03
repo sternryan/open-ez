@@ -629,6 +629,198 @@ def extras_section() -> dict:
     }
 
 
+# ---- chapters 14-17 (M2.5): the spar, firewall face, controls and trim ----------------------------------------------------------------
+M25_JIG_OPS = (
+    "f14.jig",
+    "f14.cap-troughs",
+)  # the spar jig shows from the first and goes when the box is lifted out (until is exclusive)
+M25_CAP_OP = "f14.spar-caps"
+# a part's own window when it is shown later than its component's first op (a fitting is on the spar only once its op fits it)
+M25_SHOW = {
+    "spar.jig": {"from": M25_JIG_OPS[0], "until": M25_JIG_OPS[1]},
+    "spar.bulkheads.end_bulkheads": {"from": "f14.foam-box"},
+    "spar.bulkheads.interior_bulkheads": {"from": "f14.interior-layups"},
+    "trim.pitch_handle.pth": {"from": "f17.pitch-trim"},
+    "trim.pitch_handle.pth_springs": {"from": "f17.pitch-trim"},
+    "trim.roll_trim.roll_trim_springs": {"from": "f17.roll-trim"},
+}
+M25_LABELS = {
+    "spar.box": "Spar foam box",
+    "spar.cap_top": "Top spar cap, 12 UND plies",
+    "spar.cap_bottom": "Bottom spar cap, 9 UND plies",
+    "spar.bulkheads.end_bulkheads": "Spar end bulkheads",
+    "spar.bulkheads.interior_bulkheads": "Spar interior bulkheads",
+    "spar.lwa.lwa1": "Wing attach plates LWA1",
+    "spar.lwa.lwa2": "Wing attach plates LWA2",
+    "spar.lwa.lwa3": "Wing attach plates LWA3",
+    "spar.lwa.lwa4": "Wing attach plates LWA4",
+    "spar.lwa.lwa5": "Wing attach plates LWA5",
+    "spar.spruce_blocks": "Spruce blocks",
+    "spar.em12": "Engine-mount angles EM12",
+    "spar.sh1": "Harness plates SH1",
+    "spar.jig": "Spar jig",
+    "fuselage.firewall_stainless": "Stainless firewall face",
+    "firewall.belcrank": "Rudder and brake belcrank",
+    "firewall.master_cylinders": "Brake master cylinders",
+    "controls.consoles.front_console": "Front console",
+    "controls.consoles.rear_console": "Rear console",
+    "controls.torque_tube": "Torque tube",
+    "controls.sticks.front_stick": "Front stick",
+    "controls.sticks.rear_stick": "Rear stick",
+    "controls.pitch_pushrod": "Pitch pushrod",
+    "controls.rudder_conduit": "Rudder cable conduits",
+    "trim.pitch_handle.pth": "Pitch trim handle",
+    "trim.pitch_handle.pth_pivot": "Handle pivot pin",
+    "trim.pitch_handle.pth_springs": "Pitch trim springs",
+    "trim.roll_trim.roll_trim": "Roll trim levers",
+    "trim.roll_trim.roll_trim_springs": "Roll trim springs",
+}
+
+
+@lru_cache(maxsize=1)
+def _m25_built() -> dict:
+    """{component id: [(node, part name, FusePart or None)]} for every M2.5 component; the caps are per-ply nodes (part None)."""
+    from core import controls_book, firewall_book, spar_book
+
+    out: dict = {}
+    for build, mapping in (
+        (spar_book.build_spar, spar_book.COMPONENT_PARTS),
+        (firewall_book.build_firewall, firewall_book.COMPONENT_PARTS),
+        (controls_book.build_controls, controls_book.COMPONENT_PARTS),
+    ):
+        parts = build()
+        for cid, names in mapping.items():
+            out[cid] = [
+                (cid if len(names) == 1 else f"{cid}.{n}", n, parts[n]) for n in names
+            ]
+    return out
+
+
+def m25_cap_solids() -> dict[str, list]:
+    """cap component -> its plies in lay order, drawn the way the lab shows them: stacked outward from the box face, each ply
+    PLY visual thickness (spar_book.CAP_VISUAL_PLY_T), not the published 0.0375 in."""
+    from core import spar_book
+
+    return {
+        f"spar.cap_{c}": spar_book.cap_plies(
+            c, thickness=spar_book.CAP_VISUAL_PLY_T, outward=True
+        )
+        for c in ("top", "bottom")
+    }
+
+
+def m25_components() -> dict:
+    """glb components for chapters 14-17 (see guide.export_glb.m25_components)."""
+    out: dict = {}
+    caps = m25_cap_solids()
+    for cid, rows in _m25_built().items():
+        if cid in caps:
+            out[cid] = {
+                f"{cid}.p{i + 1}": solid.copy() for i, solid in enumerate(caps[cid])
+            }
+        elif len(rows) == 1:
+            out[cid] = rows[0][2].solid.val().copy()
+        else:
+            out[cid] = {node: part.solid.val().copy() for node, _n, part in rows}
+    return out
+
+
+def m25_section() -> dict:
+    """layup.json["fuselage"]["extras"]["m25"]: part rows (by lab part name), the cap plies as ply rows, and the jig's rest offset."""
+    from core import spar_book
+
+    parts: dict[str, dict] = {}
+    nodes: dict[str, dict] = {}
+    caps = m25_cap_solids()
+    ops_order = list(_op_index())
+    for cid, rows in _m25_built().items():
+        if cid in caps:
+            fid = rows[0][2].fidelity
+            part = cid.replace(".", "_")
+            solids = caps[cid]
+            lo, hi = _extent(solids)
+            parts[part] = {
+                "node": cid,
+                "component": cid,
+                "fidelity": fid,
+                "label": M25_LABELS[cid] + " (fitted shape; ply thickness exaggerated)",
+                "cite": list(rows[0][2].cite),
+                "fs_min": lo,
+                "fs_max": hi,
+                "fwd_normal": None,
+            }
+            for i, solid in enumerate(solids):
+                x0, x1 = _extent([solid])
+                nodes[f"{cid}.p{i + 1}"] = {
+                    "part": part,
+                    "component": cid,
+                    "op": M25_CAP_OP,
+                    "op_index": ops_order.index(M25_CAP_OP),
+                    "op_order": i + 1 + (12 if cid.endswith("bottom") else 0),
+                    "order": i + 1,
+                    "stack": i + 1,
+                    "cloth": "UND",
+                    "orientation_deg": 0.0,
+                    "where": f"{cid.split('.')[1]} spar cap, ply {i + 1}",
+                    "region": "cap",
+                    "fidelity": fid,
+                    "lower_bound": False,
+                    "area_in2": round(solid.Volume() / spar_book.CAP_VISUAL_PLY_T, 3),
+                    "fs_min": x0,
+                    "fs_max": x1,
+                }
+            continue
+        for node, _n, part in rows:
+            lo, hi = _extent([part.solid])
+            row = {
+                "node": node,
+                "component": cid,
+                "fidelity": part.fidelity,
+                "label": M25_LABELS[node]
+                + (" (fitted shape)" if part.fidelity == "representational" else ""),
+                "cite": list(part.cite),
+                "fs_min": lo,
+                "fs_max": hi,
+                "fwd_normal": None,
+            }
+            if node in M25_SHOW:
+                row["show"] = dict(M25_SHOW[node])
+            parts[node.replace(".", "_")] = row
+    from core import controls_book as cb
+    from core import controls_kin as ck
+
+    base_f, _tip = cb.stick_axis("front")
+    base_r, _tip = cb.stick_axis("rear")
+    up_t, down = ck.travel_limits_deg()
+    controls = {
+        "arm_in": G.ctl_elevator_arm_fit_in,
+        "lever_in": G.ctl_stick_lever_fit_in,
+        "cant_forward_deg": G.ctl_stick_cant_forward_deg,
+        "cant_inboard_deg": G.ctl_stick_cant_inboard_deg,
+        "up_target_deg": up_t,
+        "up_floor_deg": G.elevator_travel_up_floor_deg,
+        "down_deg": down,
+        "pivot_fs": {
+            "front": G.ctl_stick_pivot_fs_front,
+            "rear": G.ctl_stick_pivot_fs_rear,
+        },
+        "tube_bl": G.ctl_torque_tube_hole_bl_in,
+        "tube_wl": G.ctl_torque_tube_hole_wl_in,
+        "wl_zero": -fb.z_of_wl(0.0),
+        "stop_label": "Pitch stops (not printed; fitted shape)",
+        "stop_size_in": [1.0, 1.0, 0.6],
+        "note": "stick pitch from the Roncz travel row only (15 up, 30 down; 12.5 is the floor); the arm and stop positions are fitted",
+    }
+    return {
+        "parts": parts,
+        "nodes": nodes,
+        "controls": controls,
+        "jig_t": spar_book.FITTED_JIG_T,
+        "cap_visual_ply_in": spar_book.CAP_VISUAL_PLY_T,
+        "cap_note": "cap plies are drawn stacked outward from the box face at a visual thickness, not the published 0.0375 in laid ply",
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -716,6 +908,6 @@ def layup_section() -> dict:
         "bank_note": "positive = left bank, the right side up (core.landing_gear_book.bank_pose); plans-1980:p46",
         "gear_marks": gh,
         "excluded": excluded + _ch9_excluded(),
-        "extras": extras_section(),
+        "extras": {**extras_section(), "m25": m25_section()},
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

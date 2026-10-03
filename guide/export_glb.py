@@ -155,23 +155,11 @@ def nose_components() -> dict:
 def m25_components() -> dict:
     """The centre-section spar, firewall face and accessories, controls and trim (chapters 14-17), one glb component per graph id, all at
     their installed positions in the fuselage frame. In default_components(); not in the canard-only cutaway export. spar.jig is
-    workshop geometry: it is in the glb flagged extras.workshop (see WORKSHOP_COMPONENTS), for the lab's jig scene."""
-    from core import controls_book, firewall_book, spar_book
+    workshop geometry: it is in the glb flagged extras.workshop (see WORKSHOP_COMPONENTS), for the lab's jig scene. The spar caps are
+    one node per ply (spar.cap_top.p1 ..), stacked outward from the box face (lab display; guide.fuselage_export.m25_cap_solids)."""
+    from guide import fuselage_export
 
-    out: dict = {}
-    for build, mapping in (
-        (spar_book.build_spar, spar_book.COMPONENT_PARTS),
-        (firewall_book.build_firewall, firewall_book.COMPONENT_PARTS),
-        (controls_book.build_controls, controls_book.COMPONENT_PARTS),
-    ):
-        parts = {n: p.solid.val().copy() for n, p in build().items()}
-        for cid, names in mapping.items():
-            out[cid] = (
-                parts[names[0]]
-                if len(names) == 1
-                else {f"{cid}.{n}": parts[n] for n in names}
-            )
-    return out
+    return fuselage_export.m25_components()
 
 
 def _canard_layup(graph) -> dict:

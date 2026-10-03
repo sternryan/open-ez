@@ -103,7 +103,12 @@ def spar_box() -> cq.Workplane:
     return envelope.intersect(plan)
 
 
-def cap_plies(cap: str) -> list[cq.Solid]:
+CAP_VISUAL_PLY_T = 0.12  # in, VISUAL: lab-only ply thickness so the taper steps read (the published laid ply is spar_ply_thickness_laid_in)
+
+
+def cap_plies(
+    cap: str, thickness: float | None = None, outward: bool = False
+) -> list[cq.Solid]:
     """One volume per published UND strip, placed on the corresponding face.
 
     The 3-in tape width and laid ply thickness are published.  The missing A11
@@ -115,18 +120,26 @@ def cap_plies(cap: str) -> list[cq.Solid]:
     solids: list[cq.Solid] = []
     for index, length in enumerate(kin.strip_lengths(cap)):
         half_span = min(length / 2, G.spar_full_ply_end_bl)
-        thickness = G.spar_ply_thickness_laid_in
+        t = G.spar_ply_thickness_laid_in if thickness is None else thickness
 
         def section(
-            bl: float, *, ply_index: int = index, ply_thickness: float = thickness
+            bl: float, *, ply_index: int = index, ply_thickness: float = t
         ) -> cq.Wire:
             aft = kin.face_fs(bl, "aft")
             if cap == "top":
-                z1 = _z(kin.top_wl(bl)) - ply_index * ply_thickness
-                z0 = z1 - ply_thickness
+                if outward:  # stacked up from the box top, first ply on the box
+                    z0 = _z(kin.top_wl(bl)) + ply_index * ply_thickness
+                    z1 = z0 + ply_thickness
+                else:
+                    z1 = _z(kin.top_wl(bl)) - ply_index * ply_thickness
+                    z0 = z1 - ply_thickness
             else:
-                z0 = _z(kin.bottom_wl(bl)) + ply_index * ply_thickness
-                z1 = z0 + ply_thickness
+                if outward:  # stacked down from the box bottom
+                    z1 = _z(kin.bottom_wl(bl)) - ply_index * ply_thickness
+                    z0 = z1 - ply_thickness
+                else:
+                    z0 = _z(kin.bottom_wl(bl)) + ply_index * ply_thickness
+                    z1 = z0 + ply_thickness
             return _wire(bl, aft - G.spar_cap_tape_width_in, aft, z0, z1)
 
         solids.append(_loft(half_span, section).val())

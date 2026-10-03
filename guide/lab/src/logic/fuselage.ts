@@ -18,7 +18,7 @@
  *              longerons (the roll-over hangs through an opening in it) and stays so to the end of the chapter (plans-1980:p50).
  */
 import { visibleOps, type GraphLite, type Op } from './graph'
-import { noseArmText } from './kin'
+import { noseArmText, type ControlsKin } from './kin'
 
 export type Subject = 'canard' | 'fuselage'
 export const SUBJECTS: Subject[] = ['canard', 'fuselage']
@@ -26,9 +26,11 @@ export const SUBJECT_KEY = 'longez.subject'
 export const parseSubject = (s: string | null | undefined): Subject => (s === 'fuselage' ? 'fuselage' : 'canard')
 
 /** Chapters 4-9 are the box and the main gear; 12 (the canard installed: F22 drilled, bushings, F28 pins) and 13 (the nose and nose gear) join them. */
-export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13])
+export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17])
 /** The chapters the all-chapters fuselage tour covers: the whole bar (12 and 13 have no film of their own yet). */
 export const FUSE_TOUR_CHAPTERS = [4, 5, 6, 7, 8, 9, 12, 13]
+/** the ch14-17 tour (the spar, firewall, controls and trim): what the Tour button plays when one of their ops is selected */
+export const M25_TOUR_CHAPTERS = [14, 15, 16, 17]
 /** From these chapters on (12, 13) the canard and its elevators are shown installed on the airplane; the nose parts are the chapter 13 ops'. */
 export const CANARD_INSTALLED_CHAPTERS = new Set([12, 13])
 export const NOSE_CHAPTER = 13
@@ -63,6 +65,8 @@ export interface FuseExtras {
   elevators: { parts: Record<string, { node: string; fidelity: Fidelity; label: string }>; hinge_xz: [number, number]; tube_le_x: number; cove: { x_cut: number; slot_gap: number; bl_start: number; bl_end: number; label: string }; installed_label: string; travel: { up_target_deg: number; up_floor_deg: number; down_deg: number }; hang_cg: { dx: number; dz: number; note: string; fitted: boolean }; jig_label: string }
   canard_install: { fs_le: number; z_le: number; z_le_status: string; incidence_deg: number; incidence_note: string }
   nose_gear: NoseGearKinLite
+  /** chapters 14-17 (guide/fuselage_export.py m25_section): the spar, firewall face, controls and trim rows, the cap plies, the control kinematics' inputs */
+  m25?: { parts: Record<string, FusePartRow>; nodes: Record<string, FusePlyRow>; controls: ControlsKin; jig_t: number; cap_visual_ply_in: number; cap_note: string }
 }
 export interface NoseGearKinLite {
   strut_length: number; axle_wl: number; pivot_wl: number; clearance_wl: number; wl_zero: number; crank_turns: number; retract_seconds: number
@@ -351,7 +355,9 @@ export const stationAmount = (fs: number): number => (fs + STATION_CUT.extent) /
 /** The section slider's range in F.S.: the box's (22 to 125.5) for chapters 4-9, forward to the nose tip once a chapter 12-13 op is selected. */
 export const FUSE_CUT_RANGE = { min: 22, max: 125.5 }
 export const NOSE_CUT_RANGE = { min: -6.8, max: 125.5 }
-export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : FUSE_CUT_RANGE)
+/** chapters 14-17: the swept spar's aft face reaches F.S. 129.9 at B.L. 55.5, so the cut goes a little past the box */
+export const M25_CUT_RANGE = { min: 22, max: 130 }
+export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : chapter !== null && chapter >= 14 && chapter <= 17 ? M25_CUT_RANGE : FUSE_CUT_RANGE)
 export const fmtFs = (fs: number): string => `FS ${Math.round(fs * 10) / 10}`
 /** tolerance on a ply's FS extent, as the canard's EPS on B.L. */
 export const FS_EPS = 1e-3

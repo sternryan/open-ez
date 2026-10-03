@@ -9,6 +9,8 @@
  * with the crank, and the crank turns 10.8 for full travel (plans-1980:p73).
  */
 
+import { SPAR_FIT_OP, STICK_OP, slideDuration } from './m25'
+
 // ---- elevators (core/elevators_kin.py) ----
 export interface ElevatorKin {
   hinge_xz: [number, number]
@@ -170,8 +172,38 @@ export const TRAVEL_OPS = ['r30.elev-uptravel-test', 'r30.elev-travel-check']
 export const HANG_OP = 'r30.elev-balance-check'
 export const RIG_OP = 'f13.rig-nose-gear'
 export const KIN_HOLD: Record<string, number> = {
+  [SPAR_FIT_OP]: slideDuration(), // the spar slides in from the side (chapter 14)
+  [STICK_OP]: travelDuration() + 0.8, // the stick sweeps the Roncz travel, the pushrod and elevators with it (chapter 16)
   'r30.elev-uptravel-test': travelDuration() + 0.8,
   'r30.elev-travel-check': travelDuration() + 0.8,
   [HANG_OP]: hangDuration() + 0.8,
   [RIG_OP]: RIG_WAIT + 6 + 1.2, // the crank takes 6 s (layup.json extras nose_gear.retract_seconds)
+}
+
+// ---- pitch control (core/controls_kin.py; Roncz travel only: 15 up, 30 down, 12.5 the floor) ----
+export interface ControlsKin {
+  arm_in: number; lever_in: number; cant_forward_deg: number; cant_inboard_deg: number
+  up_target_deg: number; up_floor_deg: number; down_deg: number
+  pivot_fs: { front: number; rear: number }; tube_bl: number; tube_wl: number; wl_zero: number
+  stop_label: string; stop_size_in: [number, number, number]; note: string
+}
+/** Elevator deflection clipped to [-down, +up] (up positive, as core.controls_kin). */
+export const clampDeflectionDeg = (d: number, k: Pick<ControlsKin, 'up_target_deg' | 'down_deg'>): number => Math.max(-k.down_deg, Math.min(k.up_target_deg, d))
+export const pushrodStrokeIn = (deflDeg: number, armIn: number): number => armIn * Math.sin((deflDeg * Math.PI) / 180)
+/** Stick angle from vertical (degrees, forward positive) for an elevator deflection (up positive). */
+export function stickAngleDeg(deflDeg: number, k: Pick<ControlsKin, 'arm_in' | 'lever_in' | 'cant_forward_deg'>): number {
+  const s = Math.sin((k.cant_forward_deg * Math.PI) / 180) - pushrodStrokeIn(deflDeg, k.arm_in) / k.lever_in
+  if (Math.abs(s) > 1) throw new Error('Stroke exceeds lever capacity.')
+  return (Math.asin(s) * 180) / Math.PI
+}
+/** The stick's direction in the exported frame (x = F.S., y = B.L., z up) at pitch angle `aDeg` and inboard cant `bDeg`. */
+export function stickDir(aDeg: number, bDeg: number): [number, number, number] {
+  const a = (aDeg * Math.PI) / 180, b = (bDeg * Math.PI) / 180
+  return [-Math.sin(a), -Math.cos(a) * Math.sin(b), Math.cos(a) * Math.cos(b)]
+}
+/** The elevator deflection (up positive) the control sits at for a TE-down travel angle, and back. */
+export const deflUpFromDegDown = (degDown: number): number => -degDown
+/** What the stick control's readout says: Roncz numbers only. */
+export function stickText(deflUp: number, k: { up_target_deg: number; up_floor_deg: number; down_deg: number }): string {
+  return travelText(-deflUp, k)
 }

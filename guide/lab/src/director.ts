@@ -3,7 +3,7 @@
 import { tourSteps } from './logic/tour'
 import { barOps, visibleOps } from './logic/graph'
 import { KIN_HOLD } from './logic/kin'
-import { fuseBarOps, FUSE_TOUR_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
+import { fuseBarOps, FUSE_TOUR_CHAPTERS, M25_TOUR_CHAPTERS, BANK_DEG, TURN_GEAR, FLIP_SECONDS, FLIP_DELAY } from './logic/fuselage'
 import { DONE_T, PLAY_ADVANCE_T } from './logic/anim'
 import { LOWER_HOLD, LOWER_SECONDS } from './logic/lower'
 import type { GraphLite } from './logic/graph'
@@ -298,18 +298,20 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 11: 'Roncz elevators', 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installation', 13: 'Nose and nose gear' }
+const FUSE_CHAPTER_NAME: Record<number, string> = { 11: 'Roncz elevators', 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installation', 13: 'Nose and nose gear', 14: 'Centre-section spar', 15: 'Firewall', 16: 'Controls', 17: 'Trim' }
 /** the Roncz elevators' chapter: a canard-subject tour */
 export const ELEVATOR_CHAPTER = 11
 /** the chapters whose tours close on their own last op (the canard and elevators installed, the nose), not the bare finished airplane */
-const CLOSE_ON_LAST_OP = new Set([12, 13])
+const CLOSE_ON_LAST_OP = new Set([12, 13, 14, 15, 16, 17])
 export const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72
 /** The roll-over box spans FS 79.04-83.55 (layup.json); the chapter 8 film ends its cut inside that, at this station. */
 export const FUSE_ROLL_CUT_FS = 80
 /** where each single-chapter film ends its station cut: chapter 6 through the front seat bulkhead, chapter 8 through the roll-over */
-export const FUSE_CUTS: Record<number, number> = { 6: FUSE_CUT_FS, 8: FUSE_ROLL_CUT_FS }
+/** chapter 14 ends on a cut through the installed spar, F.S. 121.7 (the middle of its chord at the centre line) */
+export const FUSE_SPAR_CUT_FS = 121.7
+export const FUSE_CUTS: Record<number, number> = { 6: FUSE_CUT_FS, 8: FUSE_ROLL_CUT_FS, 14: FUSE_SPAR_CUT_FS }
 /** where a film's close shot of its cut is framed, when the default (58 in out, aimed at the box's centre) crowds the part: the roll-over stands up off the top of the box */
 export const FUSE_CUT_VIEW: Record<number, { dist?: number; lift?: number }> = { [FUSE_ROLL_CUT_FS]: { dist: 98, lift: 0.2 } }
 /** Seconds the box takes to turn over after its op is picked, in sim time (the turn waits FLIP_DELAY for the camera, then takes FLIP_SECONDS). */
@@ -322,7 +324,7 @@ const FUSE_SWEEP_FS = 110
 /** Which chapters the fuselage Tour button plays: the selected op's chapter when it is a fuselage op (chapters 4-9), else all of them. */
 export function fuselageTourChapters(graph: GraphLite, variant: string, selectedId: string | null): number[] {
   const cur = fuseBarOps(graph, variant).find((o) => o.id === selectedId)
-  return cur ? [cur.chapter] : [...FUSE_TOUR_CHAPTERS]
+  return cur ? (M25_TOUR_CHAPTERS.includes(cur.chapter) ? [...M25_TOUR_CHAPTERS] : [cur.chapter]) : [...FUSE_TOUR_CHAPTERS]
 }
 
 /**
