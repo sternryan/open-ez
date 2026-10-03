@@ -107,8 +107,7 @@ def get_surrogate_polars(alphas: list[float]) -> list[dict]:
     adapter = OpenVSPAdapter()
     polars = adapter.run_vspaero(alphas)
     return [
-        {"alpha_deg": p.alpha_deg, "cl": p.cl, "cd": p.cd, "cm": p.cm}
-        for p in polars
+        {"alpha_deg": p.alpha_deg, "cl": p.cl, "cd": p.cd, "cm": p.cm} for p in polars
     ]
 
 
@@ -127,9 +126,7 @@ def build_discrepancy_table(
         Structured discrepancy dict with comparison array and summary stats.
     """
     # Align by alpha — build index keyed by rounded alpha
-    surrogate_by_alpha = {
-        round(p["alpha_deg"], 6): p for p in surrogate_points
-    }
+    surrogate_by_alpha = {round(p["alpha_deg"], 6): p for p in surrogate_points}
 
     comparison = []
     alpha_deg_list = []
@@ -191,8 +188,7 @@ def build_discrepancy_table(
             "surrogate_source": "OpenVSPAdapter (lifting-line + Viterna)",
             "alpha_count": len(comparison),
             "note": (
-                "Measure-only. No pass/fail thresholds. "
-                "Phase 5 decides calibration."
+                "Measure-only. No pass/fail thresholds. " "Phase 5 decides calibration."
             ),
         },
         "alpha_deg": alpha_deg_list,

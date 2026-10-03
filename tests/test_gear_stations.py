@@ -1,5 +1,6 @@
 # tests/test_gear_stations.py
 """Chapters 7-9 book geometry (skins, roll-over, belts, step, main gear): provenance and cross-checks."""
+
 import dataclasses
 
 import pytest
@@ -8,19 +9,50 @@ from config.aircraft_config import GEOMETRY_PROVENANCE, GeometricParams, config
 from core.sources import check_citation
 
 NEW_FIELDS = (
-    "fs_spar_aft_face", "bl_gear_datum", "main_axle_fwd_of_spar", "fs_main_axle", "wl_main_axle",
-    "fs_nose_wheel", "wl_nose_wheel", "gear_tip_back_deg", "gear_toe_in_b_minus_a",
+    "fs_spar_aft_face",
+    "bl_gear_datum",
+    "main_axle_fwd_of_spar",
+    "fs_main_axle",
+    "wl_main_axle",
+    "fs_nose_wheel",
+    "wl_nose_wheel",
+    "gear_tip_back_deg",
+    "gear_toe_in_b_minus_a",
     "gear_toe_in_square_in",
-    "skin_third_ply_fs_range", "skin_strip_width", "skin_strip_lengths", "skin_firewall_lap",
-    "skin_bottom_overlap", "skin_ply_angle_deg", "belt_insert_fs_range",
-    "rollover_width", "rollover_base_height", "rollover_shoulder", "rollover_peak_base",
-    "rollover_peak_height", "rollover_notch", "rollover_side_length", "rollover_side_ends",
-    "rollover_back_triangle", "rollover_shoulder_top", "rollover_foam_thickness",
-    "rollover_insert", "rollover_harness_insert_spacing", "rollover_harness_insert_from_end",
-    "rollover_canopy_insert_from_peak", "rollover_map_slot", "rollover_baggage_hole_dia",
-    "belt_front_fwd_of_front_seat_bkhd", "belt_rear_fwd_of_rear_seat_bkhd",
-    "step_size", "step_thickness", "step_min_bend_radius",
-    "gear_jig_block", "gear_tube", "gear_tube_showing", "gear_tab_pads", "gear_extrusion",
+    "skin_third_ply_fs_range",
+    "skin_strip_width",
+    "skin_strip_lengths",
+    "skin_firewall_lap",
+    "skin_bottom_overlap",
+    "skin_ply_angle_deg",
+    "belt_insert_fs_range",
+    "rollover_width",
+    "rollover_base_height",
+    "rollover_shoulder",
+    "rollover_peak_base",
+    "rollover_peak_height",
+    "rollover_notch",
+    "rollover_side_length",
+    "rollover_side_ends",
+    "rollover_back_triangle",
+    "rollover_shoulder_top",
+    "rollover_foam_thickness",
+    "rollover_insert",
+    "rollover_harness_insert_spacing",
+    "rollover_harness_insert_from_end",
+    "rollover_canopy_insert_from_peak",
+    "rollover_map_slot",
+    "rollover_baggage_hole_dia",
+    "belt_front_fwd_of_front_seat_bkhd",
+    "belt_rear_fwd_of_rear_seat_bkhd",
+    "step_size",
+    "step_thickness",
+    "step_min_bend_radius",
+    "gear_jig_block",
+    "gear_tube",
+    "gear_tube_showing",
+    "gear_tab_pads",
+    "gear_extrusion",
 )
 G = config.geometry
 P = GEOMETRY_PROVENANCE
@@ -93,7 +125,9 @@ def test_skin_schedule():  # Review Focus 6
 
 
 def test_rollover_box_adds_up():
-    assert 2 * G.rollover_shoulder + G.rollover_peak_base == pytest.approx(G.rollover_width)
+    assert 2 * G.rollover_shoulder + G.rollover_peak_base == pytest.approx(
+        G.rollover_width
+    )
     assert G.rollover_width == G.front_seat_bkhd_width == 23.0
     assert G.rollover_side_length == 13.0
     assert P["rollover_side_length"]["status"] == "cp-corrected"

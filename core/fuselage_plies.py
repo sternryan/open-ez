@@ -155,7 +155,9 @@ class ClipFace(Face):
         for f in _faces(part_name, build_fuselage()[part_name], self.name):
             out.extend(f.intersect(solid).Faces())
         if not out:
-            raise FusePlyError(f"{part_name}: clip {self.clip[0]} leaves no {self.name} face")
+            raise FusePlyError(
+                f"{part_name}: clip {self.clip[0]} leaves no {self.name} face"
+            )
         return out
 
     def measure(self, part_name: str, part: FusePart) -> tuple[float, float]:
@@ -470,7 +472,9 @@ _BOTTOM_AFT = (
     "the bottom foam behind the rear seat bulkhead is not modelled, so the skin there is not counted; "
     "the 0.5 in lap onto the firewall is not counted"
 )
-_HALF_OVERLAP = G.skin_bottom_overlap / 2  # each skin runs this far past the centre line: 2 in overlap in all
+_HALF_OVERLAP = (
+    G.skin_bottom_overlap / 2
+)  # each skin runs this far past the centre line: 2 in overlap in all
 _STRIP_FS = G.skin_third_ply_fs_range
 _ROW_SKIN = "crossed 30 degrees to the longerons, whole skin"
 _ROW_THIRD = "forward of the front seat bulkhead only, along the longerons"
@@ -546,11 +550,21 @@ SCOPE.update(_skin_place("left"))
 SCOPE.update(
     {
         ("f08.roll-over-inside", "inside faces"): Place(
-            (_t("rollover", RolloverFaces("inside", note="edge faces and joint fillets not counted")),),
+            (
+                _t(
+                    "rollover",
+                    RolloverFaces(
+                        "inside", note="edge faces and joint fillets not counted"
+                    ),
+                ),
+            ),
             (None,),  # p48 does not print an orientation for the BID
             _P48,
         ),
-        ("f08.roll-over-outside", "outside skin, 1 in overlap onto seat bulkhead and sides"): Place(
+        (
+            "f08.roll-over-outside",
+            "outside skin, 1 in overlap onto seat bulkhead and sides",
+        ): Place(
             (
                 _t(
                     "rollover",

@@ -1,4 +1,5 @@
 """Parse cobelu/Long-EZ inline change markers like '{CP27 PC44 MEO}' with their step heading."""
+
 from __future__ import annotations
 
 import re
@@ -6,7 +7,9 @@ from dataclasses import dataclass
 
 # Marker regex: tolerant separators (commas/spaces between parts), class optional
 # Matches {CP1,PC2,MEO} or {CP1 PC2 MEO} or {CP1 PC2}
-MARK = re.compile(r"\{\s*CP\s*(\d+)\s*,?\s*L?PC\s*(\d+)\s*,?\s*([A-Z]{2,4})?\s*\}", re.I)
+MARK = re.compile(
+    r"\{\s*CP\s*(\d+)\s*,?\s*L?PC\s*(\d+)\s*,?\s*([A-Z]{2,4})?\s*\}", re.I
+)
 HEAD = re.compile(r"^#{2,3}\s+(.*\S)\s*$")
 FNAME = re.compile(r"^(\d{1,2})[_-]")
 KNOWN_CLASSES = {"MEO", "MAN", "DES", "OPT", "OBS"}
@@ -43,7 +46,16 @@ def parse_markers(md_text: str, chapter: int) -> list[Marker]:
                     continue  # Skip markers with invalid class codes
                 cls_code = cls_text if cls_text in KNOWN_CLASSES else "?"
                 # Strip markers from heading
-                out.append(Marker(int(m.group(1)), int(m.group(2)), cls_code, chapter, heading, line_num))
+                out.append(
+                    Marker(
+                        int(m.group(1)),
+                        int(m.group(2)),
+                        cls_code,
+                        chapter,
+                        heading,
+                        line_num,
+                    )
+                )
             continue
         for m in MARK.finditer(line):
             cls_text = m.group(3)
@@ -51,5 +63,14 @@ def parse_markers(md_text: str, chapter: int) -> list[Marker]:
             if cls_text and cls_text not in KNOWN_CLASSES:
                 continue  # Skip markers with invalid class codes
             cls_code = cls_text if cls_text in KNOWN_CLASSES else "?"
-            out.append(Marker(int(m.group(1)), int(m.group(2)), cls_code, chapter, heading, line_num))
+            out.append(
+                Marker(
+                    int(m.group(1)),
+                    int(m.group(2)),
+                    cls_code,
+                    chapter,
+                    heading,
+                    line_num,
+                )
+            )
     return out

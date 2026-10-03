@@ -1,18 +1,34 @@
 """Leak scan for a public site build: plans content, private locations and network identifiers must not ship."""
+
 from __future__ import annotations
 
 import re
 import sys
 from pathlib import Path
 
-TEXT = {".html", ".js", ".mjs", ".css", ".json", ".txt", ".svg", ".map", ".md", ".yaml", ".yml", ".webmanifest"}
+TEXT = {
+    ".html",
+    ".js",
+    ".mjs",
+    ".css",
+    ".json",
+    ".txt",
+    ".svg",
+    ".map",
+    ".md",
+    ".yaml",
+    ".yml",
+    ".webmanifest",
+}
 BAD_FILES = {".jpg", ".jpeg", ".tif", ".tiff", ".pdf"}
 PATTERNS = {
     "private/ path": re.compile(r"private/"),
     "cobelu": re.compile(r"cobelu", re.I),
     "plans figure url": re.compile(r"images/\d+/\d+_\d+"),
     "tailnet hostname": re.compile(r"\.ts\.net"),
-    "tailnet IP (100.x)": re.compile(r"(?<![\d.])100\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])"),
+    "tailnet IP (100.x)": re.compile(
+        r"(?<![\d.])100\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])"
+    ),
     "home path": re.compile(r"/Users/"),
     "forbidden legal-status phrase": re.compile(r"public\s+domain", re.I),
     "airsup": re.compile(r"airsup", re.I),
@@ -35,8 +51,10 @@ def leaks(root: Path) -> list[str]:
         if p.suffix.lower() in TEXT:
             t = p.read_text(errors="ignore")
             for name, rx in PATTERNS.items():
-                if (m := rx.search(t)):
-                    out.append(f"{rel}: {name} ({t[max(0, m.start() - 20):m.end() + 20]!r})")
+                if m := rx.search(t):
+                    out.append(
+                        f"{rel}: {name} ({t[max(0, m.start() - 20):m.end() + 20]!r})"
+                    )
     return out
 
 

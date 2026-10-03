@@ -38,7 +38,6 @@ def test_physics_regressions_match_accuracy_report(tmp_path):
 
 def test_accuracy_report_pass_metrics_present(tmp_path):
     """Spot-check: key PASS metrics are present in current computed values."""
-    import json
 
     runner = RegressionRunner(tolerance=0.05)
     passed, current, failures = runner.compare_to_accuracy_report(
@@ -49,7 +48,9 @@ def test_accuracy_report_pass_metrics_present(tmp_path):
     assert "cg_range_fwd_fs" in current, "cg_range_fwd_fs missing from current run"
     assert "cg_range_aft_fs" in current, "cg_range_aft_fs missing from current run"
     assert "stall_speed_ktas" in current, "stall_speed_ktas missing from current run"
-    assert "max_gross_weight_lb" in current, "max_gross_weight_lb missing from current run"
+    assert (
+        "max_gross_weight_lb" in current
+    ), "max_gross_weight_lb missing from current run"
     assert "canard_clmax" in current, "canard_clmax missing from current run"
 
 
@@ -63,6 +64,7 @@ def test_regression_report_written(tmp_path):
     assert report_file.exists(), "Regression report JSON was not written"
 
     import json
+
     with open(report_file) as f:
         report = json.load(f)
     assert "baseline_source" in report

@@ -79,7 +79,9 @@ class TestLiftCurveSlopeWing:
     """Test wing lift curve slope against Anderson's swept-wing correction."""
 
     # Long-EZ wing parameters from config
-    AR_WING = config.geometry.wing_aspect_ratio  # reference-trapezoid AR (ledger row 44)
+    AR_WING = (
+        config.geometry.wing_aspect_ratio
+    )  # reference-trapezoid AR (ledger row 44)
     SWEEP_LE_DEG = config.geometry.wing_sweep_le
     # taper of the SAME trapezoid as AR_WING (gross, centreline chord; ledger C1)
     TAPER_RATIO = config.geometry.wing_tip_chord / config.geometry.wing_centerline_chord
@@ -90,7 +92,10 @@ class TestLiftCurveSlopeWing:
             self.SWEEP_LE_DEG, self.AR_WING, self.TAPER_RATIO
         )
 
-    @pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md rows 36, 47 and 49; a = 4.780/rad vs ceiling 4.6")
+    @pytest.mark.xfail(
+        strict=True,
+        reason="book geometry: see docs/geometry-correction-ledger.md rows 36, 47 and 49; a = 4.780/rad vs ceiling 4.6",
+    )
     def test_anderson_reference_value(self):
         """Verify the Anderson formula gives expected ~4.2/rad for Long-EZ wing."""
         a = _anderson_lift_slope(self.AR_WING, self.sweep_half_chord_deg)
@@ -208,6 +213,6 @@ class TestLiftCurveSlopeCanard:
         ar_canard = (geo.canard_span / 12) ** 2 / geo.canard_area
 
         # Long-EZ canard AR should be roughly 9-12
-        assert 5.0 < ar_canard < 15.0, (
-            f"Canard AR = {ar_canard:.2f} is outside reasonable range [5, 15]"
-        )
+        assert (
+            5.0 < ar_canard < 15.0
+        ), f"Canard AR = {ar_canard:.2f} is outside reasonable range [5, 15]"

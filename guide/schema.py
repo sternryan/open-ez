@@ -1,4 +1,5 @@
 """Step-graph schema for the Long-EZ build guide. Content is YAML in guide/graph/; see the M1 spec §5."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,12 +11,32 @@ VARIANTS = {"gu", "roncz", "both"}
 FIDELITY = {"no-geometry", "unvalidated", "plans-checked", "a-sheet-verified"}
 STATUS = {"verified", "unresolved", "conflict"}
 KIND = {"official", "community"}
-RESERVED = {"components.yaml", "pages.yaml", "annotations.yaml", "loadpaths.yaml", "tours.yaml"}
+RESERVED = {
+    "components.yaml",
+    "pages.yaml",
+    "annotations.yaml",
+    "loadpaths.yaml",
+    "tours.yaml",
+}
 LOADPATH_KINDS = {"bending", "shear", "lift"}
 
 
-OP_KEYS = {"id", "chapter", "title", "summary", "variants", "requires", "components", "geometry_visible", "materials",
-           "sources", "changes", "completion", "inspection", "stub"}
+OP_KEYS = {
+    "id",
+    "chapter",
+    "title",
+    "summary",
+    "variants",
+    "requires",
+    "components",
+    "geometry_visible",
+    "materials",
+    "sources",
+    "changes",
+    "completion",
+    "inspection",
+    "stub",
+}
 CHANGE_KEYS = {"cp", "lpc", "class", "status", "kind", "note", "annotation_pp"}
 MATERIAL_KEYS = {"cloth", "plies", "where"}
 ANNOTATION_KEYS = {"scan_pp", "cp", "lpc", "class", "text", "confirmed"}
@@ -115,7 +136,9 @@ class Graph:
     annotations: list[Annotation] = field(default_factory=list)
     pages: dict[int, str] = field(default_factory=dict)
     loadpaths: list[LoadPath] = field(default_factory=list)
-    tours: dict[str, dict] = field(default_factory=dict)  # op id -> {"target": [x, y, z], "position": [x, y, z]} camera shot
+    tours: dict[str, dict] = field(
+        default_factory=dict
+    )  # op id -> {"target": [x, y, z], "position": [x, y, z]} camera shot
 
 
 def _read(path: Path):
@@ -137,16 +160,29 @@ def _op(d: dict, file_name: str, idx: int) -> Operation:
             try:
                 sources.append(Source(**s))
             except (TypeError, ValueError, AttributeError) as e:
-                raise SchemaError(f"{file_name} entry {idx} ({op_id}): source error: {e}") from e
+                raise SchemaError(
+                    f"{file_name} entry {idx} ({op_id}): source error: {e}"
+                ) from e
 
         changes = []
         for ci, c in enumerate(d.get("changes", [])):
             _extra(c, CHANGE_KEYS, f"{where} change {ci}")
             try:
-                changes.append(Change(cp=c["cp"], lpc=c["lpc"], cls=c["class"], status=c["status"], kind=c["kind"],
-                       note=c.get("note", ""), annotation_pp=c.get("annotation_pp")))
+                changes.append(
+                    Change(
+                        cp=c["cp"],
+                        lpc=c["lpc"],
+                        cls=c["class"],
+                        status=c["status"],
+                        kind=c["kind"],
+                        note=c.get("note", ""),
+                        annotation_pp=c.get("annotation_pp"),
+                    )
+                )
             except (KeyError, TypeError, ValueError, AttributeError) as e:
-                raise SchemaError(f"{file_name} entry {idx} ({op_id}): change error: {e}") from e
+                raise SchemaError(
+                    f"{file_name} entry {idx} ({op_id}): change error: {e}"
+                ) from e
 
         for mi, m in enumerate(d.get("materials", [])):
             _extra(m, MATERIAL_KEYS, f"{where} material {mi}")
@@ -182,7 +218,9 @@ def load_graph(graph_dir: Path) -> Graph:
         for idx, c in enumerate(comp_data):
             _extra(c, COMPONENT_KEYS, f"components.yaml entry {idx}")
             try:
-                g.components[c["id"]] = Component(c["id"], c.get("label", c["id"]), c["fidelity"])
+                g.components[c["id"]] = Component(
+                    c["id"], c.get("label", c["id"]), c["fidelity"]
+                )
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"components.yaml entry {idx}: {e}") from e
     pages = graph_dir / "pages.yaml"
@@ -205,8 +243,16 @@ def load_graph(graph_dir: Path) -> Graph:
             where = f"annotations.yaml entry {idx}"
             _extra(a, ANNOTATION_KEYS, where)
             try:
-                g.annotations.append(Annotation(a["scan_pp"], a["cp"], a["lpc"], a["class"], a.get("text", ""),
-                                                _bool(a, "confirmed", False, where)))
+                g.annotations.append(
+                    Annotation(
+                        a["scan_pp"],
+                        a["cp"],
+                        a["lpc"],
+                        a["class"],
+                        a.get("text", ""),
+                        _bool(a, "confirmed", False, where),
+                    )
+                )
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"{where}: {e}") from e
     lp = graph_dir / "loadpaths.yaml"
@@ -222,7 +268,9 @@ def load_graph(graph_dir: Path) -> Graph:
             if not isinstance(parts, list):
                 raise SchemaError(f"{where}: parts must be a list")
             try:
-                g.loadpaths.append(LoadPath(d["id"], d.get("label", ""), d["kind"], tuple(parts)))
+                g.loadpaths.append(
+                    LoadPath(d["id"], d.get("label", ""), d["kind"], tuple(parts))
+                )
             except (KeyError, TypeError, ValueError, AttributeError) as e:
                 raise SchemaError(f"{where}: {e}") from e
     tp = graph_dir / "tours.yaml"
@@ -237,10 +285,20 @@ def load_graph(graph_dir: Path) -> Graph:
             _extra(shot, SHOT_KEYS, where)
             for k in SHOT_KEYS:
                 v = shot.get(k)
-                if not (isinstance(v, list) and len(v) == 3
-                        and all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in v)):
-                    raise SchemaError(f"{where}: {k} must be a list of 3 numbers, got {v!r}")
-            g.tours[str(op_id)] = {k: [float(x) for x in shot[k]] for k in ("target", "position")}
+                if not (
+                    isinstance(v, list)
+                    and len(v) == 3
+                    and all(
+                        isinstance(x, (int, float)) and not isinstance(x, bool)
+                        for x in v
+                    )
+                ):
+                    raise SchemaError(
+                        f"{where}: {k} must be a list of 3 numbers, got {v!r}"
+                    )
+            g.tours[str(op_id)] = {
+                k: [float(x) for x in shot[k]] for k in ("target", "position")
+            }
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue
@@ -303,7 +361,11 @@ def validate(g: Graph) -> list[str]:
                 errs.append(f"{op.id}: bad change status {ch.status}")
             if ch.kind not in KIND:
                 errs.append(f"{op.id}: bad change kind {ch.kind}")
-            if ch.status == "verified" and ch.kind == "official" and (ch.cp <= 0 or ch.lpc <= 0):
+            if (
+                ch.status == "verified"
+                and ch.kind == "official"
+                and (ch.cp <= 0 or ch.lpc <= 0)
+            ):
                 errs.append(f"{op.id}: verified official change needs cp and lpc")
         # Only non-stub ops need summary, sources, completion
         if op.stub:
@@ -319,7 +381,9 @@ def validate(g: Graph) -> list[str]:
                 errs.append(f"{op.id}: scan_pp {s.scan_pp} not in pages.yaml")
     for a in g.annotations:
         if a.confirmed and (a.cp, a.lpc) not in linked:
-            errs.append(f"annotation scan_pp {a.scan_pp} CP {a.cp} LPC {a.lpc} not linked to any op")
+            errs.append(
+                f"annotation scan_pp {a.scan_pp} CP {a.cp} LPC {a.lpc} not linked to any op"
+            )
     seen_paths: set[str] = set()
     for lp in g.loadpaths:
         if lp.id in seen_paths:
@@ -367,6 +431,10 @@ def authored_texts(g: Graph) -> list[tuple[str, str]]:
         if op.summary:
             out.append((f"{op.id}.summary", op.summary))
         out += [(f"{op.id}.completion[{i}]", t) for i, t in enumerate(op.completion)]
-        out += [(f"{op.id}.changes[{i}].note", c.note) for i, c in enumerate(op.changes) if c.note]
+        out += [
+            (f"{op.id}.changes[{i}].note", c.note)
+            for i, c in enumerate(op.changes)
+            if c.note
+        ]
     out += [(f"loadpath.{lp.id}.label", lp.label) for lp in g.loadpaths if lp.label]
     return out

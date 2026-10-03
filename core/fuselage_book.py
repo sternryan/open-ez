@@ -64,12 +64,22 @@ _SHEET_NOTE = (
 FITTED_CORNER_RADIUS = 0.75  # fitted, not book: the carved-corner radius is only on template A2 (CP27 LPC 50)
 FITTED_CUTOUT_AFT_OF_F28 = 0.5  # fitted, not book: p45 says only "just aft of F28"
 FITTED_BELT_INSERT_WIDTH = 1.5  # fitted, not book: p46 gives the insert 5 in long, not its size across the corner
-FITTED_BELT_PAD = (2.0, 1.0)  # fitted, not book: (x length, y width) of the 1/4 ply insert; p49 prints only the 2 in angle
+FITTED_BELT_PAD = (
+    2.0,
+    1.0,
+)  # fitted, not book: (x length, y width) of the 1/4 ply insert; p49 prints only the 2 in angle
 FITTED_ROLLOVER_SHOULDER_WL = G.side_panel_top_wl  # fitted, not book: p47 view B-B shows the shoulder line level with the top longerons (not to scale)
-FITTED_ROLLOVER_TOP_OUTER_INSET = G.rollover_notch[0]  # fitted, not book: the 6.9 shoulder top's outer edge stands at the front piece's notch inner edge (clear of the longeron)
-FITTED_ROLLOVER_SLOT_CENTRE = (6.6, 1.85)  # fitted, not book: (along the right roof side from its bottom edge, across from its front edge) of the map slot's centre
+FITTED_ROLLOVER_TOP_OUTER_INSET = G.rollover_notch[
+    0
+]  # fitted, not book: the 6.9 shoulder top's outer edge stands at the front piece's notch inner edge (clear of the longeron)
+FITTED_ROLLOVER_SLOT_CENTRE = (
+    6.6,
+    1.85,
+)  # fitted, not book: (along the right roof side from its bottom edge, across from its front edge) of the map slot's centre
 
-CANARD_CUTOUT_FLOOR_WL = 18.9  # book: plans-1980:p45 the cutout's floor and the F22 tab trim line (W.L.)
+CANARD_CUTOUT_FLOOR_WL = (
+    18.9  # book: plans-1980:p45 the cutout's floor and the F22 tab trim line (W.L.)
+)
 
 FIDELITIES = frozenset({"book", "derived", "representational"})
 
@@ -349,7 +359,10 @@ def rear_bkhd_outline() -> list[tuple[float, float]]:
     half_l = G.rear_seat_bkhd_length / 2
     hb, ht = G.rear_seat_bkhd_bottom_width / 2, G.rear_seat_bkhd_top_width / 2
     ny, ns = G.rear_seat_bkhd_notch
-    y_at = lambda s: hb + (ht - hb) * (s + half_l) / (2 * half_l)
+
+    def y_at(s):
+        return hb + (ht - hb) * (s + half_l) / (2 * half_l)
+
     right = [
         (-half_l, hb - ny),
         (-half_l + ns, hb - ny),
@@ -388,7 +401,10 @@ def _rear_plate_outline(h: float) -> list[tuple[float, float]]:
     (extended past both ends), lower corners notched from the bottom end."""
     hb, ht = G.rear_seat_bkhd_bottom_width / 2, G.rear_seat_bkhd_top_width / 2
     ny, ns = G.rear_seat_bkhd_notch
-    y_at = lambda s: hb + (ht - hb) * (s + h) / (2 * h)
+
+    def y_at(s):
+        return hb + (ht - hb) * (s + h) / (2 * h)
+
     right = [
         (-h - _EXT, hb - ny),
         (-h + ns, hb - ny),
@@ -545,7 +561,9 @@ def _rollover_roof_geometry(sgn: int) -> dict[str, Any]:
     A = np.array([xf, sgn * pk, zs])
     B = np.array([xf, 0.0, zs + G.rollover_peak_height])
     D = np.array([xf + d_bot, sgn * G.rollover_back_triangle[0] / 2, zs])
-    C = B + (D - A) * (d_top / d_bot)  # the top end is 3.0 wide, the bottom 4.5, in the plane through A, B, D
+    C = B + (D - A) * (
+        d_top / d_bot
+    )  # the top end is 3.0 wide, the bottom 4.5, in the plane through A, B, D
     n = np.cross(B - A, D - A)
     n /= np.linalg.norm(n)
     if n @ np.array([0.0, sgn, 1.0]) < 0:
@@ -554,8 +572,18 @@ def _rollover_roof_geometry(sgn: int) -> dict[str, Any]:
     plane = cq.Plane(origin=tuple(A), xDir=tuple(xd), normal=tuple(n))
     yd = np.array([plane.yDir.x, plane.yDir.y, plane.yDir.z])
     loc = lambda P: (float((P - A) @ xd), float((P - A) @ yd))  # noqa: E731
-    return {"A": A, "B": B, "C": C, "D": D, "n": n, "xd": xd, "yd": yd, "plane": plane, "loc": loc,
-            "length": float(np.linalg.norm(B - A))}
+    return {
+        "A": A,
+        "B": B,
+        "C": C,
+        "D": D,
+        "n": n,
+        "xd": xd,
+        "yd": yd,
+        "plane": plane,
+        "loc": loc,
+        "length": float(np.linalg.norm(B - A)),
+    }
 
 
 def _rollover_pieces() -> dict[str, Any]:
@@ -571,20 +599,31 @@ def _rollover_pieces() -> dict[str, Any]:
     pk = G.rollover_peak_base / 2
     nw, nh = G.rollover_notch
     if abs(W - G.rollover_shoulder - pk) > 1e-9:
-        raise ValueError("roll-over shoulders and peak base must add up to the width (7.3 + 8.4 + 7.3 = 23)")
+        raise ValueError(
+            "roll-over shoulders and peak base must add up to the width (7.3 + 8.4 + 7.3 = 23)"
+        )
     xf, zs = rollover_front_fs(), _rollover_z_shoulder()
     zb = zs - hb
     d_bot, d_top = max(G.rollover_side_ends), min(G.rollover_side_ends)
     bulk = _seat_bulkheads()[0]
 
     # front piece: base 4 tall carved to the bulkhead, 0.7 x 1.4 notches at the top outer corners, pointed peak
-    r = [(W, zb), (W, zs - nh), (W - nw, zs - nh), (W - nw, zs), (pk, zs), (0.0, zs + ph)]
+    r = [
+        (W, zb),
+        (W, zs - nh),
+        (W - nw, zs - nh),
+        (W - nw, zs),
+        (pk, zs),
+        (0.0, zs + ph),
+    ]
     pts = r + [(-y, z) for y, z in reversed(r[:-1])]
     plate_full = cq.Workplane("YZ", origin=(xf, 0, 0)).polyline(pts).close().extrude(T)
     # Cutting the bulkhead out of the plate leaves a thin strip below it, aft of the bulkhead's back face, that is
     # joined to nothing: the base is "carved to fit" so that strip is dropped and the piece sits on the bulkhead.
     carved = plate_full.cut(bulk)
-    plate = cq.Workplane("XY").add(max(carved.solids().vals(), key=lambda so: so.Volume()))
+    plate = cq.Workplane("XY").add(
+        max(carved.solids().vals(), key=lambda so: so.Volume())
+    )
 
     # shoulder tops: 6.9 across, 2.7 fore-aft, level at the shoulder line; the aft edge is bevelled to the bulkhead
     sw, sd = G.rollover_shoulder_top
@@ -600,16 +639,30 @@ def _rollover_pieces() -> dict[str, Any]:
     for sgn in (1, -1):
         g = _rollover_roof_geometry(sgn)
         loc = g["loc"]
-        panel = cq.Workplane(g["plane"]).polyline([loc(g[k]) for k in "ABCD"]).close().extrude(-T).cut(bulk)
+        panel = (
+            cq.Workplane(g["plane"])
+            .polyline([loc(g[k]) for k in "ABCD"])
+            .close()
+            .extrude(-T)
+            .cut(bulk)
+        )
         roofs[sgn] = (g, panel)
     g_r, roof_r = roofs[1]
     # map slot, right roof only: (along the slope from the bottom edge, across from the front edge) of its centre
     sh, sl = G.rollover_map_slot
     s0, c0 = FITTED_ROLLOVER_SLOT_CENTRE
-    pl_r = g_r["plane"]
+    _pl_r = g_r["plane"]
     slot = (
-        cq.Workplane(cq.Plane(origin=tuple(g_r["A"] + 0.1 * g_r["n"]), xDir=tuple(g_r["xd"]), normal=tuple(g_r["n"])))
-        .center(s0, c0).rect(sl, sh).extrude(-(T + 0.2))
+        cq.Workplane(
+            cq.Plane(
+                origin=tuple(g_r["A"] + 0.1 * g_r["n"]),
+                xDir=tuple(g_r["xd"]),
+                normal=tuple(g_r["n"]),
+            )
+        )
+        .center(s0, c0)
+        .rect(sl, sh)
+        .extrude(-(T + 0.2))
     )
     roof_r_unslotted = roof_r
     roof_r = roof_r.cut(slot)
@@ -618,14 +671,24 @@ def _rollover_pieces() -> dict[str, Any]:
     ix, iy, it = G.rollover_insert
     L = g_r["length"]
     s_hi = L - ci_from
-    (xB, _), (xC, yC) = g_r["loc"](g_r["B"]), g_r["loc"](g_r["C"])
-    (xA, yA), (xD, yD) = g_r["loc"](g_r["A"]), g_r["loc"](g_r["D"])
+    (_xB, _), (_xC, yC) = g_r["loc"](g_r["B"]), g_r["loc"](g_r["C"])
+    (_xA, _yA), (_xD, yD) = g_r["loc"](g_r["A"]), g_r["loc"](g_r["D"])
     t_ = s_hi - ci_len / 2  # slope position of the insert's centre
     y_front = 0.0
-    y_back = yD + (yC - yD) * (t_ / L)  # the back edge's across-position at that height (linear between D and C)
+    y_back = yD + (yC - yD) * (
+        t_ / L
+    )  # the back edge's across-position at that height (linear between D and C)
     canopy = (
-        cq.Workplane(cq.Plane(origin=tuple(g_r["A"] - T * g_r["n"]), xDir=tuple(g_r["xd"]), normal=tuple(g_r["n"])))
-        .center(t_, (y_front + y_back) / 2).rect(ci_len, ix).extrude(it)
+        cq.Workplane(
+            cq.Plane(
+                origin=tuple(g_r["A"] - T * g_r["n"]),
+                xDir=tuple(g_r["xd"]),
+                normal=tuple(g_r["n"]),
+            )
+        )
+        .center(t_, (y_front + y_back) / 2)
+        .rect(ci_len, ix)
+        .extrude(it)
     )
     roof_r = roof_r.cut(canopy)
     roof_l = roofs[-1][1]
@@ -633,7 +696,15 @@ def _rollover_pieces() -> dict[str, Any]:
     sc = W - G.rollover_harness_insert_spacing - ix / 2
     xc = xf + sd / 2
     harness = [
-        _box(xc - iy / 2, xc + iy / 2, sgn * sc - ix / 2, sgn * sc + ix / 2, zs - T, zs - T + it).cut(bulk) for sgn in (1, -1)
+        _box(
+            xc - iy / 2,
+            xc + iy / 2,
+            sgn * sc - ix / 2,
+            sgn * sc + ix / 2,
+            zs - T,
+            zs - T + it,
+        ).cut(bulk)
+        for sgn in (1, -1)
     ]
     tops = (top(-1), top(1))
     tops = tuple(t.cut(h) for t, h in zip(tops, (harness[1], harness[0])))
@@ -645,14 +716,24 @@ def _rollover_pieces() -> dict[str, Any]:
     up = (-math.sin(lean), 0.0, math.cos(lean))
     tplane = cq.Plane(origin=(xf + d_bot, 0, zs), xDir=(0, 1, 0), normal=nrm)
     # in-plane coordinates: x across (y), y along ``up``
-    tri = cq.Workplane(tplane).polyline([(-bt / 2, 0.0), (bt / 2, 0.0), (0.0, slant)]).close().extrude(-T)
+    tri = (
+        cq.Workplane(tplane)
+        .polyline([(-bt / 2, 0.0), (bt / 2, 0.0), (0.0, slant)])
+        .close()
+        .extrude(-T)
+    )
     side = math.hypot(bt / 2, slant)
     r_in = bt * slant / (bt + 2 * side)
     hc = (xf + d_bot - 0.0 + 0.0, 0.0, zs)  # origin of the triangle's plane
     centre = np.array(hc) + r_in * np.array(up)
     hole = (
-        cq.Workplane(cq.Plane(origin=tuple(centre + 1.0 * np.array(nrm)), xDir=(0, 1, 0), normal=nrm))
-        .circle(G.rollover_baggage_hole_dia / 2).extrude(-(T + 2.0))
+        cq.Workplane(
+            cq.Plane(
+                origin=tuple(centre + 1.0 * np.array(nrm)), xDir=(0, 1, 0), normal=nrm
+            )
+        )
+        .circle(G.rollover_baggage_hole_dia / 2)
+        .extrude(-(T + 2.0))
     )
     tri_unholed = tri
     tri = tri.cut(hole)
@@ -660,13 +741,26 @@ def _rollover_pieces() -> dict[str, Any]:
     ins_tops = [h for h in harness]
     ins = ins_tops + [canopy]
     return {
-        "main": main, "triangle": tri, "inserts": ins, "r_in": r_in, "plate": plate, "tops": tops,
-        "roofs": (roof_l, roof_r), "roof_geom": {1: g_r, -1: roofs[-1][0]}, "x_front": xf, "z_shoulder": zs,
-        "slant": slant, "lean_deg": math.degrees(lean), "tri_origin": hc, "tri_up": up, "tri_normal": nrm,
+        "main": main,
+        "triangle": tri,
+        "inserts": ins,
+        "r_in": r_in,
+        "plate": plate,
+        "tops": tops,
+        "roofs": (roof_l, roof_r),
+        "roof_geom": {1: g_r, -1: roofs[-1][0]},
+        "x_front": xf,
+        "z_shoulder": zs,
+        "slant": slant,
+        "lean_deg": math.degrees(lean),
+        "tri_origin": hc,
+        "tri_up": up,
+        "tri_normal": nrm,
         "plate_full": plate_full,
         # the foam the two access holes remove (f08.access-holes cuts them after the outside glass): the lab shows the box
         # before that op with these filled back in
-        "slot_fill": roof_r_unslotted.intersect(slot), "hole_fill": tri_unholed.intersect(hole),
+        "slot_fill": roof_r_unslotted.intersect(slot),
+        "hole_fill": tri_unholed.intersect(hole),
     }
 
 
@@ -674,8 +768,15 @@ def _rollover_pieces() -> dict[str, Any]:
 def _rollover_built() -> dict[str, Any]:
     pc = _rollover_pieces()
     shell = cq.Workplane("XY").add(pc["main"].union(pc["triangle"]).val())
-    inserts = cq.Workplane("XY").add(cq.Compound.makeCompound([b.val() for b in pc["inserts"]]))
-    return {"shell": shell, "inserts": inserts, "pieces": pc, "faces": _rollover_faces(pc)}
+    inserts = cq.Workplane("XY").add(
+        cq.Compound.makeCompound([b.val() for b in pc["inserts"]])
+    )
+    return {
+        "shell": shell,
+        "inserts": inserts,
+        "pieces": pc,
+        "faces": _rollover_faces(pc),
+    }
 
 
 def _rollover_faces(pc: dict[str, Any]) -> dict[str, tuple[float, float]]:
@@ -694,7 +795,11 @@ def _rollover_faces(pc: dict[str, Any]) -> dict[str, tuple[float, float]]:
         acc[kind][1] += area * x
 
     def planar(shape):
-        return [f for f in shape.faces().vals() if f.geomType() == "PLANE" and f.Area() >= 1.0]
+        return [
+            f
+            for f in shape.faces().vals()
+            if f.geomType() == "PLANE" and f.Area() >= 1.0
+        ]
 
     for f in planar(pc["plate"]):
         n = f.normalAt()
@@ -750,7 +855,13 @@ def _canard_cutout(parts: dict[str, FusePart]) -> cq.Workplane:
     zf = z_of_wl(CANARD_CUTOUT_FLOOR_WL)
     region = _box(x0, x1, -20, 20, zf, Z_TOP + 1.0)
     out = None
-    for n in ("side_left", "side_right", "top_longeron_left", "top_longeron_right", "f22"):
+    for n in (
+        "side_left",
+        "side_right",
+        "top_longeron_left",
+        "top_longeron_right",
+        "f22",
+    ):
         piece = parts[n].solid.intersect(region)
         out = piece if out is None else out.union(piece)
     return out
@@ -760,7 +871,9 @@ def _belt_insert(bottom: cq.Workplane) -> cq.Workplane:
     """The bottom foam's lower left corner, replaced by a wood block (the foam it replaces, FS 49.7 to 54.7)."""
     x0, x1 = G.belt_insert_fs_range
     out = half_width(x0) + G.bottom_trim_outboard
-    return bottom.intersect(_box(x0, x1, -out - 1.0, -out + FITTED_BELT_INSERT_WIDTH, -50, 50))
+    return bottom.intersect(
+        _box(x0, x1, -out - 1.0, -out + FITTED_BELT_INSERT_WIDTH, -50, 50)
+    )
 
 
 def belt_attach_stations() -> tuple[float, float]:
@@ -801,7 +914,9 @@ def _step() -> cq.Workplane:
     y_face = -(half_width(fs) + _T)
     z0 = bottom_z(fs)
 
-    def pt(ua: float, ub: float) -> tuple[float, float]:  # (outward distance, up) -> (y, z)
+    def pt(
+        ua: float, ub: float
+    ) -> tuple[float, float]:  # (outward distance, up) -> (y, z)
         return (y_face - ua, z0 + ub)
 
     c45 = math.sqrt(0.5)
@@ -838,15 +953,26 @@ def carved_box() -> dict[str, FusePart]:
     )
     edges = [e for e in low.Edges() if e.geomType() != "LINE" and e.Length() > 1.0]
     out["bottom"] = FusePart(
-        "bottom", cq.Workplane("XY").add(parts["bottom"].solid.val().fillet(r, edges)), "representational",
+        "bottom",
+        cq.Workplane("XY").add(parts["bottom"].solid.val().fillet(r, edges)),
+        "representational",
         note=f"the bottom's two lower outer edges carved to a {r} in radius (fitted, not book: the radius is only on template A2)",
     )
     for n, sgn in (("side_left", -1), ("side_right", 1)):
         s = parts[n].solid
-        top = max((f for f in s.faces().vals() if f.normalAt().z > 0.9), key=lambda f: f.Area())
-        outer = [e for e in top.Edges() if e.Length() > 1.0 and sgn * e.Center().y > sgn * top.Center().y]
+        top = max(
+            (f for f in s.faces().vals() if f.normalAt().z > 0.9),
+            key=lambda f: f.Area(),
+        )
+        outer = [
+            e
+            for e in top.Edges()
+            if e.Length() > 1.0 and sgn * e.Center().y > sgn * top.Center().y
+        ]
         out[n] = FusePart(
-            n, cq.Workplane("XY").add(s.val().fillet(r, outer)), "representational",
+            n,
+            cq.Workplane("XY").add(s.val().fillet(r, outer)),
+            "representational",
             note=f"the top outer edge carved to a {r} in radius (fitted, not book: the radius is only on template A2)",
         )
     return out

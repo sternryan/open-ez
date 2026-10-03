@@ -10,8 +10,6 @@ Run with:
     python3.13 scripts/vspaero_diagnostic.py
 """
 
-import math
-import os
 import sys
 from pathlib import Path
 
@@ -20,6 +18,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 try:
     import openvsp as vsp
+
     print(f"[OK] openvsp imported — version: {vsp.GetVSPVersion()}")
 except ImportError as e:
     print(f"[FAIL] Cannot import openvsp: {e}")
@@ -106,7 +105,9 @@ print(f"[OK] VSP3 file written: {vsp3_path}")
 
 # Option A: Only thin surfaces (SET_NONE for thick body set)
 vspgeom_path_a = vsp3_path.replace(".vsp3", "_optA.vspgeom")
-print(f"\n[INFO] Trying Option A: ExportFile(path, SET_NONE, EXPORT_VSPGEOM, False, THIN_SET)")
+print(
+    "\n[INFO] Trying Option A: ExportFile(path, SET_NONE, EXPORT_VSPGEOM, False, THIN_SET)"
+)
 vsp.ExportFile(vspgeom_path_a, vsp.SET_NONE, vsp.EXPORT_VSPGEOM, False, THIN_SET)
 if Path(vspgeom_path_a).exists():
     size_a = Path(vspgeom_path_a).stat().st_size
@@ -122,7 +123,9 @@ else:
 
 # Option B: SET_ALL for thick set (current approach)
 vspgeom_path_b = vsp3_path.replace(".vsp3", "_optB.vspgeom")
-print(f"\n[INFO] Trying Option B: ExportFile(path, SET_ALL, EXPORT_VSPGEOM, False, THIN_SET)")
+print(
+    "\n[INFO] Trying Option B: ExportFile(path, SET_ALL, EXPORT_VSPGEOM, False, THIN_SET)"
+)
 vsp.ExportFile(vspgeom_path_b, vsp.SET_ALL, vsp.EXPORT_VSPGEOM, False, THIN_SET)
 if Path(vspgeom_path_b).exists():
     size_b = Path(vspgeom_path_b).stat().st_size
@@ -175,8 +178,8 @@ vsp.SetIntAnalysisInput("VSPAEROSweep", "Symmetry", [1])
 
 # Reference geometry: simple rectangular wing
 ref_area = 100.0 * 20.0  # span * chord = 2000 sq in
-ref_span = 200.0          # full span (both sides)
-ref_chord = 20.0          # chord
+ref_span = 200.0  # full span (both sides)
+ref_chord = 20.0  # chord
 vsp.SetDoubleAnalysisInput("VSPAEROSweep", "Sref", [ref_area])
 vsp.SetDoubleAnalysisInput("VSPAEROSweep", "bref", [ref_span])
 vsp.SetDoubleAnalysisInput("VSPAEROSweep", "cref", [ref_chord])
@@ -204,9 +207,9 @@ if results_id:
         if cl_arr and cl_arr[0] != 0.0:
             print(f"[OK] VSPAERO SOLVED: CL={cl_arr[0]:.4f} at alpha=5 deg")
         elif cl_arr:
-            print(f"[WARN] VSPAERO returned CL=0 — solver may not have iterated")
+            print("[WARN] VSPAERO returned CL=0 — solver may not have iterated")
         else:
-            print(f"[FAIL] CL array is empty — VSPAERO did not produce results")
+            print("[FAIL] CL array is empty — VSPAERO did not produce results")
     except Exception as e:
         print(f"[FAIL] GetDoubleResults failed: {e}")
 else:
@@ -219,8 +222,8 @@ print("\n--- Step 10: Check VSPAERO output files ---")
 vsp3_dir = out_dir.resolve()
 vspaero_stdout = list(vsp3_dir.glob("*.vspaero")) + list(vsp3_dir.glob("*.history"))
 print(f"[INFO] VSPAERO output files in {vsp3_dir}:")
-for f in sorted(vsp3_dir.iterdir()):
-    print(f"       {f.name} ({f.stat().st_size} bytes)")
+for output_path in sorted(vsp3_dir.iterdir()):
+    print(f"       {output_path.name} ({output_path.stat().st_size} bytes)")
 
 # Check for .history file (indicates iterations ran)
 history_files = list(vsp3_dir.glob("*.history"))

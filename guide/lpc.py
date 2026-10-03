@@ -4,6 +4,7 @@ Format observed in CPs_1_to_82_Sections.txt:  'LPC #7, MEO, Back cover of plans.
 description lines until a blank line or the next entry. Attribution = nearest preceding
 'THE CANARD PUSHER NO. N' header.
 """
+
 from __future__ import annotations
 
 import re
@@ -32,12 +33,13 @@ def _extract_cls_and_ref(rest: str) -> tuple[str, str]:
     """
     rest = rest.strip()
     # Try to match: 2-4 uppercase letters followed by whitespace or separator
-    m = re.match(r'^([A-Z]{2,4})(?:[\s:,.\-]|$)(.*)$', rest)
+    m = re.match(r"^([A-Z]{2,4})(?:[\s:,.\-]|$)(.*)$", rest)
     if m:
         word = m.group(1)
         if word in KNOWN_CLASSES:
             return word, m.group(2).strip()
     return "?", rest
+
 
 OWNER = re.compile(r"owner[\u2019']?s?[\u2019']?\s+manual", re.I)
 BACK_COVER = re.compile(r"back\s+cover", re.I)
@@ -47,7 +49,12 @@ def _has_location_cue(text: str) -> bool:
     """Check if text contains a location cue: page reference, section, back cover, or owner manual."""
     if not text:
         return False
-    return bool(PAGE.search(text) or SECTION.search(text) or BACK_COVER.search(text) or OWNER.search(text))
+    return bool(
+        PAGE.search(text)
+        or SECTION.search(text)
+        or BACK_COVER.search(text)
+        or OWNER.search(text)
+    )
 
 
 def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
@@ -64,8 +71,12 @@ def _page(ref: str, next_line: str = "") -> tuple[str | None, int | None]:
     # Only when the entry line has no cue at all, or its only cue is "Section I".
     ref_secs = {m.group(1) for m in SECTION.finditer(ref)}
     fallback_ok = not _has_location_cue(ref) or (
-        ref_secs == {"I"} and not (PAGE.search(ref) or BACK_COVER.search(ref) or OWNER.search(ref)))
-    page_m = PAGE.search(loc) or (PAGE.search(next_line) if next_line and fallback_ok else None)
+        ref_secs == {"I"}
+        and not (PAGE.search(ref) or BACK_COVER.search(ref) or OWNER.search(ref))
+    )
+    page_m = PAGE.search(loc) or (
+        PAGE.search(next_line) if next_line and fallback_ok else None
+    )
     sections = {m.group(1) for m in SECTION.finditer(loc)}
     no_chapter = bool(OWNER.search(loc)) or any(x != "I" for x in sections)
 
@@ -87,11 +98,22 @@ def parse_lpcs(text: str) -> list[PlansChange]:
             # Entry acceptance: must have known class OR location cue
             has_known_class = cur["cls"] in KNOWN_CLASSES
             next_line = cur["lines"][0] if cur["lines"] else ""
-            has_location_cue = _has_location_cue(cur["ref"]) or _has_location_cue(next_line)
+            has_location_cue = _has_location_cue(cur["ref"]) or _has_location_cue(
+                next_line
+            )
             if not (has_known_class or has_location_cue):
                 return  # Reject prose lines
             page, chapter = _page(cur["ref"], next_line)
-            out.append(PlansChange(cur["lpc"], cur["cls"], page, chapter, cp_of_cur, " ".join(cur["lines"]).strip()))
+            out.append(
+                PlansChange(
+                    cur["lpc"],
+                    cur["cls"],
+                    page,
+                    chapter,
+                    cp_of_cur,
+                    " ".join(cur["lines"]).strip(),
+                )
+            )
 
     cp_of_cur: int | None = None
     for line in text.splitlines():

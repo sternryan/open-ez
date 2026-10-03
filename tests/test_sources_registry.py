@@ -1,4 +1,5 @@
 """The sources registry is the only thing a citation may point at."""
+
 import pytest
 
 from core.sources import check_citation, load_registry, parse_citation

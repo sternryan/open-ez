@@ -3,6 +3,7 @@
 Output goes under $LONGEZ_SOURCE_CACHE and is never committed. Only counts are printed.
 Env: LONGEZ_SOURCE_CACHE, LONGEZ_COBELU_DIR, LONGEZ_CP_SECTIONS.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -58,7 +59,9 @@ def fetch_om(cache: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
     for num, body in pages.items():
         (out / f"p{_pad(num)}.txt").write_text(body, encoding="utf-8")
-    print(f"om-1980: {len(doc)} pdf pages, {len(pages)} with printed number, {len(doc) - len(pages)} without")
+    print(
+        f"om-1980: {len(doc)} pdf pages, {len(pages)} with printed number, {len(doc) - len(pages)} without"
+    )
 
 
 def _cp_date(issue: int) -> str:
@@ -88,7 +91,12 @@ def fetch_cp(cache: Path, issue: int) -> None:
         for i, page in enumerate(doc, start=1):
             png = Path(tmp) / f"p{i}.png"
             page.get_pixmap(dpi=300).save(png)
-            res = subprocess.run(["tesseract", str(png), "stdout"], capture_output=True, text=True, check=True)
+            res = subprocess.run(
+                ["tesseract", str(png), "stdout"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
             (out / f"p{_pad(i)}.txt").write_text(res.stdout, encoding="utf-8")
             total += len(res.stdout)
     print(f"cp-{issue}: {len(doc)} pages, {total} chars")

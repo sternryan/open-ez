@@ -2,12 +2,15 @@
 import json
 from pathlib import Path
 
-import pytest
 
 from core.reference import truth_airfoil, truth_specs
 from core.sources import check_citation
 
-REF = json.loads((Path(__file__).resolve().parents[1] / "data/validation/reference_data.json").read_text())
+REF = json.loads(
+    (
+        Path(__file__).resolve().parents[1] / "data/validation/reference_data.json"
+    ).read_text()
+)
 
 
 def test_every_spec_has_an_audit_status():
@@ -20,8 +23,12 @@ def test_every_spec_has_an_audit_status():
 
 
 def test_truth_excludes_unverified():  # Review Focus 2
-    fake = {"aircraft_specs": {"a": {"status": "confirmed", "cite": "om-1980:p3", "value": 1},
-                               "b": {"status": "unverified", "value": 2}}}
+    fake = {
+        "aircraft_specs": {
+            "a": {"status": "confirmed", "cite": "om-1980:p3", "value": 1},
+            "b": {"status": "unverified", "value": 2},
+        }
+    }
     assert set(truth_specs(fake)) == {"a"}
 
 
@@ -60,9 +67,15 @@ def test_every_airfoil_value_has_an_audit_status():
 
 
 def test_truth_airfoil_excludes_unverified():
-    fake = {"airfoil_data": {"x": {"description": "d",
-                                   "cl_max": {"status": "confirmed", "cite": "om-1980:p3", "value": 1},
-                                   "cd_min": {"status": "unverified", "value": 2}}}}
+    fake = {
+        "airfoil_data": {
+            "x": {
+                "description": "d",
+                "cl_max": {"status": "confirmed", "cite": "om-1980:p3", "value": 1},
+                "cd_min": {"status": "unverified", "value": 2},
+            }
+        }
+    }
     assert set(truth_airfoil(fake)["x"]) == {"cl_max"}
     assert all(v == {} for v in truth_airfoil(REF).values())
 

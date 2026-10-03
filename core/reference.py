@@ -1,4 +1,5 @@
 """Reference values the model may treat as truth: confirmed or derived entries only."""
+
 TRUTH = {"confirmed", "derived"}
 
 

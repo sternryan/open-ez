@@ -109,7 +109,9 @@ class BeamFEAAdapter:
         Returns both cap-only legacy results (for backward compatibility with
         RegressionRunner) and D-box primary results with composite failure checks.
         """
-        half_span = config.geometry.wing_panel_span  # cantilever length, root BL to tip BL
+        half_span = (
+            config.geometry.wing_panel_span
+        )  # cantilever length, root BL to tip BL
         load = 450.0  # lbf total for gust + maneuver reserve
 
         # --- Existing cap-only results (KEEP for backward compat) ---
@@ -270,7 +272,9 @@ class BucklingAnalyzer:
         # Estimate bending stress: sigma = M*c/I where M from distributed load
         # For a representative wing panel under g-load
         gross_weight_lbf = config.flight_condition.gross_weight_lb
-        half_span_in = config.geometry.wing_panel_span  # panel length, root BL to tip BL
+        half_span_in = (
+            config.geometry.wing_panel_span
+        )  # panel length, root BL to tip BL
         t = self.skin_thickness_in
         b = self.panel_width_in
 
@@ -697,7 +701,9 @@ class DBoxSection:
         EI_skins = 2 * E_bid * (skin_w * skin_t**3 / 12 + skin_w * skin_t * skin_d**2)
 
         # Shear web contribution (single web at spar, centered)
-        web_bid_t = self.dbox_web_bid_plies * mat.bid_ply_thickness * 2  # both face sheets
+        web_bid_t = (
+            self.dbox_web_bid_plies * mat.bid_ply_thickness * 2
+        )  # both face sheets
         web_foam_t = self.dbox_web_foam_thickness_in
         web_total_t = web_bid_t + web_foam_t
         # Use BID modulus for face sheets (foam modulus negligible)
@@ -813,9 +819,7 @@ class DBoxBeamAdapter:
         # Use a fine grid for numerical integration
         n_fine = max(201, n * 10)
         y_fine = np.linspace(0, L, n_fine)
-        q_fine = (4 * P) / (math.pi * L) * np.sqrt(
-            np.maximum(1 - (y_fine / L) ** 2, 0)
-        )
+        q_fine = (4 * P) / (math.pi * L) * np.sqrt(np.maximum(1 - (y_fine / L) ** 2, 0))
 
         # Compute M(y) at each fine grid point
         M_fine = np.zeros(n_fine)
@@ -885,7 +889,7 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
 
     # --- 1. Spar cap Tsai-Wu (UNI glass) ---
     cap_t = root_section.spar_cap_plies * mat.uni_ply_thickness
-    cap_w = mat.spar_cap_width
+    _cap_w = mat.spar_cap_width
     # Spar cap stress: sigma = M * c / I_total, but for cap specifically
     # use the bending stress in the cap fiber: sigma_cap = E_uni * kappa * d_cap
     EI_total = root_section.ei_bending
@@ -898,19 +902,19 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
     F1c = UNI_GLASS_PROPERTIES["F1c"]
     F2t = UNI_GLASS_PROPERTIES["F2t"]
     F2c = UNI_GLASS_PROPERTIES["F2c"]
-    F6 = UNI_GLASS_PROPERTIES["F6"]
+    _F6 = UNI_GLASS_PROPERTIES["F6"]
 
     f1 = 1.0 / F1t - 1.0 / F1c
     f11 = 1.0 / (F1t * F1c)
-    f2 = 1.0 / F2t - 1.0 / F2c
+    _f2 = 1.0 / F2t - 1.0 / F2c
     f22 = 1.0 / (F2t * F2c)
-    f12 = -0.5 * math.sqrt(f11 * f22)
+    _f12 = -0.5 * math.sqrt(f11 * f22)
 
     F_cap = f1 * sigma_cap + f11 * sigma_cap**2
     cap_margin = 1.0 - F_cap
 
     # --- 2. D-box skin Tsai-Wu (BID glass) ---
-    skin_t = root_section.dbox_skin_plies * mat.bid_ply_thickness
+    _skin_t = root_section.dbox_skin_plies * mat.bid_ply_thickness
     sigma_skin = BID_GLASS_PROPERTIES["E1"] * kappa * (d / 2)
 
     F1t_bid = BID_GLASS_PROPERTIES["F1t"]
@@ -923,7 +927,9 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
     # --- 3. Web shear check (BID face sheets) ---
     # Shear at root: V = total_load (worst case)
     V = total_load_lbf
-    web_bid_t = root_section.dbox_web_bid_plies * mat.bid_ply_thickness * 2  # both faces
+    web_bid_t = (
+        root_section.dbox_web_bid_plies * mat.bid_ply_thickness * 2
+    )  # both faces
     tau_web = V / (web_bid_t * d) if (web_bid_t * d) > 0 else float("inf")
     F6_bid = BID_GLASS_PROPERTIES["F6"]
     web_margin = (F6_bid / tau_web) - 1.0 if tau_web > 0 else float("inf")
@@ -934,7 +940,11 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
     # sigma_foam = E_foam * kappa * (d/2)
     # E_foam for styrofoam_blue ~ 1,200 psi (very low vs glass)
     # This is typically very small for foam cores in sandwich beams.
-    foam_E = {"styrofoam_blue": 1200.0, "urethane_2lb": 3500.0, "divinycell_h45": 6500.0}
+    foam_E = {
+        "styrofoam_blue": 1200.0,
+        "urethane_2lb": 3500.0,
+        "divinycell_h45": 6500.0,
+    }
     foam_key_e = config.materials.wing_core_foam.value
     E_foam = foam_E.get(foam_key_e, 1200.0)
     sigma_foam = E_foam * kappa * (d / 2)
@@ -1070,7 +1080,9 @@ class FlutterEstimator:
 
         # Wing mass per unit length
         wing_weight_lb = config.structural_weights.wing_weight_lb
-        half_span_in = config.geometry.wing_panel_span  # per-panel length (mass spread over both panels)
+        half_span_in = (
+            config.geometry.wing_panel_span
+        )  # per-panel length (mass spread over both panels)
         g = 386.1  # in/s^2
         mu = wing_weight_lb / g / (2.0 * half_span_in)
 
@@ -1089,7 +1101,9 @@ class FlutterEstimator:
         # Estimate polar mass moment per unit length
         # I_theta ~ mu * c^2 / 12  (thin plate approximation)
         wing_weight_lb = config.structural_weights.wing_weight_lb
-        half_span_in = config.geometry.wing_panel_span  # per-panel length (mass spread over both panels)
+        half_span_in = (
+            config.geometry.wing_panel_span
+        )  # per-panel length (mass spread over both panels)
         g = 386.1  # in/s^2
         mu = wing_weight_lb / g / (2.0 * half_span_in)
         I_theta = mu * self.chord_in**2 / 12.0

@@ -8,7 +8,6 @@ Provides parametric geometry mapping and analysis execution.
 
 import json
 import logging
-import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -125,7 +124,9 @@ class VSPIntegration:
             return self._run_surrogate_sweep(alpha_range)
 
     @staticmethod
-    def _parse_vspaero_polar(polar_path: Path, n_pts: int) -> Tuple[List[float], List[float], List[float], List[float]]:
+    def _parse_vspaero_polar(
+        polar_path: Path, n_pts: int
+    ) -> Tuple[List[float], List[float], List[float], List[float]]:
         """
         Parse a VSPAERO .polar file and extract AoA, CLtot, CDtot, CMytot columns.
 
@@ -239,7 +240,9 @@ class VSPIntegration:
         vsp.SetParmVal(canard_id, "Sweep", "XSec_1", geom.canard_sweep_le)
         vsp.SetParmVal(canard_id, "X_Rel_Location", "XForm", geom.canard_le_fs)
         vsp.SetParmVal(canard_id, "Z_Rel_Location", "XForm", geom.canard_le_wl)
-        vsp.SetParmVal(canard_id, "Sym_Planar_Flag", "Sym", NO_SYM_FLAG)  # Half-span only
+        vsp.SetParmVal(
+            canard_id, "Sym_Planar_Flag", "Sym", NO_SYM_FLAG
+        )  # Half-span only
 
         # Note: Winglets and fuselage are intentionally omitted from the VLM model.
         # VLM (vortex lattice method) models lifting surfaces only. Fuselage exclusion
@@ -271,7 +274,11 @@ class VSPIntegration:
         #     The VSPGEOM filename must match the VSP3 base name exactly.
         vspgeom_path = vsp3_path.replace(".vsp3", ".vspgeom")
         vsp.ExportFile(vspgeom_path, vsp.SET_NONE, vsp.EXPORT_VSPGEOM, False, THIN_SET)
-        logger.info("VSPGEOM exported to %s (%d bytes)", vspgeom_path, Path(vspgeom_path).stat().st_size)
+        logger.info(
+            "VSPGEOM exported to %s (%d bytes)",
+            vspgeom_path,
+            Path(vspgeom_path).stat().st_size,
+        )
 
         # Set reference wing for VSPAERO Sref/bref/cref
         vsp.SetVSPAERORefWingID(wing_id)
@@ -308,7 +315,9 @@ class VSPIntegration:
         #    in OpenVSP 3.48.2 VSPGEOM-mode VLM analysis)
         polar_file_path = Path(vsp3_path.replace(".vsp3", ".polar"))
         logger.info("Parsing VSPAERO polars from %s", polar_file_path)
-        alphas, cl_arr, cd_arr, cm_arr = self._parse_vspaero_polar(polar_file_path, n_pts)
+        alphas, cl_arr, cd_arr, cm_arr = self._parse_vspaero_polar(
+            polar_file_path, n_pts
+        )
 
         if not alphas:
             raise RuntimeError(
@@ -317,7 +326,9 @@ class VSPIntegration:
 
         logger.info(
             "VSPAERO solved: %d points, CL range [%.3f, %.3f]",
-            len(alphas), min(cl_arr), max(cl_arr),
+            len(alphas),
+            min(cl_arr),
+            max(cl_arr),
         )
 
         points = [
@@ -343,7 +354,9 @@ class VSPIntegration:
             "points": points,
         }
 
-        out_path = Path(polar_output) if polar_output is not None else _NATIVE_POLARS_PATH
+        out_path = (
+            Path(polar_output) if polar_output is not None else _NATIVE_POLARS_PATH
+        )
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w") as f:
             json.dump(output_data, f, indent=2)
@@ -381,6 +394,7 @@ class VSPIntegration:
         ]
         # Include is_stable for backward compatibility with existing consumers
         from .analysis import physics
+
         return {
             "mode": "surrogate",
             "source": "openvsp_adapter",

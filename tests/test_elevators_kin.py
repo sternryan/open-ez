@@ -20,7 +20,10 @@ def test_foam_spans_mirror_and_tube_span_crosses():
     assert ek.tube_span("right") == pytest.approx((9.3, 65.0))
     assert ek.tube_span("left") == pytest.approx((-65.0, 7.7))
     # foam spans are the same length on both sides (55.7); the left TUBE is the 72.7 in length
-    for side, length in (("right", G.elevator_length_right_in), ("left", G.elevator_length_right_in)):
+    for side, length in (
+        ("right", G.elevator_length_right_in),
+        ("left", G.elevator_length_right_in),
+    ):
         lo, hi = ek.elevator_span(side)
         assert hi - lo == pytest.approx(length)
     lo, hi = ek.tube_span("left")
