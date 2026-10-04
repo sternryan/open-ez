@@ -1,4 +1,4 @@
-VERDICT: FAIL (bounded, round 1)
+VERDICT: PASS WITH NITS (round 2); round 1 FAIL (bounded)
 
 # Block 2 M2.8 visual review (chapters 21 to 23), Opus captain
 
@@ -37,3 +37,10 @@ Reviewed branch m28 at 05f03d8, from crew B's WebKit 1180x820 shots of all 23 f2
   big.
 - `f22.microswitches` and `f22.panel-wiring` read through layers of striping. They are acceptable.
 - The left wingtip sits beyond the shop wall (a room-size limit from M2.7).
+
+## Round 2 (captain, after crew B 6e188ba)
+- `f22.antennas`: both nav antenna strips on the canard with F22/F28 and the fuselage behind. Pass.
+- `f22.wing-wiring`: the right wing from above with the green position light at the tip. Pass.
+- `f23.root-rib`: both wing-root metal ribs labelled against the strake and wing roots, aft-left. Pass.
+- `f21.vent-screen`: closer, with the vent line and both screens coloured and labelled, but the striped tank wall still fills
+  the frame; the parts are small by nature (a tube and a screen). Pass with nit.
