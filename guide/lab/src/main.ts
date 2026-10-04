@@ -29,6 +29,7 @@ import { FuselageBay } from './fuselageBay'
 import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
 import { AILERON_OP, RUDDER_OP, aileronProgress, rudderProgress, clampAileronDeg, clampRudderDeg, wingKin, wingRow, aileronText, rudderText, aileronShort, rudderShort, type WingData } from './logic/wing'
 import { m28Kin, m28Row, type M28Data } from './logic/strake'
+import { m29Kin, m29Row, type M29Data } from './logic/finish'
 import type { FusePartRow } from './logic/fuselage'
 import { HINGE_OP, CUT_OP, liftProgress, openProgress, clampOpenDeg, canopyKin, canopyRow, openText, openShort, type CanopyData } from './logic/canopy'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
@@ -144,6 +145,8 @@ interface LabHook {
   /** chapters 19-20: the aileron (degrees up) and the rudder (degrees, trailing edge outboard positive) now, whether a person has set them, their readouts, whether their controls show, and the winglet's A, B and C lines shown */
   /** chapter 21: the strake jig table (a fitted shape under the strake) is drawn */
   strakeTable(): boolean
+  /** chapter 25: the finish stage (fill, primer, paint, or null: bare) of every finished mesh (the airframe's skins, the canopy-less airplane's covers) for the selected op */
+  finish(): Record<string, string | null>
   wing(): { aileronDeg: number; rudderDeg: number; aileronManual: boolean; rudderManual: boolean; aileronText: string; rudderText: string; aileronShown: boolean; rudderShown: boolean; abc: boolean } | null
   setAileron(deg: number): void; setRudder(deg: number): void
   /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
@@ -163,7 +166,7 @@ declare global { interface Window { __lab?: LabHook } }
 
 const hook: LabHook = {
   ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0, pixels: 0 }), advance: () => {},
-  touring: () => false, tourIndex: () => -1, strakeTable: () => false,
+  touring: () => false, tourIndex: () => -1, strakeTable: () => false, finish: () => ({}),
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
@@ -528,7 +531,7 @@ async function boot() {
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
     // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) and the canopy (chapter 18, "extras".m26) join them the same way, the cap and frame plies among the box's plies
-    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}), ...(fuseRaw.extras?.m27?.parts ?? {}), ...((fuseRaw.extras?.m28?.parts ?? {}) as unknown as Record<string, FusePartRow>) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}), ...(fuseRaw.extras?.m27?.nodes ?? {}) } } : null
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}), ...(fuseRaw.extras?.m27?.parts ?? {}), ...((fuseRaw.extras?.m28?.parts ?? {}) as unknown as Record<string, FusePartRow>), ...((fuseRaw.extras?.m29?.parts ?? {}) as unknown as Record<string, FusePartRow>) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}), ...(fuseRaw.extras?.m27?.nodes ?? {}) } } : null
     // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
     const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
@@ -867,6 +870,10 @@ async function boot() {
         const k = m28Kin(selected, M28, graph.ops.find((o) => o.id === selected)?.materials ?? [])
         if (k) return k
       }
+      if (subject === 'fuselage' && bay && M29) {
+        const k = m29Kin(selected, M29, graph.ops.find((o) => o.id === selected)?.materials ?? [])
+        if (k) return k
+      }
       if (subject === 'fuselage' && bay && CTL && selected === STICK_OP) {
         return { label: 'Pitch stick and elevators', value: stickText(stickNow(), CTL), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
       }
@@ -892,6 +899,7 @@ async function boot() {
     // chapter 18: the canopy lifts off at the cut op (a sim-time animation) and swings open on the hinge op; a person's slider takes the opening over
     const CANOPY: CanopyData | null = fuseRaw?.extras?.m26?.canopy ?? null
     const M28: M28Data | null = fuseRaw?.extras?.m28 ?? null
+    const M29: M29Data | null = fuseRaw?.extras?.m29 ?? null
     let canopyManual: number | null = null
     const liftNow = (): number => (selected === CUT_OP ? liftProgress(opT) : 1)
     const canopyNow = (): number => (!CANOPY || selected !== HINGE_OP ? 0 : clampOpenDeg(canopyManual ?? openProgress(opT) * CANOPY.hinge.max_open_deg, CANOPY.hinge.max_open_deg))
@@ -1161,7 +1169,7 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
-      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order))
+      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order) ?? m29Row(M29, selected, graph.order))
       updateKin()
     }
     const updateReadout = () => {
@@ -1274,7 +1282,7 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
-    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(chapterOf(selected))
+    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
@@ -1727,7 +1735,7 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.ground = () => groundRow(ledger)
-    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order)
+    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order) ?? m29Row(M29, selected, graph.order)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
     hook.gearMarks = () => {
@@ -1756,6 +1764,7 @@ async function boot() {
     hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.strakeTable = () => !!bay && bay.strakeTable.visible
+    hook.finish = () => (bay ? Object.fromEntries(bay.finished) : {})
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected

@@ -268,8 +268,32 @@ export const M28_VIEWS: Record<string, FuseView> = {
   'f23.root-rib': strakeAt(137, -23, 18, 84, -16, -38),
 }
 
+/**
+ * Chapters 24 to 26, the covers and consoles, the finish, the upholstery. The airplane stands on its gear and the cover ops frame the new part in its
+ * surroundings (the aft cover from under the tail, the consoles and thigh support from above and the room side, the gap seal at the left wing root);
+ * the finish ops frame the whole airplane from the room side and a little above, so the white upper wing and canard and the grey fuselage read together.
+ */
+const finAt = (fs: number, bl: number, wl: number, dist: number, el: number, az: number, o: Partial<FuseView> = {}): FuseView => ({ focus: at(fs, wl, bl), dist, el, az, ...o })
+const WHOLE = (o: Partial<FuseView> = {}): FuseView => finAt(60, 0, 16, 200, 25, 35, o)
+export const M29_VIEWS: Record<string, FuseView> = {
+  // the eye stays inside the workshop (the rig clamps it to the room): low and aft of the tail for the cover under it, over the cockpit wall for the consoles, from the nose end and above for the seats
+  'f24.aft-cover': finAt(116, 0, 0, 125, -8, 230),
+  'f24.console-lc1': finAt(54, -9, 10, 60, 52, 185),
+  'f24.consoles-left': finAt(56, -9, 11, 70, 55, 180),
+  'f24.thigh-support': finAt(46, 0, 8, 60, 55, 200),
+  'f24.canard-cover': finAt(25, 0, 14, 60, 50, 120),
+  'f24.gap-seal': finAt(116, -23, 14, 90, 55, 10),
+  'f25.inspect-repair': WHOLE(),
+  'f25.coarse-fill': WHOLE(),
+  'f25.feather-fill': WHOLE(),
+  'f25.primer': WHOLE(),
+  'f25.paint-seals': WHOLE(),
+  'f26.cushions-headrests': finAt(85, 0, 10, 100, 70, 90),
+  'f26.suitcases': finAt(85, 0, 10, 100, 70, 90),
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? M27_VIEWS[opId] ?? M28_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? M27_VIEWS[opId] ?? M28_VIEWS[opId] ?? M29_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {

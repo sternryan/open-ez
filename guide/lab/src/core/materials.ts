@@ -283,6 +283,8 @@ export function surf(o: SurfOpts): THREE.MeshStandardMaterial {
     uTintC: { value: new THREE.Color((o.tint?.c ?? 0) as THREE.ColorRepresentation) },
     uTintRange: { value: new THREE.Vector3(o.tint?.y0 ?? 0, o.tint?.y1 ?? 1, o.tint?.strength ?? 0) },
     uNoise3D: NOISE3D,
+    // the finish layer (chapter 25): rgb = the coat's colour, w = how much of it covers the surface (0 = none, the part's own look)
+    uFin: { value: new THREE.Vector4(0, 0, 0, 0) },
   }
   const hk = o.hooks ?? {}
   if (hk.uniforms) Object.assign(u, hk.uniforms)
@@ -317,6 +319,7 @@ ${GLSL_BUMP}
 uniform vec3 uCapColor; uniform float uCapRough; uniform float uCapMetal;
 uniform vec4 uDetail; uniform vec2 uLayers; uniform vec2 uRibs; uniform float uStreaks;
 uniform vec3 uTintA; uniform vec3 uTintB; uniform vec3 uTintC; uniform vec3 uTintRange;
+uniform vec4 uFin;
 ${hk.pars ?? ''}
 `,
     )
@@ -368,6 +371,7 @@ ${hk.surface ?? ''}
   diffuseColor.rgb *= 1.0 - uStreaks * smoothstep(0.45, 0.8, surfN1);
 #endif
 ${hk.color ?? ''}
+if (!cutCap && uFin.w > 0.0) diffuseColor.rgb = mix(diffuseColor.rgb, uFin.rgb * (0.95 + 0.1 * surfN1), uFin.w);
 if (cutCap) diffuseColor.rgb = uCapColor;
 ${hk.capColor ?? ''}
 if (coveCap) {
@@ -385,6 +389,7 @@ if (coveCap) {
   roughnessFactor = clamp(roughnessFactor * (1.0 + (surfN2 - 0.5) * uDetail.y * 2.0), 0.03, 1.0);
 #endif
 ${hk.rough ?? ''}
+if (!cutCap && uFin.w > 0.0) roughnessFactor = mix(roughnessFactor, 0.55, uFin.w);
 if (cutCap) {
   roughnessFactor = uCapRough + (n3(cutHit * 9.0) - 0.5) * 0.08;
   metalnessFactor = uCapMetal;

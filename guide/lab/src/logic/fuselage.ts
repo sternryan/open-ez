@@ -22,6 +22,7 @@ import { noseArmText, type ControlsKin } from './kin'
 import type { CanopyData } from './canopy'
 import type { WingData } from './wing'
 import type { M28Data } from './strake'
+import type { M29Data } from './finish'
 
 export type Subject = 'canard' | 'fuselage'
 export const SUBJECTS: Subject[] = ['canard', 'fuselage']
@@ -29,7 +30,7 @@ export const SUBJECT_KEY = 'longez.subject'
 export const parseSubject = (s: string | null | undefined): Subject => (s === 'fuselage' ? 'fuselage' : 'canard')
 
 /** Chapters 4-9 are the box and the main gear; 12 (the canard installed: F22 drilled, bushings, F28 pins) and 13 (the nose and nose gear) join them. */
-export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])
+export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
 /** The chapters the all-chapters fuselage tour covers: the whole bar (12 and 13 have no film of their own yet). */
 export const FUSE_TOUR_CHAPTERS = [4, 5, 6, 7, 8, 9, 12, 13]
 /** the ch14-17 tour (the spar, firewall, controls and trim): what the Tour button plays when one of their ops is selected */
@@ -83,6 +84,8 @@ export interface FuseExtras {
   m27?: WingData & { parts: Record<string, FusePartRow>; nodes: Record<string, FusePlyRow> }
   /** chapters 21 to 23 (guide/fuselage_export.py m28_section): the strake, electrical and engine part rows, the fuel, battery and engine figures the readouts state, the reference weight rows */
   m28?: M28Data
+  /** chapters 24 to 26 (guide/fuselage_export.py m29_section): the cover, console, seal and upholstery part rows, the finish layer's rows and the conflicts, seal and weight references the readouts state */
+  m29?: M29Data
 }
 export interface NoseGearKinLite {
   strut_length: number; axle_wl: number; pivot_wl: number; clearance_wl: number; wl_zero: number; crank_turns: number; retract_seconds: number
@@ -373,9 +376,9 @@ export const FUSE_CUT_RANGE = { min: 22, max: 125.5 }
 export const NOSE_CUT_RANGE = { min: -6.8, max: 125.5 }
 /** chapters 14-17: the swept spar's aft face reaches F.S. 129.9 at B.L. 55.5, so the cut goes a little past the box */
 export const M25_CUT_RANGE = { min: 22, max: 130 }
-/** chapters 21-23: from the nose tip (the battery shelf is at F.S. 7 to 15) aft past the engine block (to F.S. 157.3) */
+/** chapters 21-26: from the nose tip (the battery shelf is at F.S. 7 to 15) aft past the engine block (to F.S. 157.3) */
 export const M28_CUT_RANGE = { min: -6.8, max: 160 }
-export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : chapter !== null && chapter >= 21 && chapter <= 23 ? M28_CUT_RANGE : chapter !== null && chapter >= 14 && chapter <= 20 ? M25_CUT_RANGE : FUSE_CUT_RANGE)
+export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : chapter !== null && chapter >= 21 && chapter <= 26 ? M28_CUT_RANGE : chapter !== null && chapter >= 14 && chapter <= 20 ? M25_CUT_RANGE : FUSE_CUT_RANGE)
 export const fmtFs = (fs: number): string => `FS ${Math.round(fs * 10) / 10}`
 /** tolerance on a ply's FS extent, as the canard's EPS on B.L. */
 export const FS_EPS = 1e-3

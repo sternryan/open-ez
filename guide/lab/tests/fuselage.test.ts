@@ -32,7 +32,7 @@ test('the fuselage bar is the chapter 4-9, 12 and 13 ops that are not stubs, in 
     'f06.bond-panel', 'f06.bond-f22', 'f06.bottom-foam-fit', 'f06.bottom-glass', 'f06.bottom-bond']
   assert.deepEqual(fuseBarOps(G, 'roncz').map((o) => o.id), want)
   assert.deepEqual(fuseBarOps(G, 'gu').map((o) => o.id), want)
-  assert.deepEqual([...FUSE_CHAPTERS].sort((a, b) => a - b), [4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])
+  assert.deepEqual([...FUSE_CHAPTERS].sort((a, b) => a - b), [4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
   assert.deepEqual(barOps(G, 'roncz').map((o) => o.id), ['r30.a']) // the canard bar is untouched
 })
 

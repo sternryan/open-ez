@@ -19,6 +19,7 @@ import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
 import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, wingXrayAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
 import { m28Where, partBase, glassOpacity, KIT_PARTS, KIT_LIFT_IN, ANTENNAS_OP, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, GLASS_PARTS, type M28Data, type M28PartRow } from './logic/strake'
+import { M29_CHAPTERS, cockpitOpenAt, m29GhostAt, m29Where, finishStageAt, finishColour, finishRowFor, type M29Data, type M29PartRow, type FinishRow } from './logic/finish'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -62,6 +63,10 @@ export interface FMesh {
   m27: boolean
   /** a chapter 21-23 part (layup.json "extras".m28): the strakes and tank, the electrical parts, the engine and cowl */
   m28: boolean
+  /** a chapter 24 or 26 part (layup.json "extras".m29): the covers, consoles, gap seals, cushions, headrests and suitcases */
+  m29: boolean
+  /** the finish layer's row for this part (chapter 25: fill, primer, paint drawn on it), or null: it is never finished */
+  finish: FinishRow | null
 }
 
 // Representational colours (the canard's rule: tell materials apart, not a measured product colour).
@@ -111,6 +116,19 @@ const M28_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, numb
   nav_strip_right: ['metal', 0xd5d8dc, 0.85, 0.3], nav_strip_left: ['metal', 0xd5d8dc, 0.85, 0.3], comm_strips: ['metal', 0xd5d8dc, 0.85, 0.3],
   block: ['metal', 0x6d737a, 0.6, 0.45], bracket: ['metal', 0xc4c8cd, 0.85, 0.35], cowl: ['glass', 0xd9d4c4, 0, 0.3], rib_right: ['metal', 0xc4c8cd, 0.8, 0.35], rib_left: ['metal', 0xc4c8cd, 0.8, 0.35],
 }
+/** the chapter 24 and 26 parts' looks (colour, metalness, roughness), keyed by the part's row key: REPRESENTATIONAL colours (the plans give no colours; the upholstery is not coloured by the book) */
+const M29_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, number]> = {
+  cover_aft_aft_cover: ['wood', 0x6f9ec8, 0, 0.7], cover_console_lc1_lc1: ['wood', 0x5f93c4, 0, 0.7],
+  cover_consoles_lc2: ['wood', 0x8db3d4, 0, 0.7], cover_consoles_lc3: ['wood', 0x6f9ec8, 0, 0.7], cover_consoles_lc4: ['wood', 0x6f9ec8, 0, 0.7],
+  cover_consoles_lc5: ['wood', 0x8db3d4, 0, 0.7], cover_consoles_lc6: ['wood', 0x6f9ec8, 0, 0.7],
+  cover_thigh_thigh_floor: ['wood', 0x86b59a, 0, 0.7], cover_thigh_thigh_rib_a: ['wood', 0x5f9a7e, 0, 0.7], cover_thigh_thigh_rib_b: ['wood', 0x5f9a7e, 0, 0.7],
+  cover_valve_valve_cover: ['wood', 0xe0b84a, 0.2, 0.5], cover_canard_canard_cover: ['wood', 0x6f9ec8, 0, 0.7],
+  cover_seal_seal_right: ['wood', 0xe0743a, 0, 0.8], cover_seal_seal_left: ['wood', 0xe0743a, 0, 0.8],
+  upholstery_cushions_front_cushion: ['wood', 0x3f5d86, 0, 0.9], upholstery_cushions_rear_cushion: ['wood', 0x3f5d86, 0, 0.9],
+  upholstery_headrests_front_headrest: ['wood', 0x55769f, 0, 0.9], upholstery_headrests_rear_headrest: ['wood', 0x55769f, 0, 0.9],
+  upholstery_suitcases_suitcase_right: ['wood', 0xa9855a, 0, 0.75], upholstery_suitcases_suitcase_left: ['wood', 0xa9855a, 0, 0.75],
+}
+for (const [k, v] of Object.entries(M29_LOOK)) M25_LOOK[k] = v
 /** the chapter 19-20 parts' looks by part, both sides (colour, metalness, roughness; a part not listed is drawn as foam): REPRESENTATIONAL colours */
 const M27_LOOK: Record<string, ['wood' | 'metal', number, number, number]> = {
   wing_jigs_jigs: ['wood', 0xb48a58, 0, 0.62], wing_hardpoints_hardpoints: ['wood', 0x6e4328, 0, 0.7], wing_ribs_ribs: ['wood', 0xd9d4c4, 0, 0.7],
@@ -221,6 +239,9 @@ export class FuselageBay {
   /** chapters 21-23: the strake, electrical and engine data, the names of their parts, the strake jig table, and the kit's stand on the layup table */
   private m28: M28Data | null = null
   private m28Parts = new Set<string>()
+  /** chapters 24-26: the cover, upholstery and finish data and the names of their parts */
+  private m29: M29Data | null = null
+  private m29Parts = new Set<string>()
   readonly strakeTable = new THREE.Group()
   private strakeKitM: THREE.Matrix4 | null = null
   private m25Chapter = false
@@ -248,7 +269,9 @@ export class FuselageBay {
     this.m27Parts = new Set(Object.keys(data.extras?.m27?.parts ?? {}))
     this.m28 = data.extras?.m28 ?? null
     this.m28Parts = new Set(Object.keys(data.extras?.m28?.parts ?? {}))
-    const m25Parts = new Set([...Object.keys(data.extras?.m25?.parts ?? {}), ...this.m26Parts, ...this.m27Parts, ...this.m28Parts])
+    this.m29 = data.extras?.m29 ?? null
+    this.m29Parts = new Set(Object.keys(data.extras?.m29?.parts ?? {}))
+    const m25Parts = new Set([...Object.keys(data.extras?.m25?.parts ?? {}), ...this.m26Parts, ...this.m27Parts, ...this.m28Parts, ...this.m29Parts])
     this.ctl = data.extras?.m25?.controls ?? null
     const ng = data.extras?.nose_gear
     if (ng) {
@@ -325,6 +348,7 @@ export class FuselageBay {
       this.meshes.push({
         name: p.name, part, cid, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier,
         base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part), m25: m25Parts.has(part), m27: this.m27Parts.has(part), m28: this.m28Parts.has(part),
+        m29: this.m29Parts.has(part), finish: this.m29 ? finishRowFor(this.m29.finish.rows, cid, p.name) : null,
       })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
     }
@@ -709,6 +733,7 @@ export class FuselageBay {
 
   placeOf(m: FMesh, opId: string | null): Placement {
     if (this.m26Parts.has(m.part)) return this.canopyPlaceOf(m, opId) === 'airplane' ? 'jig' : 'table'
+    if (m.m29) return 'jig'
     if (m.m28) return this.m28WhereOf(m, opId) === 'table' ? 'table' : 'jig'
     if (m.m27) return wingPlace(opId, this.order) === 'airplane' ? 'jig' : 'table'
     if (m.m25) return m25Place(m.cid, opId, this.order) === 'bench' ? 'table' : 'jig'
@@ -745,6 +770,9 @@ export class FuselageBay {
     // chapters 21-23: the strake kit on the layup table (the airplane is not drawn), and the ops that work on something buried (the rest is drawn faint, the op's own parts through it)
     const strakeBench = m25On && strakeBenchAt(sel)
     const m28Ghost = m25On && m28GhostAt(selOp)
+    // chapters 24 and 26: the ops inside the cockpit leave the canopy over it out of the frame (it opens in life), so the consoles, seats and cases read from above
+    const cockpitOpen = m25On && cockpitOpenAt(selOp)
+    const m29Ghost = m25On && m29GhostAt(selOp)
     // the spar is built on the layup table (chapter 14's bench ops): the box stands on the jig bench between the camera and it, so it is not drawn then
     const benchOps = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(M25_FIRST_OP) && this.order.indexOf(sel) <= this.order.indexOf(SPAR_BENCH_LAST)
     const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
@@ -761,7 +789,7 @@ export class FuselageBay {
       // the nose-gear box lies on the jig bench until it is mounted on F22 (logic/fuselage.ts onBench): drawn there from its own op on
       const benched = st !== 'ghost' && !m.ply && onBench(m.cid, sel, this.order)
       const where = st === 'ghost' ? 'jig' : benched ? 'table' : this.placeOf(m, sel)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || (m.m28 ? this.m28WhereOf(m, sel) !== 'none' : shownAt(m.show, sel, this.order))) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn) && (!m.m25 || m25On) && !(benchOps && !m.m25 && where === 'jig') && !(wingBench && !m.m27) && !(strakeBench && !m.m28) && (!m.m27 || this.wingShown(m, sel))
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || (m.m29 ? this.m29WhereOf(m, sel) !== 'none' : m.m28 ? this.m28WhereOf(m, sel) !== 'none' : shownAt(m.show, sel, this.order))) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn) && (!m.m25 || m25On) && !(benchOps && !m.m25 && where === 'jig') && !(wingBench && !m.m27) && !(strakeBench && !m.m28) && (!m.m27 || this.wingShown(m, sel)) && !(cockpitOpen && m.cid.startsWith('canopy.'))
       // the shape for this op: the node's own, or a later stage (carved, cut, holed)
       const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
       const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
@@ -779,9 +807,10 @@ export class FuselageBay {
       }
       // what is buried in the faint box is drawn through it (x-ray), so the op's own parts read; otherwise as any part
       const wingFaint = wingGhost && m.m27 && !selOp!.components.includes(m.cid) && m.cid !== 'wing.jigs'
-      const m28Faint = m28Ghost && !m28Exposed(selOp, m.cid)
-      const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingXray && m.m27 && selOp!.components.includes(m.cid)) || (m28Ghost && m.m28 && m28Exposed(selOp, m.cid))
+      const m28Faint = (m28Ghost || m29Ghost) && !m28Exposed(selOp, m.cid)
+      const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingXray && m.m27 && selOp!.components.includes(m.cid)) || (m28Ghost && m.m28 && m28Exposed(selOp, m.cid)) || (m29Ghost && m.m29 && m28Exposed(selOp, m.cid))
       for (const mt of [m.jigMat, m.tableMat]) mt.depthTest = !xray
+      this.applyFinish(m, sel)
       m.jig.renderOrder = m.table.renderOrder = xray ? 5 : 0
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
@@ -789,7 +818,7 @@ export class FuselageBay {
       setPlyLook(m.jigMat, look)
       setPlyLook(m.tableMat, look)
       // a chapter 21-23 part drawn through the faint airplane joins the transparent pass (sorted by its render order, after the faint layers) and writes no depth, so the faint layers in front blend over it and none is drawn under it
-      if (m.m28) for (const mt of [m.jigMat, m.tableMat]) { const t = xray || !!mt.userData.glass; if (mt.transparent !== t) { mt.transparent = t; mt.needsUpdate = true } if (xray) mt.depthWrite = false }
+      if (m.m28 || m.m29) for (const mt of [m.jigMat, m.tableMat]) { const t = xray || !!mt.userData.glass; if (mt.transparent !== t) { mt.transparent = t; mt.needsUpdate = true } if (xray) mt.depthWrite = false }
       sig += (m.jig.visible ? 'j' : m.table.visible ? 't' : '-') + (cast ? '1' : '0')
     }
     this.tableGroup.updateMatrixWorld(true)
@@ -799,13 +828,14 @@ export class FuselageBay {
     sig += this.wheels.visible ? 'w' : ''
     this.marksOn = boards
     // chapters 12-13: the canard and the elevators stand installed on the airplane (never on a chapter 4-9 op, nor on the finished ch 4-9 box)
-    this.installed.visible = !!state && (CANARD_INSTALLED_CHAPTERS.has(chapter) || (!!sel && (ELEV_OPS.has(sel) || sel === ANTENNAS_OP))) // (the nav antenna foil is on the canard: the antenna op shows it)
+    this.installed.visible = !!state && (CANARD_INSTALLED_CHAPTERS.has(chapter) || M29_CHAPTERS.has(chapter) || (!!sel && (ELEV_OPS.has(sel) || sel === ANTENNAS_OP))) // (the nav antenna foil is on the canard: the antenna op shows it)
     this.stops.visible = m25On && chapter < 18 && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM) // (the canopy's ops leave the cockpit's stops out of the frame and the labels)
     this.checks.visible = m25On && sel === CANOPY_CHECK_OP
     this.abc.visible = m25On && sel === WINGLET_JIG_OP
     this.strakeTable.visible = m25On && strakeTableShown(sel, this.order)
     sig += this.strakeTable.visible ? 's' : ''
     this.applyM25()
+    this.applyInstalledFinish(sel)
     sig += this.installed.visible ? 'c' : ''
     const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
     this.noseShown = !!strut?.jig.visible
@@ -1475,6 +1505,46 @@ export class FuselageBay {
     const R = (this.noseK?.tire_od ?? 9) / 2
     return out.set(c[0], cand === 'plans' ? c[1] + R : c[1] - R, cand === 'plans' ? -1 : 1).applyMatrix4(this.jigFrame.matrixWorld)
   }
+
+  // ---- chapters 24-26: the covers and upholstery, and the finish layer ----
+
+  private m29WhereOf(m: FMesh, opId: string | null) {
+    return m29Where(this.m29!.parts[m.part] as M29PartRow, opId, this.order)
+  }
+  /** put the finish's colour on a material (and its back-face twin), or take it off (null): a layer drawn on the part, never a solid */
+  private setFin(mat: THREE.Material | THREE.Material[], hex: number | null) {
+    const c = hex === null ? null : new THREE.Color(hex)
+    for (const m of Array.isArray(mat) ? mat : [mat]) {
+      for (const mm of [m, m.userData.back as THREE.Material | undefined]) {
+        const u = mm?.userData.u as Record<string, { value: THREE.Vector4 }> | undefined
+        if (u?.uFin) { if (c) u.uFin.value.set(c.r, c.g, c.b, 1); else u.uFin.value.set(0, 0, 0, 0) }
+      }
+    }
+  }
+  /** the finish layer of an airframe mesh for `opId`: nothing before the filler, then the filler's tint, primer grey, and the paint (white on the upper wing and canard only) */
+  private applyFinish(m: FMesh, opId: string | null) {
+    if (!m.finish) return
+    const stage = finishStageAt(m.finish, opId, this.order)
+    const hex = stage ? finishColour(m.finish, stage) : null
+    this.setFin(m.jigMat, hex)
+    this.setFin(m.tableMat, hex)
+    this.finished.set(m.name, stage)
+  }
+  /** the installed canard's skins wear the same finish (their material is the canard's own copy, not a bay mesh) */
+  private applyInstalledFinish(opId: string | null) {
+    const rows = this.m29?.finish.rows
+    if (!rows) return
+    for (const mesh of this.installedMeshes()) {
+      const nm = mesh.name.replace(/^installed:/, '').replace(/:left$/, '')
+      const row = rows.find((r) => r.component.startsWith('canard.') && (nm === r.component || nm.startsWith(r.component + '.')))
+      if (!row) continue
+      const stage = finishStageAt(row, opId, this.order)
+      this.setFin((mesh.userData.front as THREE.Material | undefined) ?? mesh.material, stage ? finishColour(row, stage) : null)
+      this.finished.set(mesh.name, stage)
+    }
+  }
+  /** the finish stage each finished mesh is at for the selected op (null: bare); the test hook reads it */
+  readonly finished = new Map<string, string | null>()
 
   // ---- chapters 21-23: the strake kit on the layup table, the jig table under the strake, the strake and electrical parts' places ----
 
