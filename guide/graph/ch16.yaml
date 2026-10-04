@@ -113,7 +113,7 @@
   title: Aileron linkage (after the wing)
   summary: This waits on the wing from chapter 19. Join the stick to the aileron with the two 90-degree angles held, ailerons neutral, and protect the rod-end threads.
   variants: [both]
-  requires: [f16.sticks-pushrods, c19.wings]
+  requires: [f16.sticks-pushrods, f19.controls, f19.attach]
   components: []
   geometry_visible: false
   sources:
@@ -141,7 +141,7 @@
   title: Rudder cable rigging (after the winglet)
   summary: This waits on the winglet from chapter 20. With the pedal vertical at full rudder, set the sleeve 0.7 in off the firewall, run the pulley and 1/16 cable, and set the rudder travel with 0.7 in of overtravel at each end.
   variants: [both]
-  requires: [f16.rudder-conduit, f15.belcrank-brackets, c20.winglets]
+  requires: [f16.rudder-conduit, f15.belcrank-brackets, f20.rudder-hang]
   components: [controls.rudder_conduit, firewall.belcrank]
   geometry_visible: true
   sources:

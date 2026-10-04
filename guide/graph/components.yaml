@@ -103,3 +103,25 @@
 - {id: fuselage.front_cover, label: Front cover left on the fuselage (fitted shape), fidelity: unvalidated}
 - {id: fuselage.rear_cover, label: Rear cover left on the fuselage (fitted shape), fidelity: unvalidated}
 - {id: fuselage.door, label: "Left side door (size book, position low confidence)", fidelity: unvalidated}
+# Wing (chapter 19). The p126 planform, rib stations, shear web line and aileron cuts are printed; the airfoil section, the jig outlines, the rib and aileron shapes and the control hardware outlines are fitted shapes.
+- {id: wing.jigs, label: "Five wing jigs, leading edge up (spacings book, outlines fitted)", fidelity: unvalidated}
+- {id: wing.cores, label: "Wing foam cores FC1 to FC5 (planform book, section fitted to the Eppler 1230 file)", fidelity: unvalidated}
+- {id: wing.hardpoints, label: "Wing hard points and plates, LWA2 to LWA7 (counts book, outlines fitted)", fidelity: unvalidated}
+- {id: wing.shear_web, label: "Wing shear web plies (face line and zone counts book, cp-corrected outboard)", fidelity: unvalidated}
+- {id: wing.spar_caps, label: "Wing spar caps, base plies (lengths and offsets book)", fidelity: unvalidated}
+- {id: wing.skins, label: "Wing skins (fitted shape, ply counts book)", fidelity: unvalidated}
+- {id: wing.conduit, label: "Rudder conduit in the wing (fitted shape)", fidelity: unvalidated}
+- {id: wing.ribs, label: "Wing root rib and incidence board (fitted shape)", fidelity: unvalidated}
+- {id: wing.aileron, label: "Aileron (hinge line from the printed cuts, section fitted)", fidelity: unvalidated}
+- {id: wing.aileron_hinges, label: "Aileron hinges, rod and torque tube (lengths book, outlines fitted)", fidelity: unvalidated}
+- {id: wing.controls, label: "Aileron root controls: belhorn, brackets, belcrank (fitted shape)", fidelity: unvalidated}
+- {id: wing.attach, label: "Wing attach bolts and bushings (counts book, hole positions fitted; bolt spacing in conflict)", fidelity: unvalidated}
+# Winglet (chapter 20). The stations and rudder widths are printed; the airfoils, the tip chord, the cant, the lower fin outline and block A are fitted shapes.
+- {id: winglet.cores, label: "Winglet foam cores, upper and lower (fitted shape)", fidelity: unvalidated}
+- {id: winglet.skins, label: "Winglet skins and tip cap (stations book, tip chord derived)", fidelity: unvalidated}
+- {id: winglet.jig, label: "Winglet jig dimensions A, B, C from the reference point (book, cant fitted)", fidelity: unvalidated}
+- {id: winglet.layups, label: "Winglet corner layups (extents book, drawn as plies)", fidelity: unvalidated}
+- {id: winglet.block_a, label: "Block A corner foam (fitted shape)", fidelity: unvalidated}
+- {id: winglet.lower_fin, label: "Lower fin (WL 9.8 bottom book, outline fitted)", fidelity: unvalidated}
+- {id: winglet.rudder, label: "Rudder (hinge line and widths book, section fitted)", fidelity: unvalidated}
+- {id: winglet.rudder_hinge, label: "Rudder hinge and belhorn (length book, outline fitted)", fidelity: unvalidated}

@@ -146,18 +146,21 @@ def test_components_exist_and_are_only_the_agreed_set(g):
     assert all(g.components[c].fidelity == "unvalidated" for c in COMPONENTS)
 
 
-def test_stubs_are_required_by_the_two_ops(g):
-    assert g.ops["c19.wings"].stub and g.ops["c20.winglets"].stub
-    assert g.ops["c19.wings"].chapter == 19 and g.ops["c20.winglets"].chapter == 20
-    assert "c19.wings" in g.ops["f16.aileron-linkage"].requires
-    assert "c20.winglets" in g.ops["f16.rudder-cable-rig"].requires
+def test_wing_and_winglet_ops_replace_the_chapter_19_and_20_stubs(g):
+    assert "c19.wings" not in g.ops and "c20.winglets" not in g.ops
+    ail = g.ops["f16.aileron-linkage"].requires
+    assert "f19.controls" in ail and "f19.attach" in ail
+    assert "f20.rudder-hang" in g.ops["f16.rudder-cable-rig"].requires
     others = [
         o.id
         for o in g.ops.values()
         if o.id not in ("f16.aileron-linkage", "f16.rudder-cable-rig")
+        and o.chapter < 19
     ]
     assert not [
-        i for i in others if {"c19.wings", "c20.winglets"} & set(g.ops[i].requires)
+        i
+        for i in others
+        if {"f19.controls", "f19.attach", "f20.rudder-hang"} & set(g.ops[i].requires)
     ]
 
 

@@ -1,0 +1,163 @@
+# Chapter 20 — winglets and rudders (plans pp. 20-1 to 20-6; scan pages 135-140). Printed: the fin stations (WL 18.4, 65.4, 9.8), the trailing-edge corners (FS 186.8 and 196.6), the rudder hinge
+# FS 176.8 with its widths, the A, B and C jig lengths (CP25 LPC 6), the corner ply tables. Not printed: both airfoils, the lower fin outline, block A, the tip cap, the cant and the tip chord
+# (the 11.4 in tip chord is a derived-medium read, not a page value), so those are fitted shapes. No op states an unprinted number as a page value.
+- id: f20.cut-cores
+  chapter: 20
+  title: Cut the winglet cores
+  summary: Hot-wire the upper fin from the 48 in outboard block left over from the wing, with end angles 78.64 and 101.36 deg as on the wing. A second 4.3 by 14 by 41 in block, saved from the canard cores, gives the other side. The lower fin comes from wing scrap, 8.5 in tall.
+  variants: [both]
+  requires: [f19.cut-cores]
+  components: [winglet.cores]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 135}
+  changes:
+    - {cp: 25, lpc: 13, class: MEO, status: verified, kind: official, note: "Add sheets A3 and A14 to the hot-wire references for this step."}
+  completion:
+    - Upper fin core cut from the 48 in block
+    - Second upper fin core cut from the 41 in canard block
+    - Lower fin core cut from wing scrap
+- id: f20.skins
+  chapter: 20
+  title: Skin both sides flat, add the tip cap
+  summary: Skin each side flat on the bench with two crossed UND plies, then add a third BID ply at 45 deg on the upper winglet only, 18 in up from the root and 14 in wide. Finish the top with a 1 in urethane cap under one BID ply, so the top is WL 66.4 and the skin ends at WL 65.4.
+  variants: [both]
+  requires: [f20.cut-cores]
+  components: [winglet.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "each side, crossed diagonals"}
+    - {cloth: BID, plies: 1, where: "third ply, upper winglet only, 18 in up by 14 wide, 45 deg"}
+    - {cloth: BID, plies: 1, where: "over the 1 in tip cap"}
+  sources:
+    - {doc: scan-1980, scan_pp: 135}
+    - {doc: scan-1980, scan_pp: 136}
+  changes:
+    - {cp: 34, lpc: 104, class: MEO, status: verified, kind: official, note: "The third ply is for the upper winglet only, not for the upper surface."}
+    - {cp: 26, lpc: 0, class: OPT, status: verified, kind: community, note: "A comm antenna may go in the winglet, as copper foil strips 20.3 in long laid 1 in from the trailing edge before the inboard skin."}
+  completion:
+    - Outboard side skinned flat, then the inboard side the same
+    - BID patch on the upper winglet root only
+    - Tip cap bonded and skinned with one BID ply
+- id: f20.trim
+  chapter: 20
+  title: Trim the root with the template
+  summary: Mark the root of the inboard skin from the trim template (an A-sheet this guide does not hold, so its outline is a fitted shape) and cut it with a coping saw so the winglet fits the wing surface.
+  variants: [both]
+  requires: [f20.skins]
+  components: [winglet.skins]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 136}
+  completion:
+    - Root outline marked from the trim template
+    - Root cut to fit the wing surface
+- id: f20.jig
+  chapter: 20
+  title: Jig the winglet to the wingtip (A, B, C)
+  summary: Stand the winglet on the wingtip and measure from the reference point at BL 55.5, FS 149.6, the front inboard corner of the aileron opening. A, to the leading-edge mark on the wing top, is 102.15 in; B, to the root trailing edge, is 108.35 in; C, to the tip trailing edge, is 118.35 in. A and B hold within 0.05 in, C within 1 in. Hold it with Bondo lumps and brace sideways with 1 by 2 lumber.
+  variants: [both]
+  requires: [f20.trim, f19.top-skin]
+  components: [winglet.jig]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 136}
+    - {doc: scan-1980, scan_pp: 137}
+  changes:
+    - {cp: 25, lpc: 6, class: MEO, status: verified, kind: official, note: "Page 20-2 gains the handwritten A, B and C lengths of 102.15, 108.35 and 118.35 in."}
+  completion:
+    - Reference point marked at BL 55.5, FS 149.6
+    - A and B within 0.05 in, C within 1 in
+    - Two or three Bondo lumps hold the winglet and sideways bracing is on
+    - About 50 lb of sand bags on the wing top
+- id: f20.inside-layups
+  chapter: 20
+  title: Inside corner layups 1 and 2
+  summary: Cut the wing skin along the winglet inboard edge without touching the rudder conduit, which sits 13.2 in from the winglet trailing edge. Cut flox corners, 2 in deep in the high-stress area and half an inch elsewhere. Then lay layup 1 (eight 4 by 12 in BID strips at 45 deg) and layup 2 (eight BID plies forward of the conduit, two running aft to the trailing edge).
+  variants: [both]
+  requires: [f20.jig]
+  components: [winglet.layups]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 8, where: "layup 1, strips 4 by 12 in at 45 deg"}
+    - {cloth: BID, plies: 8, where: "layup 2, forward of the conduit, two run aft"}
+  sources:
+    - {doc: scan-1980, scan_pp: 137}
+    - {doc: scan-1980, scan_pp: 140}
+  completion:
+    - Wing skin cut free along the winglet inboard edge, conduit untouched
+    - Flox corners cut and filled with foam wedges
+    - Layup 1 strips and layup 2 plies laid, joggled over the conduit
+- id: f20.outside-layups
+  chapter: 20
+  title: Block A and outside layups 3 and 4
+  summary: Bond block A, 2 lb urethane in two 2 in pieces, between the wing trailing edge and the winglet, and carve it to a flat diagonal. Lay layup 3 on the outside, two BID plies running 15 in onto the wing and 12 in onto the winglet, plus seven UND plies from 24 and 12 in down to 12 and 6 in. Turn it over for layup 4, the same.
+  variants: [both]
+  requires: [f20.inside-layups]
+  components: [winglet.layups, winglet.block_a]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "layups 3 and 4, 15 in on the wing and 12 in on the winglet, the second ply 2 in shorter"}
+    - {cloth: UND, plies: 7, where: "layups 3 and 4 around the corner, A and B lengths 24/12, 22/11, 20/10, 18/9, 16/8, 14/7, 12/6 in"}
+  sources:
+    - {doc: scan-1980, scan_pp: 137}
+    - {doc: scan-1980, scan_pp: 138}
+  completion:
+    - Block A bonded and carved to a flat diagonal, not round
+    - Layup 3 laid with its seven UND plies
+    - Layup 4 laid the same way, BID lapped 1 in onto the winglet
+- id: f20.lower-fin
+  chapter: 20
+  title: Lower winglet (layup 5), light, fairing
+  summary: Trim the lower fin root to WL 18.4 and join it with a 2 in BID tape at 45 deg inside and out (layup 5); the joint takes a 90 deg sideslip at 170 mph, so add no plies. The fin bottom is flat at WL 9.8, 8.6 in below the root, and its outline is a fitted shape. Fit the wingtip light and an optional fairing block.
+  variants: [both]
+  requires: [f20.outside-layups]
+  components: [winglet.lower_fin]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "layup 5, 2 in tape at 45 deg, inside and outside the joint"}
+  sources:
+    - {doc: scan-1980, scan_pp: 138}
+    - {doc: scan-1980, scan_pp: 140}
+  changes:
+    - {cp: 31, lpc: 90, class: MEO, status: verified, kind: official, note: "The cross reference on this page now points to page 22-3."}
+  completion:
+    - Lower fin trimmed to WL 18.4 and bonded
+    - One 2 in BID tape inside and outside, no extra plies
+    - Wingtip light fitted, no cuts into the structure
+- id: f20.rudder-cut
+  chapter: 20
+  title: Cut the rudder free
+  summary: Lay out the rudder on the outside of the upper winglet, with the hinge line at FS 176.8, 10 in wide at WL 18.4, 12.14 at the top and 11.5 at the bottom, 14.5 in tall (10.5 above WL 18.4 and 4 below). Saw the skins and lift the rudder out, leaving the conduit alone.
+  variants: [both]
+  requires: [f20.outside-layups]
+  components: [winglet.rudder]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 135}
+    - {doc: scan-1980, scan_pp: 138}
+  completion:
+    - Rudder outline laid out from the printed widths and height
+    - Skins sawn along the hinge line and the outline
+    - Rudder removed with the conduit intact
+- id: f20.rudder-hang
+  chapter: 20
+  title: Hinge prep (layups 6 and 7) and hang the rudder
+  summary: Remove 0.6 in of foam top and bottom and 0.8 in on the front face of the rudder, and about 0.6 in on the winglet side, then lay layup 6 (winglet) and layup 7 (rudder), each three BID plies plus one at the hinge. Hang the rudder on a 7.5 in piano hinge from WL 18.4 up, with three screws into nutplates on the winglet and seven pop rivets in the rudder. Fit the belhorn and cable; travel is 30 deg each way.
+  variants: [both]
+  requires: [f20.rudder-cut]
+  components: [winglet.rudder, winglet.rudder_hinge]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "layup 6 on the winglet hinge area, plus one on the hinge edge"}
+    - {cloth: BID, plies: 3, where: "layup 7 on the rudder edges and belcrank depression, plus one at the hinge"}
+  sources:
+    - {doc: scan-1980, scan_pp: 138}
+    - {doc: scan-1980, scan_pp: 139}
+    - {doc: scan-1980, scan_pp: 140}
+  changes:
+    - {cp: 31, lpc: 0, class: cp-hint, status: verified, kind: community, note: "The rudder hinge goes into the rudder with flush pop rivets."}
+  completion:
+    - Foam removed and layups 6 and 7 laid
+    - Piano hinge fitted and the rudder swings
+    - Belhorn and cable fitted, 30 deg maximum travel, at least 0.7 in left before the swage bottoms

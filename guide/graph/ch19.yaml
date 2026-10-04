@@ -1,0 +1,330 @@
+# Chapter 19 — wings (plans pp. 19-2 to 19-18; scan pages 118-134; page 19-1, the jig templates, is not on the scan). The planform, rib stations, structure schedule and aileron
+# are printed (plan view p126); the airfoil sections, jig outlines, core templates, rib and aileron shapes live on A-sheets the owner does not hold, so they are fitted shapes.
+# Two conflicts stay as text on their ops: the BL 106.25 leading-edge label (f19.cut-cores) and the aileron inboard end (f19.aileron-cut). The shear web outboard zone is
+# cp-corrected (CP26 LPC 31). The cap schedules are the base plies only; the CP25 thin-tape box adds plies when the five-ply test reads thin.
+- id: f19.jig
+  chapter: 19
+  title: Set up the five wing jigs
+  summary: Stand five plywood jigs on a straight floor line, leading edge up, with the 17.4 water line level across them. The jigs sit 31.7, 51.7 and 88.4 in from the first one, 125.6 in end to end, and their outlines come from templates this guide does not hold.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [wing.jigs]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 118}
+    - {doc: scan-1980, scan_pp: 120}
+  completion:
+    - Five jigs lined up on a floor line, 125.6 in from first to last
+    - Jig spacings from the first jig checked (31.7, 51.7, 88.4 in)
+    - Edge offsets and the 17.4 water line level across all five
+- id: f19.cut-cores
+  chapter: 19
+  title: Cut the wing cores
+  summary: Lay out and hot-wire the seven foam blocks (five 7 by 14 by 64 in, two 7 by 14 by 41 in) into five core pairs. The cut angles are 78.64 deg centre and outboard and 77.51 deg inboard. The plan prints the leading edge at BL 106.25 two ways, FS 134.95 on its label and FS 134.45 from its chord and trailing edge, 0.5 in apart and unresolved; the model uses the straight 22.98 deg line, which sits between them.
+  variants: [both]
+  requires: [f19.jig]
+  components: [wing.cores]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 118}
+    - {doc: scan-1980, scan_pp: 126}
+    - {doc: scan-1980, scan_pp: 127}
+  completion:
+    - Blocks stacked and joined, cut lines laid out by the printed offsets
+    - Cores FC1 to FC5 cut, rib stations BL 23, 55.5, 106.25 and 157
+    - Inboard core leading edge trimmed to 32.87 in
+    - Check dimensions 22.8 and 25.1 in on the inboard core
+- id: f19.core-cutouts
+  chapter: 19
+  title: Torque-tube, shell, aileron and light-hole cuts
+  summary: Cut the torque-tube slot at BL 55.5 and hollow the inboard wedge of FC1, keeping a 0.6 in shell. Cut the aileron openings in FC2 and FC3 (a 3 by 8 in chunk out of FC3) and wire a 1 in light passage through FC4 and FC5.
+  variants: [both]
+  requires: [f19.cut-cores]
+  components: [wing.cores]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 119}
+  changes:
+    - {cp: 26, lpc: 32, class: MEO, status: verified, kind: official, note: "The 1 in light hole ends at the wing top surface; the wire cut runs from 0 to 12."}
+  completion:
+    - Torque-tube slot cut at BL 55.5
+    - FC1 wedge hollowed with a 0.6 in shell (0.25 in tolerance away from the top forward edge)
+    - Aileron openings cut in FC2 and FC3, tip template at BL 118.1
+    - Light passage cut at 2, 3.5 and 5.6 in offsets
+- id: f19.mount-cores
+  chapter: 19
+  title: Cores into the jigs, attach depressions
+  summary: Micro the inboard and centre cores onto the jigs, with the leading-edge cores set aside for later. Cut the 1.7 in wide attach depressions with a rotary file and round the inside corners.
+  variants: [both]
+  requires: [f19.core-cutouts]
+  components: [wing.cores, wing.jigs]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 120}
+  completion:
+    - FC1 to FC3 mounted on the jigs with dabs of micro on top only
+    - Depressions 1.7 in wide cut top and bottom with rounded corners
+    - Joggle checked, dimension A equal to B along the span
+- id: f19.hardpoints
+  chapter: 19
+  title: Hard points and the depression liner
+  summary: Notch the foam and bond the aluminium blocks, two outboard and one inboard, then the thin access strips. Line each depression with two plies of BID. The block outlines are printed; their thickness and exact offsets are small hand figures.
+  variants: [both]
+  requires: [f19.mount-cores, f14.lwa-fabricate]
+  components: [wing.hardpoints]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "liner in each access depression (layup 1)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 120}
+    - {doc: scan-1980, scan_pp: 128}
+  completion:
+    - Two LWA4 blocks bonded outboard and one LWA6 block inboard
+    - Two thin access strips fitted at the depressions
+    - Two BID plies laid in each depression
+- id: f19.shear-web
+  chapter: 19
+  title: Shear web (layup 2)
+  summary: Cover the web face with twelve 13 in wide 45 deg UND pieces, crossed in pairs. Two plies run the full span, then the plies step in to 6 inboard (BL 23 to 70), 4 mid span (BL 70 to 120) and 2 outboard (BL 120 to 157).
+  variants: [both]
+  requires: [f19.hardpoints]
+  components: [wing.shear_web]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 6, where: "BL 23 to 70, 45 deg crossed pairs"}
+    - {cloth: UND, plies: 4, where: "BL 70 to 120"}
+    - {cloth: UND, plies: 2, where: "BL 120 to 157, cp-corrected from the printed 3"}
+  sources:
+    - {doc: scan-1980, scan_pp: 120}
+    - {doc: scan-1980, scan_pp: 121}
+  changes:
+    - {cp: 26, lpc: 31, class: MEO, status: verified, kind: official, note: "The outboard zone of the shear web is 2 plies, not the 3 printed on the page."}
+  completion:
+    - Twelve UND pieces laid at 45 deg, edges rolled to a small radius
+    - Plies 3 and 4 start 39 in from the tip, plies 5 and 6 start 91 in from the tip
+    - Outboard zone left at 2 plies (cp-corrected)
+- id: f19.pads-plates
+  chapter: 19
+  title: Pads and plates over the hard points (layup 3)
+  summary: Lay three-ply BID pads at 45 deg, 4 by 4 in and 4 by 6 in, centred on the metal and kept off the spar cap. Epoxy the LWA3 and LWA2 plates over them and press each with about 10 lb while it cures.
+  variants: [both]
+  requires: [f19.shear-web]
+  components: [wing.hardpoints]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "pads at 45 deg, 4 by 4 in and 4 by 6 in"}
+  sources:
+    - {doc: scan-1980, scan_pp: 121}
+  completion:
+    - Pads centred on the metal and clear of the spar cap
+    - LWA3 and LWA2 plates epoxied over the pads
+    - About 10 lb on each plate while it cures
+- id: f19.le-cores
+  chapter: 19
+  title: Bond the leading-edge cores
+  summary: Micro FC4 and FC5 onto the front of the shear web, one ahead of FC2 and one ahead of FC3, and hold them with the front jig pieces until the micro is firm.
+  variants: [both]
+  requires: [f19.shear-web]
+  components: [wing.cores]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 121}
+  completion:
+    - FC4 and FC5 bonded to the shear web face
+    - Leading-edge line straight between the rib stations
+    - Joints faired and the wing section checked in the jigs
+- id: f19.bottom-cap
+  chapter: 19
+  title: Bottom spar cap
+  summary: Turn the wing over and lay five plies of 3 in UND tape, 142, 135, 84, 52 and 19.5 in long, stepped in from the root by 5, 12, 19 and 26 in. A plywood dam stops the inboard end against the LWA3 plate. These are the base plies; the CP25 thin-tape box adds more.
+  variants: [both]
+  requires: [f19.pads-plates, f19.le-cores]
+  components: [wing.spar_caps]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 5, where: "3 in tape, 142, 135, 84, 52 and 19.5 in long"}
+  sources:
+    - {doc: scan-1980, scan_pp: 122}
+  changes:
+    - {cp: 25, lpc: 9, class: MEO, status: verified, kind: official, note: "The plate named LWA7 on this page is LWA2."}
+    - {cp: 25, lpc: 10, class: MEO, status: verified, kind: official, note: "The plate named LWA7 on this page is LWA2."}
+    - {cp: 28, lpc: 56, class: MAN-GRD, status: verified, kind: official, note: "If five plies of the tape stack thinner than 0.18 in, add one ply over BL 25 to 130 and one over BL 40 to 90, as the CP25 box says; this guide draws the base plies."}
+  completion:
+    - Five 3 in plies laid, longest first
+    - Inboard ends stepped by the printed offsets
+    - Dam in place at the inboard end against the LWA3 plate
+- id: f19.bottom-skin
+  chapter: 19
+  title: Bottom skin
+  summary: Skin the bottom with two crossed diagonal plies of UND from a 38 in roll, joints butted and selvage kept, lapping the leading edge 2 in and tapering the last 0.5 in at the trailing edge. A third ply of BID reinforces the tip. Lay a peel ply 65 in long ahead of the aileron gap.
+  variants: [both]
+  requires: [f19.bottom-cap]
+  components: [wing.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "crossed diagonals, 38 in roll"}
+    - {cloth: BID, plies: 1, where: "tip reinforcement"}
+  sources:
+    - {doc: scan-1980, scan_pp: 122}
+  changes:
+    - {cp: 32, lpc: 0, class: cp-hint, status: verified, kind: community, note: "The trailing-edge glass lap is at least 0.5 in; the plans print 0.6."}
+  completion:
+    - Two UND plies laid diagonally with butted joints
+    - BID tip ply and peel ply laid
+    - Trailing edge flush with a 0.5 in minimum lap
+- id: f19.top-cap
+  chapter: 19
+  title: Top spar cap
+  summary: Return the wing to the jigs and lay seven plies of 3 in UND tape, 142, 142, 119, 90, 61, 39 and 20 in long, stepped in 6, 12, 18 and 24 in. The CP25 box adds plies when the tape is thin.
+  variants: [both]
+  requires: [f19.bottom-skin]
+  components: [wing.spar_caps]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 7, where: "3 in tape, 142, 142, 119, 90, 61, 39 and 20 in long"}
+  sources:
+    - {doc: scan-1980, scan_pp: 123}
+  changes:
+    - {cp: 25, lpc: 11, class: MEO, status: verified, kind: official, note: "The plate named LWA7 on this page is LWA2."}
+    - {cp: 28, lpc: 56, class: MAN-GRD, status: verified, kind: official, note: "If the tape stacks thin, add one ply over BL 23 to 140, one over BL 33 to 92 and one over BL 40 to 78, as the CP25 box says; this guide draws the base plies."}
+  completion:
+    - Seven 3 in plies laid, longest first
+    - Inboard ends stepped by the printed offsets
+    - Cap clear of the attach depressions
+- id: f19.rudder-conduit
+  chapter: 19
+  title: Rudder conduit in the wing
+  summary: Bed a 3/16 in OD Nylaflow tube with a 0.025 in wall in a groove in the top surface near the trailing edge, 4.8 in from the root as drawn. It curves down 0.7 in over 8 in at the root, leaves 2 in sticking out at each end, and never uses Nylo-Seal. The curve template is on an A-sheet.
+  variants: [both]
+  requires: [f19.top-cap]
+  components: [wing.conduit]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 123}
+  completion:
+    - Groove cut in the foam for the conduit
+    - Nylaflow tube bedded with 2 in left out at each end
+    - Root end curved down 0.7 in over 8 in
+- id: f19.top-skin
+  chapter: 19
+  title: Top skin
+  summary: Skin the top with two crossed UND plies like the bottom, plus a third UND ply ahead of the hinge line only, with BID at the tip. The third ply is cut 5.9 in deep at BL 55.5 and 4.35 in at BL 106.25. Peel ply goes over the aileron gap.
+  variants: [both]
+  requires: [f19.rudder-conduit]
+  components: [wing.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "crossed diagonals, as the bottom"}
+    - {cloth: UND, plies: 1, where: "third ply ahead of the hinge line only"}
+    - {cloth: BID, plies: 1, where: "tip reinforcement"}
+  sources:
+    - {doc: scan-1980, scan_pp: 123}
+  completion:
+    - Two UND plies laid over the conduit groove
+    - Third UND ply laid ahead of the hinge line
+    - BID tip ply and peel ply laid
+- id: f19.ribs
+  chapter: 19
+  title: Incidence board and root ribs (layups 5 to 8)
+  summary: Glue a 2 ft straight board to the top skin and shim it level in the jig, parallel to a butt line. Form the 0.7 in root rib with a rotary file, then lay layups 5 to 8 around the attach recess and the LWA6 and LWA7 pieces.
+  variants: [both]
+  requires: [f19.top-skin]
+  components: [wing.ribs, wing.hardpoints]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "layup 5, 3 in wide, 30 in long, one ply per leg of the V"}
+    - {cloth: BID, plies: 3, where: "layup 6 in the rib hollow"}
+    - {cloth: BID, plies: 3, where: "layup 7, whole rib"}
+    - {cloth: UND, plies: 3, where: "layup 8, 2.5 in wide over the LWA6 piece"}
+  sources:
+    - {doc: scan-1980, scan_pp: 124}
+    - {doc: scan-1980, scan_pp: 129}
+  changes:
+    - {cp: 25, lpc: 8, class: MEO, status: verified, kind: official, note: "Form the 0.7 in root rib with a rotary file."}
+    - {cp: 25, lpc: 12, class: MEO, status: verified, kind: official, note: "The plate named LWA8 on this page is LWA7."}
+    - {cp: 31, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Layup 5 is one UND ply on each leg of the V, two plies over the web face."}
+  completion:
+    - Incidence board bonded and shimmed level
+    - Root rib formed 0.7 in deep
+    - Layups 5 to 8 laid
+    - LWA7 plate clamped and covered with one BID ply
+- id: f19.aileron-cut
+  chapter: 19
+  title: Cut the aileron free, trailing-edge spar (layup 9)
+  summary: Saw the skins along the hinge line from the foam joint at BL 55.5 out to BL 118.1. The top cut sits 5.9 in forward of the trailing edge at BL 55.5 and 4.35 at BL 106.25, the bottom 7.6 and 5.65. The inboard end is a vertical plane. Page 124 cuts at BL 55.5 while the back-cover view prints BL 54.3; no page says which is meant, so both are carried unresolved. Then lay the trailing-edge spar glass.
+  variants: [both]
+  requires: [f19.top-skin]
+  components: [wing.aileron, wing.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "layup 9, 45 deg, one extra ply at each hinge"}
+  sources:
+    - {doc: scan-1980, scan_pp: 124}
+    - {doc: scan-1980, scan_pp: 130}
+    - {doc: scan-1980, scan_pp: 171}
+  changes:
+    - {cp: 34, lpc: 107, class: MEO, status: verified, kind: official, note: "The aileron root cut is a plane square to the trailing edge through the 5.9 in mark, not through the 7.6."}
+  completion:
+    - Top and bottom skin cuts laid out from the printed distances
+    - Aileron cut free along the hinge line, inboard end vertical
+    - Trailing-edge spar glass laid, hinge notch 0.2 in deep in the top skin
+- id: f19.aileron-build
+  chapter: 19
+  title: Build and hang the aileron
+  summary: Slice 3/8 in of foam off the nose and bond in the 3/8 in steel rod (65 in). Add the 9 in torque tube, which sticks out 1 in inboard, and the two end brackets, then the end ribs. Hang the aileron on three piano hinges (8, 6 and 6 in) and check the balance by hanging it from a wire.
+  variants: [both]
+  requires: [f19.aileron-cut]
+  components: [wing.aileron, wing.aileron_hinges]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "layup 10 over the rod and brackets, 45 deg, 1 in lap"}
+    - {cloth: BID, plies: 2, where: "layup 11 on each end rib"}
+  sources:
+    - {doc: scan-1980, scan_pp: 125}
+    - {doc: scan-1980, scan_pp: 130}
+    - {doc: scan-1980, scan_pp: 133}
+  changes:
+    - {cp: 32, lpc: 0, class: cp-hint, status: verified, kind: community, note: "The hinge rivets are 1/8 in round-head pop rivets."}
+  completion:
+    - Steel rod bonded in the aileron nose
+    - Torque tube, end brackets and end ribs fitted
+    - Three hinges riveted and the aileron swings free
+    - Balance checked by wire, no more than 0.3 lb of lead behind the rod
+- id: f19.controls
+  chapter: 19
+  title: Aileron controls at the root, 20 degree stop
+  summary: Fit the phenolic block and torque tube at the aileron, the belhorn at the root and the two CS127 brackets and CS128 belcrank in the root bay. Set the stop bolt for 20 deg up aileron, which page 131 also gives as 20 deg of belcrank travel from neutral, with the belcrank square to the pushrod at neutral. The bracket bolts print as AN3-5A on the drawing and AN3-4A in the text, unresolved.
+  variants: [both]
+  requires: [f19.ribs, f19.aileron-build, f16.sticks-pushrods]
+  components: [wing.controls]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 125}
+    - {doc: scan-1980, scan_pp: 131}
+    - {doc: scan-1980, scan_pp: 132}
+  changes:
+    - {cp: 26, lpc: 36, class: MEO, status: verified, kind: official, note: "The CS127 bracket can be made from the drawings on pages 19-15 and 19-16, in 0.032 in 2024-T3."}
+    - {cp: 31, lpc: 88, class: MEO, status: verified, kind: official, note: "CS127 is 0.032 in 2024-T3."}
+    - {cp: 49, lpc: 131, class: MAN-GRD, status: verified, kind: official, note: "Roll controls in the wing roots, including CS127 and CS128, go to 4130 steel or stainless; the page prints aluminium."}
+  completion:
+    - Phenolic block, torque tube and belhorn fitted
+    - CS127 brackets and CS128 belcrank bolted in the root bay
+    - Stop bolt set at 20 deg up
+    - Belcrank square to the pushrod at neutral
+- id: f19.attach
+  chapter: 19
+  title: Line-bore and bolt the wing to the spar
+  summary: With the fuselage level, butt the wing to the centre-section spar and bore three holes through both, then press in the twelve LWA9 bushings (six per wing). The bolt spacing prints 28.85 in on the drawing and 28.83 in in the note, unresolved. Fit two AN8-21A and one AN8-23A. One washer shim changes incidence by 0.4 deg.
+  variants: [both]
+  requires: [f19.controls, f14.bond-spar]
+  components: [wing.attach]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 134}
+    - {doc: scan-1980, scan_pp: 128}
+    - {doc: scan-1980, scan_pp: 129}
+  completion:
+    - Wing butted to the spar with the fuselage and spar level
+    - Holes bored through spar and wing and the LWA9 bushings fitted
+    - Two AN8-21A and one AN8-23A bolts in place
+    - Reference board level, wing flat on the 17.4 water line plane

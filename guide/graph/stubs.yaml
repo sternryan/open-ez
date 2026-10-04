@@ -8,14 +8,6 @@
   title: GU elevators built
   variants: [gu]
   stub: true
-- id: c19.wings
-  chapter: 19
-  title: Wings and ailerons built (chapter 19)
-  stub: true
-- id: c20.winglets
-  chapter: 20
-  title: Winglets and rudders built (chapter 20)
-  stub: true
 - id: ref.back-cover-3view
   chapter: 0
   title: Plans back cover 3-view (reference)
