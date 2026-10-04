@@ -332,3 +332,17 @@ Plans p.171 back-cover 3-view, read by the owner:
 | `prototype_weights` (F22 1.44, F28 0.19, panel 2.13, spar 29.3 lb) | cited as the RAF prototype, CP26 page 2 | Mike and Sally Melvill's builder airplane N26MS ("Mike and Dick's Long-EZ's"), CP26 printed page 3 | none change |
 
 The data key stays `prototype_weights`; the cites, notes, lab readout and excluded-reason string now say "builder weight" and "N26MS".
+
+## Wing LE 125.61 against 113.9 (M2.7, closed)
+
+| Number | What it is | Source | Status |
+|---|---|---|---|
+| 113.9 | wing LE FS at BL 58, the strake and wing LE kink | CP25 LPC 7 (`cp-text:p25`); `plans-1980:p171` prints 113.4 | kept: `wing_le_anchor`. It agrees with p126: 112.9 + 2.5 tan 22.98 = 113.96 |
+| 112.9 | wing LE FS at BL 55.5 | `plans-1980:p126` | book, `wing_book_le_fs_bl_55_5` |
+| 125.6 | FS of the FC1 foam edge at BL 23, the shear web forward face | `plans-1980:p126` | book, `wing_book_shear_web_fwd_fs`; not a wing LE (p118 prints the same figure as a jig spacing, which is a different quantity) |
+| 125.61 | the retired fitted value (old internal frame, aimed at a neutral-point target) | git history, calibration commit | no book meaning; it stays retired. Its nearness to 125.6 is a coincidence |
+
+The two numbers named in the open question are different points, so there is nothing to choose between. No value or test moved.
+The same milestone carries two conflict pairs on the wing (the BL 106.25 LE label 134.95 against 134.45 derived, and the aileron
+inboard end BL 54.3 on p171 against 55.5 on p124) and records the analysis fields that match no page (`wing_washout`,
+`winglet_height`, `winglet_root_chord`, `winglet_tip_chord`) as `unsourced` without changing them: moving the analysis planform moves the NP and belongs to Block 3.

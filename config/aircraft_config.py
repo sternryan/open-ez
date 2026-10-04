@@ -540,6 +540,223 @@ class GeometricParams:
     )  # conflict: p117 printed labels, against the derived centres
     canopy_open_past_vertical_deg: float = 15.0  # book: p115 text
 
+    # === WING BOOK (chapter 19, M2.7) ===
+    # plans-1980 pdf pages p118 to p134; the plan view is p126 (scale 1/10, right wing, the left is the mirror). The analysis planform
+    # (wing_span, wing_root_bl, wing_washout, wing_root_chord) is NOT moved here: see the notes in GEOMETRY_PROVENANCE.
+    # Rib stations: BL 23 is the root rib (inboard core FC1 starts there), 55.5 the foam joint, 106.25 the second joint, 157 the tip rib.
+    wing_book_rib_bl: Tuple[float, float, float, float] = (
+        23.0,
+        55.5,
+        106.25,
+        157.0,
+    )  # book: p126 and p127
+    wing_book_le_fs_bl_55_5: float = 112.9  # book: p126 LE label at the BL 55.5 joint
+    wing_book_le_fs_tip: float = 156.0  # book: p126 and p171 tip LE
+    wing_book_le_fs_bl_106_25_printed: float = (
+        134.95  # conflict: p126 LE label; the chord and the line give 134.45
+    )
+    wing_book_te_fs: Tuple[float, float, float] = (
+        155.6,
+        165.8,
+        176.0,
+    )  # book: p126 TE at BL 55.5, 106.25, 157
+    wing_book_te_fs_bl_23: float = 148.4  # book: p126 inboard TE at the root rib
+    wing_book_chord: Tuple[float, float, float] = (
+        42.7,
+        31.35,
+        20.0,
+    )  # book: p126 chords at BL 55.5, 106.25, 157
+    wing_book_thickness_pct: Tuple[float, float, float] = (
+        16.2,
+        15.7,
+        15.0,
+    )  # book: p126 thickness at BL 55.5, 106.25, 157 (16.2 medium)
+    wing_book_washout_deg: Tuple[float, float, float] = (
+        -0.6,
+        0.96,
+        2.7,
+    )  # book: p126 twist at BL 55.5, 106.25, 157; positive washout (LE down going outboard), -0.6 is the printed washin
+    wing_book_te_sweep_deg: float = 11.36  # book: p126 outer TE sweep
+    wing_book_te_sweep_inboard_deg: float = 12.49  # book: p126 TE kink BL 23 to 55.5
+    wing_book_chord_line_wl: float = (
+        17.4  # book: p126 and p128 all chord lines at WL 17.4 (LE flat), model z 0
+    )
+    wing_book_te_wl: Tuple[float, float] = (
+        16.95,
+        18.35,
+    )  # book: p126 TE height at BL 55.5 and BL 157 (the section's thickness and twist)
+    wing_book_shear_web_fwd_fs: Tuple[float, float, float, float] = (
+        125.6,
+        130.5,
+        147.35,
+        164.2,
+    )  # book: p126 shear web forward face (foam edge) at BL 23, 55.5, 106.25, 157
+    wing_book_shear_web_sweep_deg: float = 18.42  # book: p126
+    wing_book_spar_cap_width_in: float = 3.0  # book: p126 and p122 (3 in UND tape)
+    wing_book_foam_blocks: Tuple[int, int] = (
+        5,
+        2,
+    )  # book: p118 five 7x14x64 and two 7x14x41 blocks per wing
+    wing_book_core_angle_deg: Tuple[float, float] = (
+        78.64,
+        77.51,
+    )  # book: p118 and p127 centre/outboard and inboard core cut angles
+    wing_book_fc1_le_length_in: float = 32.87  # book: p118 and p127 FC1 LE length
+    wing_shear_web_zones: Tuple[
+        Tuple[float, float, int], Tuple[float, float, int], Tuple[float, float, int]
+    ] = (
+        (23.0, 70.0, 6),
+        (70.0, 120.0, 4),
+        (120.0, 157.0, 2),
+    )  # cp-corrected: p121 plies by BL zone; the outboard zone prints 3, CP26 LPC 31 makes it 2
+    wing_shear_web_outboard_plies_printed: int = (
+        3  # book as printed, superseded by the cp-corrected zone above
+    )
+    wing_cap_bottom_plies_in: Tuple[float, float, float, float, float] = (
+        142.0,
+        135.0,
+        84.0,
+        52.0,
+        19.5,
+    )  # book: p122 bottom cap ply lengths, 3 in UND tape, base schedule (the fifth digit medium)
+    wing_cap_bottom_offsets_in: Tuple[float, float, float, float] = (
+        5.0,
+        12.0,
+        19.0,
+        26.0,
+    )  # book: p122 inboard offsets of plies 2 to 5 from the root end
+    wing_cap_top_plies_in: Tuple[float, float, float, float, float, float, float] = (
+        142.0,
+        142.0,
+        119.0,
+        90.0,
+        61.0,
+        39.0,
+        20.0,
+    )  # book: p123 top cap ply lengths, seven plies
+    wing_cap_top_offsets_in: Tuple[float, float, float, float] = (
+        6.0,
+        12.0,
+        18.0,
+        24.0,
+    )  # book: p123 inboard offsets (plies 3 to 6; the model continues the same step for ply 7)
+    wing_skin_plies: Tuple[int, int] = (
+        2,
+        3,
+    )  # book: p122 and p123 bottom 2 UND, top 2 UND plus a third UND forward of the hinge line (p128 prints 3 top)
+    wing_skin_le_lap_in: float = 2.0  # book: p122 LE lap onto the bottom skin
+    wing_skin_te_lap_min_in: float = (
+        0.5  # cp-corrected: CP32 TE lap minimum (0.6 printed)
+    )
+    wing_aileron_outboard_bl: float = 118.1  # book: p126, p119 and p171 agree
+    wing_aileron_inboard_bl: float = (
+        55.5  # conflict: p124 cuts at the BL 55.5 foam joint
+    )
+    wing_aileron_inboard_bl_p171: float = 54.3  # conflict: p171 prints BL 54.3
+    wing_aileron_skin_cut_top_in: Tuple[float, float] = (
+        5.9,
+        4.35,
+    )  # book: p124 and p130 hinge-line cut forward of the TE at BL 55.5 and 106.25 (4.35 digit medium)
+    wing_aileron_skin_cut_bottom_in: Tuple[float, float] = (
+        7.6,
+        5.65,
+    )  # book: p124 and p130 bottom skin cut at BL 55.5 and 106.25
+    wing_aileron_rod_length_in: float = 65.0  # book: p133 A13 3/8 steel rod
+    wing_aileron_torque_tube_length_in: float = 9.0  # book: p133 A10 3/4 x .058 tube
+    wing_aileron_hinge_lengths_in: Tuple[float, float, float] = (
+        8.0,
+        6.0,
+        6.0,
+    )  # book: p133 A3 inboard, A4 mid and outboard
+    wing_aileron_max_up_deg: float = (
+        20.0  # book: p125 and p131 stop bolt for 20 deg up aileron
+    )
+    wing_spar_join_bolt_spacing_in: float = (
+        28.85  # conflict: p134 drawing; the text note prints 28.83
+    )
+    wing_spar_join_bolt_spacing_text_in: float = 28.83  # conflict: p134 text note
+    wing_spar_join_bolts: Tuple[int, int] = (
+        2,
+        1,
+    )  # book: p134 2 x AN8-21A and 1 x AN8-23A per wing
+    wing_spar_join_bushings_per_wing: int = 6  # book: p134 LWA9, 12 in all
+
+    # === WINGLET BOOK (chapter 20, M2.7) ===
+    # plans-1980 pdf pages p135 to p140. The fin airfoils, the lower fin outline, block A and the tip cap are on A-sheets the owner does
+    # not hold: the build model draws them as fitted shapes (core.winglet_book). Cant and toe are not printed.
+    winglet_book_root_wl: float = (
+        18.4  # book: p135 root level line (rudder, root template, lower fin joint)
+    )
+    winglet_book_top_wl: float = 65.4  # book: p135 top of the skin
+    winglet_book_cap_in: float = (
+        1.0  # book: p135 and p136 urethane cap, WL 66.4 with it
+    )
+    winglet_book_bottom_wl: float = 9.8  # book: p135 and p171 lower fin bottom
+    winglet_book_root_le_fs: float = (
+        159.7  # book: p135 the straight LE line meets WL 18.4
+    )
+    winglet_book_root_le_fs_wing_top: float = (
+        160.5  # book: p135 and p136 LE at the wing top surface
+    )
+    winglet_book_root_te_fs: float = 186.8  # book: p135 root TE at WL 18.4
+    winglet_book_top_te_fs: float = 196.6  # book: p135 and p171 top TE corner
+    winglet_book_tip_chord_in: float = 11.4  # derived-medium: captain pixel read scaled by the printed rudder widths; not crew C's 28.9
+    winglet_book_rudder_hinge_fs: float = 176.8  # book: p135
+    winglet_book_rudder_widths_in: Tuple[float, float, float] = (
+        10.0,
+        12.14,
+        11.5,
+    )  # book: p135 and p138 hinge to TE at WL 18.4, at the top, at the bottom
+    winglet_book_rudder_height_in: Tuple[float, float] = (
+        10.5,
+        4.0,
+    )  # book: p135 rudder 10.5 above WL 18.4 and 4 below (14.5 in all)
+    winglet_book_rudder_max_deg: float = 30.0  # book: p139 maximum travel
+    winglet_book_hinge_length_in: float = 7.5  # book: p138 piano hinge from WL 18.4 up
+    winglet_book_core_angle_deg: Tuple[float, float] = (
+        78.64,
+        101.36,
+    )  # book: p135 upper fin core end angles
+    winglet_book_core_length_in: float = 48.0  # book: p135 upper fin core block length
+    winglet_book_jig_wprp: Tuple[float, float] = (
+        149.6,
+        55.5,
+    )  # book: p136 WPRP (FS, BL), inboard front corner of the aileron cut-out
+    winglet_book_jig_abc_in: Tuple[float, float, float] = (
+        102.15,
+        108.35,
+        118.35,
+    )  # book: p136 CP25 LPC 6, A to the LE mark, B to the root TE, C to the tip TE
+    winglet_book_jig_tol_in: Tuple[float, float, float] = (
+        0.05,
+        0.05,
+        1.0,
+    )  # book: p136 tolerance on A, B and C
+    winglet_book_bid_patch_in: Tuple[float, float] = (
+        18.0,
+        14.0,
+    )  # cp-corrected: p136 third BID ply on the upper winglet root, 18 up by 14 wide (CP34 LPC 104; the 14 is medium)
+    winglet_book_und_table_in: Tuple[
+        Tuple[float, float],
+        Tuple[float, float],
+        Tuple[float, float],
+        Tuple[float, float],
+        Tuple[float, float],
+        Tuple[float, float],
+        Tuple[float, float],
+    ] = (
+        (24.0, 12.0),
+        (22.0, 11.0),
+        (20.0, 10.0),
+        (18.0, 9.0),
+        (16.0, 8.0),
+        (14.0, 7.0),
+        (12.0, 6.0),
+    )  # book: p138 corner layups 3 and 4 UND plies, A in and B in
+    winglet_book_conduit_from_te_in: float = (
+        13.2  # book: p137 rudder conduit from the winglet TE
+    )
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -657,6 +874,63 @@ class GeometricParams:
     def canopy_check_b_fs(self) -> float:
         """Derived: 15 in forward of the firewall line (p109)."""
         return self.fs_firewall - 15.0
+
+    # --- chapter 19 and 20 derived values (M2.7) ---
+    @property
+    def wing_le_fs_bl_58(self) -> float:
+        """Derived: LE at BL 58 from the p126 LE at BL 55.5 and the 22.98 deg line (113.96); CP25 LPC 7 prints 113.9."""
+        return self.wing_book_le_fs_bl_55_5 + (
+            58.0 - self.wing_book_rib_bl[1]
+        ) * math.tan(math.radians(self.wing_sweep_le))
+
+    @property
+    def wing_le_fs_bl_106_25_derived(self) -> float:
+        """Derived: p126 TE 165.8 less the printed chord 31.35 (134.45); the p126 LE label prints 134.95 and the 22.98 deg line gives 134.42."""
+        return self.wing_book_te_fs[1] - self.wing_book_chord[1]
+
+    @property
+    def wing_le_fs_bl_106_25_line(self) -> float:
+        """Derived: the straight 22.98 deg LE line from FS 112.9 at BL 55.5 to BL 106.25 (134.42)."""
+        return self.wing_book_le_fs_bl_55_5 + (
+            self.wing_book_rib_bl[2] - self.wing_book_rib_bl[1]
+        ) * math.tan(math.radians(self.wing_sweep_le))
+
+    @property
+    def wing_aileron_hinge_fs(self) -> Tuple[float, float]:
+        """Derived: top-skin hinge line FS at BL 55.5 and 106.25, the p126 TE less the p124 top cut (149.7, 161.45)."""
+        te = self.wing_book_te_fs
+        cut = self.wing_aileron_skin_cut_top_in
+        return (te[0] - cut[0], te[1] - cut[1])
+
+    @property
+    def winglet_height_book_in(self) -> float:
+        """Derived: WL 65.4 less WL 18.4 (p135), the upper fin without its cap."""
+        return self.winglet_book_top_wl - self.winglet_book_root_wl
+
+    @property
+    def winglet_lower_height_book_in(self) -> float:
+        """Derived: WL 18.4 less WL 9.8 (p135)."""
+        return self.winglet_book_root_wl - self.winglet_book_bottom_wl
+
+    @property
+    def winglet_root_chord_book_in(self) -> float:
+        """Derived: root TE FS 186.8 less the straight LE line at WL 18.4, FS 159.7 (p135): 27.1."""
+        return self.winglet_book_root_te_fs - self.winglet_book_root_le_fs
+
+    @property
+    def winglet_top_le_fs(self) -> float:
+        """Derived-medium: top TE FS 196.6 less the 11.4 tip chord (185.2)."""
+        return self.winglet_book_top_te_fs - self.winglet_book_tip_chord_in
+
+    @property
+    def winglet_cant_in(self) -> float:
+        """Derived-low: inward lean of the tip over the fin height that closes the p136 C dimension (about 3.6)."""
+        wprp_fs, wprp_bl = self.winglet_book_jig_wprp
+        lateral = self.wing_book_rib_bl[3] - wprp_bl
+        dx = self.winglet_book_top_te_fs - wprp_fs
+        dz = self.winglet_height_book_in
+        c = self.winglet_book_jig_abc_in[2]
+        return lateral - math.sqrt(c * c - dx * dx - dz * dz)
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -866,7 +1140,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "book",
         "om-1980:p3 wing span 26.1 ft",
         "high",
-        "26.1 ft = 313.2 in; plans tip rib at B.L. 157 (plans-1980:p126) gives 314",
+        "26.1 ft = 313.2 in; plans tip rib at B.L. 157 (plans-1980:p126) gives 314 (2 x 157). Not moved in M2.7: the analysis planform changes the NP (Block 3); the chapter 19 build model uses wing_book_rib_bl",
     ),
     "wing_root_chord": _p(
         "derived",
@@ -935,7 +1209,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "cp-corrected",
         "cp-text:p25 LPC 7 wing root LE 113.9",
         "high",
-        "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58; fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)",
+        "plans p.171 prints 113.4; CP25 LPC 7 (MEO) corrects to 113.9; the station is the strake/wing LE junction at BL 58 and agrees with p126 (112.9 + 2.5 tan 22.98 = 113.96). The retired 125.61 is a different point: p126 prints FS 125.6 at BL 23 for the FC1 foam edge (the shear web face), not a wing LE, and 125.61 itself was a fitted value in an old frame with no book meaning (M2.7 ruling, docs/geometry-correction-ledger.md). fs_wing_le is derived from this anchor (derived-unsourced via wing sweep)",
     ),
     "wing_centerline_chord": _p(
         "derived",
@@ -945,7 +1219,7 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
     ),
     "wing_root_bl": _p(
         "unsourced",
-        note="root butt line 23.3, carried from the existing config comment; plans p126 TE meets cowl at B.L. 23 F.S. 148.4; not a root chord station",
+        note="root butt line 23.3, carried from the existing config comment; plans-1980:p126 prints BL 23 (TE meets the cowl at B.L. 23 F.S. 148.4) and 23.3 appears on no page; not a root chord station; not moved in M2.7 (the build model uses BL 23 from wing_book_rib_bl)",
     ),
     "fs_f22": _p(
         "derived",
@@ -1938,6 +2212,465 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "plans-1980:p109 15 in forward of the firewall FS 125",
         "high",
         "FS 110; property",
+    ),
+    # --- chapter 19 (M2.7): wings ---
+    "wing_book_rib_bl": _p(
+        "book",
+        "plans-1980:p126 rib stations BL 55.5, 106.25, 157; p127 adds the BL 23 root rib",
+        "high",
+        "BL 23 is the inboard core FC1 root rib, not the analysis root_bl 23.3 (wing_root_bl)",
+    ),
+    "wing_book_le_fs_bl_55_5": _p(
+        "book",
+        "plans-1980:p126 LE FS 112.9 at BL 55.5",
+        "high",
+        "re-read on the page image; chord 155.6 - 112.9 = 42.7 agrees",
+    ),
+    "wing_book_le_fs_tip": _p(
+        "book",
+        "plans-1980:p126 LE FS 156 at BL 157",
+        "high",
+        "p171 prints 156 too",
+    ),
+    "wing_book_le_fs_bl_106_25_printed": _p(
+        "conflict",
+        "plans-1980:p126 LE label FS 134.95 at BL 106.25",
+        "low",
+        "pair with wing_le_fs_bl_106_25_derived 134.45 (TE 165.8 less chord 31.35) and the 22.98 deg line 134.42; the page's hand renders 4 like 9 elsewhere; the model uses the straight line and is unaffected",
+    ),
+    "wing_le_fs_bl_106_25_derived": _p(
+        "conflict",
+        "plans-1980:p126 TE 165.8 and chord 31.35 at BL 106.25",
+        "medium",
+        "derived 134.45; the printed LE label reads 134.95 (wing_book_le_fs_bl_106_25_printed), 0.5 in apart, carried as a pair; property",
+    ),
+    "wing_le_fs_bl_106_25_line": _p(
+        "derived",
+        "plans-1980:p126 LE FS 112.9 at BL 55.5, 22.98 deg",
+        "high",
+        "112.9 + 50.75 tan 22.98 = 134.42; property",
+    ),
+    "wing_le_fs_bl_58": _p(
+        "derived",
+        "plans-1980:p126 LE FS 112.9 at BL 55.5, 22.98 deg",
+        "high",
+        "112.9 + 2.5 tan 22.98 = 113.96, agrees with CP25 LPC 7 (cp-text:p25) 113.9 within 0.1; property",
+    ),
+    "wing_book_te_fs": _p(
+        "book",
+        "plans-1980:p126 TE FS 155.6, 165.8, 176 at BL 55.5, 106.25, 157",
+        "high",
+        "11.36 deg outer TE; 165.8 = 155.6 + 50.75 tan 11.36",
+    ),
+    "wing_book_te_fs_bl_23": _p(
+        "book",
+        "plans-1980:p126 TE FS 148.4 at BL 23",
+        "medium",
+        "hand 4 reads like 9; 155.6 - 32.5 tan 12.49 = 148.4 settles it",
+    ),
+    "wing_book_chord": _p(
+        "book",
+        "plans-1980:p126 chords 42.7, 31.35, 20.0",
+        "high",
+        "each equals TE minus LE at its station, except that the BL 106.25 LE label conflicts (wing_book_le_fs_bl_106_25_printed)",
+    ),
+    "wing_book_thickness_pct": _p(
+        "book",
+        "plans-1980:p126 thickness 16.2, 15.7, 15.0 per cent",
+        "medium",
+        "the 16.2 trailing glyph is smeared; the others are clear",
+    ),
+    "wing_book_washout_deg": _p(
+        "book",
+        "plans-1980:p126 twist 0.6 washin, 0.96 washout, 2.7 washout",
+        "high",
+        "sign: positive is washout; the reference datum of these angles is not printed; the analysis wing_washout (1.0 tip) matches none of them",
+    ),
+    "wing_book_te_sweep_deg": _p(
+        "book",
+        "plans-1980:p126 TE sweep 11.36 deg",
+        "high",
+        "20.4 / 101.5 gives 11.37",
+    ),
+    "wing_book_te_sweep_inboard_deg": _p(
+        "book",
+        "plans-1980:p126 inboard TE kink 12.49 deg",
+        "high",
+        "7.2 / 32.5 gives 12.49",
+    ),
+    "wing_book_chord_line_wl": _p(
+        "book",
+        "plans-1980:p126 chord lines at W.L. 17.40",
+        "medium",
+        "p128 section A-A prints 17.4 twice and p134 names the 17.4 waterline plane; the digit 4 reads like 9 on p126; model z 0 (wing_le_wl)",
+    ),
+    "wing_book_te_wl": _p(
+        "book",
+        "plans-1980:p126 TE height WL 16.95 at BL 55.5, 18.35 at BL 157",
+        "high",
+        "the TE rises with the thickness taper and the twist",
+    ),
+    "wing_book_shear_web_fwd_fs": _p(
+        "book",
+        "plans-1980:p126 shear web forward face FS 125.6, 130.5, 147.35, 164.2",
+        "high",
+        "18.42 deg line; FS 125.6 at BL 23 is the FC1 foam edge, NOT a wing LE (see wing_le_anchor and the correction ledger)",
+    ),
+    "wing_book_shear_web_sweep_deg": _p(
+        "book",
+        "plans-1980:p126 shear web sweep 18.42 deg",
+        "high",
+        "atan(0.3320) = 18.37, the print rounds differently by 0.05",
+    ),
+    "wing_book_spar_cap_width_in": _p(
+        "book",
+        "plans-1980:p126 spar cap 3.0; p122 3 in tape",
+        "high",
+        "",
+    ),
+    "wing_book_foam_blocks": _p(
+        "book",
+        "plans-1980:p118 five 7x14x64 and two 7x14x41 blocks per wing",
+        "high",
+        "p127 lays them out",
+    ),
+    "wing_book_core_angle_deg": _p(
+        "book",
+        "plans-1980:p118 core cut angles 78.64 centre and outboard, 77.51 inboard",
+        "high",
+        "90 - 11.36 and 90 - 12.49",
+    ),
+    "wing_book_fc1_le_length_in": _p(
+        "book",
+        "plans-1980:p118 FC1 LE length 32.87",
+        "high",
+        "sqrt(32.5^2 + 4.9^2) = 32.87 from the shear-web edge stations",
+    ),
+    "wing_shear_web_zones": _p(
+        "cp-corrected",
+        "cp-text:p26 CP26 LPC 31 outboard shear web 2 plies",
+        "high",
+        "p121 prints 6 plies BL 23-70, 4 plies BL 70-120 and 3 plies BL 120-157; LPC 31 corrects the 3 to 2; plans-1980:p121",
+    ),
+    "wing_shear_web_outboard_plies_printed": _p(
+        "book",
+        "plans-1980:p121 3 plies BL 120 to 157 as printed",
+        "high",
+        "superseded by CP26 LPC 31 (wing_shear_web_zones); kept so the correction is visible",
+    ),
+    "wing_cap_bottom_plies_in": _p(
+        "book",
+        "plans-1980:p122 bottom cap 142, 135, 84, 52, 19.5 long",
+        "medium",
+        "fifth digit medium (19.5 or 17.5); base schedule only: the CP25 thin-tape box adds plies when the 5-ply test reads thin (CP28 LPC 56 makes it mandatory then) and the model says so",
+    ),
+    "wing_cap_bottom_offsets_in": _p(
+        "book",
+        "plans-1980:p122 offsets 5, 12, 19, 26",
+        "high",
+        "the drawing is not to scale along the span; the model reads them as inboard-end offsets of plies 2 to 5",
+    ),
+    "wing_cap_top_plies_in": _p(
+        "book",
+        "plans-1980:p123 top cap 142, 142, 119, 90, 61, 39, 20 long",
+        "high",
+        "142 tape is about 134 / cos 18.4 = 141.3 along the web line; base schedule, the CP25 box adds plies on thin tape",
+    ),
+    "wing_cap_top_offsets_in": _p(
+        "book",
+        "plans-1980:p123 offsets 6, 12, 18, 24",
+        "medium",
+        "four offsets for seven plies; the model puts plies 1 and 2 flush and carries the 6 in step on to ply 7 (representational)",
+    ),
+    "wing_skin_plies": _p(
+        "book",
+        "plans-1980:p122 bottom 2 UND; p123 and p128 top 3 UND",
+        "high",
+        "the third top ply is forward of the hinge line only; the bottom third ply is BID at the tip",
+    ),
+    "wing_skin_le_lap_in": _p(
+        "book",
+        "plans-1980:p122 2 in LE lap onto the bottom skin",
+        "high",
+        "p123 adds a 4 in lap down the FC1 face",
+    ),
+    "wing_skin_te_lap_min_in": _p(
+        "cp-corrected",
+        "cp-text:p32 CP32 wing TE lap minimum 0.5",
+        "high",
+        "the plans print 0.6; plans-1980:p128",
+    ),
+    "wing_aileron_outboard_bl": _p(
+        "book",
+        "plans-1980:p126 aileron outboard end BL 118.1",
+        "high",
+        "p119 and p171 agree",
+    ),
+    "wing_aileron_inboard_bl": _p(
+        "conflict",
+        "plans-1980:p124 aileron skin cut at the BL 55.5 foam joint",
+        "medium",
+        "pair with wing_aileron_inboard_bl_p171 (54.3); the A10 torque tube overhangs 1 in inboard (p125); no page says which dimension p171 means",
+    ),
+    "wing_aileron_inboard_bl_p171": _p(
+        "conflict",
+        "plans-1980:p171 aileron inner end BL 54.3",
+        "high",
+        "pair with wing_aileron_inboard_bl (55.5); digits clear, meaning unresolved",
+    ),
+    "wing_aileron_skin_cut_top_in": _p(
+        "book",
+        "plans-1980:p124 top cut 5.9 at BL 55.5, 4.35 at BL 106.25",
+        "medium",
+        "the 4.35 third digit is 3 or 5 on the image; 5.9 repeats on CP34 LPC 107 (cp-text:p34); measured forward of the TE",
+    ),
+    "wing_aileron_skin_cut_bottom_in": _p(
+        "book",
+        "plans-1980:p124 bottom cut 7.6 at BL 55.5, 5.65 at BL 106.25",
+        "high",
+        "7.6 repeats on CP34 LPC 107; the root cut is a vertical plane (cp-text:p34)",
+    ),
+    "wing_aileron_rod_length_in": _p(
+        "book",
+        "plans-1980:p133 A13 balance rod 3/8 steel 65 long",
+        "high",
+        "hinge line is about 63.9 in, so 65 fits within 1.1 in; the p130 section labels the same rod A11",
+    ),
+    "wing_aileron_torque_tube_length_in": _p(
+        "book",
+        "plans-1980:p133 A10 tube 3/4 x .058, 9 in",
+        "high",
+        "overhangs 1 in inboard of the aileron (p125)",
+    ),
+    "wing_aileron_hinge_lengths_in": _p(
+        "book",
+        "plans-1980:p133 A3 8 in, A4 6 in twice",
+        "high",
+        "hinge stock MS20001-P6",
+    ),
+    "wing_aileron_max_up_deg": _p(
+        "book",
+        "plans-1980:p125 stop bolt for 20 deg up aileron; p131 20 deg of belcrank travel",
+        "high",
+        "",
+    ),
+    "wing_spar_join_bolt_spacing_in": _p(
+        "conflict",
+        "plans-1980:p134 drawing 28.85",
+        "high",
+        "pair with wing_spar_join_bolt_spacing_text_in 28.83 (text note on the same page); unresolved",
+    ),
+    "wing_spar_join_bolt_spacing_text_in": _p(
+        "conflict",
+        "plans-1980:p134 text note 28.83",
+        "high",
+        "pair with wing_spar_join_bolt_spacing_in 28.85",
+    ),
+    "wing_spar_join_bolts": _p(
+        "book",
+        "plans-1980:p134 2 x AN8-21A and 1 x AN8-23A per wing",
+        "high",
+        "p128 and p129 show the same",
+    ),
+    "wing_spar_join_bushings_per_wing": _p(
+        "book",
+        "plans-1980:p134 LWA9 bushing, 12 in all",
+        "high",
+        "6 per wing",
+    ),
+    "wing_aileron_hinge_fs": _p(
+        "derived",
+        "plans-1980:p126 TE and p124 top cut",
+        "medium",
+        "FS 149.7 at BL 55.5 and 161.45 at BL 106.25; the hinge line sits at the top skin; property",
+    ),
+    # --- chapter 20 (M2.7): winglets and rudders ---
+    "winglet_book_root_wl": _p(
+        "book",
+        "plans-1980:p135 root level line WL 18.4",
+        "high",
+        "printed five times",
+    ),
+    "winglet_book_top_wl": _p(
+        "book",
+        "plans-1980:p135 top of skin WL 65.4",
+        "high",
+        "WL 66.4 with the 1 in cap; read twice",
+    ),
+    "winglet_book_cap_in": _p(
+        "book",
+        "plans-1980:p135 1 in urethane cap, p136 skinned 1 ply BID",
+        "high",
+        "",
+    ),
+    "winglet_book_bottom_wl": _p(
+        "book",
+        "plans-1980:p135 lower fin bottom WL 9.8",
+        "high",
+        "p171 prints 9.8 too",
+    ),
+    "winglet_book_root_le_fs": _p(
+        "book",
+        "plans-1980:p135 straight LE line meets WL 18.4 at FS 159.7",
+        "high",
+        "p135 label read twice; the LE at the wing top surface is FS 160.5 (winglet_book_root_le_fs_wing_top)",
+    ),
+    "winglet_book_root_le_fs_wing_top": _p(
+        "book",
+        "plans-1980:p136 side view FS 160.5 at the wing top",
+        "high",
+        "4.5 in aft of the wingtip LE FS 156",
+    ),
+    "winglet_book_root_te_fs": _p(
+        "book",
+        "plans-1980:p135 root TE FS 186.8",
+        "high",
+        "rudder hinge 176.8 plus 10",
+    ),
+    "winglet_book_top_te_fs": _p(
+        "book",
+        "plans-1980:p135 top TE corner FS 196.6",
+        "high",
+        "p171 prints 196.6 too",
+    ),
+    "winglet_book_tip_chord_in": _p(
+        "derived-unsourced",
+        "plans-1980:p135 planform at 1/5 scale, pixel read scaled by the printed 10 and 12.14 rudder widths",
+        "medium",
+        "about 11.4, tip LE about FS 185.2; the page prints no tip chord. Crew C read 28.9, which is wrong (the fin tapers); not used",
+    ),
+    "winglet_book_rudder_hinge_fs": _p(
+        "book",
+        "plans-1980:p135 rudder hinge FS 176.8",
+        "high",
+        "",
+    ),
+    "winglet_book_rudder_widths_in": _p(
+        "book",
+        "plans-1980:p135 and p138 rudder 10 at WL 18.4, 12.14 at the top, 11.5 at the bottom",
+        "high",
+        "186.8 - 176.8 = 10",
+    ),
+    "winglet_book_rudder_height_in": _p(
+        "book",
+        "plans-1980:p135 rudder 14.5 tall, 10.5 above WL 18.4 and 4 below",
+        "high",
+        "",
+    ),
+    "winglet_book_rudder_max_deg": _p(
+        "book",
+        "plans-1980:p139 rudder travel 30 deg maximum",
+        "high",
+        "the brake master cylinder is the stop; the swage keeps at least 0.7 in travel",
+    ),
+    "winglet_book_hinge_length_in": _p(
+        "book",
+        "plans-1980:p138 piano hinge 7.5 in from WL 18.4 up",
+        "high",
+        "the p135 hatched strip agrees",
+    ),
+    "winglet_book_core_angle_deg": _p(
+        "book",
+        "plans-1980:p135 upper fin core end angles 78.64 and 101.36",
+        "high",
+        "same as the wing",
+    ),
+    "winglet_book_core_length_in": _p(
+        "book",
+        "plans-1980:p135 upper fin core 48 in long",
+        "high",
+        "cut from the wing outboard TE block",
+    ),
+    "winglet_book_jig_wprp": _p(
+        "book",
+        "plans-1980:p136 WPRP FS 149.6, BL 55.5",
+        "high",
+        "inboard front corner of the aileron cut-out; the p124 top hinge line gives FS 149.7 at BL 55.5 (wing_aileron_hinge_fs)",
+    ),
+    "winglet_book_jig_abc_in": _p(
+        "book",
+        "plans-1980:p136 A 102.15, B 108.35, C 118.35 (CP25 LPC 6, cp-text:p25)",
+        "high",
+        "handwritten on the page; the plan arithmetic closes A within 0.1, B within 0.25 and C only with a lean (winglet_cant_in)",
+    ),
+    "winglet_book_jig_tol_in": _p(
+        "book",
+        "plans-1980:p136 A and B within 0.05, C within 1",
+        "high",
+        "",
+    ),
+    "winglet_book_bid_patch_in": _p(
+        "cp-corrected",
+        "plans-1980:p136 third BID ply 18 in up by 14 wide; CP34 LPC 104 (cp-text:p34) upper winglet only",
+        "medium",
+        "the 14 label is handwritten",
+    ),
+    "winglet_book_und_table_in": _p(
+        "book",
+        "plans-1980:p138 UND plies 24/12, 22/11, 20/10, 18/9, 16/8, 14/7, 12/6",
+        "high",
+        "A in and B in, layups 3 and 4",
+    ),
+    "winglet_book_conduit_from_te_in": _p(
+        "book",
+        "plans-1980:p137 rudder conduit 13.2 from the winglet TE",
+        "high",
+        "cobelu agrees",
+    ),
+    "winglet_height_book_in": _p(
+        "derived",
+        "plans-1980:p135 WL 65.4 less WL 18.4",
+        "high",
+        "47.0 (48.0 with the cap); property",
+    ),
+    "winglet_lower_height_book_in": _p(
+        "derived",
+        "plans-1980:p135 WL 18.4 less WL 9.8",
+        "high",
+        "8.6; property",
+    ),
+    "winglet_root_chord_book_in": _p(
+        "derived",
+        "plans-1980:p135 root TE 186.8 less LE line 159.7",
+        "medium",
+        "27.1; the page prints no chord; property",
+    ),
+    "winglet_top_le_fs": _p(
+        "derived-unsourced",
+        "plans-1980:p135 top TE 196.6 less the 11.4 tip chord",
+        "medium",
+        "185.2 (LE sweep about 28 deg); inherits the tip chord's pixel read; property",
+    ),
+    "winglet_cant_in": _p(
+        "derived-unsourced",
+        "plans-1980:p136 jig C 118.35 from the WPRP",
+        "low",
+        "about 3.6 in inward over 47 in closes C; no cant or toe angle is printed, so it is representational; A and B close without it; property",
+    ),
+    # --- analysis fields with no page behind them (M2.7 rulings; values unchanged) ---
+    "wing_washout": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "tip washout 1.0 deg matches no page. The book twist is 0.6 washin at BL 55.5, 0.96 washout at 106.25 and 2.7 washout at the tip (wing_book_washout_deg, plans-1980:p126); not moved here because it changes the NP (Block 3)",
+    ),
+    "winglet_height": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "16 in matches no page. The book upper fin is 47.0 tall (WL 18.4 to 65.4) plus a 8.6 lower fin (plans-1980:p135); the chapter 20 build model uses winglet_book_* fields. VSPAERO not re-run (TODOS)",
+    ),
+    "winglet_root_chord": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "20 in matches no page. The book root chord is about 27.1 (winglet_root_chord_book_in, plans-1980:p135); analysis field left as is",
+    ),
+    "winglet_tip_chord": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "12 in matches no page. The book tip chord is about 11.4 (derived-medium, winglet_book_tip_chord_in, plans-1980:p135); analysis field left as is",
     ),
     "datum_offset_in": _p(
         "book",

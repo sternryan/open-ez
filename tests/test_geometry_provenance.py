@@ -18,7 +18,7 @@ from config.aircraft_config import (
 )
 
 PATTERN = re.compile(
-    r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor)|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_|spar_|ctl_|trim_|canopy_)"
+    r"^(fs_|side_|front_seat_bkhd_|rear_seat_bkhd_|fuselage_inner_|bottom_(foam|trim|aft)|canard_|wing_(span|root_chord|tip_chord|sweep_le|dihedral|root_bl|le_anchor|washout|book_|shear_web_|cap_|skin_|aileron_|spar_join_)|winglet_|datum_offset_in$|fuselage_length$|wl_(main_axle|nose_wheel|static_port|fuselage_bottom_3view)$|bl_gear_datum$|main_axle_fwd_of_spar$|gear_|skin_|belt_|rollover_|step_|ng\d+_|nose_strut_|nose_crank_|floor_block_|top_block_|pedal_block_|static_port_|elevator_|cs1[01]_|balance_pocket_|spar_|ctl_|trim_|canopy_)"
 )
 
 
@@ -42,6 +42,15 @@ TRACKED_PROPERTIES = {
     "canopy_check_a_wl",
     "canopy_check_b_wl",
     "canopy_check_b_fs",
+    "wing_le_fs_bl_58",
+    "wing_le_fs_bl_106_25_derived",
+    "wing_le_fs_bl_106_25_line",
+    "wing_aileron_hinge_fs",
+    "winglet_height_book_in",
+    "winglet_lower_height_book_in",
+    "winglet_root_chord_book_in",
+    "winglet_top_le_fs",
+    "winglet_cant_in",
 }
 
 
