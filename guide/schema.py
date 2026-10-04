@@ -405,6 +405,9 @@ def validate(g: Graph) -> list[str]:
     return errs
 
 
+WING_CHAPTERS = (19, 30)
+
+
 def topo_order(g: Graph) -> list[str]:
     order: list[str] = []
     seen: set[str] = set()
@@ -420,7 +423,30 @@ def topo_order(g: Graph) -> list[str]:
     # Within a chapter the authored order (the chapter file's list order) breaks ties, not the op id:
     # ids sort alphabetically, which put chapter 4's firewall ahead of the seat bulkheads.
     authored = {op_id: k for k, op_id in enumerate(g.ops)}
-    for n in sorted(g.ops, key=lambda i: (g.ops[i].chapter, authored[i])):
+
+    # An op that waits on the wing or winglet chapters (19 to 29: the aileron linkage, the rudder
+    # cable rig) is walked with the chapter it waits on, after that chapter's own ops. Walked at its
+    # own chapter (16), its prerequisites were pulled in with it and put all of chapters 19 and 20
+    # ahead of chapters 17 and 18. Chapters 30 and up (canard revisions) and the earlier-chapter
+    # pulls (the spar before the firewall bond) keep the plain pull-in behaviour.
+    eff: dict[str, int] = {}
+
+    def effective(n: str) -> int:
+        if n not in eff:
+            eff[n] = g.ops[n].chapter  # cycle guard; validate() reports cycles
+            late = [
+                effective(r)
+                for r in g.ops[n].requires
+                if r in g.ops and WING_CHAPTERS[0] <= effective(r) < WING_CHAPTERS[1]
+            ]
+            eff[n] = max([g.ops[n].chapter, *late])
+        return eff[n]
+
+    def key(i: str) -> tuple[int, int, int, int]:
+        e = effective(i)
+        return (e, int(e != g.ops[i].chapter), g.ops[i].chapter, authored[i])
+
+    for n in sorted(g.ops, key=key):
         visit(n)
     return order
 

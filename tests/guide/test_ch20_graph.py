@@ -75,9 +75,9 @@ def test_order_and_the_rudder_stub_is_replaced(g):
         "f20.jig",
         "f20.inside-layups",
         "f20.outside-layups",
+        "f20.lower-fin",
         "f20.rudder-cut",
         "f20.rudder-hang",
-        "f20.lower-fin",
     ]
     assert "f20.rudder-hang" in g.ops["f16.rudder-cable-rig"].requires
     assert "c20.winglets" not in g.ops
@@ -130,3 +130,23 @@ def test_own_words(g):
     for loc, t in authored_texts(g):
         if loc.startswith("f20."):
             assert isinstance(t, str) and "‑" not in t and len(t) < 700, loc
+
+
+def test_book_order_the_wing_waiters_follow_their_chapter(g):
+    """Chapters 17 and 18 come before 19 and 20; the two ch16 ops that wait on the wing and
+    the winglet are walked right after the chapter they wait on."""
+    order = topo_order(g)
+    pos = {i: k for k, i in enumerate(order)}
+    ch = lambda n: [i for i in order if g.ops[i].chapter == n]  # noqa: E731
+    assert max(pos[i] for i in ch(18)) < pos["f19.jig"]
+    assert max(pos[i] for i in ch(17)) < pos["f19.jig"]
+    assert pos["f19.attach"] < pos["f16.aileron-linkage"] < pos["f20.cut-cores"]
+    assert pos["f20.rudder-hang"] < pos["f16.rudder-cable-rig"]
+    # ch16 minus the two deferred ops is all ahead of chapter 17
+    held = {"f16.aileron-linkage", "f16.rudder-cable-rig", "f16.brake-cables"}
+    assert (
+        max(
+            pos[i] for i in ch(16) if i not in held and pos[i] < pos["f17.mount-blocks"]
+        )
+        < pos["f17.mount-blocks"]
+    )
