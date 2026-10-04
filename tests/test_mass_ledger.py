@@ -328,3 +328,22 @@ def test_ledger_reasons_name_parts_and_materials_in_plain_words_never_internal_i
         assert not any(re.search(rf"\b{re.escape(p)}\b", s) for p in ids), s
     assert "not yet computed: core material of Left top longeron not sourced" in reasons
     assert "not yet computed: density of birch plywood not sourced" in reasons
+
+
+def test_ledger_json_exposes_the_cp26_prototype_weights_as_reference_rows_in_no_sum():
+    """M2.5 F2: the spar's 29.3 lb is a reference row (like F22, F28 and the panel); it is in neither CG."""
+    from core.ledger import fuselage_ledger_json
+
+    j = fuselage_ledger_json()
+    rows = j["prototype_weights"]["rows"]
+    assert {"f22", "f28", "panel", "spar"} <= set(rows)
+    spar = rows["spar"]
+    assert spar["weight_lb"] == 29.3 and spar["cite"].startswith("cp-text:p26")
+    assert "reference only" in spar["note"] and set(spar) == {
+        "weight_lb",
+        "cite",
+        "note",
+    }
+    for part_cg in (j["cg"], j["cg_lower_bound"]):
+        assert "spar" not in part_cg["included"] + list(part_cg["excluded"])
+    assert j["cg"]["arm_in"] is None and j["cg"]["weight_lb"] == 0.0

@@ -78,7 +78,7 @@ const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foa
   spar_box: 'foam', spar_bulkheads_end_bulkheads: 'foam', spar_bulkheads_interior_bulkheads: 'foam',
   spar_lwa_lwa1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa2: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa3: ['metal', 0xc4c8cd, 0.85, 0.35],
   spar_lwa_lwa4: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa5: ['metal', 0xc4c8cd, 0.85, 0.35],
-  spar_spruce_blocks: ['wood', 0xdcc08e, 0, 0.6], spar_em12: ['metal', 0x8d939a, 0.9, 0.3], spar_sh1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_jig: ['wood', 0xb98f5c, 0, 0.62],
+  spar_spruce_blocks: ['wood', 0xdcc08e, 0, 0.6], spar_em12: ['metal', 0x8d939a, 0.9, 0.3], spar_sh1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_jig: ['wood', 0xe9ddc0, 0, 0.62],
   fuselage_firewall_stainless: ['metal', 0xd5d8dc, 0.9, 0.3], firewall_belcrank: ['metal', 0x8d939a, 0.9, 0.3], firewall_master_cylinders: ['metal', 0x6d737a, 0.7, 0.4],
   controls_consoles_front_console: 'foam', controls_consoles_rear_console: 'foam', controls_torque_tube: ['metal', 0x8d939a, 0.9, 0.3],
   controls_sticks_front_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_sticks_rear_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_pitch_pushrod: ['metal', 0xc4c8cd, 0.85, 0.35],
@@ -89,6 +89,7 @@ const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foa
 const SLIDES = (cid: string) => SPAR_COMPONENTS.has(cid) && cid !== 'spar.jig'
 /** the parts bolted on the firewall's aft face: the glass plies lie on that face (the aft ply to F.S. 125.31), where the stainless sheet is exported, so the lab sets them that far aft (display only) */
 const FIREWALL_FACE = new Set(['fuselage.firewall_stainless', 'firewall.belcrank', 'firewall.master_cylinders'])
+const BURIED_PART = /^spar_(lwa_lwa[1-5]|spruce_blocks|bulkheads_interior_bulkheads)$/
 const STICKS = new Set(['controls_sticks_front_stick', 'controls_sticks_rear_stick'])
 /** how far the canard opening's removed material is lifted out of the box at its op (inches), so it reads as taken out */
 const VOID_LIFT = 5
@@ -690,6 +691,10 @@ export class FuselageBay {
         m.table.matrixWorldNeedsUpdate = true
         sig += m.carrier + face + (benched ? 'b' : '')
       }
+      // what is buried in the faint box is drawn through it (x-ray), so the op's own parts read; otherwise as any part
+      const xray = boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)
+      for (const mt of [m.jigMat, m.tableMat]) mt.depthTest = !xray
+      m.jig.renderOrder = m.table.renderOrder = xray ? 5 : 0
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
       const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') }

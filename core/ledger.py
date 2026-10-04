@@ -325,6 +325,18 @@ def fuselage_ledger_json() -> dict:
         "cg": cg_dict(False),
         "cg_lower_bound": _lower_bound_with_gear(),
         "gear": gear_json(),
+        # CP26 prototype weights (reference rows: F22, F28, panel and the centre-section spar). They are in no sum: the lab shows the spar's
+        # as a reference row, and cg / cg_lower_bound above never include it.
+        "prototype_weights": {
+            "rows": {
+                k: {
+                    "weight_lb": float(v["weight_lb"]),
+                    "cite": v["cite"],
+                    "note": v["note"],
+                }
+                for k, v in load_ledger()["prototype_weights"]["rows"].items()
+            }
+        },
         "notes": [
             "cg: parts whose core and glass are both fully sourced and placed (none yet).",
             "cg_lower_bound: core plus only the glass rows that are placed, plus the sourced gear rows (main and nose strut); never the unsourced wheels and brakes row. An undercount, not a weight.",

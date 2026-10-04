@@ -123,11 +123,11 @@ export const NOSE_VIEWS: Record<string, FuseView> = {
  */
 const spar = (bl: number, dist: number, el = 52, az = 0, pan = 0, up = 0): FuseView => ({ focus: { spar: bl }, dist, el, az, pan, up })
 export const M25_VIEWS: Record<string, FuseView> = {
-  'f14.jig': spar(0, 124, 42, 0, 0, 7),
+  'f14.jig': spar(-26, 96, 56, 0, 0, 4),
   'f14.foam-box': spar(0, 124, 42, 0, 0, 7),
   'f14.cs4-forward': spar(0, 124, 42, 0, 0, 7),
-  'f14.lwa-fabricate': spar(-25, 100, 42, 0, 0, 7),
-  'f14.interior-layups': spar(-27, 100, 42, 0, 0, 7),
+  'f14.lwa-fabricate': spar(-25, 50, 52, 180, 0, 2),
+  'f14.interior-layups': spar(-27, 52, 52, 180, 0, 2),
   'f14.close-box': spar(0, 124, 42, 0, 0, 7),
   'f14.cap-troughs': spar(0, 124, 42, 0, 0, 7),
   'f14.shearweb-lwa45': spar(-53, 100, 42, 0, 0, 7),
@@ -140,7 +140,7 @@ export const M25_VIEWS: Record<string, FuseView> = {
   // the slide-in: from the nose end and above, the spar entering the box from the room side (the left), the box in the middle of the frame
   'f14.fit-fuselage': { focus: at(121.7, 17.75), dist: 135, el: 30, az: -90 },
   'f14.bond-spar': { focus: at(121.7, 17.75), dist: 95, el: 40, az: -70 },
-  'f14.sh1-tabs': { focus: at(120.6, 22, 0), dist: 20, el: 60, az: -50 },
+  'f14.sh1-tabs': { focus: at(120.6, 22, 0), dist: 36, el: 58, az: -40 },
   // chapter 15: the firewall from behind and above (the aft end of the box is the +X end)
   'f15.parts-fab': { focus: at(125, 15), dist: 110, el: 28, az: -70 },
   'f15.stainless-firewall': { focus: at(125.5, 15), dist: 70, el: 20, az: -80 },
@@ -151,15 +151,15 @@ export const M25_VIEWS: Record<string, FuseView> = {
   'f16.pivot-bulkheads': { focus: at(78, 13, 6), dist: 100, el: 62, az: -20 },
   'f16.firewall-bearing': { focus: at(118, 12.3, 6), dist: 40, el: 55, az: -30 },
   'f16.torque-tubes': { focus: at(85, 12.3, 6), dist: 70, el: 62, az: -20 },
-  'f16.sticks-pushrods': { focus: at(48, 16, 5), dist: 34, el: 66, az: -14 },
-  'f16.pitch-pushrod': { focus: at(40, 15, 4), dist: 62, el: 58, az: -30 },
+  'f16.sticks-pushrods': { focus: at(47, 16, 5), dist: 42, el: 58, az: -60 },
+  'f16.pitch-pushrod': { focus: at(34, 18, 2), dist: 145, el: 44, az: -66 },
   'f16.aileron-linkage': { focus: at(70, 15, 6), dist: 110, el: 58, az: -20 },
   'f16.rudder-conduit': { focus: at(100, 8, 5), dist: 55, el: 58, az: -25 },
   'f16.rudder-cable-rig': { focus: at(112, 9, 5), dist: 45, el: 55, az: -40 },
   'f16.brake-cables': { focus: at(126, 17.75, 3), dist: 40, el: 24, az: -70 },
   'f16.adjustable-pedals': { focus: at(20, 8, 0), dist: 90, el: 35, az: 40 },
   // chapter 17: the trim handle on the left, the roll trim on the torque tube between the consoles
-  'f17.mount-blocks': { focus: at(82, 13, 6), dist: 34, el: 64, az: -20 },
+  'f17.mount-blocks': { focus: at(82, 13, 6), dist: 44, el: 66, az: -62 },
   'f17.parts': { focus: at(64, 10, -3), dist: 100, el: 55, az: 165 },
   'f17.pitch-trim': { focus: at(45, 9, -9.5), dist: 38, el: 56, az: 165 },
   'f17.roll-trim': { focus: at(82, 13, 6), dist: 30, el: 64, az: -20 },

@@ -408,7 +408,10 @@ export interface GroundLite {
   /** the nose wheel's W.L. (cp-corrected, CP25 LPC 24); no tip-over number goes with it */
   nose_wheel_wl?: number
 }
+/** ledger.json "prototype_weights": CP26 reference weights by part; in no CG */
+export interface ProtoRowLite { weight_lb: number; cite: string; note: string }
 export interface LedgerLite {
+  prototype_weights?: { rows: Record<string, ProtoRowLite> }
   cg: CgLite; cg_lower_bound: CgLite
   gear?: { rows: GearRowLite[]; sourced_lb: number; ground_handling?: GroundLite; nose_arm_candidates?: number[]; nose_arm_candidates_status?: string }
 }
@@ -470,4 +473,13 @@ export function groundRow(ledger: LedgerLite | null): { value: string; sub: stri
     value: `Main axle F.S. ${g.main_axle_fs} (book)`,
     sub: [`${g.tip_back_line_deg}° tip-back line from the main tyre contact (p171)`, ...nose, `tip-back check: ${checkText(g.tip_back_check)}`, `tip-over check: ${checkText(g.tip_over_check)}`].join(' · '),
   }
+}
+
+
+/** From this op on (the spar is bonded in the box) the readout carries the spar's CP26 prototype weight as a reference row: never in the CG. */
+export const SPAR_REF_FROM = 'f14.bond-spar'
+export function sparRow(ledger: LedgerLite | null, opId: string | null, order: string[]): { value: string; sub: string } | null {
+  const r = ledger?.prototype_weights?.rows?.spar
+  if (!r || !opId || order.indexOf(opId) < order.indexOf(SPAR_REF_FROM) || ![14, 15, 16, 17].includes(Number(/^f(\d+)\./.exec(opId)?.[1]))) return null
+  return { value: `Spar (CP26 prototype): ${r.weight_lb.toFixed(1)} lb, reference, not in CG`, sub: r.note }
 }

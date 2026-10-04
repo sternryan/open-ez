@@ -228,3 +228,5 @@ body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, 
 #gl-lost p { margin: 0 0 8px; color: var(--ink-soft); line-height: 1.45; }
 #gl-lost .btn { background: var(--ink); color: var(--on-ink); font-weight: 600; padding: 0 18px; }
 #gl-lost .btn:hover { background: var(--ink); }
+
+#readout #t-ref { flex-wrap: wrap; }

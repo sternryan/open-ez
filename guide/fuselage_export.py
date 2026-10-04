@@ -650,7 +650,7 @@ M25_LABELS = {
     "spar.cap_bottom": "Bottom spar cap, 9 UND plies",
     "spar.bulkheads.end_bulkheads": "Spar end bulkheads",
     "spar.bulkheads.interior_bulkheads": "Spar interior bulkheads",
-    "spar.lwa.lwa1": "Wing attach plates LWA1",
+    "spar.lwa.lwa1": "Wing attach plates LWA1 to LWA5",
     "spar.lwa.lwa2": "Wing attach plates LWA2",
     "spar.lwa.lwa3": "Wing attach plates LWA3",
     "spar.lwa.lwa4": "Wing attach plates LWA4",
