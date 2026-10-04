@@ -52,7 +52,7 @@ unresolved, so all three solids are representational and ineligible for manufact
 
 Each component left `no-geometry` with a positive-volume test and a fidelity expectation
 (`tests/test_m25_geometry.py`), which assert stations, symmetry and control travel against
-literal book numbers. Keep the prototype spar mass distinct from calculated material
+literal book numbers. Keep the CP26 builder-weight (N26MS) spar mass distinct from calculated material
 mass. These display solids are not STEP/STL candidates merely because a GLB can show
 them.
 

@@ -270,7 +270,7 @@ export function initUI(h: UIHandlers, store: Store) {
       $('ro-ground-sub').textContent = g.sub
       $('t-ground').title = `${g.value}. ${g.sub}`
     },
-    /** a reference weight row (the spar's CP26 prototype weight); null hides it */
+    /** a reference weight row (the spar's CP26 builder weight, N26MS); null hides it */
     setRef(r: { value: string; sub: string } | null) {
       $('t-ref').hidden = r === null
       if (!r) return

@@ -324,3 +324,11 @@ Plans p.171 back-cover 3-view, read by the owner:
   unsourced, and cobelu template sheet C-3 labels **W.L. 19.8**. 18.9 vs 19.8 may be a digit
   transposition in one source or two different reference points (e.g. chord line vs a template
   datum). Not changed here: a Block 1 item.
+
+## CP26 weight list attribution (M2.5 round 3)
+
+| Row | Was | Is | Numbers |
+|---|---|---|---|
+| `prototype_weights` (F22 1.44, F28 0.19, panel 2.13, spar 29.3 lb) | cited as the RAF prototype, CP26 page 2 | Mike and Sally Melvill's builder airplane N26MS ("Mike and Dick's Long-EZ's"), CP26 printed page 3 | none change |
+
+The data key stays `prototype_weights`; the cites, notes, lab readout and excluded-reason string now say "builder weight" and "N26MS".

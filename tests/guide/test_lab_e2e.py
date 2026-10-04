@@ -5993,11 +5993,11 @@ def test_m25_spar_reference_row_from_the_bond_on_and_never_in_the_cg(rsite):
                 ("f14.fit-fuselage", None),
                 (
                     "f14.bond-spar",
-                    "Spar (CP26 prototype): 29.3 lb, reference, not in CG",
+                    "Spar (CP26 builder weight, N26MS): 29.3 lb, reference, not in CG",
                 ),
                 (
                     "f16.pitch-pushrod",
-                    "Spar (CP26 prototype): 29.3 lb, reference, not in CG",
+                    "Spar (CP26 builder weight, N26MS): 29.3 lb, reference, not in CG",
                 ),
                 ("f13.nose-door", None),
             ):

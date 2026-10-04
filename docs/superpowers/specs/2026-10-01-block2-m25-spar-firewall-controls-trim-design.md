@@ -37,7 +37,7 @@ in place, and the mass ledger gains its heaviest sourced structural row (the spa
 - **Template-only, so representational:** spar-cap trough templates (A11), firewall outline (A4),
   console and stick fore-aft positions beyond the two pivot planes, wing attach bolt FS, master
   cylinder and bracket positions.
-- **Mass:** spar 29.3 lb (CP26 prototype weight, BID layup) is the one sourced row. Everything else
+- **Mass:** spar 29.3 lb (CP26 builder weight, Melvill N26MS, BID layup) is the one sourced row. Everything else
   in ch15–17 is `unsourced`; foam/metal/cloth arithmetic is `derived` and labelled as a lower bound.
 
 ## 3. Rulings made by the lead
@@ -69,7 +69,7 @@ in place, and the mass ledger gains its heaviest sourced structural row (the spa
   rudder conduits to the pedals.
 - Trim: the pitch trim handle and springs on the left elevator's belcrank, roll trim on the torque
   tube.
-- Readout: the spar's 29.3 lb (prototype) row; CG still "not yet computed"; the lower bound grows.
+- Readout: the spar's 29.3 lb (builder weight, N26MS) row; CG still "not yet computed"; the lower bound grows.
 
 ## 5. How it is built
 
