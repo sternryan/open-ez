@@ -135,6 +135,14 @@ prototype_weights:
     dynafocal_mount: {weight_lb: 5.19, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3 dynafocal engine mount (5 lb 3 oz); the 183 lb fuselage excludes it; reference only, no CG, not a ledger row"}
     cowl_glass: {weight_lb: 18.0, cite: "cp-text:p27", note: "published weight (CP27 page 5): the standard Lycoming Long-EZ cowl, both halves, in glass; reference only, no CG, not a ledger row"}
     cowl_graphite: {weight_lb: 12.0, cite: "cp-text:p27", note: "published weight (CP27 page 5): the same cowl in graphite (Kevlar within 1 lb of graphite, CP28 p10); reference only, no CG, not a ledger row"}
+    # Block 2 M2.9: finish deltas of ONE airplane (N26MS): the same part weighed "ready to finish" (CP26 page 3) and "filled and painted" (CP27 page 1).
+    # A delta is not a part mass: these are references, never summed, in no moment sum, and no finish row is added on top of builder weights that are
+    # already painted (the N26MS ladder starts painted, so a finish row would double-count). Finish enters the bottom-up ledger only in 2.n, from
+    # per-part deltas or a stated allowance, flagged as such. Chapter 25 prints thicknesses only, no finish weight. No fuselage, strake or cowl finish was weighed.
+    wing_painted: {weight_lb: 60.0, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 1; one wing with winglets, no rudder or aileron, filled and painted; reference only, no CG, not a ledger row"}
+    finish_delta_canopy: {weight_lb: 1.0, cite: "cp-text:p27", note: "finish delta, N26MS: canopy 16 lb ready to finish (CP26 page 3) against 17 lb with hinges, filled and painted (CP27 page 1); an upper bound, the hinges may be only in the painted figure; reference only, never summed, no CG, not a ledger row"}
+    finish_delta_aileron: {weight_lb: 0.275, cite: "cp-text:p27", note: "finish delta, N26MS: aileron 5.125 lb (CP26 page 3, 5 lb 2 oz) against 5.4 lb filled and painted (CP27 page 1); each; reference only, never summed, no CG, not a ledger row"}
+    finish_delta_wing: {weight_lb: 2.2, cite: "cp-text:p27", note: "finish delta, N26MS: one wing with winglets about +2.2 lb (range 2.1 to 2.3, derived: 64 lb ready to finish less aileron 5.125 and the unweighed rudder, against 60 lb painted, CP26 page 3 and CP27 page 1); each; reference only, never summed, no CG, not a ledger row"}
   complete_fuselage_lb:
     weight_lb: 183.0
     cite: "cp-text:p26 CP26 page 3 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"

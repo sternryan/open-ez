@@ -931,6 +931,49 @@ class GeometricParams:
         0.063,
     )  # book: plans-1980:p156: upright 2 by 2 formed angle, 0.063, eight rivets (the rivet prefix is smudged)
 
+    # === COVERS, FINISHING, UPHOLSTERY (chapters 24 to 26, M2.9) ===
+    # plans-1980 pdf pages p159 to p170. Only LC1's stations are printed; the other console, cover and cushion outlines are fitted shapes
+    # (core.covers_book, core.upholstery_book) because the A-sheets are not held. The finish is thicknesses and a colour rule, not solids.
+    # The prefixes cov_, fin_, upl_ keep these apart from the earlier chapters.
+    cov_book_lc1_fs: Tuple[float, float] = (52.0, 60.0)  # book: plans-1980:p159: LC1 runs FS 52 to FS 60, 8 in long (typed)
+    cov_book_lc1_in: Tuple[float, float] = (9.1, 8.0)  # book: plans-1980:p159: LC1 landing-brake console piece 9.1 high by 8 long, 0.35 in core
+    cov_book_lc1_offset_in: float = 2.0  # book: plans-1980:p159: LC1 stands 2.0 in off the fuselage side (text and section B-B agree)
+    cov_book_lc1_top_wl: float = 11.6  # book: plans-1980:p159: sketch label W.L. 11.6
+    cov_book_console_core_in: float = 0.35  # book: plans-1980:p159: type R45 PV, 0.35 in, every console piece
+    cov_book_lc2_len_in: float = 30.6  # conflict: plans-1980:p160: scan reads 30.6 at 4x (open-topped last digit)
+    cov_book_lc2_len_cobelu_in: float = 30.8  # conflict: cobelu:pch24: cobelu chapter 24 text
+    cov_book_lc2_width_in: float = 2.35  # book: plans-1980:p160: LC2 front console top, 0.3 in bevel at the forward end
+    cov_book_lc3_in: Tuple[float, float] = (10.6, 9.1)  # book: plans-1980:p160: LC3 sloped side: 10.6 along the top, 9.1 tall, 3 in step at the bottom
+    cov_book_lc3_step_in: float = 3.0  # book: plans-1980:p160: LC3 bottom step 3 in
+    cov_book_lc4_in: Tuple[float, float] = (11.7, 9.1)  # book: plans-1980:p160: LC4 side rectangle with one trim-lever hole
+    cov_book_lc5_in: Tuple[float, float] = (18.2, 1.9)  # book: plans-1980:p160: LC5 rear console top, 0.35 in bevel at the end
+    cov_book_lc6_depth_in: float = 8.0  # book: plans-1980:p160: LC6 triangle on LC5, base angles 50 and 45 read at 4x
+    cov_book_aft_cover_block_in: Tuple[float, float, float] = (18.0, 20.0, 2.0)  # book: plans-1980:p159: green urethane chunk, 18 by 20 by 2
+    cov_book_aft_cover_strut_gap_in: float = 0.125  # book: plans-1980:p159: about 1/8 in clear of the main gear strut all round
+    cov_book_aft_cover_dish_in: float = 0.5  # book: plans-1980:p159: mark 1/2 in inside the first outline, front and back, and hollow to the line
+    cov_book_aft_cover_plies: Tuple[int, int] = (1, 1)  # conflict: plans-1980:p159: inside, outside plies BID. The scan blanks the inside ply count and hand-edits the outside from two to one
+    cov_book_aft_cover_plies_cobelu: Tuple[int, int] = (1, 2)  # conflict: cobelu:pch24: cobelu chapter 24: inside 1 ply, outside 2 plies
+    cov_book_thigh_rib_in: Tuple[float, float] = (10.8, 3.65)  # book: plans-1980:p160: two ribs, 10.8 long and 3.65 tall at the front
+    cov_book_thigh_floor_in: Tuple[float, float] = (17.0, 12.3)  # book: plans-1980:p160: floor, one piece, 17 by 12.3
+    cov_book_thigh_notch_in: Tuple[float, float] = (5.6, 4.5)  # book: plans-1980:p160: floor notch 5.6 tall by 4.5 deep
+    cov_book_thigh_rib_spacing_in: float = 5.6  # book: plans-1980:p160: ribs 5.6 in apart with the fuel valve between
+    cov_book_valve_cover_in: Tuple[float, float, float] = (6.6, 5.0, 0.025)  # book: plans-1980:p160: fuel-valve cover, 2024-T3 aluminium, 6.6 by 5.0 by 0.025, silicone, no screws
+    cov_book_canard_cover_foam_in: float = 2.0  # book: plans-1980:p161: 2 in green urethane block fitted to canard and fuselage
+    cov_book_canard_cover_lap_in: float = 0.25  # book: plans-1980:p161: 2 plies BID outside, lapped about 1/4 in onto the canard
+    cov_book_seal_gap_in: float = 0.5  # book: plans-1980:p161: gap between wing root and centre section about 1/2 in
+    cov_book_seal_front_gap_in: float = 0.0625  # book: plans-1980:p161: sand the wedge to shape and leave 1/16 in gap at the front, printed on sketch 2
+    fin_book_fill_in: Tuple[float, float] = (0.02, 0.03)  # book: plans-1980:p167: feather fill, brushed, 0.02 to 0.03 in
+    fin_book_primer_in: Tuple[float, float] = (0.004, 0.008)  # book: plans-1980:p168: primer coat 0.004 to 0.008 in
+    fin_book_weave_in: float = 0.009  # book: plans-1980:p167: glass weave roughness .009 in, the sketch label
+    fin_book_min_temp_f: float = 70.0  # book: plans-1980:p167: shop and feather fill at 70 F or above
+    fin_book_fill_bands_in: Tuple[float, float] = (0.03, 0.20)  # book: plans-1980:p165: under 0.03 feather fill
+    fin_book_white_surfaces: Tuple[str, ...] = ("wing_upper", "canard_upper")  # book: plans-1980:p162: white only on the upper wing and canard (dark trim banned there)
+    upl_book_suitcase_in: Tuple[float, float, float, float] = (30.0, 18.0, 14.0, 5.0)  # book: plans-1980:p170: suitcase long edge 30, rear edge 18, top edge 14, full thickness 5 (4.5 collapsed, medium)
+    upl_book_front_cushion_in: Tuple[float, float, float] = (46.0, 16.5, 2.0)  # book: plans-1980:p170: front cushion plan 46 by 16.5 (the point is faint), 2 in foam rubber
+    upl_book_rear_cushion_in: Tuple[float, float, float, float] = (12.0, 16.0, 18.0, 2.0)  # book: plans-1980:p170: rear seat part 12 deep by 16 wide, back 18 tall, 2 in blocks
+    upl_book_front_headrest_in: Tuple[float, float, float] = (4.5, 4.5, 2.0)  # book: plans-1980:p170: front headrest bonded to the rollover with contact cement
+    upl_book_rear_headrest_in: Tuple[float, float, float] = (4.5, 4.5, 1.5)  # book: plans-1980:p170: rear headrest, two snapped flaps over the canopy braces
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -3242,6 +3285,235 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "plans-1980:p156",
         "high",
         "286 - 246 = 40 lb for prop, exhaust, extensions and oil; derived, not printed; property",
+    ),
+    # --- chapters 24 to 26 (M2.9): covers, finishing, upholstery ---
+    "cov_book_lc1_fs": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "LC1 runs FS 52 to FS 60, 8 in long (typed); the only station chapter 24 prints",
+    ),
+    "cov_book_lc1_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "LC1 landing-brake console piece 9.1 high by 8 long, 0.35 in core; 12 in forward to the panel (FS 40, derived)",
+    ),
+    "cov_book_lc1_offset_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "LC1 stands 2.0 in off the fuselage side (text and section B-B agree)",
+    ),
+    "cov_book_lc1_top_wl": _p(
+        "book",
+        "plans-1980:p159",
+        "medium",
+        "sketch label W.L. 11.6; the dot after W.L. is ambiguous",
+    ),
+    "cov_book_console_core_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "type R45 PV, 0.35 in, every console piece",
+    ),
+    "cov_book_lc2_len_in": _p(
+        "conflict",
+        "plans-1980:p160",
+        "medium",
+        "scan reads 30.6 at 4x (open-topped last digit); cobelu reads 30.8 (cov_book_lc2_len_cobelu_in); both carried, the model draws 30.6",
+    ),
+    "cov_book_lc2_len_cobelu_in": _p(
+        "conflict",
+        "cobelu:pch24",
+        "medium",
+        "cobelu chapter 24 text; against the scan 30.6 (cov_book_lc2_len_in); no second source",
+    ),
+    "cov_book_lc2_width_in": _p(
+        "book",
+        "plans-1980:p160",
+        "medium",
+        "LC2 front console top, 0.3 in bevel at the forward end",
+    ),
+    "cov_book_lc3_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "LC3 sloped side: 10.6 along the top, 9.1 tall, 3 in step at the bottom; the outline between corners is representational",
+    ),
+    "cov_book_lc3_step_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "LC3 bottom step 3 in; the slope between the corners is representational",
+    ),
+    "cov_book_lc4_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "LC4 side rectangle with one trim-lever hole; hole size not printed",
+    ),
+    "cov_book_lc5_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "LC5 rear console top, 0.35 in bevel at the end",
+    ),
+    "cov_book_lc6_depth_in": _p(
+        "book",
+        "plans-1980:p160",
+        "medium",
+        "LC6 triangle on LC5, base angles 50 and 45 read at 4x; the bottom is trimmed to fit the floor (representational)",
+    ),
+    "cov_book_aft_cover_block_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "green urethane chunk, 18 by 20 by 2; the outline follows the strut and firewall (representational)",
+    ),
+    "cov_book_aft_cover_strut_gap_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "about 1/8 in clear of the main gear strut all round; the gap is left open until after paint, then silicone",
+    ),
+    "cov_book_aft_cover_dish_in": _p(
+        "book",
+        "plans-1980:p159",
+        "high",
+        "mark 1/2 in inside the first outline, front and back, and hollow to the line",
+    ),
+    "cov_book_aft_cover_plies": _p(
+        "conflict",
+        "plans-1980:p159",
+        "low",
+        "inside, outside plies BID. The scan blanks the inside ply count and hand-edits the outside from two to one; LPC 54 (cp-text:p28) says one ply; cobelu keeps inside 1 and outside 2 (cov_book_aft_cover_plies_cobelu); the owner's edit may be later than LPC 54",
+    ),
+    "cov_book_aft_cover_plies_cobelu": _p(
+        "conflict",
+        "cobelu:pch24",
+        "medium",
+        "cobelu chapter 24: inside 1 ply, outside 2 plies; against the scan edit (cov_book_aft_cover_plies)",
+    ),
+    "cov_book_thigh_rib_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "two ribs, 10.8 long and 3.65 tall at the front; the curved top is on A8, which the owner does not hold (representational)",
+    ),
+    "cov_book_thigh_floor_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "floor, one piece, 17 by 12.3; notch cov_book_thigh_notch_in; heat-formed at about 280 F; 1 ply BID inside then 2 outside",
+    ),
+    "cov_book_thigh_notch_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "floor notch 5.6 tall by 4.5 deep",
+    ),
+    "cov_book_thigh_rib_spacing_in": _p(
+        "book",
+        "plans-1980:p160",
+        "medium",
+        "ribs 5.6 in apart with the fuel valve between; the same 5.6 as the notch",
+    ),
+    "cov_book_valve_cover_in": _p(
+        "book",
+        "plans-1980:p160",
+        "high",
+        "fuel-valve cover, 2024-T3 aluminium, 6.6 by 5.0 by 0.025, silicone, no screws; placard OFF, LEFT, RIGHT",
+    ),
+    "cov_book_canard_cover_foam_in": _p(
+        "book",
+        "plans-1980:p161",
+        "high",
+        "2 in green urethane block fitted to canard and fuselage; no other size printed (representational)",
+    ),
+    "cov_book_canard_cover_lap_in": _p(
+        "book",
+        "plans-1980:p161",
+        "medium",
+        "2 plies BID outside, lapped about 1/4 in onto the canard",
+    ),
+    "cov_book_seal_gap_in": _p(
+        "book",
+        "plans-1980:p161",
+        "medium",
+        "gap between wing root and centre section about 1/2 in; the stacked-fraction glyph reads 1/2, not told from 3/4 at this scan resolution",
+    ),
+    "cov_book_seal_front_gap_in": _p(
+        "book",
+        "plans-1980:p161",
+        "high",
+        "sand the wedge to shape and leave 1/16 in gap at the front, printed on sketch 2; silicone after paint",
+    ),
+    "fin_book_fill_in": _p(
+        "book",
+        "plans-1980:p167",
+        "high",
+        "feather fill, brushed, 0.02 to 0.03 in; over 95 percent is sanded off; no weight is printed",
+    ),
+    "fin_book_primer_in": _p(
+        "book",
+        "plans-1980:p168",
+        "high",
+        "primer coat 0.004 to 0.008 in; dark grey lacquer primer (p162)",
+    ),
+    "fin_book_weave_in": _p(
+        "book",
+        "plans-1980:p167",
+        "high",
+        "glass weave roughness .009 in, the sketch label",
+    ),
+    "fin_book_min_temp_f": _p(
+        "book",
+        "plans-1980:p167",
+        "high",
+        "shop and feather fill at 70 F or above",
+    ),
+    "fin_book_fill_bands_in": _p(
+        "book",
+        "plans-1980:p165",
+        "high",
+        "under 0.03 feather fill; 0.03 to 0.20 dry micro; over 0.20 urethane foam block with 1 or 2 plies BID (p166)",
+    ),
+    "fin_book_white_surfaces": _p(
+        "book",
+        "plans-1980:p162",
+        "high",
+        "white only on the upper wing and canard (dark trim banned there); everything else may take trim. The lab draws the rest primer grey, a representational colour (the book prints no airplane colour)",
+    ),
+    "upl_book_suitcase_in": _p(
+        "book",
+        "plans-1980:p170",
+        "high",
+        "suitcase long edge 30, rear edge 18, top edge 14, full thickness 5 (4.5 collapsed, medium); the shell is ABS 0.06 to 0.09 or 4 plies BID, fabric bag, snaps every 4 in; the outline between the dimensions is representational",
+    ),
+    "upl_book_front_cushion_in": _p(
+        "book",
+        "plans-1980:p170",
+        "medium",
+        "front cushion plan 46 by 16.5 (the point is faint), 2 in foam rubber; the notch dimensions read '6-8' and 6 and are not placed (low)",
+    ),
+    "upl_book_rear_cushion_in": _p(
+        "book",
+        "plans-1980:p170",
+        "medium",
+        "rear seat part 12 deep by 16 wide, back 18 tall, 2 in blocks; the 4 in front edge height is small print",
+    ),
+    "upl_book_front_headrest_in": _p(
+        "book",
+        "plans-1980:p170",
+        "high",
+        "front headrest bonded to the rollover with contact cement",
+    ),
+    "upl_book_rear_headrest_in": _p(
+        "book",
+        "plans-1980:p170",
+        "medium",
+        "rear headrest, two snapped flaps over the canopy braces; the 1.5 is medium",
     ),
     "datum_offset_in": _p(
         "book",
