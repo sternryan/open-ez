@@ -103,7 +103,7 @@ const M25_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, numb
 /** the chapter 21-23 parts' looks by part name (colour, metalness, roughness; kind 'glass' draws it see-through; a part not listed is drawn as foam): REPRESENTATIONAL colours */
 const M28_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, number]> = {
   tank: ['glass', GLASS_PARTS.tank, 0, 0.1], cutout_baggage: ['glass', GLASS_PARTS.cutout_baggage, 0, 0.3], cutout_tank: ['glass', GLASS_PARTS.cutout_tank, 0, 0.3],
-  sump_blister: ['wood', 0xc77a3a, 0, 0.7], drain_insert: ['metal', 0xd5d8dc, 0.85, 0.3], vent_line: ['metal', 0x3d4249, 0.7, 0.4], screen: ['metal', 0xb4bac2, 0.85, 0.3],
+  sump_blister: ['wood', 0xc77a3a, 0, 0.7], drain_insert: ['metal', 0xd5d8dc, 0.85, 0.3], vent_line: ['wood', 0xffd23f, 0, 0.4], screen: ['wood', 0x2fe0e8, 0, 0.4],
   outlet_tube: ['metal', 0xd5d8dc, 0.85, 0.3], fuel_cap: ['metal', 0xe6b23a, 0.6, 0.35],
   shelf: ['wood', 0xd9d4c4, 0, 0.7], battery: ['wood', 0x2f3a46, 0, 0.5], cover: ['wood', 0xe9e3d3, 0, 0.7], strap: ['wood', 0x2e2e30, 0, 0.7],
   start_relay: ['metal', 0x3d4249, 0.7, 0.4], overvoltage_unit: ['metal', 0x6d737a, 0.7, 0.4], battery_cable: ['wood', 0xc23b2f, 0, 0.5], firewall_cable: ['wood', 0xc23b2f, 0, 0.5], panel_bundle: ['wood', 0x2e2e30, 0, 0.7],

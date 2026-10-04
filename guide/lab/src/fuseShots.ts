@@ -247,7 +247,7 @@ export const M28_VIEWS: Record<string, FuseView> = {
   'f21.fuselage-cutouts': strakeAt(76, -12, 14, 120, 24, 16),
   'f21.jig-bond': strakeAt(88, -32, 15, 205, 52, 14),
   'f21.inside-layups': strakeAt(94, -32, 17, 190, 54, 14),
-  'f21.vent-screen': strakeAt(111, -14, 16, 64, 52, 14),
+  'f21.vent-screen': strakeAt(111, -14, 17, 56, 40, 8),
   'f21.close-tank': strakeAt(98, -30, 17, 200, 56, 14),
   'f21.od-outlet': strakeAt(106, -32, 17, 170, 54, 20),
   'f21.outside-bottom': strakeAt(104, -26, 14, 190, 48, 14),
@@ -259,13 +259,13 @@ export const M28_VIEWS: Record<string, FuseView> = {
   'f22.microswitches': strakeAt(39, 0, 9, 62, 40, -28),
   'f22.battery-shelf': strakeAt(11, 0, 3, 44, 34, 38),
   'f22.firewall-terminals': strakeAt(26, 4, 5, 70, 32, 40),
-  'f22.wing-wiring': strakeAt(157, 157.8, 18.6, 40, 18, 100),
-  'f22.antennas': strakeAt(24, -24, 18, 96, 60, 0),
+  'f22.wing-wiring': strakeAt(145, 95, 19, 250, 62, 18),
+  'f22.antennas': strakeAt(34, -10, 14, 150, 34, 30),
   'f23.engine-install': strakeAt(142, 0, 20, 110, 24, -48),
   'f23.carb-bracket': strakeAt(134, 0, 14, 74, 24, -42),
   'f23.cowl-trim': strakeAt(137, 0, 21, 112, 26, -46),
   'f23.cowl-closeout': strakeAt(137, 0, 21, 112, 26, -46),
-  'f23.root-rib': strakeAt(137, -23, 19, 64, 12, 0),
+  'f23.root-rib': strakeAt(137, -23, 18, 84, -16, -38),
 }
 
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }

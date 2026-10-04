@@ -7950,3 +7950,53 @@ def test_m28_tours_visit_every_chapter_21_to_23_op_in_order_and_end_on_the_last(
                 b.close()
         finally:
             s.shutdown()
+
+
+def test_m28_round2_vent_screen_wing_wiring_antennas_and_root_rib_read_in_context(
+    rsite,
+):
+    """Visual review round 1: the vent line and screen are marked, close enough to tell apart; the right wing is in frame from above with its tip
+    light; the nav foil reads against the canard and the airplane; the root rib is seen from aft and below, the wing in frame."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            want = {
+                # op: (subject prefixes, least subject pixels, context prefixes, least context pixels)
+                "f21.vent-screen": (
+                    ["strake.fittings.screen", "strake.fittings.vent_line"],
+                    400,
+                    ["strake."],
+                    500,
+                ),
+                "f22.wing-wiring": (["elec.lights"], 100, ["wing."], 3000),
+                "f22.antennas": (
+                    ["elec.antennas.nav_strip"],
+                    600,
+                    ["installed:"],
+                    3000,
+                ),
+                "f23.root-rib": (["engine.rib"], 3000, ["wing."], 3000),
+            }
+            for op, (sub, n_sub, ctx, n_ctx) in want.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                assert _pixels_of(pg, sub) >= n_sub, (op, "subject")
+                assert _pixels_of(pg, ctx) >= n_ctx, (op, "context")
+                cam = pg.evaluate("window.__lab.camera()")
+                d = sum((a - c) ** 2 for a, c in zip(cam["pos"], cam["target"])) ** 0.5
+                el = (cam["pos"][1] - cam["target"][1]) / d
+                if op == "f21.vent-screen":
+                    assert d < 2.0, d  # close, not a wall of striping
+                if op == "f22.wing-wiring":
+                    assert el > 0.4, el  # from above, the wing's run in frame
+                if op == "f23.root-rib":
+                    assert (
+                        el < 0.1
+                    ), el  # level with the root or below (the rig will not take the eye under the floor line)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

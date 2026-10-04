@@ -57,3 +57,13 @@ Ruff (pinned v0.5.4 via pre-commit) and ruff-format clean on the touched Python.
 5. The engine block label is crew A's export text, "(installation in Section II, not held) (fitted shape)"; the spec's order is "(fitted shape; installation ...)". Left as is.
 6. The commit hook credits a green run to the session's cwd repo and ignores a `cd` prefix; commits used `git -C <worktree>` after a green unpiped run. No hook was edited.
 7. Screenshots for review (not committed): WebKit 1180x820 of every f21, f22, f23 op and 390x844 of four (`f21.cut-parts`, `f21.close-tank`, `f22.battery-shelf`, `f23.engine-install`) in the scratchpad `m28-shots/`.
+
+## Round 2 (visual review round 1: four fails)
+
+- `f21.vent-screen`: the vent line is now yellow and the screen cyan (fitted-shape colours) so the 1 in parts read as marked dots, and the camera is closer (about 56 in, 40 deg) between them.
+- `f22.wing-wiring`: the right wing from above at about 250 in, the tip light at the end of the run (the room ceiling holds the eye at about 24 deg of elevation). No conduit is drawn by chapter 22 (the conduit is chapter 19's wing part), so only the lights are the op's own.
+- `f22.antennas`: framed at 150 in from the left front, the canard (installed on this op) and the nose in view with the nav strips on it.
+- `f23.root-rib`: seen from aft and left, level with the root (the rig will not take the eye lower), the two ribs read as white plates against the wing and the cowl.
+- Pinned by `test_m28_round2_vent_screen_wing_wiring_antennas_and_root_rib_read_in_context`: subject pixels (400, 100, 600, 3000), context pixels (the strake 500, the wing 3000, the installed canard 3000, the wing 3000), camera distance under 2 m on the vent shot, from above on the wing shot, level or below on the rib shot.
+- Results: node 236 pass, Python non-e2e 1297 passed / 3 skipped / 9 xfailed, Mac e2e `-k "m28 or order"` 50 passed, 2 chromium `goto` timeouts under load (`test_recorder_url_exposes_rec_and_both_films_start[chromium-fuselage6]`, a chapter 14 to 17 placement test) that passed on a solo re-run (6 passed).
+- Re-shot the four ops (WebKit 1180x820) over the old files in `m28-shots/`.
