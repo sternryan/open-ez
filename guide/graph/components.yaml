@@ -125,3 +125,24 @@
 - {id: winglet.lower_fin, label: "Lower fin (WL 9.8 bottom book, outline fitted)", fidelity: unvalidated}
 - {id: winglet.rudder, label: "Rudder (hinge line and widths book, section fitted)", fidelity: unvalidated}
 - {id: winglet.rudder_hinge, label: "Rudder hinge and belhorn (length book, outline fitted)", fidelity: unvalidated}
+# Strakes and fuel (chapter 21). The p147 planform stations and the p141 and p142 part and skin sizes are printed; the R23 and R45 rib outlines (A14), the OD outline, the skin curvature, the sump outline and the fittings are fitted shapes. Tank volume is shaded and its capacity is in conflict.
+- {id: strake.ribs, label: "Strake ribs R23 and R45 (stations book, outlines fitted to A14)", fidelity: unvalidated}
+- {id: strake.baffles, label: "Strake baffles B23, DB, BAB and the outboard diagonal OD (lengths book, OD outline fitted)", fidelity: unvalidated}
+- {id: strake.leading_edge, label: "Strake leading-edge strips TLE and BLE (sizes book)", fidelity: unvalidated}
+- {id: strake.skins, label: "Strake top and bottom skins (edges book, curvature fitted)", fidelity: unvalidated}
+- {id: strake.sump, label: "Fuel sump blister (size book, outline fitted)", fidelity: unvalidated}
+- {id: strake.tank, label: "Fuel tank volume (shaded, capacity in conflict: 25.5 plans, 28 manual, model 26)", fidelity: unvalidated}
+- {id: strake.fairing, label: "Strake leading-edge fairing block (fitted shape)", fidelity: unvalidated}
+- {id: strake.fittings, label: "Strake cap, drain insert, vent line, screen and outlet tube (fitted shape)", fidelity: unvalidated}
+# Electrical (chapter 22). No station is printed; the battery sits somewhere in the nose box (FS 0 to 22) and the wiring runs are representational.
+- {id: elec.battery_shelf, label: "Battery shelf and cover (nose box, fitted shape)", fidelity: unvalidated}
+- {id: elec.battery, label: "25 Ah battery (station not printed; drawn mid nose box for illustration)", fidelity: unvalidated}
+- {id: elec.relays, label: "Start relay and over-voltage unit on the front of F22 (fitted shape)", fidelity: unvalidated}
+- {id: elec.wiring, label: "Wire runs (representational, gauges book)", fidelity: unvalidated}
+- {id: elec.lights, label: "Position lights, strobe supply and landing light (fitted shape)", fidelity: unvalidated}
+- {id: elec.antennas, label: "Nav and comm antenna foil strips (lengths book, positions fitted)", fidelity: unvalidated}
+# Engine (chapter 23). No engine, mount, prop or exhaust dimension is printed in any held source; the engine block is a striped fitted shape.
+- {id: engine.block, label: "Engine block (fitted shape; installation is in Section II, not held)", fidelity: unvalidated}
+- {id: engine.bracket, label: "Throttle and mixture bracket (sizes book, shape fitted)", fidelity: unvalidated}
+- {id: engine.cowl, label: "Cowl outline (trim and reinforcement book, shape fitted)", fidelity: unvalidated}
+- {id: engine.rib, label: "Wing-root metal rib (sheet size book, outline fitted)", fidelity: unvalidated}

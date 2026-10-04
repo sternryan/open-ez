@@ -1,0 +1,93 @@
+# Chapter 23 — engine installation (plans pp. 23-1 to 23-3; scan pages 156-158). The chapter is a three-page delta, not an installation: it says to build the engine installation from the VariEze Sections IIA
+# (Continental) or IIC (Lycoming), which the owner does not hold, "with the exceptions shown here". Printed here: the engine choice and weight limits, the throttle and mixture bracket, the Continental keeper
+# plug, the cowl trim and reinforcement, and the wing-root metal rib. One op, f23.engine-install, stands for the absent installation; its engine solid is a striped fitted shape and no station, arm or weight is
+# stated as a page value. Conflicts kept as text: the rib thickness, the fastener count.
+- id: f23.engine-install
+  chapter: 23
+  title: Engine, mount and installation (stands for Section II, not held)
+  summary: This op stands for the engine installation that lives in Sections IIA, IIC and IIL, none of which the owner holds. Chapter 23 only fixes the limits, an O-200 or O-235 with accessories under 246 lb and a vibrating mass under 286 lb, and says the engine sits on BL 0 with 2 deg of down thrust. The lab shows an O-235-sized block aft of the firewall, striped as a fitted shape. Tape the throttle cables to the fuselage side and pot them in silicone. The exhaust drawings the page promises are not held either.
+  variants: [both]
+  requires: [f15.stainless-firewall, f16.firewall-bearing, f22.firewall-terminals]
+  components: [engine.block]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 156}
+    - {doc: scan-1980, scan_pp: 158}
+  changes:
+    - {cp: 27, lpc: 0, class: MAN, status: verified, kind: community, note: "Do not use the IIC section for a Long-EZ Lycoming; a new Section IIL replaces it."}
+    - {cp: 25, lpc: 25, class: DES, status: verified, kind: official, note: "An aluminium firewall may replace the steel one, with the insulation fitted after the cowl."}
+    - {cp: 32, lpc: 0, class: MAN, status: verified, kind: community, note: "Set the crank on BL 0 with 2 deg down thrust, plus or minus 1, and check the mount station against Section IIL."}
+    - {cp: 31, lpc: 93, class: MAN, status: verified, kind: official, note: "Use steel fittings for the fuel and oil lines in place of the listed aluminium ones."}
+  completion:
+    - Engine chosen within the 246 lb and 286 lb limits
+    - Crank on BL 0 with 2 deg down thrust, from the Section II drawings
+    - Throttle cables taped to the fuselage side and potted
+    - Section II installation recorded as not held
+- id: f23.carb-bracket
+  chapter: 23
+  title: Throttle and mixture bracket, keeper plug
+  summary: Make the Lycoming bracket from 0.063 in 2024-T3, a 6.5 by 2.5 in plate seen from below with a 2 in oil-drain hole 3.6 in from the carb hole and a 1.8 in carb hole 1.25 in from the forward end, plus a 2 by 2 in upright angle on eight rivets. The return springs must take the controls to full open and full rich if a cable fails. A Continental O-200-48 without a starter needs the keeper plug, a 1/2 in 6061-T6 rod 3.15 in long; the text says a 3/16 in hole (drill 10) and the drawing says drill 12, unresolved.
+  variants: [both]
+  requires: [f23.engine-install]
+  components: [engine.bracket]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 156}
+  completion:
+    - Bracket plate and upright cut to the figure 23-1 sizes
+    - Return springs checked to full open and full rich
+    - Keeper plug made if a Continental O-200-48 is fitted without a starter
+- id: f23.cowl-trim
+  chapter: 23
+  title: Reinforce and trim the cowl
+  summary: Cut about 9 in off each outboard end of the VariEze cowl, after first laying four BID plies at 45 deg, 2 in wide, in four places just inboard of the trim line to stiffen the new edges. The Lycoming cowl sits 0.7 in further aft than on the VariEze, and the engine with it. The VariEze end ribs are not used.
+  variants: [both]
+  requires: [f23.engine-install]
+  components: [engine.cowl]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 4, where: "four inside edge bands, 2 in wide, at 45 deg, just inboard of the 9 in trim line"}
+  sources:
+    - {doc: scan-1980, scan_pp: 156}
+    - {doc: scan-1980, scan_pp: 157}
+  changes:
+    - {cp: 27, lpc: 0, class: DES, status: verified, kind: community, note: "The Lycoming cowl moves aft 0.7 in against the VariEze, and the engine moves aft with the dynafocal mount."}
+    - {cp: 31, lpc: 92, class: MEO, status: verified, kind: official, note: "Flox the ram inlet scoop to the lower cowl, rivet about every 2 in and lay one BID ply inside, lapping 1 in."}
+  completion:
+    - Four reinforcing bands of 4 plies laid at 45 deg
+    - About 9 in trimmed off each outboard end after the cure
+- id: f23.cowl-closeout
+  chapter: 23
+  title: Trailing-edge closeout and wing flange
+  summary: Stand the cowl on its trailing edges, front opened 8.5 in, tape the edges, and lay a five-ply BID closeout strip, then one ply over the top, trimmed to 1.6 in wide. The fasteners are eight along the top forward edge, five on each forward bottom side, three on each trailing edge and four on each wing flange. The plans total 40, while counting those gives 32, unresolved. Build the wing flange with five BID plies at 45 deg, bottom first with the airplane inverted, and add one outside ply after the cowl comes off. Patch any gap over 1/4 in round the exhaust exit.
+  variants: [both]
+  requires: [f23.cowl-trim, f21.fairing-caps]
+  components: [engine.cowl]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 5, where: "trailing-edge closeout strips at 45 deg, then 1 ply over the top"}
+    - {cloth: BID, plies: 5, where: "wing flange at 45 deg, bottom first, then 1 outside ply"}
+  sources:
+    - {doc: scan-1980, scan_pp: 157}
+  completion:
+    - Cowl stood on its trailing edges, front opened 8.5 in
+    - Closeout strips laid and trimmed to 1.6 in
+    - Wing flange built with five plies, then the outside ply
+    - Fastener count checked against the conflict (40 printed, 32 counted)
+- id: f23.root-rib
+  chapter: 23
+  title: Wing-root metal rib
+  summary: Form a soft aluminium rib from 20 by 24 in sheet of 6061-0 that butts the spar at the front, with two 1.2 in flanges, a 0.5 in edge offset, and cut-outs for the rudder cable and the aileron pushrod; the cowl screws hold it. The page text says 0.20 in thick but the drawing and the parts list say 0.020 in, so this guide takes the thin value as a typo fix. The rib's outline is a hand drawing with no coordinates, so the lab draws a fitted shape. Many builders skipped this rib; exhaust heat can damage the wing foam without it.
+  variants: [both]
+  requires: [f23.cowl-closeout]
+  components: [engine.rib]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 157}
+    - {doc: scan-1980, scan_pp: 158}
+  changes:
+    - {cp: 39, lpc: 0, class: MAN, status: verified, kind: community, note: "Many builders left out the metal shields in the wing-root area, and exhaust heat can damage the wing foam."}
+  completion:
+    - Rib formed from 0.020 in 6061-0 with two 1.2 in flanges
+    - Cut-outs for the rudder cable and aileron pushrod
+    - Rib held by the cowl screws and butting the spar

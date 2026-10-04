@@ -1,0 +1,247 @@
+# Chapter 21 — strakes, baggage areas, fuel tanks and the fuel system (plans pp. 21-1 to 21-8; scan pages 141-148). Printed: the plan view with its stations (p147), the part sizes (p141),
+# the skin edges and the fuselage-side cutouts (p142), the ply schedule and the sump blister (p143-p146). The A14 rib outlines, the OD outline and the jig-board use are on sheets the owner does not
+# hold, so the ribs and OD are fitted shapes. Conflicts kept as text: tank capacity (25.5 plans, 28 Owner's Manual), the cutout depth near the aft end (1.90 against 1.40), "layup 7" used twice,
+# the drain thread (1/4-27 printed, 1/8-27 corrected), the baggage arm. No strake weight is printed anywhere, so no op states one.
+- id: f21.cut-parts
+  chapter: 21
+  title: Cut the ribs, baffles and skin cores
+  summary: From 0.35 in PV foam cut ribs R23 and R45 (drawn full size on A14, which this guide does not hold), the baffles B23 (21.3 by 7.3 in), DB (28.5 in) and BAB (13.4 in), the leading-edge strips TLE (33.5 in) and BLE (25.5 in), the outboard diagonal OD, and four skin cores from six 32 by 48 in sheets. The plans size each tank at 25.5 gal, the Owner's Manual says 28 gal each and 52 gal in all, and the model carries 26 gal a side with both figures shown. Keep R45 where it is; moving it outboard shifts the CG aft.
+  variants: [both]
+  requires: [c03.layup-skills, f14.bond-spar]
+  components: [strake.ribs, strake.baffles, strake.leading_edge, strake.skins]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 141}
+    - {doc: scan-1980, scan_pp: 142}
+  changes:
+    - {cp: 25, lpc: 0, class: INFO, status: verified, kind: community, note: "Set R45 and R23 parallel to the butt lines on the jig table."}
+    - {cp: 28, lpc: 0, class: INFO, status: verified, kind: community, note: "Do not move the BL 45 rib outboard; it brings the CG aft."}
+  completion:
+    - Ribs R23 and R45 cut to the A14 outlines (fitted shape here)
+    - B23, DB and BAB baffles cut to the printed lengths and heights
+    - TLE, BLE and OD cut, then the top and bottom skin cores
+    - Tank capacity conflict noted (25.5 plans, 28 manual, model 26)
+- id: f21.fuselage-cutouts
+  chapter: 21
+  title: Saw the fuselage-side cutouts
+  summary: Cut two openings in each fuselage side, measured forward from the spar face and down from the top of the longeron (WL 23). The baggage hole runs from 65.8 in forward of the spar, 4.0 below the top, down to 42 in, flush with the front seat bulkhead, 1.40 below. The tank hole starts 30 in forward of the spar and ends 15 in forward, 9.15 below WL 23. The aft end of the tank hole reads 1.90 once and 1.40 elsewhere on the page, unresolved. The baggage arm in the manual is 90, while the floor's own centroid is near 80.6; which volume the 90 covers is unresolved.
+  variants: [both]
+  requires: [f07.skin-right, f07.skin-left, f07.fuel-gauge-area, f06.bond-front-seat, f14.bond-spar]
+  components: [strake.skins]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 142}
+    - {doc: scan-1980, scan_pp: 147}
+  changes:
+    - {cp: 24, lpc: 0, class: INFO, status: verified, kind: community, note: "The fuel sight-gauge strip must be optically clear; if it is not, cut the window about 0.7 in wide."}
+  completion:
+    - Longeron top marked as the WL 23 reference on both sides
+    - Baggage holes cut at the printed stations and depths
+    - Tank holes cut, with the sight gauge strip left at the aft end
+    - Both cutouts checked left and right
+- id: f21.jig-bond
+  chapter: 21
+  title: Level the jig table and bond the bottom
+  summary: Level a flat table (a 4 by 4 ft plywood sheet will do) flush with the spar bottom, with the longerons level. On R45 the WL 17.4 mark stands 2.65 in above the table and on R23 3.45 in; a 35 in board props the front edge of the lower skin. Heat-form the skin curves, nail the parts to the plan, and micro the bottom skin, ribs, TLE and BLE together. Bevel the 1.25 in sump hole and seat the 1 by 1 in aluminium drain plate where fuel pools with the nose down on the ground. The page prints a 1/4-27 tap for it; the corrected thread is 1/8-27.
+  variants: [both]
+  requires: [f21.cut-parts, f21.fuselage-cutouts, f19.attach]
+  components: [strake.ribs, strake.leading_edge, strake.skins, strake.fittings]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 143}
+    - {doc: scan-1980, scan_pp: 146}
+    - {doc: scan-1980, scan_pp: 147}
+  changes:
+    - {cp: 28, lpc: 60, class: MEO, status: verified, kind: official, note: "The drain insert tap is 1/8-27 NPT, not the 1/4-27 printed on page 21-3."}
+    - {cp: 34, lpc: 0, class: INFO, status: verified, kind: community, note: "Towels wet with boiling water help form the foam to the curves."}
+  completion:
+    - Table level with the longerons and flush with the spar bottom
+    - Rib marks at 2.65 and 3.45 in above the table
+    - Bottom skin, R23, R45, TLE and BLE bonded in place
+    - Sump hole bevelled and the drain insert set flush
+- id: f21.inside-layups
+  chapter: 21
+  title: Glass the inside (layups 1 to 3)
+  summary: Layup 1 is one wet BID ply over the whole tank floor, lapping 1 in up the spar and fuselage side and fully onto both ribs, TLE and BAB. Layup 2 is one BID ply on each side of B23 and DB, B23 first. Layup 3 covers the outside face of R45 and the baggage floor with BID, plus a 2 in strip of two UND plies along the outer diagonal edge, fibres along its length. Use the fuel-proof epoxy for these inside layups, give the walls a heavy coat, and check the outboard ribs for pinholes that would leak fuel into the wing foam.
+  variants: [both]
+  requires: [f21.jig-bond]
+  components: [strake.ribs, strake.baffles, strake.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "layup 1, whole tank floor, 1 in laps"}
+    - {cloth: BID, plies: 1, where: "layup 2, each side of B23 and DB"}
+    - {cloth: BID, plies: 1, where: "layup 3, R45 outside face and baggage floor"}
+    - {cloth: UND, plies: 2, where: "layup 3, 2 in strip along the outer diagonal"}
+  sources:
+    - {doc: scan-1980, scan_pp: 143}
+    - {doc: scan-1980, scan_pp: 146}
+  changes:
+    - {cp: 24, lpc: 4, class: DES, status: verified, kind: official, note: "Use Safe-T-Poxy for the interior fuel layups and the fuselage sides on new construction."}
+    - {cp: 37, lpc: 0, class: INFO, status: verified, kind: community, note: "Give the tank interior a heavy coat of the fuel-proof epoxy, up to the spar face and the baggage wall."}
+    - {cp: 38, lpc: 0, class: INFO, status: verified, kind: community, note: "Pinholes in the outboard ribs let fuel into the wing foam; look for them before closing."}
+  completion:
+    - Layup 1 down with 1 in laps on the spar, fuselage, ribs, TLE and BAB
+    - B23 glassed first, then DB, one ply each side
+    - R45 outside face, baggage floor and outer diagonal strip glassed
+    - Ribs checked for pinholes
+- id: f21.vent-screen
+  chapter: 21
+  title: Vent line and outlet screen
+  summary: Run a 1/4 in aluminium vent line through the fuselage side with wet flox on both faces of the hole, opening 1/2 in above the top. Dome a piece of aluminium screen-door mesh over the 1 1/4 in hole in the inboard bottom skin, so it works as a finger strainer; the oval hole in B23, 5 by 3 in, lets you see it from the cap. Each tank gets its own vent line; never merge the two.
+  variants: [both]
+  requires: [f21.inside-layups]
+  components: [strake.fittings]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 141}
+    - {doc: scan-1980, scan_pp: 143}
+    - {doc: scan-1980, scan_pp: 147}
+  changes:
+    - {cp: 48, lpc: 0, class: INFO, status: verified, kind: community, note: "Never join the two tank vents; give each tank its own, and two each if the caps are sealed."}
+  completion:
+    - Vent line floxed through the fuselage side and sticking out 1/2 in
+    - Screen domed over the 1 1/4 in hole at about FS 117
+    - Screen visible through the B23 oval hole
+- id: f21.close-tank
+  chapter: 21
+  title: Top cores, layup 4 and closing the tank
+  summary: Fit the top core to within a tenth of an inch of the tank walls and heat-form it under weights; hold the curve with lumber and dabs of filler. Lay layup 4, one BID ply on the inside of the top plus a 2 in strip of two UND plies along the outboard diagonal, leaving 1 in dry along the inboard edge, and let it cure only two to four hours. Then close the tank with a few helpers and weights, and tape the top to R45, R23 and BAB (layup 5) and around the fuselage cutouts (layup 6). Fit the wing first and trim OD to match it.
+  variants: [both]
+  requires: [f21.vent-screen]
+  components: [strake.skins, strake.tank]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "layup 4, inside of the top skin"}
+    - {cloth: UND, plies: 2, where: "layup 4, 2 in strip at the outboard diagonal"}
+    - {cloth: BID, plies: 1, where: "layups 5 and 6, tapes to the ribs, BAB and fuselage cutout edges"}
+  sources:
+    - {doc: scan-1980, scan_pp: 143}
+    - {doc: scan-1980, scan_pp: 144}
+    - {doc: scan-1980, scan_pp: 146}
+  changes:
+    - {cp: 30, lpc: 0, class: INFO, status: verified, kind: community, note: "Put the wing on before the tank top goes on, and trim OD so the top matches the wing."}
+  completion:
+    - Top cores fitted within 1/10 in and heat-formed
+    - Layup 4 inside the top, 1 in left dry along the inboard edge
+    - Tank closed while layup 4 is still tacky
+    - Tapes of layups 5 and 6 on the ribs, BAB and cutout edges
+- id: f21.od-outlet
+  chapter: 21
+  title: Outboard diagonal and fuel outlet tube
+  summary: Shape OD to the tank's outside contour and glass it inside with one BID ply, floxed in with nails, running to the spar at its aft end. Run the 3/8 in soft aluminium outlet tube, about eight feet long, from the right side of the front cockpit floor to a 7/16 in hole in the fuselage under the tank, about 13 in forward of the firewall and 3 in below the tank bottom. It sticks out 0.4 in; keep a wood plug in it while it cures. The plans call this step and the next both layup 7; this guide names this one 7a and the outside one 7b.
+  variants: [both]
+  requires: [f21.close-tank]
+  components: [strake.baffles, strake.fittings]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "layup 7a, inside of OD, floxed in with nails"}
+  sources:
+    - {doc: scan-1980, scan_pp: 141}
+    - {doc: scan-1980, scan_pp: 144}
+    - {doc: scan-1980, scan_pp: 146}
+  changes:
+    - {cp: 33, lpc: 102, class: MEO, status: verified, kind: official, note: "Step 6 is one BID ply floxed in; step 7 laps one inch onto the forward face of the spar."}
+  completion:
+    - OD shaped to the tank contour and bonded
+    - Layup 7a ties OD into the spar behind it
+    - Outlet tube run to the fuselage hole and plugged while it cures
+    - Left tank line routed aft of the aft seat bulkhead
+- id: f21.outside-bottom
+  chapter: 21
+  title: Outside bottom skin and sump blister (layups 7b and 8)
+  summary: Turn the airframe over and fair the outside with a hard block. Lay two UND plies over the whole strake, the first with fibres parallel to the tank leading edge and the second fore and aft, lapping 4 in onto the spar, 3/4 in onto the fuselage, down the TLE and BLE faces and half way down OD. Add a 5 in UND strip along the diagonal. Then bond the sump blister, 21 in long and 2.75 in deep with a 1/2 in flange, in wet flox with a 1 in BID tape all round (layup 8); its aft end is flush with the firewall.
+  variants: [both]
+  requires: [f21.od-outlet]
+  components: [strake.skins, strake.sump]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "layup 7b, whole strake, first parallel to the tank leading edge, second fore and aft"}
+    - {cloth: UND, plies: 1, where: "5 in strip along the diagonal, CP28 LPC 59"}
+    - {cloth: BID, plies: 1, where: "layup 8, 1 in tape round the sump blister"}
+  sources:
+    - {doc: scan-1980, scan_pp: 144}
+    - {doc: scan-1980, scan_pp: 146}
+  changes:
+    - {cp: 28, lpc: 59, class: MEO, status: verified, kind: official, note: "Add a third outside UND ply, a 5 in strip along the diagonal, to layups 7 and 9."}
+    - {cp: 32, lpc: 0, class: INFO, status: verified, kind: community, note: "Peel the peel ply off the strake edges, and let the UND strip lap the strake onto the spar smoothly."}
+  completion:
+    - Outside bottom faired with the hard block
+    - Two UND plies down with the printed laps, butt joints
+    - Diagonal strip added
+    - Sump blister bonded flush with the firewall and taped
+- id: f21.outside-top
+  chapter: 21
+  title: Outside top skin (layup 9)
+  summary: Fair and skin the top the same way as the bottom, two crossed UND plies and the diagonal strip, with peel ply on the edges. On the left strake only, add a fourth UND ply so the top can take a footstep when you climb into the aft cockpit.
+  variants: [both]
+  requires: [f21.outside-bottom]
+  components: [strake.skins]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "layup 9, whole strake, like layup 7b"}
+    - {cloth: UND, plies: 1, where: "5 in diagonal strip"}
+    - {cloth: UND, plies: 1, where: "fourth ply, top of the left strake only"}
+  sources:
+    - {doc: scan-1980, scan_pp: 144}
+    - {doc: scan-1980, scan_pp: 146}
+  completion:
+    - Top faired and two UND plies laid like layup 7b
+    - Diagonal strip added to both strakes
+    - Fourth ply on the left top only
+- id: f21.pressure-check
+  chapter: 21
+  title: Leak check by altitude change
+  summary: Seal the tank, plug the 3/8 in line at the forward cockpit and tee an altimeter into the vent. Raise the pressure by mouth, never with a pump, to the equivalent of 1500 ft of altitude, and wait several hours. A tank that holds is done; a leak gets repaired and tested again.
+  variants: [both]
+  requires: [f21.outside-top]
+  components: [strake.tank]
+  geometry_visible: true
+  inspection: true
+  sources:
+    - {doc: scan-1980, scan_pp: 145}
+  changes:
+    - {cp: 38, lpc: 0, class: INFO, status: verified, kind: community, note: "Test by mouth only, never above 1500 ft equivalent; pinholes in the outboard ribs are the usual leak."}
+  completion:
+    - Outlet line plugged and an altimeter on the vent tee
+    - Pressure held at 1500 ft equivalent for several hours
+    - Leaks repaired and the test repeated
+- id: f21.fairing-caps
+  chapter: 21
+  title: Leading-edge fairing blocks and fuel caps
+  summary: With the wing fitted, carve a 2 lb urethane block to the rib noses and skin it with two UND plies crossing at 45 deg, lapping 1/2 in onto the skins and fuselage. After paint, bore a 2 1/4 in hole in the aft half of each tank, flox the 2 in aluminium rim in, and fit the Dzus cap with its slot fore and aft. The 1/4 in drain marked step 10 on page 21-7 vents the closed-off outboard area; it is not a tank drain.
+  variants: [both]
+  requires: [f21.pressure-check, f19.attach]
+  components: [strake.fairing, strake.fittings]
+  geometry_visible: true
+  materials:
+    - {cloth: UND, plies: 2, where: "fairing block skin, crossing at 45 deg, 1/2 in laps"}
+  sources:
+    - {doc: scan-1980, scan_pp: 145}
+    - {doc: scan-1980, scan_pp: 147}
+  changes:
+    - {cp: 30, lpc: 84, class: MEO, status: verified, kind: official, note: "Use a 2 lb/ft3 urethane block with two UND plies crossing at 45 deg, lapping 1/2 in, on the leading-edge flats."}
+    - {cp: 27, lpc: 0, class: INFO, status: verified, kind: community, note: "The caps are not airtight; a sealed cap needs a second vent."}
+    - {cp: 31, lpc: 0, class: INFO, status: verified, kind: community, note: "Tether each cap to its cross wire with a short chain."}
+  completion:
+    - Urethane block carved to the rib noses and skinned at 45 deg
+    - Cap holes bored in the aft half of each tank after paint
+    - Caps fitted with the slot fore and aft and tethered
+- id: f21.plumbing
+  chapter: 21
+  title: Fuel valve, pumps and gascolator
+  summary: Plumbing is installation only here and has no modelled geometry. Mount the left-right-off valve on the lower front floor just under the instrument panel, the electric pump high enough to reach its filter, and the gascolator at the lower right of the firewall, then connect valve, pump, gascolator and engine with fire-sleeved hose. The engine side is Section II work, which this guide does not hold.
+  variants: [both]
+  requires: [f21.fairing-caps, f15.stainless-firewall, f06.bond-panel]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: scan-1980, scan_pp: 145}
+    - {doc: scan-1980, scan_pp: 148}
+  changes:
+    - {cp: 24, lpc: 1, class: MAN, status: verified, kind: official, note: "Safety the pump cap: bend the tab 90 deg, drill a #50 hole and lockwire it."}
+    - {cp: 32, lpc: 96, class: MEO, status: verified, kind: official, note: "The fuel valve bracket is 0.062 in 2024-T3, with a trim handle on the valve."}
+    - {cp: 60, lpc: 0, class: INFO, status: verified, kind: community, note: "The new fuel valve fits the original bracket in the same left-right orientation."}
+  completion:
+    - Valve on the lower front floor under the panel
+    - Pump and gascolator mounted, pump cap safetied
+    - Lines run and the fire sleeve fitted
