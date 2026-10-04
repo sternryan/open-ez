@@ -90,3 +90,16 @@
 - {id: controls.rudder_conduit, label: Rudder cable conduits, fidelity: unvalidated}
 - {id: trim.pitch_handle, label: Pitch trim handle and springs, fidelity: unvalidated}
 - {id: trim.roll_trim, label: Roll trim levers and springs, fidelity: unvalidated}
+# Canopy (chapter 18). The bubble contour, the frame surface, the covers, the vent, the latch linkage and the door are representational; only the stations are printed.
+- {id: canopy.plexi, label: Plexiglass canopy (bubble contour is a fitted shape), fidelity: unvalidated}
+- {id: canopy.frame, label: Canopy foam and glass frame (fitted shape), fidelity: unvalidated}
+- {id: canopy.pads, label: "Hinge, latch and catch pads (book stations, fitted size across)", fidelity: unvalidated}
+- {id: canopy.blocks, label: "Temporary canopy blocks (workshop, fitted outline)", fidelity: unvalidated}
+- {id: canopy.vent, label: Canopy vent block (fitted shape), fidelity: unvalidated}
+- {id: canopy.brace_tubes, label: Canopy brace tubes (front tube station derived), fidelity: unvalidated}
+- {id: canopy.hinges, label: Canopy hinges on the right (spans derived from the pads), fidelity: unvalidated}
+- {id: canopy.latches, label: Canopy latches on the left (centres in conflict with the p117 labels), fidelity: unvalidated}
+- {id: canopy.safety_catch, label: "Safety catch SC-1 (station book, shape fitted)", fidelity: unvalidated}
+- {id: fuselage.front_cover, label: Front cover left on the fuselage (fitted shape), fidelity: unvalidated}
+- {id: fuselage.rear_cover, label: Rear cover left on the fuselage (fitted shape), fidelity: unvalidated}
+- {id: fuselage.door, label: "Left side door (size book, position low confidence)", fidelity: unvalidated}

@@ -1,0 +1,256 @@
+# Chapter 18 — canopy (plans pp. 18-1 to 18-10; scan pages 108-117). The plexiglass bubble is a vendor part with no printed section, so its contour is
+# representational. Printed: the 68 in length, the A and B checks, the rear cut at FS 117 (CP27 LPC 43), the eight pad stations (measured forward from FS 117), SC-1 at FS 56.75
+# and the 4.3 by 3.7 door. The front cut datum is not named and the latch pad centres disagree with the p117 labels by 0.75 in, so no op states either as a bare fact.
+- id: f18.trim-plexi
+  chapter: 18
+  title: Trim the plexiglass
+  summary: Cut the bubble to the trim lines, 68 in long, with half an inch off each side and three quarters round the nose. File and polish the edges, then spray on a peel coat.
+  variants: [both]
+  requires: [c03.layup-skills]
+  components: [canopy.plexi]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 108}
+  completion:
+    - Canopy trimmed to 68 in long with the side and nose offsets
+    - Edges filed free of nicks and polished
+    - Peel coat sprayed on
+- id: f18.locate-blocks
+  chapter: 18
+  title: Set the canopy on its blocks
+  summary: Bond four temporary wood blocks to the inside of the top longerons and rest the trimmed canopy on them. Sand the fuselage sides dull and tape them, except the back 8 in.
+  variants: [both]
+  requires: [f18.trim-plexi, f05.top-longeron-glass, f06.bond-panel, f06.f28-install, f06.bond-firewall, f08.roll-over-outside]
+  components: [canopy.blocks, canopy.plexi]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 108}
+    - {doc: scan-1980, scan_pp: 109}
+  completion:
+    - Two front and two rear blocks cut from the full-size outlines and bonded
+    - Canopy nose tip 5 in aft of the instrument panel
+    - Gray tape on the fuselage sides, none in the back 8 in
+- id: f18.check-ab
+  chapter: 18
+  title: Check the canopy height
+  summary: Measure the canopy top above the longerons at two places before any foam goes on. Check A must be at least 13.5 in and check B is 12.3 in, both from the top of the longerons, WL 23.
+  variants: [both]
+  requires: [f18.locate-blocks]
+  components: [canopy.plexi]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 109}
+  changes:
+    - {cp: 26, lpc: 0, class: cp-hint, status: verified, kind: community, note: "Do not compromise check A. The plexiglass flange behind the roll-over structure may be trimmed to meet check B."}
+  completion:
+    - Check A at least 13.5 in, taken 6 in forward of the headrest
+    - Check B 12.3 in, taken 15 in forward of the firewall
+    - Both heights measured up from WL 23
+- id: f18.foam-core
+  chapter: 18
+  title: Foam around the canopy
+  summary: Fit 2 in green urethane blocks around the plexiglass edge, tack them with Bondo and fair them with micro. The front block runs from F28 to the plexiglass.
+  variants: [both]
+  requires: [f18.check-ab]
+  components: [canopy.frame]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 109}
+  completion:
+    - Urethane blocks 2 in thick fitted round the plexiglass
+    - Blocks tacked with Bondo and micro, nails removed after
+    - Front block spans F28 to the plexiglass lip
+- id: f18.carve-outside
+  chapter: 18
+  title: Carve the frame
+  summary: Carve the foam frame to the fuselage contour, 0.06 in low all round to allow for glass. Dig a groove at the plexiglass for the first ply.
+  variants: [both]
+  requires: [f18.foam-core]
+  components: [canopy.frame]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 109}
+    - {doc: scan-1980, scan_pp: 110}
+  completion:
+    - Frame carved to match the fuselage side
+    - Foam 0.06 in low everywhere
+    - Groove dug at the plexiglass edge
+- id: f18.glass-outside
+  chapter: 18
+  title: Glass the frame outside
+  summary: Lay five plies over the frame. The first ply goes into the groove, then flox fills it flat and the last three go over the top. Sides take 2 BID and 2 UND, the front and rear 3 BID, all BID at 45 degrees.
+  variants: [both]
+  requires: [f18.carve-outside]
+  components: [canopy.frame, fuselage.front_cover, fuselage.rear_cover]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "sides, all BID at 45 deg"}
+    - {cloth: UND, plies: 2, where: "sides only, lapping 3 in onto the front and rear"}
+    - {cloth: BID, plies: 3, where: "front and rear, 45 deg"}
+  sources:
+    - {doc: scan-1980, scan_pp: 110}
+    - {doc: scan-1980, scan_pp: 111}
+  completion:
+    - Groove ply laid first and troweled flat with flox
+    - Remaining plies butted to the plexiglass, glass lapped 1 in onto the fuselage side at the rear
+    - Knife-trimmed, never into the plexiglass
+    - Cured 48 hours
+- id: f18.cut-remove
+  chapter: 18
+  title: Cut the canopy free
+  summary: Hacksaw across the front and across the back at FS 117, 8 in forward of the firewall. Bondo lumber round the frame to stiffen it, free the sides with a knife and lift the canopy off. The front and rear covers stay on the fuselage.
+  variants: [both]
+  requires: [f18.glass-outside]
+  components: [canopy.frame, fuselage.front_cover, fuselage.rear_cover]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 111}
+  completion:
+    - Rear cut at FS 117, 8 in forward of the firewall
+    - Front cut made about 14 in aft of an unnamed vertical, which reads as F28 (representational)
+    - Lumber bonded round the frame, sides freed, canopy turned upside down on the bench
+- id: f18.carve-inside
+  chapter: 18
+  title: Carve the inside foam
+  summary: Turn the canopy over and carve the foam from inside, leaving 0.5 in. Remove all foam down to the skin at the eight pad places, each 2.5 in long, measured forward from FS 117 to the pad's aft edge.
+  variants: [both]
+  requires: [f18.cut-remove]
+  components: [canopy.frame, canopy.pads]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 112}
+  completion:
+    - Foam left 0.5 in thick inside
+    - Left pads 11, 41, 59 and 71 in forward of FS 117
+    - Right pads 20, 25.5, 48 and 53.5 in forward of FS 117
+    - The 59 in pad on the left carries the safety catch
+- id: f18.pads-inside-glass
+  chapter: 18
+  title: Fill the pads, glass inside
+  summary: Fill each pad with flox and BID, 15 plies, overfilled and sanded flush. Recess the four right pads 0.15 in for the hinges, then glass the inside to the same schedule as the outside.
+  variants: [both]
+  requires: [f18.carve-inside]
+  components: [canopy.pads, canopy.frame]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 15, where: "each of the eight pads, wet flox between plies"}
+    - {cloth: BID, plies: 2, where: "inside sides, as step 5"}
+    - {cloth: UND, plies: 2, where: "inside sides, as step 5"}
+    - {cloth: BID, plies: 3, where: "inside front and rear"}
+  sources:
+    - {doc: scan-1980, scan_pp: 113}
+  completion:
+    - Eight pads filled with flox and BID, sanded flush
+    - Right pads joggled 0.15 in for the hinge
+    - Inside skins laid, glass butted to the tape, corners floxed
+- id: f18.rear-cover-inside
+  chapter: 18
+  title: Glass inside the rear cover
+  summary: Glass one BID ply inside the rear cover, which stays on the fuselage, lapping onto the firewall. Fit the cowl first, as the cowl moved aft.
+  variants: [both]
+  requires: [f18.carve-inside]
+  components: [fuselage.rear_cover]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside the rear cover, lapping onto the firewall"}
+  sources:
+    - {doc: scan-1980, scan_pp: 113}
+  completion:
+    - Rear cover foam carved to 0.5 in over the spar
+    - One BID ply laid, lapped onto the firewall
+- id: f18.vent-brace
+  chapter: 18
+  title: Vent and brace tubes
+  summary: Carve a vent block, glass it with 3 BID and bond it inside. Cut the scoop in the skin along the pattern. Flox three 5/16 in arrow shafts across the canopy through the side glass.
+  variants: [both]
+  requires: [f18.pads-inside-glass]
+  components: [canopy.vent, canopy.brace_tubes]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 3, where: "vent block, 1 in lap onto the inside glass"}
+  sources:
+    - {doc: scan-1980, scan_pp: 113}
+    - {doc: scan-1980, scan_pp: 114}
+  completion:
+    - Vent block bonded and glassed, scoop cut to the pattern
+    - Three tubes floxed in, 35 in between the front tube and the rear end
+    - Canopy spread slightly while the tubes go in
+- id: f18.hinges
+  chapter: 18
+  title: Hinge the canopy
+  summary: Bolt two hinges to the right longeron, one over each pair of right pads. Match-drill the canopy side, then check that both hinges line up and the canopy opens about 15 degrees past vertical.
+  variants: [both]
+  requires: [f18.vent-brace, f06.bond-firewall]
+  components: [canopy.hinges]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 114}
+    - {doc: scan-1980, scan_pp: 115}
+  changes:
+    - {cp: 27, lpc: 43, class: MEO, status: verified, kind: official, note: "The hinge dimensions run from the aft end of the canopy frame, FS 117, not from the firewall bulkhead."}
+  completion:
+    - Hinges at about FS 89 to 97 and 61 to 69, derived from the pad stations
+    - Four countersunk screws per hinge through the longeron
+    - Canopy side drilled and bolted, eight places
+    - Hinge pins outside the fuselage contour so the canopy does not bind
+- id: f18.door
+  chapter: 18
+  title: Cut the small door
+  summary: Cut and hinge the small door in the left side, 4.3 by 3.7 in. Do this before the latches, as the plans ask.
+  variants: [both]
+  requires: [f07.skin-left]
+  components: [fuselage.door]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 115}
+    - {doc: scan-1980, scan_pp: 116}
+  completion:
+    - Door opening 4.3 long by 3.7 high, 3 in aft of the instrument panel
+    - Door hinged and latched, emergency placard inside
+    - Door position is only roughly located (low confidence)
+- id: f18.latches
+  chapter: 18
+  title: Install the latches
+  summary: Fit the three latches on the left, with the handle on the front one. Bond the C7 and C8 fittings to the frame, then link the arms and pushrods. Glue foam strip on the frame as a seal.
+  variants: [both]
+  requires: [f18.hinges, f18.door]
+  components: [canopy.latches]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 115}
+    - {doc: scan-1980, scan_pp: 117}
+  completion:
+    - Three latches on the left pads, about 30 in apart
+    - The p117 labels read FS 104, 74 and 44 while the pads put them 0.75 in further aft, so this is unresolved
+    - Knob left on C7
+- id: f18.front-cover
+  chapter: 18
+  title: Finish the front cover
+  summary: Glass the front cover while the canopy is off, then flox it back on the fuselage. Join it to F28 and the skin with a BID tape.
+  variants: [both]
+  requires: [f18.cut-remove]
+  components: [fuselage.front_cover]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside the front cover"}
+    - {cloth: BID, plies: 2, where: "panel end corners, with flox"}
+    - {cloth: BID, plies: 1, where: "outside tape joining to F28 and the skin"}
+  sources:
+    - {doc: scan-1980, scan_pp: 116}
+  completion:
+    - Front cover foam about 0.5 in thick
+    - One BID ply inside, tape outside to F28 and the skin
+    - Cover floxed onto the fuselage
+- id: f18.safety-catch
+  chapter: 18
+  title: Fit the safety catch
+  summary: Bolt the stainless catch SC-1 to the eighth pad on the left, then bolt its catch at FS 56.75. It stops the canopy about an inch open.
+  variants: [both]
+  requires: [f18.latches]
+  components: [canopy.safety_catch]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 116}
+  completion:
+    - SC-1 on the left safety-catch pad
+    - Catch bolt at FS 56.75 with its spacer and washer
