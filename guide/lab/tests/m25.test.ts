@@ -41,3 +41,15 @@ test('chapters 14-17 are the fuselage subject, with their own tour and a cut ran
   for (const p of ['spar.', 'firewall.', 'controls.', 'trim.']) assert.ok(FUSE_PREFIXES.includes(p), p)
   assert.ok(ELEV_OPS.has(STICK_OP))
 })
+
+import { sparRow } from '../src/logic/fuselage'
+test('the spar reference row: from f14.bond-spar on in chapters 14-17 only, worded as a reference not in the CG', () => {
+  const led = { cg: {}, cg_lower_bound: {}, prototype_weights: { rows: { spar: { weight_lb: 29.3, cite: 'cp-text:p26', note: 'prototype' } } } } as never
+  const ord = ['f14.fit-fuselage', 'f14.bond-spar', 'f14.sh1-tabs', 'f15.stainless-firewall', 'f09.brake-lines']
+  assert.equal(sparRow(led, 'f14.fit-fuselage', ord), null)
+  assert.equal(sparRow(led, 'f14.bond-spar', ord)?.value, 'Spar (CP26 prototype): 29.3 lb, reference, not in CG')
+  assert.ok(sparRow(led, 'f15.stainless-firewall', ord))
+  assert.equal(sparRow(led, 'f09.brake-lines', ord), null)
+  assert.equal(sparRow(led, null, ord), null)
+  assert.equal(sparRow(null, 'f14.bond-spar', ord), null)
+})

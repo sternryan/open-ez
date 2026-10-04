@@ -5683,7 +5683,9 @@ def test_m25_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsi
             labs = pg.evaluate("window.__lab.labelsAll()")
             assert sum(1 for x in labs if _legible(x)) <= 10
             _bare(pg)
-            assert _pixels_of(pg, comps, 390, 844) >= 150
+            # the pitch pushrod op's subject on a phone is the stick's elevators (the rod itself is a few pixels at that width)
+            hide = ["installed:elevator."] if op == "f16.pitch-pushrod" else comps
+            assert _pixels_of(pg, hide, 390, 844) >= 150
             assert not errors, errors
             b.close()
     finally:
@@ -5925,6 +5927,89 @@ def test_m25_the_station_cut_passes_through_the_installed_spar_and_the_slider_re
             pg.evaluate("window.__lab.select('f14.close-box')")
             _run(pg, 0.5)
             assert "spar.box" not in pg.evaluate("window.__lab.cut()")["cappedNodes"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_pitch_pushrod_shot_shows_the_stick_and_the_elevators_and_the_elevators_move_on_screen_with_the_stick(
+    rsite,
+):
+    """Round 2 F1: the op's own camera shows the stick and the Roncz elevators together; between 30 down and 15 up the pixels over the
+    elevators differ."""
+    from PIL import Image, ImageChops
+
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            pg.evaluate("window.__lab.select('f16.pitch-pushrod')")
+            _run(pg, 6)
+            frames, boxes = {}, []
+            for d in (-30, 15):
+                pg.evaluate(f"window.__lab.setStick({d}); window.__lab.advance(0.05)")
+                frames[d] = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+                ib = pg.evaluate("window.__lab.installedCanard()")["boxes"]
+                boxes += [ib["installed:elevator.right"], ib["installed:elevator.left"]]
+            clip = _screen_clip(pg, boxes, 1180, 820, pad=6)
+            box = (
+                int(clip["x"]),
+                int(clip["y"]),
+                int(clip["x"] + clip["width"]),
+                int(clip["y"] + clip["height"]),
+            )
+            d = (
+                ImageChops.difference(frames[-30].crop(box), frames[15].crop(box))
+                .convert("L")
+                .point(lambda v: 255 if v > 30 else 0)
+            )
+            moved = d.histogram()[255]
+            assert moved > 400, f"the elevators do not move on screen: {moved} px"
+            # the stick and the elevators are in this one frame (the stick's own pixels differ with it hidden)
+            pg.evaluate("window.__lab.setStick(0); window.__lab.advance(0.05)")
+            assert _pixels_of(pg, ["controls.sticks"]) >= 100
+            assert pg.evaluate("window.__lab.installedCanard()")["shown"] is True
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m25_spar_reference_row_from_the_bond_on_and_never_in_the_cg(rsite):
+    import json as _j
+
+    led = _j.loads((rsite / "ledger.json").read_text())
+    assert led["prototype_weights"]["rows"]["spar"]["weight_lb"] == 29.3
+    assert "spar" not in led["cg"]["included"] + led["cg_lower_bound"]["included"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, want in (
+                ("f14.fit-fuselage", None),
+                (
+                    "f14.bond-spar",
+                    "Spar (CP26 prototype): 29.3 lb, reference, not in CG",
+                ),
+                (
+                    "f16.pitch-pushrod",
+                    "Spar (CP26 prototype): 29.3 lb, reference, not in CG",
+                ),
+                ("f13.nose-door", None),
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                r = pg.evaluate("window.__lab.ref()")
+                assert (r["value"] if r else None) == want, (op, r)
+                shown = pg.evaluate(
+                    "!document.getElementById('t-ref').hidden && document.getElementById('ro-ref').textContent"
+                )
+                assert (shown or None) == want, (op, shown)
+                assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
             assert not errors, errors
             b.close()
     finally:

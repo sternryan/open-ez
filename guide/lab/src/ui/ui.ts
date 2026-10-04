@@ -270,6 +270,13 @@ export function initUI(h: UIHandlers, store: Store) {
       $('ro-ground-sub').textContent = g.sub
       $('t-ground').title = `${g.value}. ${g.sub}`
     },
+    /** a reference weight row (the spar's CP26 prototype weight); null hides it */
+    setRef(r: { value: string; sub: string } | null) {
+      $('t-ref').hidden = r === null
+      if (!r) return
+      $('ro-ref').textContent = r.value
+      $('t-ref').title = `${r.value}. ${r.sub}`
+    },
     setVariant(v: Variant) {
       for (const b of variant.querySelectorAll('button[data-variant]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.variant === v))
     },

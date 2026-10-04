@@ -27,7 +27,7 @@ import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
 import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
-import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
+import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
 import { STATION, fsToX } from './scene/fuselageStation'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
@@ -120,6 +120,8 @@ interface LabHook {
   gearMarks(): { shown: boolean; axleFs: number; boardFs: number; dimText: string; axleText: string; dimModel: number[]; axleModel: number[]; dimWorld: number[]; axleWorld: number[] } | null
   /** the ground-handling note as the readout shows it */
   ground(): { value: string; sub: string } | null
+  /** the spar's reference weight row as the readout shows it (from f14.bond-spar on), or null */
+  ref(): { value: string; sub: string } | null
   /** every mesh's build state, the chapter 11-13 meshes (elevators, nose) included; state() is the subject's original set (canard.* / chapters 4-9) */
   stateAll(): Record<string, BuildState>
   /** the motion readout: label, live value, note (null when hidden) */
@@ -160,7 +162,7 @@ const hook: LabHook = {
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
-  fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null,
+  fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null, ref: () => null,
   stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
@@ -1106,12 +1108,14 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
+      ui.setRef(sparRow(ledger, selected, graph.order))
       updateKin()
     }
     const updateReadout = () => {
       if (subject === 'fuselage') { updateFuseReadout(); return }
       ui.setCg(null)
       ui.setGround(null)
+      ui.setRef(null)
       const n = opCount(selected)
       const cnt = new Map<string, number>()
       const lit: Record<string, LayupNode> = {}
@@ -1252,6 +1256,7 @@ async function boot() {
           if (subject !== 'fuselage' || !(tourOv.labels ?? labelsOn)) return false
           const st = bstate.get(m.name)
           if ((st !== 'built' && st !== 'current') || !bay.shown(m.name)) return false
+          if (/^spar_lwa_lwa[2-5]$/.test(part) && present('spar_lwa_lwa1')) return false // the five fitting kinds share one label (lwa1's), so they do not crowd each other into bare dots
           if (fsecOn && inJig() && removedByStationCut(row, fsecFs)) return false // the cut took this part away: its label must not hover over the gap
           const o = op()
           // the home view (nothing selected): one label per family of parts (logic/fuselage.ts LABEL_FAMILY); the cut's face keeps its words
@@ -1626,6 +1631,7 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.ground = () => groundRow(ledger)
+    hook.ref = () => sparRow(ledger, selected, graph.order)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
     hook.gearMarks = () => {
