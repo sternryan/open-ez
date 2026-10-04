@@ -16,6 +16,7 @@ import { nosePoints, nosePose, noseAxleAt, type Candidate, type NosePoints, type
 import { fuseView, viewOffset } from './fuseShots'
 import { M25_CHAPTERS, M25_FIRST_OP, SPAR_BENCH_LAST, ELEV_OPS, STOPS_FROM, SPAR_FIT_OP, SPAR_COMPONENTS, m25Place, boxGhostAt } from './logic/m25'
 import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
+import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -74,7 +75,7 @@ const CARRIER: Record<string, string> = { rollover_inserts: 'rollover' }
 /** fitted parts that are thin bands, not plates: their bounding box says nothing about how large their faces are */
 const NARROW = new Set(['carved_corners'])
 /** the chapter 14-17 parts' looks (colour, metalness, roughness; 'foam' parts are drawn as foam): REPRESENTATIONAL colours, as the box's */
-const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foam'> = {
+const M25_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, number] | 'foam'> = {
   spar_box: 'foam', spar_bulkheads_end_bulkheads: 'foam', spar_bulkheads_interior_bulkheads: 'foam',
   spar_lwa_lwa1: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa2: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa3: ['metal', 0xc4c8cd, 0.85, 0.35],
   spar_lwa_lwa4: ['metal', 0xc4c8cd, 0.85, 0.35], spar_lwa_lwa5: ['metal', 0xc4c8cd, 0.85, 0.35],
@@ -84,7 +85,17 @@ const M25_LOOK: Record<string, ['wood' | 'metal', number, number, number] | 'foa
   controls_sticks_front_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_sticks_rear_stick: ['metal', 0x8d939a, 0.9, 0.3], controls_pitch_pushrod: ['metal', 0xc4c8cd, 0.85, 0.35],
   controls_rudder_conduit: ['wood', 0x2e2e30, 0, 0.7], trim_pitch_handle_pth: ['metal', 0xc4c8cd, 0.85, 0.35], trim_pitch_handle_pth_pivot: ['metal', 0x8d939a, 0.9, 0.3],
   trim_pitch_handle_pth_springs: ['metal', 0x9aa0a6, 0.9, 0.35], trim_roll_trim_roll_trim: ['metal', 0xc4c8cd, 0.85, 0.35], trim_roll_trim_roll_trim_springs: ['metal', 0x9aa0a6, 0.9, 0.35],
+  // chapter 18 (the canopy): the plexiglass is glass (drawn see-through, GLASS_OPACITY); the pads are coloured by role, the rest by what it is made of; REPRESENTATIONAL colours
+  canopy_plexi: ['glass', 0xcfe9f2, 0, 0.06],
+  canopy_pads_pads_hinge: ['wood', PAD_ROLES.hinge.color, 0, 0.55], canopy_pads_pads_latch: ['wood', PAD_ROLES.latch.color, 0, 0.55], canopy_pads_pad_catch: ['wood', PAD_ROLES.catch.color, 0, 0.55],
+  canopy_frame_foam: ['wood', 0x6fae6a, 0, 0.85], canopy_frame_carved: ['wood', 0x86bd7e, 0, 0.85], canopy_frame: ['wood', 0x86bd7e, 0, 0.85], canopy_vent: ['wood', 0x9fcf92, 0, 0.85],
+  canopy_blocks: ['wood', 0xb4531f, 0, 0.7], canopy_brace_tubes: ['metal', 0xe0b84a, 0.5, 0.35],
+  canopy_hinges_hinge_fuselage: ['metal', 0xd5d8dc, 0.85, 0.3], canopy_hinges_hinge_canopy: ['metal', 0xb4bac2, 0.85, 0.3],
+  canopy_latches: ['metal', 0xe6b23a, 0.6, 0.35], canopy_safety_catch_sc1: ['metal', 0xd5d8dc, 0.9, 0.3], canopy_safety_catch_sc1_bolt: ['metal', 0x6d737a, 0.9, 0.3],
+  fuselage_front_cover: ['wood', 0xd9d4c4, 0, 0.7], fuselage_rear_cover: ['wood', 0xd9d4c4, 0, 0.7], fuselage_door: ['metal', 0xe4e8ec, 0.3, 0.4],
 }
+/** the plexiglass's opacity: glass reads as glass when the parts behind it show through (and not as a pane of nothing) */
+export const GLASS_OPACITY = 0.34
 /** the spar's parts that slide into the box as one (the bench's, less the jig) */
 const SLIDES = (cid: string) => SPAR_COMPONENTS.has(cid) && cid !== 'spar.jig'
 /** the parts bolted on the firewall's aft face: the glass plies lie on that face (the aft ply to F.S. 125.31), where the stainless sheet is exported, so the lab sets them that far aft (display only) */
@@ -159,6 +170,16 @@ export class FuselageBay {
   /** the pitch stops (fitted, unprinted): two small blocks at the stick's travel limits, shown from STOPS_FROM */
   readonly stops = new THREE.Group()
   private sparBenchM = new Map<string, THREE.Matrix4>()
+  /** chapter 18: the canopy's data, the names of its parts (and the covers, the door), how far it has got in lifting off at the cut (0 on the airplane, 1 on the bench), and how far it is open (degrees) */
+  private canopy: CanopyData | null = null
+  private m26Parts = new Set<string>()
+  private liftK = 1
+  private openDeg = 0
+  private canopyBenchM = new Map<boolean, THREE.Matrix4>()
+  private selOp: string | null = null
+  /** the A and B checks' dimension lines (jig frame), shown on their op only */
+  readonly checks = new THREE.Group()
+  private checkAnchors = new Map<string, THREE.Vector3>()
   private m25Chapter = false
   /** how far aft the firewall face's parts are drawn (inches): the aft glass ply's thickness over the stainless sheet's station, plus a hair */
   private firewallAside = 0
@@ -178,7 +199,9 @@ export class FuselageBay {
     this.cut.amount = 0
     this.bank = data.bank_deg ?? BANK_DEG
     const extraParts = new Set(Object.keys(data.extras?.nose_parts ?? {}))
-    const m25Parts = new Set(Object.keys(data.extras?.m25?.parts ?? {}))
+    this.canopy = data.extras?.m26?.canopy ?? null
+    this.m26Parts = new Set(Object.keys(data.extras?.m26?.parts ?? {}))
+    const m25Parts = new Set([...Object.keys(data.extras?.m25?.parts ?? {}), ...this.m26Parts])
     this.ctl = data.extras?.m25?.controls ?? null
     const ng = data.extras?.nose_gear
     if (ng) {
@@ -214,11 +237,11 @@ export class FuselageBay {
         jigMat = compositeMaterial(spec, this.cut, fj.web, fj.span, { axis: fj.axis, hatch, hatchSoft, dryTone: this.dryTone })
         tableMat = compositeMaterial(spec, null, ft.web, ft.span, { axis: ft.axis, hatch, hatchSoft })
       } else if (M25_LOOK[part] !== undefined && M25_LOOK[part] !== 'foam') {
-        const [kind, color, metalness, roughness] = M25_LOOK[part] as ['wood' | 'metal', number, number, number]
+        const [kind, color, metalness, roughness] = M25_LOOK[part] as ['wood' | 'metal' | 'glass', number, number, number]
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color, metalness, roughness, hatch, hatchSoft, name: part })
         tableMat = partMaterial(null, { color, metalness, roughness, hatch, hatchSoft, name: part })
-        void kind
+        if (kind === 'glass') for (const mt of [jigMat, tableMat]) { mt.userData.glass = GLASS_OPACITY; mt.transparent = true; mt.opacity = GLASS_OPACITY; mt.depthWrite = false; mt.side = THREE.DoubleSide }
       } else if (WOOD[part] !== undefined) {
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, hatchSoft, name: part })
@@ -281,13 +304,14 @@ export class FuselageBay {
     this.buildMarks()
     this.buildGhost()
     this.buildStops()
+    this.buildChecks()
     {
       const ply = Math.max(...Object.values(data.nodes).filter((n) => n.part === 'firewall').map((n) => n.fs_max), -Infinity)
       const sheet = data.extras?.m25?.parts.fuselage_firewall_stainless?.fs_min
       this.firewallAside = sheet !== undefined && ply > sheet ? ply - sheet + 0.02 : 0
     }
     this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
-    this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops)
+    this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops, this.checks)
     this.installed.name = 'installedCanard'
     this.installed.visible = false
     this.setPose('upright')
@@ -634,6 +658,7 @@ export class FuselageBay {
   }
 
   placeOf(m: FMesh, opId: string | null): Placement {
+    if (this.m26Parts.has(m.part)) return this.canopyPlaceOf(m, opId) === 'airplane' ? 'jig' : 'table'
     if (m.m25) return m25Place(m.cid, opId, this.order) === 'bench' ? 'table' : 'jig'
     return placement(m.cid, opId, this.order, this.dry)
   }
@@ -651,6 +676,7 @@ export class FuselageBay {
   paint(state: Map<string, BuildState> | null, opId: string | null, lay: number, layT: number, ghost: boolean, opIdx: Map<string, number>, backdrop: string | null = null): string {
     const back = !state && backdrop && this.order.includes(backdrop) ? backdrop : null
     const sel = state ? opId : back
+    this.selOp = sel
     const pose = this.poseFor(sel)
     if (pose !== this.pose) this.setPose(pose)
     const chapter = sel ? this.opChapter.get(sel) ?? -1 : -1
@@ -687,7 +713,7 @@ export class FuselageBay {
       if (m.part === 'datum_board' && m.jig.visible) boards = true
       if (m.table.visible) {
         const face = this.faceFor(m.carrier, sel)
-        m.table.matrix.copy(benched ? this.benchMatrix() : m.m25 ? this.sparBenchMatrix(this.sparStand(sel)) : this.tableMatrix(m.carrier, face))
+        m.table.matrix.copy(benched ? this.benchMatrix() : this.m26Parts.has(m.part) ? this.canopyMatrix(m, sel) : m.m25 ? this.sparBenchMatrix(this.sparStand(sel)) : this.tableMatrix(m.carrier, face))
         m.table.matrixWorldNeedsUpdate = true
         sig += m.carrier + face + (benched ? 'b' : '')
       }
@@ -710,7 +736,8 @@ export class FuselageBay {
     this.marksOn = boards
     // chapters 12-13: the canard and the elevators stand installed on the airplane (never on a chapter 4-9 op, nor on the finished ch 4-9 box)
     this.installed.visible = !!state && (CANARD_INSTALLED_CHAPTERS.has(chapter) || (!!sel && ELEV_OPS.has(sel)))
-    this.stops.visible = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM)
+    this.stops.visible = m25On && chapter !== 18 && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM) // (the canopy's ops leave the cockpit's stops out of the frame and the labels)
+    this.checks.visible = m25On && sel === CANOPY_CHECK_OP
     this.applyM25()
     sig += this.installed.visible ? 'c' : ''
     const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
@@ -763,7 +790,7 @@ export class FuselageBay {
     const where = this.placeOf(m, opId)
     const mat = where === 'jig'
       ? this.restMatrix(this.poseFor(opId))
-      : m.m25 ? this.sparBenchMatrix(this.sparStand(opId)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
+      : this.m26Parts.has(m.part) ? this.canopyMatrix(m, opId) : m.m25 ? this.sparBenchMatrix(this.sparStand(opId)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
     const g = where === 'jig' ? m.base : m.table.geometry
     return g.boundingBox!.clone().applyMatrix4(mat)
   }
@@ -784,6 +811,12 @@ export class FuselageBay {
         // the span runs the other way on the bench once the box is turned about (sparBenchMatrix): the same B.L. stays at the same end of the spar
         const p = new THREE.Vector3(121.7, 0.35, -v.focus.spar)
         target.copy(p).applyMatrix4(bench ? this.sparBenchMatrix(this.sparStand(id)) : this.restMatrix(this.poseFor(id)))
+      } else if (typeof v.focus === 'object' && 'canopy' in v.focus) {
+        // the canopy on the bench (upright while trimmed, upside down once cut free), or halfway between it on the airplane and on the bench
+        const c = this.canopyBox().getCenter(new THREE.Vector3())
+        const onBench = c.clone().applyMatrix4(this.canopyBenchMatrix(v.focus.canopy !== 'bench-up'))
+        if (v.focus.canopy === 'mid') target.copy(onBench).lerp(c.clone().applyMatrix4(this.restMatrix(this.poseFor(id))), 0.5)
+        else target.copy(onBench)
       } else if (typeof v.focus === 'object' && 'at' in v.focus) {
         target.set(...v.focus.at).applyMatrix4(this.restMatrix(this.poseFor(id)))
       } else if (v.focus === 'box' || v.focus === 'marks') {
@@ -963,12 +996,15 @@ export class FuselageBay {
       } else if (k && m.part === 'controls_pitch_pushrod') {
         const r0 = this.pm(rod(a0, 'front')), r1 = this.pm(rod(a, 'front'))
         mat.makeTranslation(r1.x - r0.x, r1.y - r0.y, r1.z - r0.z)
+      } else if (this.canopy && this.m26Parts.has(m.part) && this.data.parts[m.part]?.turns && this.canopyPlaceOf(m, this.selOp) === 'airplane') {
+        mat.copy(this.openMatrix())
       }
       m.jig.matrixAutoUpdate = false
       m.jig.matrix.copy(mat)
       m.jig.matrixWorldNeedsUpdate = true
     }
     this.applyElevators()
+    this.applyCanopy()
     this.jigFrame.updateMatrixWorld(true)
   }
 
@@ -1018,6 +1054,123 @@ export class FuselageBay {
     for (const b of this.stops.children) c.add(b.position)
     c.multiplyScalar(1 / this.stops.children.length).add(new THREE.Vector3(0, 1.4, 0))
     return out.copy(c).applyMatrix4(this.jigFrame.matrixWorld)
+  }
+
+  // ---- chapter 18: the canopy on the bench, lifting off at the cut, and opening on its right hinges ----
+
+  private canopyPlaceOf(m: FMesh, opId: string | null): CanopyPlace {
+    return canopyPlace(m.cid, this.canopy?.lift ?? [], opId, this.order)
+  }
+  /** the parts that come off with the canopy, as one box in the model frame (inches): where they would stand whether or not they are built yet, so the canopy keeps one place on the bench */
+  private canopyBox(): THREE.Box3 {
+    const bx = new THREE.Box3()
+    for (const m of this.meshes) if (this.m26Parts.has(m.part) && this.canopy?.lift.includes(m.cid)) bx.union(m.base.boundingBox!)
+    return bx
+  }
+  /** the canopy on the layup table (REPRESENTATIONAL: the book says only that it is trimmed and later turned over, not where): upright on its sill while the bubble is trimmed, upside down once cut free; middle over the table's, its lowest point on the top */
+  canopyBenchMatrix(inverted: boolean): THREE.Matrix4 {
+    const hit = this.canopyBenchM.get(inverted)
+    if (hit) return hit
+    const T = STATION.table, bx = this.canopyBox(), c = bx.getCenter(new THREE.Vector3())
+    const ymin = inverted ? -(bx.max.y - c.y) : bx.min.y - c.y
+    const m = new THREE.Matrix4().makeTranslation(T.x, T.topY + 0.002, T.z).multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH))
+      .multiply(new THREE.Matrix4().makeTranslation(0, -ymin, 0)).multiply(new THREE.Matrix4().makeRotationX(inverted ? Math.PI : 0))
+      .multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
+    this.canopyBenchM.set(inverted, m)
+    return m
+  }
+  /** the canopy partway through lifting off (0 = on the airplane, 1 = upside down on the bench): its middle goes up and over along an arc, turning half a turn about its long axis as it goes (world matrix, metres from inches) */
+  private liftMatrix(k: number): THREE.Matrix4 {
+    const W0 = this.restMatrix(this.poseFor(CANOPY_CUT_OP)), W1 = this.canopyBenchMatrix(true)
+    const c = this.canopyBox().getCenter(new THREE.Vector3())
+    const p0 = c.clone().applyMatrix4(W0), p1 = c.clone().applyMatrix4(W1)
+    const q0 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(W0)), q1 = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(W1))
+    const e = Math.min(1, Math.max(0, k))
+    const pos = p0.clone().lerp(p1, e).add(new THREE.Vector3(0, 0.55 * Math.sin(Math.PI * e), 0))
+    const q = q0.clone().slerp(q1, e)
+    return new THREE.Matrix4().makeTranslation(pos.x, pos.y, pos.z).multiply(new THREE.Matrix4().makeRotationFromQuaternion(q))
+      .multiply(new THREE.Matrix4().makeScale(INCH, INCH, INCH)).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
+  }
+  /** the world matrix of a canopy part's table mesh for `opId` (the cut op animates it from the airplane to the bench) */
+  private canopyMatrix(m: FMesh, opId: string | null): THREE.Matrix4 {
+    if (this.canopyPlaceOf(m, opId) === 'bench-up') return this.canopyBenchMatrix(false)
+    return opId === CANOPY_CUT_OP && this.liftK < 1 ? this.liftMatrix(this.liftK) : this.canopyBenchMatrix(true)
+  }
+  /** the cut op's lift-off progress (0 on the airplane, 1 on the bench) */
+  setCanopyLift(k: number) {
+    const c = Math.min(1, Math.max(0, k))
+    if (c === this.liftK) return
+    this.liftK = c
+    this.applyCanopy()
+  }
+  get canopyLiftK(): number { return this.liftK }
+  /** the canopy open `deg` degrees on its right hinges (0 = closed) */
+  setCanopyOpen(deg: number) {
+    if (deg === this.openDeg) return
+    this.openDeg = deg
+    this.applyM25()
+  }
+  get canopyOpenDeg(): number { return this.openDeg }
+  /** the local matrix (jig frame, model inches) of a part that turns with the canopy: a turn about the right hinge line, the python frame's -deg about +x (core.canopy_book.open_pose) */
+  private openMatrix(): THREE.Matrix4 {
+    const h = this.canopy!.hinge
+    return new THREE.Matrix4().makeTranslation(0, h.z, -h.y).multiply(new THREE.Matrix4().makeRotationX((-this.openDeg * Math.PI) / 180)).multiply(new THREE.Matrix4().makeTranslation(0, -h.z, h.y))
+  }
+  /** keep the canopy's table meshes where the lift puts them */
+  private applyCanopy() {
+    if (!this.canopy) return
+    for (const m of this.meshes) {
+      if (!this.m26Parts.has(m.part) || !m.table.visible) continue
+      m.table.matrix.copy(this.canopyMatrix(m, this.selOp))
+      m.table.matrixWorldNeedsUpdate = true
+    }
+    this.tableGroup.updateMatrixWorld(true)
+  }
+
+  /** where the open canopy's bubble is (the model frame, inches): a box of the visible turning parts as they stand now */
+  canopyWorldBox(): THREE.Box3 {
+    const bx = new THREE.Box3()
+    for (const m of this.meshes) {
+      if (!this.m26Parts.has(m.part)) continue
+      const mesh = this.shown(m.name)
+      if (mesh && this.canopy?.lift.includes(m.cid)) bx.union(new THREE.Box3().setFromObject(mesh))
+    }
+    return bx
+  }
+
+  /**
+   * The A and B checks' dimension lines (plans-1980:p109), in the box's frame: a vertical dimension beside the left side from the longerons' top
+   * (the datum W.L.) up to the check's height, its end ticks, and dashed extension lines across to the centre line at both heights. Only the
+   * book's heights are labelled (main.ts); the A station is fitted (6 in forward of a fitted headrest), so no station number is labelled for it.
+   */
+  private buildChecks() {
+    const c = this.canopy, wlz = c?.wl_zero
+    if (!c || wlz === undefined) return
+    const mat = new THREE.MeshBasicMaterial({ color: 0x2fc4ff, toneMapped: false, depthTest: false })
+    const zs = this.half.w + 5
+    const bar = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, th = 0.3) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(Math.max(Math.abs(x1 - x0), th), Math.max(Math.abs(y1 - y0), th), Math.max(Math.abs(z1 - z0), th)), mat)
+      b.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)
+      b.castShadow = false; b.receiveShadow = false; b.renderOrder = 9
+      this.checks.add(b)
+    }
+    for (const k of c.checks) {
+      const y0 = k.wl0 - wlz, y1 = k.wl1 - wlz, x = k.fs
+      bar(x, y0, zs, x, y1, zs, 0.4) // the dimension
+      for (const y of [y0, y1]) {
+        bar(x - 1.6, y, zs, x + 1.6, y, zs, 0.4) // its end ticks
+        for (let z = zs, n = 0; z > 0.5 && n < 40; z -= 2.2, n++) bar(x, y, z, x, y, Math.max(0, z - 1.2), 0.25) // the extension line, dashed, to the centre line
+      }
+      this.checkAnchors.set(k.id, new THREE.Vector3(x, y1 + 1.2, zs))
+    }
+    this.checks.name = 'canopyChecks'
+    this.checks.visible = false
+  }
+  /** a check's label anchor (world metres), or null while the dimension lines are not shown */
+  checkAnchor(id: string, out: THREE.Vector3): THREE.Vector3 | null {
+    const a = this.checkAnchors.get(id)
+    if (!a || !this.checks.visible) return null
+    return out.copy(a).applyMatrix4(this.jigFrame.matrixWorld)
   }
 
   // ---- chapters 12-13: the installed canard, the nose gear's retraction and its other axle candidate ----
@@ -1129,6 +1282,8 @@ export class FuselageBay {
   }
 
   labelColor(m: FMesh): string {
+    const role = this.data.parts[m.part]?.role
+    if (role && PAD_ROLES[role]) return '#' + PAD_ROLES[role].color.toString(16).padStart(6, '0')
     const c = m.hatch ? HATCH_COLOR : WOOD[m.part] ?? METAL[m.part]?.[0] ?? COLORS.foam
     return '#' + c.toString(16).padStart(6, '0')
   }

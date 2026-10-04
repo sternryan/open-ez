@@ -8,7 +8,8 @@ import { visibleOps, type GraphLite } from './graph'
 
 /** the glb node families the fuselage subject owns (the rest are the canard's and the elevators'): a node whose component id starts with one of these */
 export const FUSE_PREFIXES = ['fuselage.', 'gear.', 'nose.', 'spar.', 'firewall.', 'controls.', 'trim.', 'canopy.']
-export const M25_CHAPTERS = new Set([14, 15, 16, 17])
+/** chapters 14-17 (the spar, firewall, controls, trim) and 18 (the canopy): the parts of layup.json "extras" m25 and m26 show on these chapters' ops only */
+export const M25_CHAPTERS = new Set([14, 15, 16, 17, 18])
 /** the first op of chapter 14: from it to SPAR_BENCH_LAST the spar is built on the layup table, and the box on its bench is not drawn */
 export const M25_FIRST_OP = 'f14.jig'
 export const SPAR_FIT_OP = 'f14.fit-fuselage'

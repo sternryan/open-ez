@@ -19,6 +19,7 @@
  */
 import { visibleOps, type GraphLite, type Op } from './graph'
 import { noseArmText, type ControlsKin } from './kin'
+import type { CanopyData } from './canopy'
 
 export type Subject = 'canard' | 'fuselage'
 export const SUBJECTS: Subject[] = ['canard', 'fuselage']
@@ -26,7 +27,7 @@ export const SUBJECT_KEY = 'longez.subject'
 export const parseSubject = (s: string | null | undefined): Subject => (s === 'fuselage' ? 'fuselage' : 'canard')
 
 /** Chapters 4-9 are the box and the main gear; 12 (the canard installed: F22 drilled, bushings, F28 pins) and 13 (the nose and nose gear) join them. */
-export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17])
+export const FUSE_CHAPTERS = new Set([4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18])
 /** The chapters the all-chapters fuselage tour covers: the whole bar (12 and 13 have no film of their own yet). */
 export const FUSE_TOUR_CHAPTERS = [4, 5, 6, 7, 8, 9, 12, 13]
 /** the ch14-17 tour (the spar, firewall, controls and trim): what the Tour button plays when one of their ops is selected */
@@ -43,6 +44,9 @@ export interface FusePartRow {
   /** the material an opening removes (the canard cutout): no mass, shown lifted out at its op */
   void?: boolean
   show?: ShowWindow
+  /** chapter 18: the part turns with the canopy about the hinge line when it opens; and a pad's role (hinge, latch, catch) */
+  turns?: boolean
+  role?: string
 }
 /** a node's later shapes: from op `from` on the lab shows `node` in its place (the carve, the canard opening, the access holes) */
 export interface FuseStage { from: string; node: string }
@@ -67,6 +71,8 @@ export interface FuseExtras {
   nose_gear: NoseGearKinLite
   /** chapters 14-17 (guide/fuselage_export.py m25_section): the spar, firewall face, controls and trim rows, the cap plies, the control kinematics' inputs */
   m25?: { parts: Record<string, FusePartRow>; nodes: Record<string, FusePlyRow>; controls: ControlsKin; jig_t: number; cap_visual_ply_in: number; cap_note: string }
+  /** chapter 18 (guide/fuselage_export.py m26_section): the canopy's part rows, the frame's five plies, the hinge line and the checks and conflicts the readout states */
+  m26?: { parts: Record<string, FusePartRow>; nodes: Record<string, FusePlyRow>; canopy: CanopyData }
 }
 export interface NoseGearKinLite {
   strut_length: number; axle_wl: number; pivot_wl: number; clearance_wl: number; wl_zero: number; crank_turns: number; retract_seconds: number
@@ -357,7 +363,7 @@ export const FUSE_CUT_RANGE = { min: 22, max: 125.5 }
 export const NOSE_CUT_RANGE = { min: -6.8, max: 125.5 }
 /** chapters 14-17: the swept spar's aft face reaches F.S. 129.9 at B.L. 55.5, so the cut goes a little past the box */
 export const M25_CUT_RANGE = { min: 22, max: 130 }
-export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : chapter !== null && chapter >= 14 && chapter <= 17 ? M25_CUT_RANGE : FUSE_CUT_RANGE)
+export const cutRangeFor = (chapter: number | null): { min: number; max: number } => (chapter === NOSE_CHAPTER ? NOSE_CUT_RANGE : chapter !== null && chapter >= 14 && chapter <= 18 ? M25_CUT_RANGE : FUSE_CUT_RANGE)
 export const fmtFs = (fs: number): string => `FS ${Math.round(fs * 10) / 10}`
 /** tolerance on a ply's FS extent, as the canard's EPS on B.L. */
 export const FS_EPS = 1e-3

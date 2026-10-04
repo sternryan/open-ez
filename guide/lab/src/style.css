@@ -230,3 +230,6 @@ body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, 
 #gl-lost .btn:hover { background: var(--ink); }
 
 #readout #t-ref { flex-wrap: wrap; }
+
+/* the motion and reference rows carry whole sentences (the canopy's conflicts, its weight row): they wrap instead of clipping */
+#readout #ro-kin, #readout #ro-ref { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }

@@ -19,6 +19,8 @@ export interface UIHandlers {
   onSubject?(s: Subject): void
   /** the stick control (chapter 16's pitch pushrod op): the elevator deflection the person set, degrees, up positive */
   onStick?(deflUp: number): void
+  /** the canopy control (chapter 18's hinge op): how far open the person set it, degrees */
+  onCanopy?(deg: number): void
 }
 /** How the section slider reads: the canard's B.L. (the default) or the fuselage's FS. */
 export interface SectionScale { min: number; max: number; fmt: (v: number) => string; label: string }
@@ -120,6 +122,8 @@ export function initUI(h: UIHandlers, store: Store) {
   secBl.addEventListener('input', secChange)
   const stickEl = $('stick-defl') as HTMLInputElement
   stickEl.addEventListener('input', () => h.onStick?.(+stickEl.value))
+  const canopyEl = $('canopy-open') as HTMLInputElement
+  canopyEl.addEventListener('input', () => h.onCanopy?.(+canopyEl.value))
   $('quality-seg').addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-q]') as HTMLElement | null
     if (b) h.onQuality(b.dataset.q as 'high' | 'mid' | 'low' | 'auto')
@@ -236,6 +240,13 @@ export function initUI(h: UIHandlers, store: Store) {
       $('stick').hidden = !show
       if (+stickEl.value !== defl) stickEl.value = String(defl)
       $('stick-val').textContent = text
+    },
+    /** the canopy control: shown only on the hinge op; `deg` is how far open (degrees), `text` its short reading */
+    setCanopy(show: boolean, deg: number, text: string, max = 105) {
+      $('canopy-ctl').hidden = !show
+      if (+canopyEl.max !== max) canopyEl.max = String(max)
+      if (+canopyEl.value !== deg) canopyEl.value = String(deg)
+      $('canopy-val').textContent = text
     },
     setSubject(s: Subject) {
       for (const b of document.querySelectorAll('#subject button[data-subject]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.subject === s))

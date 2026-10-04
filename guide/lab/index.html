@@ -38,6 +38,11 @@
       <input type="range" id="stick-defl" min="-30" max="15" step="0.5" value="0" aria-label="Pitch stick: elevator deflection, 30 degrees down to 15 up" aria-describedby="stick-val">
       <span class="val mono" id="stick-val"></span>
     </div>
+    <div class="crow slide" id="canopy-ctl" hidden>
+      <span class="label lead">Canopy</span>
+      <input type="range" id="canopy-open" min="0" max="105" step="1" value="0" aria-label="Canopy: how far open on its right hinges, in degrees" aria-describedby="canopy-val">
+      <span class="val mono" id="canopy-val"></span>
+    </div>
   </aside>
 
   <div id="viewpop" class="card" role="group" aria-label="Display settings" hidden>

@@ -7,7 +7,7 @@
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
  * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -166,8 +166,33 @@ export const M25_VIEWS: Record<string, FuseView> = {
   'f17.fixed-trim-tab': { focus: at(45, 9, -9.5), dist: 60, el: 52, az: 165 },
 }
 
+/**
+ * Chapter 18, the canopy. The bubble is trimmed upright on the layup table; it then stands on its blocks on the airplane (on its gear beside the
+ * bench: the room side, az 0, is the left, where the door, the latches and the safety catch are) until the cut frees it, when it lifts off and
+ * turns upside down on the table for the inside work (`canopy`: the bubble on the table, or halfway between it and the airplane); the hinge
+ * op opens it to the right, away from the room, so that shot comes from the nose end.
+ */
+export const M26_VIEWS: Record<string, FuseView> = {
+  'f18.trim-plexi': { focus: { canopy: 'bench-up' }, dist: 104, el: 36, az: 0, up: 5 },
+  'f18.locate-blocks': { focus: at(86, 27, -4), dist: 100, el: 34, az: 14, up: 4 },
+  'f18.check-ab': { focus: at(96, 30, -4), dist: 108, el: 12, az: 6, up: 7 },
+  'f18.foam-core': { focus: at(66, 25, -10), dist: 74, el: 36, az: 18, up: 3 },
+  'f18.carve-outside': { focus: at(66, 25, -10), dist: 74, el: 36, az: 18, up: 3 },
+  'f18.glass-outside': { focus: at(54, 25.5, -9), dist: 58, el: 42, az: 28, up: 3 },
+  'f18.cut-remove': { focus: { canopy: 'mid' }, dist: 200, el: 30, az: 8 },
+  'f18.carve-inside': { focus: { canopy: 'bench-down' }, dist: 132, el: 55, az: 0, up: 6 },
+  'f18.pads-inside-glass': { focus: { canopy: 'bench-down' }, dist: 132, el: 55, az: 0, up: 6 },
+  'f18.rear-cover-inside': { focus: at(121, 28, 0), dist: 60, el: 40, az: -40 },
+  'f18.vent-brace': { focus: { canopy: 'bench-down' }, dist: 104, el: 52, az: 0, up: 5 },
+  'f18.hinges': { focus: at(80, 32, 4), dist: 150, el: 22, az: 62 },
+  'f18.door': { focus: at(50, 19, -12), dist: 40, el: 26, az: 12, up: 2 },
+  'f18.latches': { focus: at(60, 25.5, -12.5), dist: 56, el: 34, az: 26, up: 2, pan: -9 },
+  'f18.front-cover': { focus: at(40, 27, 0), dist: 60, el: 34, az: 24 },
+  'f18.safety-catch': { focus: at(57, 24, -12), dist: 34, el: 24, az: 10, up: 2 },
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {

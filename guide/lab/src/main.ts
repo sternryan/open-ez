@@ -27,6 +27,7 @@ import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
 import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
+import { HINGE_OP, CUT_OP, liftProgress, openProgress, clampOpenDeg, canopyKin, canopyRow, openText, openShort, type CanopyData } from './logic/canopy'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
 import { STATION, fsToX } from './scene/fuselageStation'
@@ -68,7 +69,7 @@ interface LabHook {
   /** authored lab shots, model inches in the canard's frame (target is the tours.yaml target) */
   labShots(): Record<string, LabShot>
   /** the composite material a mesh got (by mesh name), or null */
-  material(name: string): { kind: string; angles: number[]; wet: number; hatch?: boolean; fidelity?: string } | null
+  material(name: string): { kind: string; angles: number[]; wet: number; hatch?: boolean; fidelity?: string; opacity?: number; transparent?: boolean; color?: number | null } | null
   setWet(name: string, w: number): void
   /** world-space box [min, max] in metres of a mesh, for placing close-up cameras */
   meshBox(name: string): number[][] | null
@@ -135,6 +136,8 @@ interface LabHook {
   /** chapters 14-17: the stick control now (elevator deflection, up positive; whether a person has set it), its readout and whether its row shows; the spar's slide-in (inches still to go, and the start distance) */
   stick(): { deflUp: number; manual: boolean; text: string; shown: boolean } | null; setStick(deflUp: number): void
   sparSlide(): { inches: number; distance: number } | null
+  /** chapter 18: the canopy's opening now (degrees; whether a person has set it), its readout, whether its control shows, how far it has lifted off at the cut (0 on the airplane, 1 on the bench), and the A and B checks' dimension lines shown */
+  canopy(): { openDeg: number; manual: boolean; text: string; shown: boolean; liftK: number; checks: boolean } | null; setCanopyOpen(deg: number): void
   /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
   hide(prefixes: string[]): void
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
@@ -163,7 +166,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null, ref: () => null,
-  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, canopy: () => null, setCanopyOpen: () => {}, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -516,8 +519,8 @@ async function boot() {
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
-    // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) join them the same way, the cap plies among the box's plies
-    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}) } } : null
+    // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) and the canopy (chapter 18, "extras".m26) join them the same way, the cap and frame plies among the box's plies
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}) } } : null
     // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
     const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
@@ -844,6 +847,10 @@ async function boot() {
         if (mode === 'hang') return { label: 'Elevator hang', value: hangText(hangPitch, hangNose, opT > hangDuration()), sub: `Hung on its hinge line; ${ELEV.hang_cg.note}` }
         return null
       }
+      if (subject === 'fuselage' && bay && CANOPY) {
+        const k = canopyKin(selected, CANOPY, canopyNow())
+        if (k) return k
+      }
       if (subject === 'fuselage' && bay && CTL && selected === STICK_OP) {
         return { label: 'Pitch stick and elevators', value: stickText(stickNow(), CTL), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
       }
@@ -866,11 +873,18 @@ async function boot() {
       const d = stickManual ?? (selected === STICK_OP ? -travelAngle(opT, ELEV.travel) : 0)
       return clampDeflectionDeg(d, CTL)
     }
+    // chapter 18: the canopy lifts off at the cut op (a sim-time animation) and swings open on the hinge op; a person's slider takes the opening over
+    const CANOPY: CanopyData | null = fuseRaw?.extras?.m26?.canopy ?? null
+    let canopyManual: number | null = null
+    const liftNow = (): number => (selected === CUT_OP ? liftProgress(opT) : 1)
+    const canopyNow = (): number => (!CANOPY || selected !== HINGE_OP ? 0 : clampOpenDeg(canopyManual ?? openProgress(opT) * CANOPY.hinge.max_open_deg, CANOPY.hinge.max_open_deg))
+    const updateCanopy = () => ui.setCanopy(subject === 'fuselage' && selected === HINGE_OP && !!CANOPY, canopyNow(), openShort(canopyNow()), CANOPY?.hinge.max_open_deg)
     const stickShort = (d: number) => (Math.abs(d) < 0.05 ? 'Neutral' : d > 0 ? `${d.toFixed(1)} up` : `${(-d).toFixed(1)} down`)
     const updateStick = () => ui.setStick(subject === 'fuselage' && selected === STICK_OP && !!CTL, stickNow(), stickShort(stickNow()))
-    const updateKin = () => { ui.setKin(kinNow()); updateStick() }
+    const updateKin = () => { ui.setKin(kinNow()); updateStick(); updateCanopy() }
     const snapKin = () => { // a page opened on an op (no flight): the elevators start where the op has them
       if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()) }
+      if (bay && subject === 'fuselage' && CANOPY) { bay.setCanopyLift(liftNow()); bay.setCanopyOpen(canopyNow()) }
       elevDx = elevMode() === 'apart' ? APART_IN : 0
       elevDeg = 0
       applyElev()
@@ -894,6 +908,12 @@ async function boot() {
           if (Math.abs(bay.sparSlideInches - (1 - sl) * bay.slideDistance()) > 1e-9 || st !== bay.stickDeflUp) pipeline.shadowDirty = true
           bay.setSparSlide(sl)
           bay.setStick(st)
+        }
+        if (CANOPY) {
+          const lk = liftNow(), od = canopyNow()
+          if (lk !== bay.canopyLiftK || od !== bay.canopyOpenDeg) pipeline.shadowDirty = true
+          bay.setCanopyLift(lk)
+          bay.setCanopyOpen(od)
         }
       }
       updateKin()
@@ -1108,7 +1128,7 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
-      ui.setRef(sparRow(ledger, selected, graph.order))
+      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order))
       updateKin()
     }
     const updateReadout = () => {
@@ -1221,7 +1241,7 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
-    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17].includes(chapterOf(selected))
+    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
@@ -1300,6 +1320,17 @@ async function boot() {
           vis: budgeted(part, wants, () => (bay.isNewOn(row.component, selected) ? 90 : op()?.components.includes(row.component) ? 80 : 10)),
           priority: () => labelPriority({ inOp: !!op()?.components.includes(row.component), cut: false, fitted: true }),
           tie: () => row.fs_max - row.fs_min,
+        })
+      }
+    }
+    // chapter 18: the A and B checks, drawn as dimension lines above WL 23 (the book's heights; the A station is fitted, so no station is labelled for it)
+    if (bay && CANOPY) {
+      for (const k of CANOPY.checks) {
+        flabels.add({
+          id: `canopy.check.${k.id}`, text: `Check ${k.id}: ${k.min ? 'at least ' : ''}${k.height_in} in above WL ${k.wl0}`, color: '#2fc4ff', cls: '',
+          at: () => bay.checkAnchor(k.id, fwp),
+          vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.checks.visible ? 1 : 0),
+          priority: () => 4, tie: () => 0,
         })
       }
     }
@@ -1407,7 +1438,9 @@ async function boot() {
       if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey(); bay.setNose(noseTNow()); fitCutRange() }
       openOp()
       if (!fly) snapKin()
+      canopyManual = null
       if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()); paint() } // the spar starts clear of the box on its fit op; the stick at the op's own start
+      if (bay && subject === 'fuselage' && CANOPY) { bay.setCanopyLift(liftNow()); bay.setCanopyOpen(canopyNow()); paint() } // the canopy starts on the airplane at its cut op, closed at the hinge op
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
@@ -1580,6 +1613,7 @@ async function boot() {
         select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
       },
       onSubject(s) { if (s !== subject) { userAct(); setSubject(s) } },
+      onCanopy(d) { userAct(); canopyManual = d; if (bay && CANOPY) { bay.setCanopyOpen(canopyNow()); pipeline.shadowDirty = true } updateKin() },
       onStick(d) { userAct(); stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() },
       onHome: () => goto(homeShot(), true),
       onTour: () => (director.active ? stopTour() : startTour()),
@@ -1631,7 +1665,7 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.ground = () => groundRow(ledger)
-    hook.ref = () => sparRow(ledger, selected, graph.order)
+    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
     hook.gearMarks = () => {
@@ -1652,6 +1686,8 @@ async function boot() {
     }
     hook.stick = () => (bay && CTL ? { deflUp: bay.stickDeflUp, manual: stickManual !== null, text: stickText(bay.stickDeflUp, CTL), shown: !document.getElementById('stick')!.hidden } : null)
     hook.setStick = (d) => { stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.canopy = () => (bay && CANOPY ? { openDeg: bay.canopyOpenDeg, manual: canopyManual !== null, text: openText(bay.canopyOpenDeg, CANOPY.hinge), shown: !document.getElementById('canopy-ctl')!.hidden, liftK: bay.canopyLiftK, checks: bay.checks.visible } : null)
+    hook.setCanopyOpen = (d) => { canopyManual = d; if (bay && CANOPY) { bay.setCanopyOpen(canopyNow()); pipeline.shadowDirty = true } updateKin() }
     hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.touring = () => director.active
@@ -1675,7 +1711,7 @@ async function boot() {
         if (!f) return null
         const mat = (f.jig.visible || !f.table.visible ? f.jigMat : f.tableMat)
         const fi = mat.userData.comp as { wet: number } | undefined
-        return { kind: f.spec.kind, angles: f.spec.angles.slice(), wet: fi?.wet ?? 0, hatch: !!mat.userData.hatch, fidelity: f.fidelity }
+        return { kind: f.spec.kind, angles: f.spec.angles.slice(), wet: fi?.wet ?? 0, hatch: !!mat.userData.hatch, fidelity: f.fidelity, opacity: mat.opacity, transparent: mat.transparent, color: (mat as THREE.MeshStandardMaterial).color?.getHex?.() ?? null }
       }
       const info = (m.mesh.material as THREE.Material).userData.comp as { wet: number } | undefined
       // an elevator part is a fitted shape: it says so (the canard's own parts report no hatch, as before)

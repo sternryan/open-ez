@@ -380,6 +380,8 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
     const uu = mat.userData.u as Record<string, { value: unknown }>
     ;(uu.uGhost as { value: number }).value = look.ghost ? 1 : 0
     if (uu.uLay) (uu.uLay.value as THREE.Vector2).set(look.unroll, look.front)
+    const glass = mat.userData.glass as number | undefined // a glass part (the canopy's plexiglass) is see-through at its own opacity, ghost or not
+    if (glass !== undefined) { mat.opacity = look.ghost ? glass * 0.35 : glass; return }
     if (mat.transparent !== look.ghost) { mat.transparent = look.ghost; mat.needsUpdate = true }
     mat.opacity = look.ghost ? 0.2 : 1
     mat.depthWrite = !look.ghost

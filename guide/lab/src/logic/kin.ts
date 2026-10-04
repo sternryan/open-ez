@@ -9,6 +9,7 @@
  * with the crank, and the crank turns 10.8 for full travel (plans-1980:p73).
  */
 
+import { CUT_OP, HINGE_OP, liftDuration, openDuration } from './canopy'
 import { SPAR_FIT_OP, STICK_OP, slideDuration } from './m25'
 
 // ---- elevators (core/elevators_kin.py) ----
@@ -173,6 +174,8 @@ export const HANG_OP = 'r30.elev-balance-check'
 export const RIG_OP = 'f13.rig-nose-gear'
 export const KIN_HOLD: Record<string, number> = {
   [SPAR_FIT_OP]: slideDuration(), // the spar slides in from the side (chapter 14)
+  [CUT_OP]: liftDuration(), // the canopy lifts off and turns over on the bench (chapter 18)
+  [HINGE_OP]: openDuration(), // the canopy swings open on its right hinges (chapter 18)
   [STICK_OP]: travelDuration() + 0.8, // the stick sweeps the Roncz travel, the pushrod and elevators with it (chapter 16)
   'r30.elev-uptravel-test': travelDuration() + 0.8,
   'r30.elev-travel-check': travelDuration() + 0.8,
