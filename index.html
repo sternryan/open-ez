@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="data-base" content="./">
+  <title>Long-EZ build lab</title>
+  <script type="module" crossorigin src="./assets/index-Cvnx9D5O.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Aj72Q7oj.css">
+</head>
+<body>
+  <div id="app"><canvas id="gl" tabindex="0" aria-label="3D view of the canard in the workshop"></canvas><div id="labels" aria-hidden="true"></div></div>
+
+  <aside id="controls" class="card" aria-label="View controls">
+    <div class="crow">
+      <div id="variant" class="seg" role="group" aria-label="Canard variant">
+        <button type="button" data-variant="roncz" aria-pressed="true">Roncz</button>
+        <button type="button" data-variant="gu" aria-pressed="false">GU</button>
+      </div>
+      <div class="row">
+        <button type="button" id="home" class="btn">Home<span class="wide-only"> view</span></button>
+        <button type="button" id="tour" class="btn" aria-pressed="false">Tour</button>
+        <button type="button" id="more" class="btn sq" aria-expanded="false" aria-controls="viewpop" aria-label="Display settings" title="Display settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="crow slide" id="scrubwrap" hidden>
+      <button type="button" id="play" class="btn lead" aria-pressed="false">Play</button>
+      <input type="range" id="scrub" min="0" max="0" value="0" step="1" aria-label="Plies laid so far" aria-describedby="scrublabel">
+      <span class="val mono" id="scrublabel">Ply 0 of 0</span>
+    </div>
+    <div class="crow slide" id="section" hidden>
+      <label class="check lead"><input type="checkbox" id="section-on"> Cut at</label>
+      <input type="range" id="section-bl" min="0" max="70" step="0.5" value="35" aria-label="Section station in buttock line inches" aria-describedby="section-station">
+      <span id="section-station" class="val mono"></span>
+    </div>
+    <div class="crow slide" id="stick" hidden>
+      <span class="label lead">Stick</span>
+      <input type="range" id="stick-defl" min="-30" max="15" step="0.5" value="0" aria-label="Pitch stick: elevator deflection, 30 degrees down to 15 up" aria-describedby="stick-val">
+      <span class="val mono" id="stick-val"></span>
+    </div>
+  </aside>
+
+  <div id="viewpop" class="card" role="group" aria-label="Display settings" hidden>
+    <span class="label">Show</span>
+    <label class="check"><input type="checkbox" id="labels-on" checked> Part names</label>
+    <label class="check"><input type="checkbox" id="paths-on" checked> Load paths</label>
+    <label class="check"><input type="checkbox" id="ghost"> Future work</label>
+    <div class="group" id="quality">
+      <span class="label" id="quality-label">Quality</span>
+      <div id="quality-seg" class="seg" role="group" aria-label="Rendering quality" aria-describedby="quality-label">
+        <button type="button" data-q="high" aria-pressed="false">High</button>
+        <button type="button" data-q="mid" aria-pressed="false">Med</button>
+        <button type="button" data-q="low" aria-pressed="false">Low</button>
+        <button type="button" data-q="auto" aria-pressed="false" title="Start high and step down if frames run long">Auto</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dock" class="card">
+    <section id="readout" aria-label="Readout" aria-live="polite">
+      <div class="tiles">
+        <div class="tile" data-k="station"><span class="label">Station</span><b id="ro-station" class="mono"></b></div>
+        <div class="tile" data-k="plies" id="t-plies" hidden><span class="label">Plies</span><b id="ro-plies" class="mono"></b></div>
+        <div class="tile" data-k="cloth"><span class="label">Cloth so far</span><b id="ro-cloth" class="mono"></b></div>
+        <div class="tile" data-k="mass"><span class="label">Mass</span><b id="ro-mass">not yet computed</b></div>
+      </div>
+      <div class="tile layers" data-k="layers"><span class="label">Layers here</span><b id="ro-layers"></b></div>
+      <div class="tile layers" data-k="kin" id="t-kin" hidden><span class="label" id="ro-kin-label">Motion</span><b id="ro-kin"></b><span id="ro-kin-sub" class="sub"></span></div>
+      <div class="tile layers" data-k="ref" id="t-ref" hidden><span class="label">Reference</span><b id="ro-ref"></b></div>
+      <div id="fuse-rows" data-open="false" hidden>
+        <div class="tile layers" data-k="cg" id="t-cg" hidden><span class="label">CG</span><b id="ro-cg">not yet computed</b><span id="ro-cg-sub" class="sub"></span></div>
+        <div class="tile layers" data-k="ground" id="t-ground" hidden><span class="label">Ground</span><b id="ro-ground"></b><span id="ro-ground-sub" class="sub"></span></div>
+        <div class="tile layers legend" data-k="legend" id="t-legend" hidden><i class="hatch" aria-hidden="true"></i><span class="long">Amber stripes: a fitted shape, not a printed outline</span><span class="short">Stripes: fitted shape</span></div>
+        <button type="button" id="fuse-more" aria-expanded="false" aria-controls="fuse-rows" aria-label="CG detail, ground handling and stripes legend"><span class="chev" aria-hidden="true"></span></button>
+      </div>
+    </section>
+
+    <section id="step" aria-live="polite" data-open="true">
+      <button type="button" id="step-head" aria-expanded="true" aria-controls="step-body">
+        <span class="label">Step <span id="step-count" class="mono"></span></span>
+        <h2 id="step-title"></h2>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+      <div id="step-body">
+        <p id="step-summary"></p>
+        <button type="button" class="label" id="checklist-h" aria-controls="checklist">Checklist <span id="check-count" class="mono"></span><span class="fold" aria-hidden="true"></span></button>
+        <ul id="checklist"></ul>
+      </div>
+    </section>
+  </div>
+
+  <nav id="opbar" aria-label="Build steps">
+    <button type="button" id="bar-home" class="icon" aria-label="Home view" title="Home view">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+    </button>
+    <div id="subject" class="seg" role="group" aria-label="What to build">
+      <button type="button" data-subject="canard" aria-pressed="true">Canard</button>
+      <button type="button" data-subject="fuselage" aria-pressed="false">Fuselage</button>
+    </div>
+    <div id="chips" role="list"></div>
+  </nav>
+
+  <div id="gl-lost" class="card" role="alert" hidden>
+    <b>3D paused</b>
+    <p>The browser reclaimed graphics memory. Tap to reload and pick up at this step.</p>
+    <button type="button" id="gl-lost-reload" class="btn">Reload</button>
+  </div>
+
+  <div id="status" role="status">Loading the canard&hellip;</div>
+</body>
+</html>

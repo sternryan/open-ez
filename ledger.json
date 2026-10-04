@@ -1,0 +1,599 @@
+{
+ "cg": {
+  "arm_in": null,
+  "excluded": {
+   "belt_attach": "not yet computed: core material of Seat-belt attach pads not sourced",
+   "belt_insert": "not yet computed: core material of Left lower-corner belt insert not sourced",
+   "bottom": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "f22": "not yet computed: glass rows not fully placed (2 excluded row(s))",
+   "f28": "not yet computed: glass rows not fully placed (2 excluded row(s))",
+   "firewall": "not yet computed: density of birch plywood not sourced",
+   "front_seat_bkhd": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "panel": "not yet computed: glass rows not fully placed (4 excluded row(s))",
+   "rear_seat_bkhd": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "rollover": "not yet computed: glass rows not fully placed (4 excluded row(s))",
+   "rollover_inserts": "not yet computed: density of birch plywood not sourced",
+   "side_left": "not yet computed: glass rows not fully placed (8 excluded row(s))",
+   "side_right": "not yet computed: glass rows not fully placed (8 excluded row(s))",
+   "step": "not yet computed: density of aluminium 2024 T3 not sourced",
+   "top_longeron_left": "not yet computed: core material of Left top longeron not sourced",
+   "top_longeron_right": "not yet computed: core material of Right top longeron not sourced"
+  },
+  "included": [],
+  "weight_lb": 0.0
+ },
+ "cg_lower_bound": {
+  "arm_in": 82.28181755589009,
+  "excluded": {
+   "belt_attach": "not yet computed: core material of Seat-belt attach pads not sourced",
+   "belt_insert": "not yet computed: core material of Left lower-corner belt insert not sourced",
+   "f22": "modelled 2.00 lb is above the CP26 builder weight (N26MS) 1.44 lb: under review",
+   "f28": "modelled 0.40 lb is above the CP26 builder weight (N26MS) 0.19 lb: under review",
+   "firewall": "not yet computed: density of birch plywood not sourced",
+   "rollover_inserts": "not yet computed: density of birch plywood not sourced",
+   "step": "not yet computed: density of aluminium 2024 T3 not sourced",
+   "top_longeron_left": "not yet computed: core material of Left top longeron not sourced",
+   "top_longeron_right": "not yet computed: core material of Right top longeron not sourced",
+   "wheels_brakes_tyres_axles": "not yet computed: weight and arm of wheels and brakes (unsourced) not sourced"
+  },
+  "included": [
+   "side_left",
+   "side_right",
+   "front_seat_bkhd",
+   "rear_seat_bkhd",
+   "panel",
+   "bottom",
+   "rollover",
+   "main_strut",
+   "nose_strut"
+  ],
+  "weight_lb": 55.61955310448407
+ },
+ "gear": {
+  "ground_handling": {
+   "cite": {
+    "main_axle_fs": "plans-1980:p50 figure 1A; plans-1980:p171",
+    "main_axle_wl": "plans-1980:p171",
+    "nose_wheel_wl": "plans-1980:p171 (CP25 LPC 24)",
+    "tip_back_line_deg": "plans-1980:p171 12 deg line from the main tyre contact"
+   },
+   "main_axle_fs": 110.5,
+   "main_axle_wl": -22.0,
+   "nose_wheel_wl": -22.0,
+   "tip_back_check": "not yet computed: no source for the CG height",
+   "tip_back_line_deg": 12.0,
+   "tip_over_check": "not yet computed: the track has no source"
+  },
+  "nose_arm_candidates": [
+   17.0,
+   20.0
+  ],
+  "nose_arm_candidates_status": "conflict",
+  "rows": [
+   {
+    "arm_in": 110.5,
+    "arm_status": "approximate",
+    "cite": [
+     "plans-1980:p50 Long-EZ gear weighs 22 lb",
+     "plans-1980:p8 MG-1L main gear strut 22-lb S-glass"
+    ],
+    "label": "Main gear strut",
+    "name": "main_strut",
+    "note": "one piece, both legs. Arm is the axle station (p50, p171); strut CG not printed, a bow's CG sits above and maybe forward of the axle",
+    "status": "book",
+    "weight_lb": 22.0
+   },
+   {
+    "arm_in": 17.0,
+    "arm_status": "conflict",
+    "cite": [
+     "plans-1980:p8 NG-1L nose gear strut 2.8 lb S-glass",
+     "plans-1980:p171 nose wheel F.S. 17"
+    ],
+    "label": "Nose gear strut",
+    "name": "nose_strut",
+    "nose_arm_candidates": [
+     17.0,
+     20.0
+    ],
+    "nose_arm_candidates_status": "conflict",
+    "note": "weight is book; station conflicts: p171 prints F.S. 17, the Owner's Manual says about 20 (fs_nose_wheel); nose gear is chapter 13. CP23 page 2 gives 2.6 lb for the RAF-made part; the scan's 2.8 is kept until the part is weighed",
+    "status": "book",
+    "weight_lb": 2.8
+   },
+   {
+    "arm_in": 110.5,
+    "arm_status": "unsourced",
+    "cite": [],
+    "label": "Wheels and brakes (unsourced)",
+    "name": "wheels_brakes_tyres_axles",
+    "note": "the remainder of the retired 45 lb lump (45 - 22 - 2.8); no source for the weight or the arm; placed at the main axle station only so the empty weight does not silently drop",
+    "status": "unsourced",
+    "weight_lb": 20.2
+   }
+  ],
+  "sourced_lb": 24.8,
+  "total_lb": 45.0
+ },
+ "notes": [
+  "cg: parts whose core and glass are both fully sourced and placed (none yet).",
+  "cg_lower_bound: core plus only the glass rows that are placed, plus the sourced gear rows (main and nose strut); never the unsourced wheels and brakes row. An undercount, not a weight."
+ ],
+ "parts": [
+  {
+   "arm_core_in": 70.72381357414862,
+   "arm_in": null,
+   "arm_lower_bound_in": 69.73949771792716,
+   "core_mass_lb": 2.7408291920607493,
+   "core_mass_reason": null,
+   "fidelity": "book",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f07.skin-left"
+   ],
+   "glass_mass_lb": 4.803716584113249,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f05.top-longeron-glass: along the 55 in stiffener",
+    "f05.top-longeron-glass: full 103 in length, 45 degrees, may be pieces",
+    "f05.gear-pad: hatched pad area, 45 degrees",
+    "f05.gear-pad: gear pad stack, 45 degrees, ending at W.L. 12.35",
+    "f06.bond-front-seat: corner tapes, front seat bulkhead, 45 degrees",
+    "f06.bond-panel: corner tapes, instrument panel, 45 degrees",
+    "f06.f28-install: over each doubler, 45 degrees, lapping about 0.4 onto F28, longeron and side",
+    "f06.rear-seat-tape: rear seat bulkhead joint tape, 45 degrees"
+   ],
+   "material": "R45",
+   "part": "side_left",
+   "ply_area_in2": {
+    "UND": 9459.626504099933
+   },
+   "ply_count": {
+    "UND": 8
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 7.544545776173998,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (8 excluded row(s))",
+   "volume_in3": 1578.7176146269917
+  },
+  {
+   "arm_core_in": 70.91808313383741,
+   "arm_in": null,
+   "arm_lower_bound_in": 69.8030704013565,
+   "core_mass_lb": 2.718700622175413,
+   "core_mass_reason": null,
+   "fidelity": "book",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f07.skin-right"
+   ],
+   "glass_mass_lb": 4.804938070819381,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f05.top-longeron-glass: along the 55 in stiffener",
+    "f05.top-longeron-glass: full 103 in length, 45 degrees, may be pieces",
+    "f05.gear-pad: hatched pad area, 45 degrees",
+    "f05.gear-pad: gear pad stack, 45 degrees, ending at W.L. 12.35",
+    "f06.bond-front-seat: corner tapes, front seat bulkhead, 45 degrees",
+    "f06.bond-panel: corner tapes, instrument panel, 45 degrees",
+    "f06.f28-install: over each doubler, 45 degrees, lapping about 0.4 onto F28, longeron and side",
+    "f06.rear-seat-tape: rear seat bulkhead joint tape, 45 degrees"
+   ],
+   "material": "R45",
+   "part": "side_right",
+   "ply_area_in2": {
+    "UND": 9462.031893305855
+   },
+   "ply_count": {
+    "UND": 8
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 7.523638692994794,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (8 excluded row(s))",
+   "volume_in3": 1565.9715583730379
+  },
+  {
+   "arm_core_in": 72.63545745354934,
+   "arm_in": null,
+   "arm_lower_bound_in": 72.57039636241095,
+   "core_mass_lb": 0.8700540715969133,
+   "core_mass_reason": null,
+   "fidelity": "book",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f04.front-seat-bkhd-back",
+    "f04.front-seat-bkhd-front"
+   ],
+   "glass_mass_lb": 1.0350018226704976,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f06.bond-front-seat: corner tapes, front seat bulkhead, 45 degrees"
+   ],
+   "material": "R45",
+   "part": "front_seat_bkhd",
+   "ply_area_in2": {
+    "BID": 626.4389315497792,
+    "UND": 1252.8778630995585
+   },
+   "ply_count": {
+    "BID": 1,
+    "UND": 2
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 1.9050558942674107,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "volume_in3": 501.1511452398221
+  },
+  {
+   "arm_core_in": 112.6697825821646,
+   "arm_in": null,
+   "arm_lower_bound_in": 112.68099030351941,
+   "core_mass_lb": 0.35696088167525064,
+   "core_mass_reason": null,
+   "fidelity": "book",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f04.rear-seat-bkhd-hole"
+   ],
+   "glass_mass_lb": 0.5945902718312538,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f06.rear-seat-tape: rear seat bulkhead joint tape, 45 degrees"
+   ],
+   "material": "R45",
+   "part": "rear_seat_bkhd",
+   "ply_area_in2": {
+    "BID": 482.1071377161536,
+    "UND": 566.5346304691027
+   },
+   "ply_count": {
+    "BID": 2,
+    "UND": 2
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 0.9515511535065044,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "volume_in3": 205.60946784494436
+  },
+  {
+   "arm_core_in": 73.75000000000004,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: core material of Left top longeron not sourced",
+   "fidelity": "book",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.0,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": null,
+   "part": "top_longeron_left",
+   "ply_area_in2": {},
+   "ply_count": {},
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: core material of Left top longeron not sourced",
+   "volume_in3": 72.44999999999999
+  },
+  {
+   "arm_core_in": 73.75000000000004,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: core material of Right top longeron not sourced",
+   "fidelity": "book",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.0,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": null,
+   "part": "top_longeron_right",
+   "ply_area_in2": {},
+   "ply_count": {},
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: core material of Right top longeron not sourced",
+   "volume_in3": 72.44999999999999
+  },
+  {
+   "arm_core_in": 22.099999999999998,
+   "arm_in": null,
+   "arm_lower_bound_in": 22.099999999999994,
+   "core_mass_lb": 0.8433333333333304,
+   "core_mass_reason": null,
+   "fidelity": "representational",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 1.1595833333333334,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f04.panel-f22-f28-aft: over the wet doubler",
+    "f04.panel-f22-f28-fwd: F22 canard attach pad, left and right, forward face only"
+   ],
+   "material": "R250",
+   "part": "f22",
+   "ply_area_in2": {
+    "BID": 1821.6000000000001
+   },
+   "ply_count": {
+    "BID": 4
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 2.002916666666664,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (2 excluded row(s))",
+   "volume_in3": 91.07999999999969
+  },
+  {
+   "arm_core_in": 27.749999999999996,
+   "arm_in": null,
+   "arm_lower_bound_in": 27.75,
+   "core_mass_lb": 0.17037037037036976,
+   "core_mass_reason": null,
+   "fidelity": "representational",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.23425925925925925,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f04.panel-f22-f28-aft: over the wet doubler",
+    "f06.f28-install: over each doubler, 45 degrees, lapping about 0.4 onto F28, longeron and side"
+   ],
+   "material": "R250",
+   "part": "f28",
+   "ply_area_in2": {
+    "BID": 368.0
+   },
+   "ply_count": {
+    "BID": 4
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 0.404629629629629,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (2 excluded row(s))",
+   "volume_in3": 18.399999999999935
+  },
+  {
+   "arm_core_in": 39.85000000000001,
+   "arm_in": null,
+   "arm_lower_bound_in": 39.85,
+   "core_mass_lb": 0.6352686832673049,
+   "core_mass_reason": null,
+   "fidelity": "representational",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.8734944394925316,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f04.panel-f22-f28-aft: over the wet doubler",
+    "f04.panel-f22-f28-aft: panel, above the leg cutouts",
+    "f04.panel-f22-f28-fwd: upper panel, forward face, extra",
+    "f06.bond-panel: corner tapes, instrument panel, 45 degrees"
+   ],
+   "material": "R250",
+   "part": "panel",
+   "ply_area_in2": {
+    "BID": 1372.1803558573586
+   },
+   "ply_count": {
+    "BID": 4
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 1.5087631227598366,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (4 excluded row(s))",
+   "volume_in3": 68.60901779286893
+  },
+  {
+   "arm_core_in": 125.12499999999997,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: density of birch plywood not sourced",
+   "fidelity": "representational",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.3916425120772948,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": "birch_plywood",
+   "part": "firewall",
+   "ply_area_in2": {
+    "BID": 615.2347826086957
+   },
+   "ply_count": {
+    "BID": 2
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: density of birch plywood not sourced",
+   "volume_in3": 76.90434782608696
+  },
+  {
+   "arm_core_in": 64.1103002500193,
+   "arm_in": null,
+   "arm_lower_bound_in": 64.23436848006943,
+   "core_mass_lb": 5.69228633005632,
+   "core_mass_reason": null,
+   "fidelity": "representational",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f06.bottom-glass",
+    "f06.bottom-tape",
+    "f07.skin-left",
+    "f07.skin-right"
+   ],
+   "glass_mass_lb": 5.110814883794267,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f06.bottom-glass: rear seat entry area, extra"
+   ],
+   "material": "R45",
+   "part": "bottom",
+   "ply_area_in2": {
+    "BID": 4484.136980115734,
+    "UND": 4443.233551075992
+   },
+   "ply_count": {
+    "BID": 3,
+    "UND": 4
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 10.803101213850587,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (1 excluded row(s))",
+   "volume_in3": 3278.7569261124404
+  },
+  {
+   "arm_core_in": 52.19999999987651,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: core material of Left lower-corner belt insert not sourced",
+   "fidelity": "derived",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.0,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": null,
+   "part": "belt_insert",
+   "ply_area_in2": {},
+   "ply_count": {},
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: core material of Left lower-corner belt insert not sourced",
+   "volume_in3": 12.00000319972002
+  },
+  {
+   "arm_core_in": 80.5212693618961,
+   "arm_in": null,
+   "arm_lower_bound_in": 80.67463781203311,
+   "core_mass_lb": 0.14392278415244406,
+   "core_mass_reason": null,
+   "fidelity": "derived",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [
+    "f08.roll-over-outside"
+   ],
+   "glass_mass_lb": 0.4389744667784947,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f08.roll-over-outside: local reinforcement",
+    "f08.roll-over-outside: buildup over each of 3 inserts",
+    "f08.roll-over-outside: over the peak",
+    "f08.shoulder-harness: over the shoulder-harness pads"
+   ],
+   "material": "R45",
+   "part": "rollover",
+   "ply_area_in2": {
+    "BID": 689.588980539308
+   },
+   "ply_count": {
+    "BID": 3
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": 0.5828972509309388,
+   "total_mass_reason": "not yet computed: glass rows not fully placed (4 excluded row(s))",
+   "volume_in3": 82.89952367180778
+  },
+  {
+   "arm_core_in": 80.47878384319924,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: density of birch plywood not sourced",
+   "fidelity": "derived",
+   "glass_complete": false,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.0,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [
+    "f08.roll-over-outside: buildup over each of 3 inserts",
+    "f08.shoulder-harness: over the shoulder-harness pads"
+   ],
+   "material": "birch_plywood",
+   "part": "rollover_inserts",
+   "ply_area_in2": {},
+   "ply_count": {},
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: density of birch plywood not sourced",
+   "volume_in3": 1.151391537376578
+  },
+  {
+   "arm_core_in": 78.77499999999722,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: core material of Seat-belt attach pads not sourced",
+   "fidelity": "derived",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.21388891384259298,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": null,
+   "part": "belt_attach",
+   "ply_area_in2": {
+    "BID": 336.0000392000006
+   },
+   "ply_count": {
+    "BID": 7
+   },
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: core material of Seat-belt attach pads not sourced",
+   "volume_in3": 1.9999999999995333
+  },
+  {
+   "arm_core_in": 58.54999999999993,
+   "arm_in": null,
+   "arm_lower_bound_in": null,
+   "core_mass_lb": null,
+   "core_mass_reason": "not yet computed: density of aluminium 2024 T3 not sourced",
+   "fidelity": "derived",
+   "glass_complete": true,
+   "glass_lower_bound_regions": [],
+   "glass_mass_lb": 0.0,
+   "glass_mass_reason": null,
+   "glass_unplaced_rows": [],
+   "material": "aluminium_2024_T3",
+   "part": "step",
+   "ply_area_in2": {},
+   "ply_count": {},
+   "total_mass_lb": null,
+   "total_mass_lower_bound_lb": null,
+   "total_mass_reason": "not yet computed: density of aluminium 2024 T3 not sourced",
+   "volume_in3": 1.9425539101099807
+  }
+ ],
+ "prototype_weights": {
+  "rows": {
+   "f22": {
+    "cite": "cp-text:p26 CP26 page 3 F22 bulkhead 1 lb 7 oz",
+    "note": "builder weight, Melvill N26MS, uncured finish",
+    "weight_lb": 1.44
+   },
+   "f28": {
+    "cite": "cp-text:p26 CP26 page 3 F28 bulkhead 3 oz",
+    "note": "builder weight, Melvill N26MS, uncured finish",
+    "weight_lb": 0.19
+   },
+   "panel": {
+    "cite": "cp-text:p26 CP26 page 3 instrument panel 2 lb 2 oz",
+    "note": "builder weight, Melvill N26MS, uncured finish",
+    "weight_lb": 2.13
+   },
+   "spar": {
+    "cite": "cp-text:p26 CP26 page 3 centre-section spar 29 lb 5 oz",
+    "note": "builder weight, Melvill N26MS, BID layup of layups 5, 6 and 8; the UND option saves about 3.5 lb (CP25 LPC 26), derived about 25.8 lb; reference only, no CG, not a ledger row",
+    "weight_lb": 29.3
+   }
+  }
+ },
+ "units": {
+  "area": "in^2",
+  "arm": "in (fuselage station)",
+  "mass": "lb",
+  "volume": "in^3"
+ }
+}
