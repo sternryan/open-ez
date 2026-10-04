@@ -374,9 +374,9 @@ def ply_shells() -> dict[str, cq.Workplane]:
 
 
 @lru_cache(maxsize=1)
-def _base_and_stages() -> tuple[
-    dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]
-]:
+def _base_and_stages() -> (
+    tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]]
+):
     """(the shape each part node shows first, {node: ((op, stage node, shape), ...)} in graph order)."""
     parts = _parts()
     base = {name: part.solid for name, part in parts.items()}
@@ -1349,6 +1349,248 @@ def m27_section() -> dict:
     }
 
 
+# ---- chapters 21 to 23 (M2.8): strakes and fuel, electrical, engine -------------------------------------------------------------------
+M28_SHOW_FROM = {  # a part's first op (the lab shows it from here on)
+    "rib_r23": "f21.jig-bond",
+    "rib_r45": "f21.jig-bond",
+    "b23": "f21.jig-bond",
+    "db": "f21.jig-bond",
+    "bab": "f21.jig-bond",
+    "od": "f21.od-outlet",
+    "tle": "f21.jig-bond",
+    "ble": "f21.jig-bond",
+    "skin_bottom": "f21.jig-bond",
+    "skin_top": "f21.close-tank",
+    "cutout_baggage": "f21.fuselage-cutouts",
+    "cutout_tank": "f21.fuselage-cutouts",
+    "sump_blister": "f21.outside-bottom",
+    "tank": "f21.close-tank",
+    "fairing": "f21.fairing-caps",
+    "drain_insert": "f21.jig-bond",
+    "vent_line": "f21.vent-screen",
+    "screen": "f21.vent-screen",
+    "outlet_tube": "f21.od-outlet",
+    "fuel_cap": "f21.fairing-caps",
+    "shelf": "f22.battery-shelf",
+    "battery": "f22.battery-shelf",
+    "cover": "f22.battery-shelf",
+    "strap": "f22.battery-shelf",
+    "start_relay": "f22.firewall-terminals",
+    "overvoltage_unit": "f22.firewall-terminals",
+    "battery_cable": "f22.firewall-terminals",
+    "panel_bundle": "f22.panel-wiring",
+    "firewall_cable": "f22.firewall-terminals",
+    "light_right": "f22.wing-wiring",
+    "light_left": "f22.wing-wiring",
+    "strobe_supply": "f22.wing-wiring",
+    "nav_strip_right": "f22.antennas",
+    "nav_strip_left": "f22.antennas",
+    "comm_strips": "f22.antennas",
+    "block": "f23.engine-install",
+    "bracket": "f23.carb-bracket",
+    "cowl": "f23.cowl-trim",
+    "rib_right": "f23.root-rib",
+    "rib_left": "f23.root-rib",
+}
+M28_LABELS = {
+    "rib_r23": "Rib R23",
+    "rib_r45": "Rib R45",
+    "b23": "Baffle B23",
+    "db": "Diagonal baffle DB",
+    "bab": "Baffle BAB",
+    "od": "Outboard diagonal OD",
+    "tle": "Tank leading-edge strip TLE",
+    "ble": "Baggage leading-edge strip BLE",
+    "skin_bottom": "Strake bottom skin",
+    "skin_top": "Strake top skin",
+    "cutout_baggage": "Baggage opening in the fuselage side (material removed)",
+    "cutout_tank": "Tank opening in the fuselage side (material removed)",
+    "sump_blister": "Sump blister",
+    "tank": "Fuel tank volume",
+    "fairing": "Leading-edge fairing block",
+    "drain_insert": "Drain insert",
+    "vent_line": "Vent line",
+    "screen": "Outlet screen",
+    "outlet_tube": "Outlet tube end",
+    "fuel_cap": "Fuel cap",
+    "shelf": "Battery shelf",
+    "battery": "Battery, 25 Ah (station not printed)",
+    "cover": "Battery cover",
+    "strap": "Battery strap",
+    "start_relay": "Start relay",
+    "overvoltage_unit": "Over-voltage unit",
+    "battery_cable": "Battery cable",
+    "panel_bundle": "Panel wire bundle",
+    "firewall_cable": "Cable to the firewall",
+    "light_right": "Right position light (green)",
+    "light_left": "Left position light (red)",
+    "strobe_supply": "Strobe power supply",
+    "nav_strip_right": "Right nav antenna strip",
+    "nav_strip_left": "Left nav antenna strip",
+    "comm_strips": "Comm antenna strips (in the right winglet)",
+    "block": "Engine block (installation in Section II, not held)",
+    "bracket": "Throttle and mixture bracket",
+    "cowl": "Cowl outline",
+    "rib_right": "Right wing-root metal rib",
+    "rib_left": "Left wing-root metal rib",
+}
+
+
+@lru_cache(maxsize=1)
+def _m28_built() -> dict:
+    """{"strake": {side: {part: FusePart}}, "elec": {part: FusePart}, "engine": {part: FusePart}} (core.strake_book, electrical_book, engine_book)."""
+    from core import electrical_book as eb
+    from core import engine_book as ng
+    from core import strake_book as sb
+
+    return {
+        "strake": {side: sb.build_strake(side) for side in SIDES},
+        "elec": eb.build_electrical(),
+        "engine": ng.build_engine(),
+    }
+
+
+def _m28_component_parts() -> dict:
+    """{component id: (family, part names)}; family is "strake" (a node per side) or "elec" or "engine" (one node per part)."""
+    from core import electrical_book as eb
+    from core import engine_book as ng
+    from core import strake_book as sb
+
+    out = {cid: ("strake", names) for cid, names in sb.COMPONENT_PARTS.items()}
+    out.update({cid: ("elec", names) for cid, names in eb.COMPONENT_PARTS.items()})
+    out.update({cid: ("engine", names) for cid, names in ng.COMPONENT_PARTS.items()})
+    return out
+
+
+def m28_components() -> dict:
+    """glb components for chapters 21 to 23 (see guide.export_glb.m28_components). A component is a group node named by its id; the children are
+    ``<id>.<part>.<right|left>`` for the strakes (both sides) and ``<id>.<part>`` for the electrical and engine parts (which name their own side where there
+    is one: the lights, the nav strips, the ribs). All solids are in the airplane frame, in place."""
+    built = _m28_built()
+    out: dict = {}
+    for cid, (fam, names) in _m28_component_parts().items():
+        nodes: dict = {}
+        for n in names:
+            if fam == "strake":
+                for side in SIDES:
+                    nodes[f"{cid}.{n}.{side}"] = (
+                        built["strake"][side][n].solid.val().copy()
+                    )
+            else:
+                nodes[f"{cid}.{n}"] = built[fam][n].solid.val().copy()
+        out[cid] = nodes
+    return out
+
+
+def m28_section() -> dict:
+    """layup.json["fuselage"]["extras"]["m28"]: a row per part (node, component, side, fidelity, label, cite, extents, the op it shows from), the fuel capacity conflict
+    with the tank envelope's own volume, the battery range, the engine inputs, and the weights that are reference only. Representational parts say "fitted shape"."""
+    from core import electrical_book as eb
+    from core import strake_book as sb
+    from core.ledger import load_ledger
+
+    built = _m28_built()
+    ops_order = list(_op_index())
+    parts: dict[str, dict] = {}
+    for cid, (fam, names) in _m28_component_parts().items():
+        for n in names:
+            sides = SIDES if fam == "strake" else (None,)
+            for side in sides:
+                part = built[fam][side][n] if fam == "strake" else built[fam][n]
+                node = f"{cid}.{n}.{side}" if side else f"{cid}.{n}"
+                bb = cq.Compound.makeCompound([part.solid.val()]).BoundingBox()
+                op = M28_SHOW_FROM[n]
+                row = {
+                    "node": node,
+                    "component": cid,
+                    "side": side,
+                    "fidelity": part.fidelity,
+                    "label": M28_LABELS[n]
+                    + (
+                        " (fitted shape)" if part.fidelity == "representational" else ""
+                    ),
+                    "cite": list(part.cite),
+                    "fs_min": round(bb.xmin, 4),
+                    "fs_max": round(bb.xmax, 4),
+                    "bl_min": round(bb.ymin, 4),
+                    "bl_max": round(bb.ymax, 4),
+                    "show": {"from": op},
+                    "op_index": ops_order.index(op),
+                }
+                if part.void:
+                    row["void"] = True
+                if n in eb.POCKET_PARTS:
+                    row["pocket"] = (
+                        True  # sits in a carved pocket the nose foam does not show
+                    )
+                if n in eb.IN_FOAM_PARTS:
+                    row["in_foam"] = True
+                if n in sb.INSET_PARTS:
+                    row["inset"] = True
+                parts[
+                    f"{cid}_{n}_{side}".replace(".", "_")
+                    if side
+                    else f"{cid}_{n}".replace(".", "_")
+                ] = row
+    led = load_ledger()
+    rows = led["prototype_weights"]["rows"]
+    ladder = [k for k in rows if k.startswith("n26ms_empty_")]
+    return {
+        "parts": parts,
+        "fuel": {
+            "model_gal_per_side": config.strakes.tank_volume_gal,
+            "plans_gal_per_tank": G.fuel_book_capacity_plans_gal,
+            "om_gal_per_tank": G.fuel_book_capacity_om_gal,
+            "om_total_gal": G.fuel_book_capacity_om_total_gal,
+            "envelope_gal_per_side": round(sb.tank_volume_gal(), 2),
+            "lb_per_gal": G.fuel_book_lb_per_gal,
+            "arm_fs": G.fuel_book_arm_fs,
+            "note": "capacity is a conflict, kept as text: the plans print 25.5 per tank, the manual 28 per tank and 52 in all; the model keeps 26 per side; the shaded envelope is a fitted shape, not a measurement",
+        },
+        "conflicts": {
+            "cutout_aft_top_depth": {
+                "mid_in": G.stk_book_cutout_aft_in[2],
+                "aft_end_in": G.stk_book_cutout_aft_top_alt_in,
+            },
+            "baggage_arm": {"om_fs": 90.0, "plan_centroid_fs": 80.6},
+            "layup_7_numbering": ["f21.od-outlet", "f21.outside-bottom"],
+        },
+        "battery": {
+            "fs_range": list(G.elec_book_battery_fs_range),
+            "model_fs": G.elec_book_battery_model_fs,
+            "status": "positioned-from-text, low: the station is on A6 (not held); drawn at the middle of the range for illustration only",
+            "added_lb": G.elec_book_battery_added_lb,
+            "starter_fs_min": G.elec_book_starter_fs_min,
+            "relay_fs": G.elec_book_relay_fs,
+        },
+        "engine": {
+            "down_thrust_deg": G.eng_book_down_thrust_deg,
+            "crank_bl": G.eng_book_crank_bl,
+            "block_in": list(G.eng_book_block_in),
+            "block_fwd_fs": G.eng_book_block_fwd_fs,
+            "limits_lb": [G.eng_book_engine_max_lb, G.eng_book_vibrating_max_lb],
+            "oil": {"lb": G.eng_book_oil_lb, "fs": G.eng_book_oil_fs},
+            "striped": ["engine.block.block"],
+            "note": "installation is in Sections IIA, IIC and IIL, not held; no engine, mount, prop or exhaust station is printed",
+        },
+        "weights": {
+            "rows": ladder + ["dynafocal_mount", "cowl_glass", "cowl_graphite"],
+            "note": "CP27 page 4 N26MS empty-weight ladder, the dynafocal mount (CP26) and the cowl (CP27): reference only, in no sum",
+            "closure_target": {
+                "empty_lb": led["empty"]["weight_lb"],
+                "empty_arm_in": led["empty"]["arm_in"],
+                "cite": led["empty"]["cite"],
+                "loaded_envelope_fs": [
+                    led["envelope"]["fwd_fs"],
+                    led["envelope"]["aft_fs"],
+                ],
+                "note": "the OM sample empty airplane is the closure target; FS 97 to 103 is the loaded envelope, not the empty CG",
+            },
+            "cg": "not yet computed",
+        },
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -1441,6 +1683,7 @@ def layup_section() -> dict:
             "m25": m25_section(),
             "m26": m26_section(),
             "m27": m27_section(),
+            "m28": m28_section(),
         },
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

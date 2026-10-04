@@ -444,6 +444,9 @@ def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_s
         "canopy.",
         "wing.",
         "winglet.",
+        "strake.",
+        "elec.",
+        "engine.",
     )
     assert all(k.startswith(fam) for k in comps), [
         k for k in comps if not k.startswith(fam)
@@ -899,9 +902,9 @@ def test_m27_layup_section_names_every_part_the_plies_the_axes_and_the_conflicts
     parts, nodes = ex["parts"], ex["nodes"]
     # 32 parts a side (the two winglet skin ply parts have a row of their own, so the lab can name and stripe them), 36 plies a side
     assert len(parts) == 64 and len(nodes) == 72
-    assert {n["part"] for n in nodes.values()} <= set(parts), (
-        "every ply's part has a row"
-    )
+    assert {n["part"] for n in nodes.values()} <= set(
+        parts
+    ), "every ply's part has a row"
     assert ex["shear_web"]["zones"] == [
         [23.0, 70.0, 6],
         [70.0, 120.0, 4],
@@ -968,3 +971,193 @@ def test_m27_layup_section_names_every_part_the_plies_the_axes_and_the_conflicts
         "upper_winglet",
         "lower_winglet",
     ]
+
+
+# ---- M2.8: the strakes, electrical system and engine in the lab export ----
+M28_STRAKE = {
+    "strake.ribs",
+    "strake.baffles",
+    "strake.leading_edge",
+    "strake.skins",
+    "strake.sump",
+    "strake.tank",
+    "strake.fairing",
+    "strake.fittings",
+}
+M28_ELEC = {
+    "elec.battery_shelf",
+    "elec.battery",
+    "elec.relays",
+    "elec.wiring",
+    "elec.lights",
+    "elec.antennas",
+}
+M28_ENGINE = {"engine.block", "engine.bracket", "engine.cowl", "engine.rib"}
+
+
+def test_m28_components_are_group_nodes_with_a_child_per_part_and_side(fuse_export):
+    j = _glb_json(fuse_export)
+    names = {n["name"] for n in j["nodes"]}
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    parent = _parents(j)
+    assert M28_STRAKE | M28_ELEC | M28_ENGINE <= names
+    graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    assert M28_STRAKE | M28_ELEC | M28_ENGINE <= set(graph.components)
+    for cid, kid in (
+        ("strake.ribs", "strake.ribs.rib_r23.right"),
+        ("strake.ribs", "strake.ribs.rib_r45.left"),
+        ("strake.baffles", "strake.baffles.od.right"),
+        ("strake.skins", "strake.skins.skin_top.left"),
+        ("strake.skins", "strake.skins.cutout_tank.right"),
+        ("strake.tank", "strake.tank.tank.right"),
+        ("strake.fittings", "strake.fittings.fuel_cap.left"),
+        ("elec.battery", "elec.battery.battery"),
+        ("elec.wiring", "elec.wiring.panel_bundle"),
+        ("elec.lights", "elec.lights.light_left"),
+        ("elec.antennas", "elec.antennas.comm_strips"),
+        ("engine.block", "engine.block.block"),
+        ("engine.rib", "engine.rib.rib_left"),
+    ):
+        assert parent[idx[kid]] == cid, kid
+    assert all(
+        "mesh" in j["nodes"][idx[n]]
+        for n in names
+        if n.startswith(("strake.", "elec.", "engine.")) and n.count(".") >= 2
+    )
+    # no part of chapters 21 to 23 is workshop geometry
+    assert not [
+        n["name"]
+        for n in j["nodes"]
+        if n["name"].startswith(("strake.", "elec.", "engine."))
+        and n.get("extras", {}).get("workshop")
+    ]
+
+
+def test_m28_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
+    j = _glb_json(fuse_export)
+    acc = j["accessors"]
+    mesh_of = {n["name"]: n["mesh"] for n in j["nodes"] if "mesh" in n}
+
+    def box(name):
+        ps = [
+            acc[p["attributes"]["POSITION"]]
+            for p in j["meshes"][mesh_of[name]]["primitives"]
+        ]
+        return (
+            [min(a["min"][i] for a in ps) for i in range(3)],
+            [max(a["max"][i] for a in ps) for i in range(3)],
+        )
+
+    lo, hi = box("strake.skins.skin_top.right")
+    assert lo[0] == pytest.approx(50.4, abs=0.1)  # the LE at the fuselage side, FS 50
+    assert hi[1] == pytest.approx(54.6, abs=0.05)  # the skin's outboard edge
+    assert hi[2] == pytest.approx(
+        21.6 + 0.35 - 17.4, abs=1e-3
+    )  # top outside plane, model z = WL - 17.4
+    lo, hi = box("strake.skins.skin_top.left")
+    assert lo[1] == pytest.approx(-54.6, abs=0.05)  # the left strake is the mirror
+    lo, hi = box("strake.ribs.rib_r45.right")
+    assert (lo[1], hi[1]) == (
+        pytest.approx(44.825, abs=1e-3),
+        pytest.approx(45.175, abs=1e-3),
+    )
+    lo, hi = box("elec.relays.start_relay")
+    assert hi[0] == pytest.approx(22.0)  # the front face of F22
+    lo, hi = box("elec.battery.battery")
+    assert (lo[0] + hi[0]) / 2 == pytest.approx(11.0)  # the illustration station
+    lo, hi = box("engine.block.block")
+    assert lo[0] > 125.28 and (lo[1], hi[1]) == (
+        pytest.approx(-16.0),
+        pytest.approx(16.0),
+    )
+    lo, hi = box("engine.cowl.cowl")
+    assert hi[0] == pytest.approx(148.4)  # the wing TE at the root
+
+
+def test_m28_layup_section_names_every_part_the_conflicts_and_the_reference_weights(
+    fuse_export,
+):
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m28"]
+    parts = ex["parts"]
+    # 20 strake parts a side, 15 electrical parts, 5 engine parts
+    assert len(parts) == 20 * 2 + 15 + 5
+    assert {
+        r["component"] for r in parts.values()
+    } == M28_STRAKE | M28_ELEC | M28_ENGINE
+    assert {r["fidelity"] for r in parts.values()} == {"representational", "derived"}
+    assert all(
+        "(fitted shape" in r["label"]
+        for r in parts.values()
+        if r["fidelity"] == "representational"
+    )
+    assert all(
+        r["show"]["from"]
+        in {
+            o
+            for o in load_graph(
+                Path(__file__).resolve().parents[2] / "guide" / "graph"
+            ).ops
+        }
+        for r in parts.values()
+    )
+    assert {r["node"] for r in parts.values() if r.get("void")} == {
+        f"strake.skins.{n}.{s}"
+        for n in ("cutout_baggage", "cutout_tank")
+        for s in ("right", "left")
+    }
+    assert {r["node"] for r in parts.values() if r.get("pocket")} >= {
+        "elec.battery.battery",
+        "elec.relays.start_relay",
+    }
+    assert all(
+        r["side"] in ("right", "left")
+        for r in parts.values()
+        if r["component"].startswith("strake.")
+    )
+    # the fuel capacity conflict is carried as data and as text
+    f = ex["fuel"]
+    assert (f["plans_gal_per_tank"], f["om_gal_per_tank"], f["om_total_gal"]) == (
+        25.5,
+        28.0,
+        52.0,
+    )
+    assert f["model_gal_per_side"] == 26.0 and 22.0 < f["envelope_gal_per_side"] < 28.0
+    assert "conflict" in f["note"] and f["arm_fs"] == 104.5 and f["lb_per_gal"] == 6.0
+    assert ex["conflicts"]["cutout_aft_top_depth"] == {"mid_in": 1.4, "aft_end_in": 1.9}
+    b = ex["battery"]
+    assert b["fs_range"] == [0.0, 22.0] and b["model_fs"] == 11.0
+    assert "illustration only" in b["status"] and "A6" in b["status"]
+    e = ex["engine"]
+    assert e["down_thrust_deg"] == 2.0 and e["limits_lb"] == [246.0, 286.0]
+    assert e["oil"] == {"lb": 8.0, "fs": 140.0} and e["striped"] == [
+        "engine.block.block"
+    ]
+    assert "not held" in e["note"]
+    w = ex["weights"]
+    assert w["rows"][:8] == [f"n26ms_empty_{i}" for i in range(1, 9)]
+    assert w["rows"][8:] == ["dynafocal_mount", "cowl_glass", "cowl_graphite"]
+    c = w["closure_target"]
+    assert (c["empty_lb"], c["empty_arm_in"]) == (730, 111.7) and c[
+        "loaded_envelope_fs"
+    ] == [97.0, 103.0]
+    assert "not the empty CG" in c["note"] and w["cg"] == "not yet computed"
+
+
+def test_m28_adds_no_ledger_sum_the_cg_stays_not_yet_computed(fuse_export):
+    led = json.loads((fuse_export.parent / "ledger.json").read_text())
+    assert led["cg"]["arm_in"] is None and led["cg"]["weight_lb"] == 0.0
+    rows = led["prototype_weights"]["rows"]
+    assert {f"n26ms_empty_{i}" for i in range(1, 9)} | {
+        "dynafocal_mount",
+        "cowl_glass",
+        "cowl_graphite",
+    } <= set(rows)
+    for cg in (led["cg"], led["cg_lower_bound"]):
+        new = {f"n26ms_empty_{i}" for i in range(1, 9)} | {
+            "dynafocal_mount",
+            "cowl_glass",
+            "cowl_graphite",
+        }
+        assert not [k for k in new if k in cg["included"] + list(cg["excluded"])]

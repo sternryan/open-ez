@@ -64,6 +64,9 @@ def real(tmp_path_factory):
                 "canopy.",
                 "wing.",
                 "winglet.",
+                "strake.",
+                "elec.",
+                "engine.",
             )
         ):
             continue

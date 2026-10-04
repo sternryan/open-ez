@@ -896,7 +896,7 @@ class GeometricParams:
     eng_book_block_in: Tuple[float, float, float] = (
         30.0,
         32.0,
-        20.0,
+        18.0,
     )  # unsourced: no page: O-235-sized block, length (along the crank), width and height
     eng_book_block_fwd_fs: float = 127.0  # unsourced: no page: front of the engine block, aft of the firewall (F.S. 125) and the mount
     eng_book_block_wl: float = 23.0  # unsourced: no page: WL of the block centre

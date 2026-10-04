@@ -112,6 +112,7 @@ def default_components() -> dict:
         **m25_components(),
         **m26_components(),
         **m27_components(),
+        **m28_components(),
     }
 
 
@@ -184,6 +185,16 @@ def m27_components() -> dict:
     from guide import fuselage_export
 
     return fuselage_export.m27_components()
+
+
+def m28_components() -> dict:
+    """The strakes, fuel tank, electrical system and engine (chapters 21 to 23), one glb component per graph id, in place on the airplane
+    (core.strake_book, core.electrical_book, core.engine_book). Each component is a group node of its id with children ``<id>.<part>.<right|left>``
+    (the strakes) or ``<id>.<part>``. In default_components(); not in the canard-only cutaway export. No part is workshop geometry. The engine block is a striped
+    fitted shape; the tank volume is a display envelope that overlaps the baffles by design."""
+    from guide import fuselage_export
+
+    return fuselage_export.m28_components()
 
 
 def _canard_layup(graph) -> dict:
