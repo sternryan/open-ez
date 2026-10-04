@@ -6685,6 +6685,7 @@ def test_m26_tour_visits_every_chapter_18_op_in_order_holds_the_lift_and_the_ope
 # ======================================================================================================================
 # Block 2 M2.7: chapters 19 and 20, the wings (on their own bench, then on the airplane) and the winglets with their rudders.
 # ======================================================================================================================
+_M27_WINGLET_BENCH = ("f20.cut-cores", "f20.skins", "f20.trim")
 _M27_TABLE_OPS = (
     "f19.cut-cores",
     "f19.core-cutouts",
@@ -6716,6 +6717,9 @@ def _m27_expect(g, row, op):
     if w.get("from") and i < order.index(w["from"]):
         return "none"
     attach = order.index("f19.attach")
+    if op in _M27_WINGLET_BENCH:  # the right winglet alone, flat on the table
+        right_winglet = row["component"].startswith("winglet.") and row["side"] == "right"
+        return "table" if right_winglet and row["component"] != "winglet.jig" else "none"
     if row["side"] == "left" and i < attach:
         return "none"
     if row["component"] == "wing.jigs":
@@ -7324,3 +7328,63 @@ def test_m27_tours_visit_every_chapter_19_and_20_op_in_order_hold_the_swings_and
                 b.close()
         finally:
             s.shutdown()
+
+
+def test_m27_round2_the_winglet_lies_flat_on_the_bench_until_its_jig_and_the_wing_roots_read(
+    rsite,
+):
+    """Visual review round 1: (1) f19.attach shows both wings on the fuselage, (2) the root ops read against the solid core with the wing outline
+    in frame, (3) the winglet is flat on the table (not on the wingtip) until f20.jig."""
+    g = _graph(rsite)
+    rows = _m27(g)["parts"]
+    left, right = (
+        [
+            r["node"]
+            for r in rows.values()
+            if r["side"] == side and r["component"].startswith("wing.")
+        ]
+        for side in ("left", "right")
+    )
+    assert len(left) == len(right) >= 15
+    core = "winglet.cores.upper_core.right"
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            # (3) flat on the table: wider than it is high, low in the room, and nothing of the wing or airplane drawn; upright on the tip from f20.jig
+            for op in ("f20.cut-cores", "f20.skins", "f20.trim"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.5)
+                bx = pg.evaluate(f"window.__lab.meshBox('{core}')")
+                span = [bx[1][i] - bx[0][i] for i in range(3)]
+                assert span[1] < 0.2 * max(span[0], span[2]), (op, span)  # thin in the vertical
+                assert 0.7 < bx[0][1] < 1.0, (op, bx)  # on the table top
+                pl = pg.evaluate("window.__lab.placement()")
+                assert pl["wing_cores_fc1_right"] == "none" and pl["winglet_cores_upper_core_left"] == "none", op
+                assert pl["spar_box"] == "none" and pl["winglet_cores_upper_core_right"] == "table"
+            pg.evaluate("window.__lab.select('f20.jig')")
+            _run(pg, 0.5)
+            bx = pg.evaluate(f"window.__lab.meshBox('{core}')")
+            assert bx[1][1] - bx[0][1] > 0.9, bx  # standing on the wingtip (about 48 in tall)
+            assert pg.evaluate("window.__lab.placement()")["winglet_cores_upper_core_right"] == "jig"
+            # (1) both wings on the fuselage at the spar: each wing's cores are on screen
+            pg.evaluate("window.__lab.select('f19.attach')")
+            _run(pg, 6)
+            assert _pixels_of(pg, left) >= 2000 and _pixels_of(pg, right) >= 2000
+            assert _pixels_of(pg, ["wing.attach"]) >= 100
+            # (2) the root ops: the part reads against the solid core and the wing's outline is in frame
+            for op, sub in (
+                ("f19.hardpoints", ["wing.hardpoints"]),
+                ("f19.pads-plates", ["wing.hardpoints"]),
+                ("f19.controls", ["wing.controls"]),
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                assert _pixels_of(pg, sub) >= 100, op
+                assert _pixels_of(pg, ["wing.cores"]) >= 3000, op  # the core (or its faint outline) fills a good part of the frame
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()

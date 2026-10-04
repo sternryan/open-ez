@@ -34,7 +34,10 @@ export const WING_REF_FROM = ATTACH_OP
 export const WINGLET_REF_FROM = RUDDER_OP
 
 /** the ops that work on something buried in the wing (or, the rudder's hinge, on the far side of the winglet from the room): the rest of the wing is drawn faint for them, so the op's own parts read through it */
-export const WING_GHOST_OPS = new Set(['f19.hardpoints', 'f19.pads-plates', 'f19.controls', ATTACH_OP, RUDDER_OP])
+export const WING_GHOST_OPS = new Set(['f19.controls', RUDDER_OP])
+/** the ops whose own parts draw over the solid wing (the hard points sit in the core's face; the rest of the wing stays solid so they read against it) */
+export const WING_XRAY_OPS = new Set([...WING_GHOST_OPS, 'f19.hardpoints', 'f19.pads-plates', ATTACH_OP])
+export const wingXrayAt = (op: { id: string } | null): boolean => !!op && WING_XRAY_OPS.has(op.id)
 export const wingGhostAt = (op: { id: string } | null): boolean => !!op && WING_GHOST_OPS.has(op.id)
 
 export interface ConflictLe { printed_fs: number; derived_fs: number; line_fs: number }
@@ -53,13 +56,16 @@ export interface WingData {
 /** a ply node row's fields the schedule reads */
 export interface WingPlyRow { part: string; component: string; side: string; op: string; op_order: number; cloth: string }
 
-export type WingPlace = 'jig' | 'table' | 'airplane'
+/** 'winglet': the right winglet lies flat on the table while it is cut, skinned and trimmed (chapter 20 up to the jig op); nothing else of the wing or airplane is drawn */
+export type WingPlace = 'jig' | 'table' | 'airplane' | 'winglet'
+export const WINGLET_BENCH_OPS = ['f20.cut-cores', 'f20.skins', 'f20.trim']
 /**
  * Where the wing parts (the right wing's bench set) are while `opId` is selected: stood leading edge up in the jigs from f19.jig, flat on the table
  * for the two bottom ops, back in the jigs, and on the airplane from the attach op on. Nothing selected: on the airplane.
  */
 export function wingPlace(opId: string | null, order: string[]): WingPlace {
   if (!opId) return 'airplane'
+  if (WINGLET_BENCH_OPS.includes(opId)) return 'winglet'
   const i = order.indexOf(opId)
   if (i < order.indexOf(JIG_OP) || i >= order.indexOf(ATTACH_OP)) return 'airplane'
   return TABLE_OPS.includes(opId) ? 'table' : 'jig'
@@ -76,7 +82,7 @@ export function sideShown(side: string, opId: string | null, order: string[]): b
 export function workshopShown(component: string, opId: string | null, order: string[]): boolean {
   if (!opId) return false
   const i = order.indexOf(opId)
-  if (component === 'wing.jigs') return wingPlace(opId, order) !== 'airplane'
+  if (component === 'wing.jigs') return wingPlace(opId, order) === 'jig' || wingPlace(opId, order) === 'table'
   if (component === 'winglet.jig') return i >= order.indexOf(WINGLET_JIG_OP) && i <= order.indexOf(LAYUPS_OUT_OP)
   return true
 }

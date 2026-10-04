@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import {
   wingPlace, onWingBench, sideShown, workshopShown, rotateAbout, aileronPoint, rudderPoint, aileronProgress, aileronDuration, AILERON_SWING, rudderProgress, rudderDuration, RUDDER_SWING,
   clampAileronDeg, clampRudderDeg, aileronText, aileronShort, rudderText, rudderShort, leText, aileronEndText, boltText, webText, abcText, abcLabel, plySchedule, plyText, wingKin, wingRow,
-  TABLE_OPS, JIG_OP, CUT_CORES_OP, SHEAR_WEB_OP, AILERON_CUT_OP, AILERON_OP, CONTROLS_OP, ATTACH_OP, WINGLET_JIG_OP, LOWER_FIN_OP, RUDDER_OP, type WingData, type WingPlyRow,
+  TABLE_OPS, WINGLET_BENCH_OPS, WING_GHOST_OPS, WING_XRAY_OPS, JIG_OP, CUT_CORES_OP, SHEAR_WEB_OP, AILERON_CUT_OP, AILERON_OP, CONTROLS_OP, ATTACH_OP, WINGLET_JIG_OP, LOWER_FIN_OP, RUDDER_OP, type WingData, type WingPlyRow,
 } from '../src/logic/wing'
 import { M25_CHAPTERS, FUSE_PREFIXES } from '../src/logic/m25'
 import { FUSE_CHAPTERS, FUSE_TOUR_CHAPTERS, M25_TOUR_CHAPTERS, cutRangeFor } from '../src/logic/fuselage'
@@ -50,7 +50,11 @@ test('the wing is on its bench from the jigs to the controls and on the airplane
   const want: Record<string, string> = {}
   for (const o of CH19.slice(0, -1)) want[o] = TABLE_OPS.includes(o) ? 'table' : 'jig'
   for (const [o, p] of Object.entries(want)) assert.equal(wingPlace(o, order), p, o)
-  for (const o of [ATTACH_OP, ...CH20, 'f16.aileron-linkage', 'f16.rudder-cable-rig', 'f18.safety-catch', null]) assert.equal(wingPlace(o, order), 'airplane', String(o))
+  assert.deepEqual(WINGLET_BENCH_OPS, ['f20.cut-cores', 'f20.skins', 'f20.trim'])
+  for (const o of WINGLET_BENCH_OPS) { assert.equal(wingPlace(o, order), 'winglet', o); assert.ok(onWingBench(o, order), 'the airplane is not drawn on the winglet bench ops') }
+  for (const o of ['f20.jig', 'f20.inside-layups', 'f20.rudder-hang']) assert.equal(wingPlace(o, order), 'airplane', o)
+  assert.ok(!WING_GHOST_OPS.has(ATTACH_OP) && WING_XRAY_OPS.has(ATTACH_OP) && WING_XRAY_OPS.has('f19.hardpoints') && !WING_GHOST_OPS.has('f19.hardpoints'))
+  for (const o of [ATTACH_OP, 'f20.jig', 'f20.inside-layups', 'f20.outside-layups', 'f20.lower-fin', 'f20.rudder-cut', 'f20.rudder-hang', 'f16.aileron-linkage', 'f16.rudder-cable-rig', 'f18.safety-catch', null]) assert.equal(wingPlace(o, order), 'airplane', String(o))
   assert.ok(onWingBench(JIG_OP, order) && onWingBench(CONTROLS_OP, order) && !onWingBench(ATTACH_OP, order) && !onWingBench(null, order))
 })
 

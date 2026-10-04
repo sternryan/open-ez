@@ -17,7 +17,7 @@ import { fuseView, viewOffset } from './fuseShots'
 import { M25_CHAPTERS, M25_FIRST_OP, SPAR_BENCH_LAST, ELEV_OPS, STOPS_FROM, SPAR_FIT_OP, SPAR_COMPONENTS, m25Place, boxGhostAt } from './logic/m25'
 import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
-import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
+import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, wingXrayAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -717,6 +717,7 @@ export class FuselageBay {
     const wingBench = m25On && onWingBench(sel, this.order)
     // an op that works on something buried in the wing (the hard points, the root controls, the attach bolts): the rest of the wing goes faint so the op's own parts show through it
     const wingGhost = m25On && wingGhostAt(selOp)
+    const wingXray = m25On && wingXrayAt(selOp)
     // the spar is built on the layup table (chapter 14's bench ops): the box stands on the jig bench between the camera and it, so it is not drawn then
     const benchOps = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(M25_FIRST_OP) && this.order.indexOf(sel) <= this.order.indexOf(SPAR_BENCH_LAST)
     const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
@@ -751,7 +752,7 @@ export class FuselageBay {
       }
       // what is buried in the faint box is drawn through it (x-ray), so the op's own parts read; otherwise as any part
       const wingFaint = wingGhost && m.m27 && !selOp!.components.includes(m.cid) && m.cid !== 'wing.jigs'
-      const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingGhost && m.m27 && !wingFaint)
+      const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingXray && m.m27 && selOp!.components.includes(m.cid))
       for (const mt of [m.jigMat, m.tableMat]) mt.depthTest = !xray
       m.jig.renderOrder = m.table.renderOrder = xray ? 5 : 0
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
@@ -853,7 +854,7 @@ export class FuselageBay {
         else target.copy(onBench)
       } else if (typeof v.focus === 'object' && 'wing' in v.focus) {
         // the wing at B.L. `bl` (model z = -bl), at the middle of its chord and thickness (or the given F.S. and z): in the jigs or on the table (the bench ops) or on the airplane
-        const w = v.focus.wing, place = wingPlace(id, this.order), c = this.wingBox(place === 'jig').getCenter(new THREE.Vector3())
+        const w = v.focus.wing, place = wingPlace(id, this.order), c = this.wingBox(place === 'jig', place === 'winglet').getCenter(new THREE.Vector3())
         const p = new THREE.Vector3(w.fs ?? c.x, w.z !== undefined ? w.z : c.y, -w.bl)
         target.copy(p).applyMatrix4(place === 'airplane' ? this.restMatrix(this.poseFor(id)) : this.wingStandMatrix(place))
       } else if (typeof v.focus === 'object' && 'at' in v.focus) {
@@ -1219,8 +1220,9 @@ export class FuselageBay {
   // ---- chapters 19 and 20: the wing on its bench (in the jigs, flat on the table), on the airplane, the aileron and rudder, the winglet's A, B and C ----
 
   /** the wing's bench set (the right wing and its jigs) as one box in the model frame, inches: where it would stand whether or not it is built yet, so the wing keeps one place on the bench */
-  private wingBox(withJigs: boolean): THREE.Box3 {
+  private wingBox(withJigs: boolean, winglet = false): THREE.Box3 {
     const bx = new THREE.Box3()
+    if (winglet) { for (const m of this.meshes) if (m.m27 && m.part.endsWith('_right') && m.cid.startsWith('winglet.') && m.cid !== 'winglet.jig') bx.union(m.base.boundingBox!); return bx }
     for (const m of this.meshes) if (m.m27 && m.part.endsWith('_right') && m.cid.startsWith('wing.') && (withJigs || m.cid !== 'wing.jigs')) bx.union(m.base.boundingBox!)
     return bx
   }
@@ -1229,30 +1231,32 @@ export class FuselageBay {
    * its five jigs, its span along the room's length with the root to the left, the top surface toward the room. 'table': laid flat on the layup table,
    * bottom up, leading edge toward the room (the bottom cap and skin are laid with the wing this way up). One rigid matrix each, the model frame to the world.
    */
-  wingStandMatrix(stand: 'jig' | 'table'): THREE.Matrix4 {
+  wingStandMatrix(stand: 'jig' | 'table' | 'winglet'): THREE.Matrix4 {
     const hit = this.wingStandM.get(stand)
     if (hit) return hit
-    const bx = this.wingBox(stand === 'jig'), c = bx.getCenter(new THREE.Vector3())
+    const bx = this.wingBox(stand === 'jig', stand === 'winglet'), c = bx.getCenter(new THREE.Vector3())
     const L = new THREE.Matrix4()
-    if (stand === 'jig') L.makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0)) // F.S. down, up out toward the room, B.L. along +X
+    if (stand === 'winglet') L.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)) // the fin lies flat: its height along the table, its inboard face up
+    else if (stand === 'jig') L.makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0)) // F.S. down, up out toward the room, B.L. along +X
     else L.makeBasis(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(-1, 0, 0)) // F.S. toward the room, up down, B.L. along +X
     const M0 = new THREE.Matrix4().makeScale(INCH, INCH, INCH).multiply(L).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
     const lo = bx.clone().applyMatrix4(M0).min.y
     const T = STATION.table, J = STATION.jig
-    const M = (stand === 'table' ? new THREE.Matrix4().makeTranslation(T.x, T.topY + 0.002 - lo, T.z) : new THREE.Matrix4().makeTranslation(J.x, 0.002 - lo, WING_FLOOR_Z)).multiply(M0)
+    const M = ((stand === 'table' || stand === 'winglet') ? new THREE.Matrix4().makeTranslation(T.x, T.topY + 0.002 - lo, T.z) : new THREE.Matrix4().makeTranslation(J.x, 0.002 - lo, WING_FLOOR_Z)).multiply(M0)
     this.wingStandM.set(stand, M)
     return M
   }
   /** the world matrix of a wing or winglet part's table mesh for `opId`: the stand, then its own deflection (the aileron and rudder swing on the bench too) */
   private wingMatrix(m: FMesh, opId: string | null): THREE.Matrix4 {
     const place = wingPlace(opId, this.order)
-    const M = this.wingStandMatrix(place === 'table' && m.cid !== 'wing.jigs' ? 'table' : 'jig') // the jigs stay on the floor while the wing is on the table
+    const M = this.wingStandMatrix(place === 'winglet' ? 'winglet' : place === 'table' && m.cid !== 'wing.jigs' ? 'table' : 'jig') // the jigs stay on the floor while the wing is on the table
     const d = this.deflection(m)
     return d ? M.clone().multiply(d) : M
   }
   /** is this wing or winglet mesh drawn on `opId`: the left side waits for the attach, the workshop parts have their own ops, and the jigs stand only with the wing upright */
   private wingShown(m: FMesh, opId: string | null): boolean {
     const row = this.data.parts[m.part]
+    if (wingPlace(opId, this.order) === 'winglet' && (!m.cid.startsWith('winglet.') || m.part.endsWith('_left'))) return false
     return sideShown(m.part.endsWith('_left') ? 'left' : 'right', opId, this.order) && (!row?.workshop || workshopShown(m.cid, opId, this.order))
   }
   /** the local matrix (model inches) that swings an aileron or rudder part about its hinge axis: right side only, null at rest */

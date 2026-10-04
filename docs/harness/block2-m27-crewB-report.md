@@ -100,3 +100,19 @@ for that reason, since it rewrites existing lines). One finding in crew A's code
 6. The left aileron and rudder stay neutral; only the right side swings (the book's deflection model is one side).
 7. `f19.cut-cores` and `f19.core-cutouts` now draw the cores on the table (they were invisible there before); the cores' own cut-outs
    (torque-tube slot, light holes, hollowed FC1) are still the crew A open items.
+
+# Round 2 (visual review round 1: three fails and a nit)
+
+1. `f19.attach`: both wings now flank the fuselage at the spar, seen from the nose end and above (three-quarter). The room's walls clamp the camera to
+   about 3.4 m from the target, so the whole 313 in span cannot be framed; the frame shows both wing roots and the spar join. The wing is no longer faint on
+   this op (the bolts draw over it). Pinned: each side's wing parts change at least 2000 px, the bolts at least 100 (`test_m27_round2_...`).
+2. `f19.hardpoints`, `f19.pads-plates`, `f19.controls`: camera pulled back to about 180 to 215 in. Hard points and plates now draw over a solid core (no ghosting), so
+   they read against it with the wing outline in frame; the controls keep the faint wing. Pinned: the part at least 100 px and the cores at least 3000 px on each op.
+3. `f20.cut-cores`, `f20.skins`, `f20.trim`: the right winglet lies flat on the table (its inboard face up) with nothing else of the wing or airplane drawn; it stands on the
+   wingtip from `f20.jig`. New place `winglet` in `logic/wing.ts`, a third bench stand in `fuselageBay.ts`. Pinned: on those ops its box is thin in the vertical
+   and on the table top, the wing, the left winglet and the airplane are not placed; on `f20.jig` it is over 0.9 m tall and on the airplane. `_m27_expect` carries the new placement.
+4. `f19.core-cutouts`: re-framed (wider, shifted) so the jig face no longer clips.
+
+Lanes: lab node 222 pass; Python non-e2e 1147 passed, 3 skipped, 9 xfailed; Mac node `-k "m27 or order"` 44 passed, 2 chromium page-load timeouts under 16 workers
+(`test_m25_every_chapter_14_to_17...`, `test_recorder_url_exposes...[fuselage6]`), both pass in isolation (3 passed). Re-shot the 8 affected ops (the seven plus
+`f19.core-cutouts`) into the scratchpad `m27-shots`; the three phone shots are unchanged.
