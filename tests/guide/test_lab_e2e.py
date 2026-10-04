@@ -181,7 +181,8 @@ def _bar_ops(g, variant):
         if variant
         in byid[i]["variants"]
         + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
-        and byid[i]["chapter"] not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17)
+        and byid[i]["chapter"]
+        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18)
         and not byid[i]["stub"]
     ]
 
@@ -2780,7 +2781,7 @@ _BOOK_BOND_ORDER = (
 )  # plans-1980:p40, then F28 (p41)
 
 
-def _fuse_ops(g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17)):
+def _fuse_ops(g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18)):
     byid = {o["id"]: o for o in g["ops"]}
     return [
         i
@@ -5515,7 +5516,7 @@ def _m25_ops(g):
     return [
         i
         for i in g["order"]
-        if byid[i]["chapter"] in (14, 15, 16, 17) and not byid[i]["stub"]
+        if byid[i]["chapter"] in (14, 15, 16, 17, 18) and not byid[i]["stub"]
     ], byid
 
 
@@ -6010,6 +6011,669 @@ def test_m25_spar_reference_row_from_the_bond_on_and_never_in_the_cg(rsite):
                 )
                 assert (shown or None) == want, (op, shown)
                 assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.6: chapter 18, the canopy (trimmed on the bench, built in place, cut free and turned over on the bench, hinged on the right).
+# ======================================================================================================================
+_M26_LIFT = {
+    "canopy.plexi",
+    "canopy.frame",
+    "canopy.pads",
+    "canopy.vent",
+    "canopy.brace_tubes",
+}
+
+
+def _flat(bx):
+    return [x for row in bx for x in row]
+
+
+def _m26_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [
+        i for i in g["order"] if byid[i]["chapter"] == 18 and not byid[i]["stub"]
+    ], byid
+
+
+def _m26(g):
+    return g["layup"]["fuselage"]["extras"]["m26"]
+
+
+def _m26_expect(g, row, op):
+    """'table' | 'jig' | 'none': where a chapter 18 part is on `op`. On or after its component's first op and inside its own show window; the
+    parts that come off with the canopy are on the bench upright while the bubble is trimmed and upside down from the cut to the vent op."""
+    order, byid, first = _first_ops(g)
+    i = order.index(op)
+    if i < order.index(first[row["component"]]):
+        return "none"
+    if row["node"] == "canopy.frame_glass" and i < order.index("f18.glass-outside"):
+        return "none"  # the plies are laid by that op
+    w = row.get("show") or {}
+    if (w.get("from") and i < order.index(w["from"])) or (
+        w.get("until") and i >= order.index(w["until"])
+    ):
+        return "none"
+    if row["component"] in _M26_LIFT:
+        if order.index("f18.trim-plexi") <= i < order.index("f18.locate-blocks"):
+            return "table"
+        if order.index("f18.cut-remove") <= i <= order.index("f18.vent-brace"):
+            return "table"
+    return "jig"
+
+
+def test_m26_every_chapter_18_op_shows_its_parts_in_build_order_striped_and_labelled_and_the_blocks_only_in_their_ops(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m26_ops(g)
+    rows = _m26(g)["parts"]
+    order = g["order"]
+    assert len(ops) == 16 and len(rows) == 19
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            assert set(ops) <= set(_chips(pg))  # the bar carries every chapter 18 op
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    want = _m26_expect(g, row, op)
+                    assert pl[name] == want, (op, name, pl[name], want)
+            # the temporary blocks exist on the ops where the canopy rests on them (until the inside is carved), never elsewhere
+            for op in ops + ["f17.fixed-trim-tab", "f09.brake-lines", None]:
+                on = (
+                    op is not None
+                    and op in order
+                    and order.index("f18.locate-blocks")
+                    <= order.index(op)
+                    < order.index("f18.carve-inside")
+                )
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.2)
+                assert (
+                    pg.evaluate("window.__lab.placement()")["canopy_blocks"] == "jig"
+                ) == on, op
+            # nothing of the canopy before chapter 18's ops, nor on the finished box
+            for op in ("f17.fixed-trim-tab", "f14.fit-fuselage", "f13.nose-door", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.4)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (
+                    op,
+                    {n: pl[n] for n in rows if pl[n] != "none"},
+                )
+            # the chapter 14-17 parts stay on through chapter 18 (the spar, the controls)
+            pg.evaluate("window.__lab.select('f18.hinges')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert (
+                pl["spar_box"] == "jig" and pl["controls_sticks_front_stick"] == "jig"
+            )
+            # every part is a fitted shape: striped, representational, and says so on screen
+            pg.evaluate("window.__lab.select('f18.safety-catch')")
+            _run(pg, 1)
+            for name, row in rows.items():
+                assert (
+                    row["fidelity"] == "representational"
+                    and "(fitted shape" in row["label"]
+                ), name
+                node = (
+                    "canopy.frame.p1"
+                    if row["node"] == "canopy.frame_glass"
+                    else row["node"]
+                )
+                m = pg.evaluate(f"window.__lab.material('{node}')")
+                assert m and m["hatch"] and m["fidelity"] == "representational", (
+                    name,
+                    m,
+                )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# what each op that adds something shows, as the part-name prefixes to leave out of the frame: the pixels that differ are that part on screen
+_M26_SUBJECT = {
+    "f18.trim-plexi": ["canopy.plexi"],
+    "f18.locate-blocks": ["canopy.blocks"],
+    "f18.check-ab": ["canopy.plexi"],
+    "f18.foam-core": ["canopy.frame_foam"],
+    "f18.carve-outside": ["canopy.frame_carved"],
+    "f18.glass-outside": ["canopy.frame.p"],
+    "f18.cut-remove": ["canopy.plexi", "canopy.frame"],
+    "f18.carve-inside": ["canopy.pads"],
+    "f18.pads-inside-glass": ["canopy.pads"],
+    "f18.rear-cover-inside": ["fuselage.rear_cover"],
+    "f18.vent-brace": ["canopy.vent", "canopy.brace_tubes"],
+    "f18.hinges": ["canopy.hinges", "canopy.plexi"],
+    "f18.door": ["fuselage.door"],
+    "f18.latches": ["canopy.latches"],
+    "f18.front-cover": ["fuselage.front_cover"],
+    "f18.safety-catch": ["canopy.safety_catch"],
+}
+
+
+def test_m26_every_chapter_18_op_puts_its_subject_on_screen_not_hidden_inside_another_solid(
+    rsite,
+):
+    """Pixels decide: the frame with the op's subject and the same frame without it must differ, for the op's own parts and for the one thing
+    each op adds (the blocks, the foam, the plies, the pads, the leaves, the latches, the door, the catch)."""
+    g = _graph(rsite)
+    ops, byid = _m26_ops(g)
+    assert set(_M26_SUBJECT) == set(ops)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            seen_all, seen_one = {}, {}
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                seen_all[op] = _pixels_of(pg, byid[op]["components"])
+                seen_one[op] = _pixels_of(pg, _M26_SUBJECT[op])
+            print(seen_all, seen_one)
+            weak = {o: n for o, n in seen_all.items() if n < 150}
+            assert not weak, f"the op's own parts are not visible on screen: {weak}"
+            weak = {o: n for o, n in seen_one.items() if n < 120}
+            assert not weak, f"what the op adds is not visible on screen: {weak}"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("op", ["f18.hinges", "f18.cut-remove"])
+def test_m26_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsite, op):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 390, 844, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate(f"window.__lab.select('{op}')")
+            _run(pg, 7)
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert pg.evaluate("document.documentElement.scrollHeight") <= 844
+            if (
+                op == "f18.hinges"
+            ):  # the opening control is reachable and inside the viewport
+                r = pg.evaluate(
+                    "(() => { const r = document.getElementById('canopy-open').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] })()"
+                )
+                assert (
+                    r[0] >= 0 and r[2] <= 390 and r[3] <= 844 and r[2] - r[0] > 100
+                ), r
+            labs = pg.evaluate("window.__lab.labelsAll()")
+            assert sum(1 for x in labs if _legible(x)) <= 10
+            _bare(pg)
+            assert _pixels_of(pg, _M26_SUBJECT[op], 390, 844) >= 150
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_plexiglass_reads_as_glass_not_invisible_and_not_opaque(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f18.locate-blocks')")
+            _run(pg, 6)
+            m = pg.evaluate("window.__lab.material('canopy.plexi')")
+            assert m["transparent"] is True and 0.2 <= m["opacity"] <= 0.6, m
+            _bare(pg)
+            # on screen (it differs from the frame without it) yet see-through: the blocks it sits over still show with it in place
+            assert _pixels_of(pg, ["canopy.plexi"]) >= 1500
+            both = _pixels_of(pg, ["canopy.blocks"])
+            assert both >= 120, both  # the blocks are visible through the glass
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_canopy_opens_on_its_right_hinges_up_to_15_past_vertical_and_the_readout_says_so(
+    rsite,
+):
+    from PIL import Image, ImageChops
+
+    g = _graph(rsite)
+    h = _m26(g)["canopy"]["hinge"]
+    assert h["max_open_deg"] == 105 and h["past_vertical_deg"] == 15
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f18.hinges')")
+            c = pg.evaluate("window.__lab.canopy()")
+            assert c["shown"] is True and c["openDeg"] == 0 and c["manual"] is False, c
+            assert pg.evaluate("window.__lab.kin().value") == "Closed"
+            _run(pg, 0.1)
+            cz = lambda bx: (bx[0][2] + bx[1][2]) / 2  # noqa: E731
+            closed = pg.evaluate("window.__lab.meshBox('canopy.plexi')")
+            hinge0 = pg.evaluate("window.__lab.meshBox('canopy.hinges.hinge_fuselage')")
+            leaf0 = pg.evaluate("window.__lab.meshBox('canopy.hinges.hinge_canopy')")
+            last, texts = 0.0, set()
+            for _ in range(80):  # the op's own sweep, in sim time: monotone to 105
+                _run(pg, 0.1)
+                d = pg.evaluate("window.__lab.canopy()")["openDeg"]
+                assert d >= last - 1e-9, (last, d)
+                last = d
+                texts.add(pg.evaluate("window.__lab.kin().value"))
+            assert last == 105
+            assert "105 deg open: 15 deg past vertical, representational" in texts
+            assert any(
+                t.endswith("deg open") for t in texts
+            )  # on its way, it reads as an angle
+            opened = pg.evaluate("window.__lab.meshBox('canopy.plexi')")
+            # it swung to the right (B.L. grows toward the window wall, model Z falls) and up and out; the fuselage leaves of the hinges stay, the canopy leaves go
+            assert cz(opened) < cz(closed) - 0.3, (cz(closed), cz(opened))
+            assert _flat(
+                pg.evaluate("window.__lab.meshBox('canopy.hinges.hinge_fuselage')")
+            ) == pytest.approx(_flat(hinge0))
+            assert _flat(
+                pg.evaluate("window.__lab.meshBox('canopy.hinges.hinge_canopy')")
+            ) != pytest.approx(_flat(leaf0), abs=1e-3)
+            # the pixels over the canopy differ between closed and open
+            _bare(pg)
+            frames = {}
+            for d in (0, 105):
+                pg.evaluate(
+                    f"window.__lab.setCanopyOpen({d}); window.__lab.advance(0.05)"
+                )
+                frames[d] = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            diff = (
+                ImageChops.difference(frames[0], frames[105])
+                .convert("L")
+                .point(lambda v: 255 if v > 30 else 0)
+            )
+            assert diff.histogram()[255] > 4000, diff.histogram()[255]
+            # a person's slider takes over, is clamped to the range, and reads as an angle
+            pg.evaluate("window.__lab.setCanopyOpen(45)")
+            c = pg.evaluate("window.__lab.canopy()")
+            assert (
+                c["openDeg"] == 45
+                and c["manual"] is True
+                and c["text"] == "45 deg open"
+            )
+            pg.evaluate("window.__lab.setCanopyOpen(300)")
+            assert pg.evaluate("window.__lab.canopy()")["openDeg"] == 105
+            pg.evaluate("window.__lab.setCanopyOpen(-5)")
+            assert pg.evaluate("window.__lab.canopy()")["openDeg"] == 0
+            # on the other ops it is closed and the control is not offered
+            pg.evaluate("window.__lab.select('f18.door')")
+            _run(pg, 0.3)
+            c = pg.evaluate("window.__lab.canopy()")
+            assert c["openDeg"] == 0 and c["shown"] is False
+            assert _flat(
+                pg.evaluate("window.__lab.meshBox('canopy.plexi')")
+            ) == pytest.approx(_flat(closed))
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_cut_leaves_the_covers_and_the_canopy_lifts_off_and_turns_upside_down_on_the_bench(
+    rsite,
+):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            box = lambda n: pg.evaluate(f"window.__lab.meshBox('{n}')")  # noqa: E731
+            mid = lambda bx: [(bx[0][i] + bx[1][i]) / 2 for i in range(3)]  # noqa: E731
+            # trimmed on the bench, upright: the dome above its rim; then in place on the airplane
+            pg.evaluate("window.__lab.select('f18.trim-plexi')")
+            _run(pg, 0.5)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["canopy_plexi"] == "table" and pl["canopy_blocks"] == "none"
+            on_bench_up = mid(box("canopy.plexi"))
+            pg.evaluate("window.__lab.select('f18.glass-outside')")
+            _run(pg, 7)
+            in_place = mid(box("canopy.plexi"))
+            assert (
+                in_place[2] > on_bench_up[2] + 2.0
+            ), "on the airplane (room side), the bench is toward the wall"
+            front = box("fuselage.front_cover")
+            # the cut: the canopy starts on the airplane, goes up and over and ends upside down on the table; the covers and the blocks stay
+            pg.evaluate("window.__lab.select('f18.cut-remove')")
+            assert pg.evaluate("window.__lab.canopy()")["liftK"] == 0
+            _run(pg, 0.3)
+            start = mid(box("canopy.plexi"))
+            assert all(abs(a - b_) < 0.05 for a, b_ in zip(start, in_place)), (
+                start,
+                in_place,
+            )
+            ys, zs, lifts = [], [], []
+            for _ in range(80):
+                _run(pg, 0.1)
+                m = mid(box("canopy.plexi"))
+                ys.append(m[1])
+                zs.append(m[2])
+                lifts.append(pg.evaluate("window.__lab.canopy()")["liftK"])
+                pl = pg.evaluate("window.__lab.placement()")
+                assert (
+                    pl["fuselage_front_cover"] == "jig"
+                    and pl["fuselage_rear_cover"] == "jig"
+                ), "the covers stay on the fuselage"
+                assert (
+                    pl["canopy_blocks"] == "jig"
+                ), "the blocks are left on the longerons"
+            assert lifts == sorted(lifts) and lifts[-1] == 1
+            assert zs[0] > zs[-1] + 2.0 and all(
+                zs[i] >= zs[i + 1] - 1e-9 for i in range(len(zs) - 1)
+            ), "it travels toward the bench"
+            assert (
+                max(ys) > ys[0] + 0.25 and max(ys) > ys[-1] + 0.25
+            ), "it goes up and over, not straight across"
+            on_bench_down = mid(box("canopy.plexi"))
+            assert on_bench_up[0] == pytest.approx(
+                on_bench_down[0], abs=0.02
+            ) and on_bench_up[2] == pytest.approx(
+                on_bench_down[2], abs=0.02
+            ), "the same place on the table"
+            assert _flat(box("fuselage.front_cover")) == pytest.approx(
+                _flat(front)
+            )  # nothing of the cover moved
+            # upside down: the sill (the pads on it) is above the dome; in place it was below
+            pg.evaluate("window.__lab.select('f18.carve-inside')")
+            _run(pg, 0.5)
+            assert (
+                pg.evaluate("window.__lab.placement()")["canopy_blocks"] == "none"
+            ), "discarded once the inside is carved"
+            pads = mid(box("canopy.pads.pads_hinge"))
+            dome = mid(box("canopy.plexi"))
+            assert pads[1] > dome[1] + 0.05, "turned over: the sill is up"
+            pg.evaluate("window.__lab.select('f18.hinges')")
+            _run(pg, 0.3)
+            assert (
+                mid(box("canopy.pads.pads_hinge"))[1]
+                < mid(box("canopy.plexi"))[1] - 0.02
+            ), "back on the airplane, right side up"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _cyan_pixels(png):
+    import numpy as np
+    from PIL import Image
+
+    a = np.asarray(Image.open(io.BytesIO(png)).convert("RGB")).astype(int)
+    r, g_, b_ = a[..., 0], a[..., 1], a[..., 2]
+    # the dimension lines are drawn flat in a cyan nothing else in the scene is (the picture goes through grading, so match the hue, not the exact value)
+    return int(((b_ > 180) & (r < 110) & (g_ > 140) & (b_ - r > 110)).sum())
+
+
+def test_m26_checks_a_and_b_are_dimension_lines_above_wl_23_on_their_op_only(rsite):
+    g = _graph(rsite)
+    checks = _m26(g)["canopy"]["checks"]
+    assert [(c["id"], c["height_in"], c["wl0"]) for c in checks] == [
+        ("A", 13.5, 23.0),
+        ("B", 12.3, 23.0),
+    ]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            pg.evaluate("window.__lab.select('f18.check-ab')")
+            _run(pg, 6)
+            assert pg.evaluate("window.__lab.canopy()")["checks"] is True
+            on = _cyan_pixels(pg.screenshot())
+            assert on > 300, on
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+            assert (
+                labs["canopy.check.A"]["text"]
+                == "Check A: at least 13.5 in above WL 23"
+            )
+            assert labs["canopy.check.B"]["text"] == "Check B: 12.3 in above WL 23"
+            assert _legible(labs["canopy.check.A"]) and _legible(labs["canopy.check.B"])
+            assert (
+                pg.evaluate("window.__lab.kin().value")
+                == "A at least 13.5 in, B 12.3 in, above WL 23"
+            )
+            for op in ("f18.locate-blocks", "f18.foam-core"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 4)
+                assert pg.evaluate("window.__lab.canopy()")["checks"] is False
+                assert _cyan_pixels(pg.screenshot()) < 40, op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_frame_is_foam_blocks_then_carved_then_five_plies_laid_groove_ply_first(
+    rsite,
+):
+    g = _graph(rsite)
+    nodes = _m26(g)["nodes"]
+    order = sorted(nodes, key=lambda k: nodes[k]["op_order"])
+    assert order == [f"canopy.frame.p{i}" for i in range(1, 6)]
+    assert [nodes[k]["cloth"] for k in order] == ["BID", "BID", "UND", "BID", "UND"]
+    assert "groove" in nodes[order[0]]["where"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _run(pg, 0.1)
+            for op, shown in (
+                ("f18.foam-core", "canopy.frame_foam"),
+                ("f18.carve-outside", "canopy.frame_carved"),
+                ("f18.glass-outside", "canopy.frame_carved"),
+                ("f18.carve-inside", "canopy.frame"),
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                on = {
+                    k
+                    for k in (
+                        "canopy_frame_foam",
+                        "canopy_frame_carved",
+                        "canopy_frame",
+                    )
+                    if pl[k] != "none"
+                }
+                assert on == {shown.replace(".", "_")}, (op, on)
+            pg.evaluate("window.__lab.select('f18.glass-outside')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.lay()") == 5
+            for n in (1, 3):
+                pg.evaluate(f"window.__lab.setLay({n})")
+                _run(pg, 4)
+                st = pg.evaluate("window.__lab.stateAll()")
+                laid = [k for k in order if st[k] in ("built", "current")]
+                assert laid == order[:n], (
+                    n,
+                    laid,
+                )  # in lay order; the groove ply first
+                assert all(st[k] == "hidden" for k in order[n:])
+            pg.evaluate("window.__lab.select('f18.carve-inside')")
+            _run(pg, 0.3)
+            st = pg.evaluate("window.__lab.stateAll()")
+            assert all(st[k] == "built" for k in order)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_eight_pads_are_coloured_by_role_and_named_hinge_latch_and_catch(rsite):
+    g = _graph(rsite)
+    rows = _m26(g)["parts"]
+    roles = {r["role"]: r for r in rows.values() if r.get("role")}
+    assert set(roles) == {"hinge", "latch", "catch"}
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f18.carve-inside')")
+            _run(pg, 6)
+            colours = {
+                r: pg.evaluate(f"window.__lab.material('{roles[r]['node']}')")["color"]
+                for r in roles
+            }
+            assert len(set(colours.values())) == 3, colours
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+            assert (
+                labs[roles["hinge"]["node"]]["text"]
+                == "Hinge pads, right, 4 (fitted shape)"
+            )
+            assert (
+                labs[roles["latch"]["node"]]["text"]
+                == "Latch pads, left, 3 (fitted shape)"
+            )
+            assert (
+                labs[roles["catch"]["node"]]["text"]
+                == "Safety-catch pad, left (fitted shape)"
+            )
+            assert all(_legible(labs[roles[r]["node"]]) for r in roles)
+            sub = pg.evaluate("document.getElementById('ro-kin-sub').textContent")
+            assert (
+                "Hinge pads blue" in sub
+                and "latch pads green" in sub
+                and "catch pad red" in sub
+            ), sub
+            assert "20, 25.5, 48, 53.5" in pg.evaluate("window.__lab.kin().value")
+            assert "11, 41, 59 (safety catch), 71" in sub
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_the_latch_conflict_and_the_front_cut_datum_are_text_in_the_readout_on_their_ops_never_a_bare_number(
+    rsite,
+):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f18.latches')")
+            _run(pg, 0.3)
+            k = pg.evaluate("window.__lab.kin()")
+            assert k["value"] == "Pad centres FS 104.75, 74.75, 44.75 (derived)"
+            assert (
+                "printed labels read 104, 74, 44" in k["sub"]
+                and "0.75 in apart, unresolved" in k["sub"]
+            )
+            assert pg.evaluate("document.getElementById('t-kin').hidden") is False
+            assert "unresolved" in pg.evaluate(
+                "document.getElementById('ro-kin-sub').textContent"
+            )
+            for op in ("f18.cut-remove", "f18.front-cover"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                v = pg.evaluate("document.getElementById('ro-kin').textContent")
+                assert (
+                    v == "Front cut about FS 41.65, datum not named (representational)"
+                ), (op, v)
+            # neither is stated on the other ops
+            pg.evaluate("window.__lab.select('f18.hinges')")
+            assert "41.65" not in pg.evaluate(
+                "document.getElementById('ro-kin').textContent"
+            )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_canopy_reference_row_from_the_last_op_and_never_in_the_cg(rsite):
+    import json as _j
+
+    led = _j.loads((rsite / "ledger.json").read_text())
+    assert led["prototype_weights"]["rows"]["canopy"]["weight_lb"] == 16.0
+    assert "canopy" not in led["cg"]["included"] + led["cg_lower_bound"]["included"]
+    want = "Canopy (CP26 builder weight, N26MS): 16.0 lb, reference, not in CG"
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, w in (
+                ("f18.trim-plexi", None),
+                ("f18.hinges", None),
+                ("f18.front-cover", None),
+                ("f18.safety-catch", want),
+                (
+                    "f17.fixed-trim-tab",
+                    "Spar (CP26 builder weight, N26MS): 29.3 lb, reference, not in CG",
+                ),
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                r = pg.evaluate("window.__lab.ref()")
+                assert (r["value"] if r else None) == w, (op, r)
+                shown = pg.evaluate(
+                    "!document.getElementById('t-ref').hidden && document.getElementById('ro-ref').textContent"
+                )
+                assert (shown or None) == w, (op, shown)
+                assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
+            # the whole sentence is on screen (it wraps rather than clipping)
+            pg.evaluate("window.__lab.select('f18.safety-catch')")
+            _run(pg, 0.3)
+            clip = pg.evaluate(
+                "(() => { const e = document.getElementById('ro-ref'); return e.scrollWidth <= e.clientWidth + 1 })()"
+            )
+            assert clip is True
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m26_tour_visits_every_chapter_18_op_in_order_holds_the_lift_and_the_opening_and_ends_on_the_last(
+    rsite,
+):
+    g = _graph(rsite)
+    want = _chapter_ops(g, "roncz", 18)
+    assert len(want) == 16
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open_rec(p, url)
+            _to_fuselage(pg)
+            pg.evaluate(f"__lab.select('{want[0]}')")
+            pg.click("#tour")
+            assert pg.evaluate("__lab.touring()") is True
+            probes = {
+                "f18.cut-remove": "__lab.canopy().liftK",
+                "f18.hinges": "__lab.canopy().openDeg",
+            }
+            seen, last = _tour_probe(pg, want, probes, after="never")
+            assert seen == want, seen
+            assert (
+                last["f18.cut-remove"] == 1
+            ), last  # the canopy was on the bench before the tour left the cut
+            assert (
+                last["f18.hinges"] == 105
+            ), last  # and open to 15 past vertical before it left the hinges
+            assert pg.evaluate("__lab.touring()") is False
+            assert pg.evaluate("__lab.selected()") == want[-1]
+            assert pg.evaluate("__lab.subject()") == "fuselage"
             assert not errors, errors
             b.close()
     finally:
