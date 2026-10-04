@@ -182,7 +182,31 @@ def _bar_ops(g, variant):
         in byid[i]["variants"]
         + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
         and byid[i]["chapter"]
-        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)
+        not in (
+            0,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+        )
         and not byid[i]["stub"]
     ]
 
@@ -2782,7 +2806,30 @@ _BOOK_BOND_ORDER = (
 
 
 def _fuse_ops(
-    g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)
+    g,
+    chapters=(
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+    ),
 ):
     byid = {o["id"]: o for o in g["ops"]}
     return [
@@ -7478,7 +7525,7 @@ def test_m28_the_chapters_follow_chapter_20_in_book_order_and_every_op_is_on_the
         byid[o]["chapter"] >= 21 for o in order[first21:] if byid[o]["chapter"] < 30
     ), [o for o in order[first21:] if byid[o]["chapter"] < 21]
     seq = [byid[o]["chapter"] for o in order[first21:]]
-    assert seq == sorted(seq) and set(seq) == {21, 22, 23}
+    assert seq == sorted(seq) and set(seq) == {21, 22, 23, 24, 25, 26}  # (24 to 26 follow in M2.9)
     assert (
         order.index("f20.rudder-hang")
         < order.index("f16.rudder-cable-rig")
@@ -8000,3 +8047,541 @@ def test_m28_round2_vent_screen_wing_wiring_antennas_and_root_rib_read_in_contex
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.9: chapters 24 to 26, covers and consoles, finishing, upholstery.
+# ======================================================================================================================
+_M29_CH = (24, 25, 26)
+_M29_FINISH_OPS = (
+    "f25.inspect-repair",
+    "f25.coarse-fill",
+    "f25.feather-fill",
+    "f25.primer",
+    "f25.paint-seals",
+)
+
+
+def _m29_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [
+        i for i in g["order"] if byid[i]["chapter"] in _M29_CH and not byid[i]["stub"]
+    ], byid
+
+
+def _m29(g):
+    return g["layup"]["fuselage"]["extras"]["m29"]
+
+
+def _m29_expect(g, row, op):
+    """'jig' | 'none': a chapter 24 or 26 part stands in its place from the op its row names (all of them are fitted in place on the airplane, none on the table)."""
+    order = g["order"]
+    return "jig" if order.index(op) >= order.index(row["show"]["from"]) else "none"
+
+
+def _frame(pg):
+    from PIL import Image
+
+    pg.evaluate("window.__lab.hide([]); window.__lab.advance(0.02)")
+    return Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+
+
+def _diff_px(a, b):
+    from PIL import ImageChops
+
+    d = ImageChops.difference(a, b).convert("L").point(lambda v: 255 if v > 30 else 0)
+    return sum(d.histogram()[255:])
+
+
+def test_m29_the_chapters_follow_chapter_23_in_book_order_and_every_op_is_on_the_bar(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m29_ops(g)
+    order = g["order"]
+    assert len(ops) == 6 + 5 + 2
+    first24 = order.index("f24.aft-cover")
+    assert all(
+        byid[o]["chapter"] >= 24 for o in order[first24:] if byid[o]["chapter"] < 30
+    ), [o for o in order[first24:] if byid[o]["chapter"] < 24]
+    seq = [byid[o]["chapter"] for o in order[first24:]]
+    assert seq == sorted(seq) and set(seq) == {24, 25, 26}
+    assert order.index("f23.root-rib") < first24
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            chips = _chips(pg)
+            assert set(ops) <= set(chips)
+            bar = [c for c in chips if c in ops]
+            assert bar == ops  # in graph order
+            i = chips.index(ops[0])
+            assert chips[i : i + len(ops)] == ops  # unbroken, after chapter 23
+            assert chips.index("f23.root-rib") < i
+            assert not [o for o in chips[i:] if byid[o]["chapter"] < 24]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_every_chapter_24_and_26_op_shows_its_parts_in_build_order_striped_and_labelled_and_the_cockpit_ops_leave_the_canopy_out(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m29_ops(g)
+    rows = _m29(g)["parts"]
+    assert len(rows) == 14 + 6
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    want = _m29_expect(g, row, op)
+                    assert pl[name] == want, (op, name, pl[name], want)
+                # the airplane stands on its gear in every one of them: the spar box, the left wing and the strakes are all there
+                assert (
+                    pl["spar_box"] == "jig" and pl["wing_cores_fc1_left"] == "jig"
+                ), op
+                assert pl["strake_skins_skin_top_right"] == "jig", op
+                # the cockpit ops leave the canopy over it out of the frame (it opens in life); every other op has it
+                cockpit = op in (
+                    "f24.console-lc1",
+                    "f24.consoles-left",
+                    "f24.thigh-support",
+                    "f26.cushions-headrests",
+                    "f26.suitcases",
+                )
+                assert (pl["canopy_plexi"] == "none") == cockpit, (
+                    op,
+                    pl["canopy_plexi"],
+                )
+            # nothing of the two chapters before chapter 24's first op
+            for op in ("f23.root-rib", "f21.plumbing", "f19.attach", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (
+                    op,
+                    [n for n in rows if pl[n] != "none"],
+                )
+            # the finish ops keep every cover and have no upholstery yet; the end has every part
+            pg.evaluate("window.__lab.select('f25.primer')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert all(
+                (pl[n] == "jig") == n.startswith("cover_") for n in rows
+            ), "covers stand, upholstery waits"
+            pg.evaluate("window.__lab.select('f26.suitcases')")
+            _run(pg, 1)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert all(pl[n] == "jig" for n in rows)
+            # every part is a fitted shape but LC1 (the book's printed stations): striped and named so on screen
+            for name, row in rows.items():
+                rep = row["fidelity"] == "representational"
+                assert rep == ("(fitted shape" in row["label"]), name
+                assert rep == (name != "cover_console_lc1_lc1"), name
+                m = pg.evaluate(f"window.__lab.material('{row['node']}')")
+                assert (
+                    m and bool(m["hatch"]) == rep and m["fidelity"] == row["fidelity"]
+                ), (
+                    name,
+                    m,
+                )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# what each op that adds a new part shows, as the part-name prefixes to leave out of the frame: the pixels that differ are that part on screen
+_M29_SUBJECT = {
+    "f24.aft-cover": ["cover.aft."],
+    "f24.console-lc1": ["cover.console_lc1."],
+    "f24.consoles-left": ["cover.consoles."],
+    "f24.thigh-support": ["cover.thigh.", "cover.valve."],
+    "f24.canard-cover": ["cover.canard."],
+    "f24.gap-seal": ["cover.seal."],
+    "f26.cushions-headrests": ["upholstery.cushions.", "upholstery.headrests."],
+    "f26.suitcases": ["upholstery.suitcases."],
+}
+# and what each of them must show in context: the airframe round it (prefixes, least pixels)
+_M29_CONTEXT = {
+    "f24.aft-cover": (["gear.", "fuselage.bottom"], 3000),
+    "f24.console-lc1": (["fuselage.side", "fuselage.panel"], 3000),
+    "f24.consoles-left": (["fuselage.side", "fuselage.panel"], 3000),
+    "f24.canard-cover": (["fuselage.", "installed:"], 3000),
+    "f24.gap-seal": (["wing.", "strake."], 3000),
+    "f26.cushions-headrests": (["fuselage.side", "strake."], 3000),
+    "f26.suitcases": (["fuselage.side", "strake."], 3000),
+}
+
+
+def test_m29_every_chapter_24_and_26_op_puts_its_subject_on_screen_not_hidden_inside_another_solid(
+    rsite,
+):
+    """Pixels decide: the frame with the op's new part and the same frame without it must differ, and the airframe round it must be in the frame. 1180x820,
+    the WebKit and Chromium frames both."""
+    g = _graph(rsite)
+    ops, byid = _m29_ops(g)
+    assert set(_M29_SUBJECT) | set(_M29_FINISH_OPS) == set(ops)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            seen, ctx = {}, {}
+            for op in _M29_SUBJECT:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                seen[op] = _pixels_of(pg, _M29_SUBJECT[op])
+                if op in _M29_CONTEXT:
+                    ctx[op] = _pixels_of(pg, _M29_CONTEXT[op][0])
+            print(seen, ctx)
+            weak = {o: n for o, n in seen.items() if n < 150}
+            assert not weak, f"what the op adds is not visible on screen: {weak}"
+            weak = {o: n for o, n in ctx.items() if n < _M29_CONTEXT[o][1]}
+            assert not weak, f"the airframe round the op's subject is not in frame: {weak}"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_the_finish_goes_on_in_stages_fill_then_primer_then_white_on_the_upper_wing_and_canard_only(
+    rsite,
+):
+    """The finish is a layer on the airframe's own surfaces (never a solid): bare through chapter 24, then each of the coats changes the frame. The five
+    chapter 25 ops share one camera, so the frames differ only by the finish."""
+    g = _graph(rsite)
+    d = _m29(g)
+    # python's tags: white on the upper wing and canard only, grey elsewhere, three coats from their ops
+    white = {r["surface"] for r in d["finish"]["rows"] if r["final_colour"] == "white"}
+    assert white == {"wing_upper", "canard_upper"}
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            # earlier ops keep their look: no mesh is finished before the first filler op
+            for op in ("f23.root-rib", "f24.gap-seal", "f25.inspect-repair"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                fin = pg.evaluate("window.__lab.finish()")
+                assert fin and not [k for k, v in fin.items() if v], (op, fin)
+            stage_of = {}
+            frames = {}
+            for op in _M29_FINISH_OPS:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                stage_of[op] = pg.evaluate("window.__lab.finish()")
+                frames[op] = _frame(pg)
+            want = {
+                "f25.inspect-repair": None,
+                "f25.coarse-fill": "fill",
+                "f25.feather-fill": "fill",
+                "f25.primer": "primer",
+                "f25.paint-seals": "paint",
+            }
+            for op, st in want.items():
+                fin = stage_of[op]
+                tops = {k: v for k, v in fin.items() if "wing.skins.skin_top" in k}
+                bottoms = {k: v for k, v in fin.items() if "wing.skins.skin_bottom" in k}
+                sides = {k: v for k, v in fin.items() if k.startswith("fuselage.side")}
+                canard = {k: v for k, v in fin.items() if "canard.skin_top" in k}
+                assert tops and bottoms and sides and canard, (op, list(fin)[:8])
+                for grp in (tops, bottoms, sides, canard):
+                    assert set(grp.values()) == {st}, (op, grp)
+                # the unfinished (the canopy's plexi, the firewall) never gets the finish
+                assert not [k for k in fin if k.startswith(("canopy.plexi", "fuselage.firewall"))]
+            # each coat changes the picture; the second fill coat does not (same tint)
+            d1 = _diff_px(frames["f25.inspect-repair"], frames["f25.coarse-fill"])
+            d2 = _diff_px(frames["f25.coarse-fill"], frames["f25.feather-fill"])
+            d3 = _diff_px(frames["f25.feather-fill"], frames["f25.primer"])
+            d4 = _diff_px(frames["f25.primer"], frames["f25.paint-seals"])
+            print("finish frame diffs", d1, d2, d3, d4)
+            assert d1 > 20000 and d3 > 20000, (d1, d3)
+            assert d2 < 500, d2
+            # the paint is white on the upper wing and canard only: the top skins change from primer to paint, nothing else does (the fuselage stays grey)
+            assert d4 > 3000, d4
+            top = _pixels_of(pg, ["wing.skins.skin_top", "installed:canard.skin_top"])
+            assert top >= 3000, top
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize(
+    "op", ["f24.consoles-left", "f25.paint-seals", "f26.suitcases"]
+)
+def test_m29_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsite, op):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 390, 844, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate(f"window.__lab.select('{op}')")
+            _run(pg, 7)
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert pg.evaluate("document.documentElement.scrollHeight") <= 844
+            labs = pg.evaluate("window.__lab.labelsAll()")
+            assert sum(1 for x in labs if _legible(x)) <= 10
+            _bare(pg)
+            if op in _M29_SUBJECT:
+                assert _pixels_of(pg, _M29_SUBJECT[op], 390, 844) >= 150, op
+            else:  # the finish op: the wing's top skins, white now, are in the frame
+                assert (
+                    _pixels_of(pg, ["wing.skins.skin_top", "installed:canard.skin_top"], 390, 844)
+                    >= 150
+                ), op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_the_gap_seal_is_drawn_through_the_faint_airplane_and_its_fractions_read_as_text(
+    rsite,
+):
+    g = _graph(rsite)
+    d = _m29(g)
+    assert (d["seal"]["gap_in"], d["seal"]["front_gap_in"]) == (0.5, 0.0625)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f24.gap-seal')")
+            _run(pg, 3)
+            st = pg.evaluate("window.__lab.stateAll()")
+            node = d["parts"]["cover_seal_seal_left"]["node"]
+            assert st[node] in ("built", "current")
+            assert (
+                pg.evaluate("window.__lab.kin().value")
+                == "Gap seal: 1/2 in gap at the wing root, 1/16 in at the front"
+            )
+            assert "cannot be told from 3/4" in pg.evaluate("window.__lab.kin().sub")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_the_chapter_24_conflicts_the_finish_figures_and_the_upholstery_note_are_text_on_their_ops_never_a_bare_number(
+    rsite,
+):
+    g = _graph(rsite)
+    d = _m29(g)
+    assert d["conflicts"]["aft_cover_plies"]["scan_inside_outside"] == [1, 1]
+    assert d["conflicts"]["aft_cover_plies"]["transcription_inside_outside"] == [1, 2]
+    assert (
+        d["conflicts"]["lc2_length_in"]["scan"],
+        d["conflicts"]["lc2_length_in"]["transcription"],
+    ) == (30.6, 30.8)
+    assert (d["finish"]["min_temp_f"], d["finish"]["weave_in"]) == (70, 0.009)
+    want = {
+        "f24.aft-cover": "Aft cover plies: scan 1 inside and 1 outside, transcription 1 inside and 2 outside",
+        "f24.consoles-left": "Console top LC2 length: 30.6 in on the scan, 30.8 in in the transcription",
+        "f24.gap-seal": "Gap seal: 1/2 in gap at the wing root, 1/16 in at the front",
+        "f25.inspect-repair": "Finishing: shop held at 70 F or above; glass weave 0.009 in rough",
+        "f25.feather-fill": "Feather fill 0.02 to 0.03 in over the 0.009 in weave, shop at 70 F or above",
+        "f25.primer": "Primer 0.004 to 0.008 in over the sanded fill",
+        "f25.paint-seals": "No finish weight printed. White on the upper wing and canard only; primer grey elsewhere",
+        "f26.cushions-headrests": "No upholstery weight printed",
+        "f26.suitcases": "No upholstery weight printed",
+    }
+    subs = {
+        "f24.aft-cover": ("Unresolved", "LPC 54"),
+        "f24.consoles-left": ("Unresolved",),
+        "f25.feather-fill": ("no finish weight is printed",),
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, text in want.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                assert pg.evaluate("window.__lab.kin().value") == text, op
+                assert pg.evaluate("document.getElementById('t-kin').hidden") is False
+                assert (
+                    pg.evaluate("document.getElementById('ro-kin').textContent") == text
+                )
+                sub = pg.evaluate("document.getElementById('ro-kin-sub').textContent")
+                for frag in subs.get(op, ()):
+                    assert frag in sub, (op, frag, sub)
+            # an op with a layup schedule and a conflict carries both
+            pg.evaluate("window.__lab.select('f24.aft-cover')")
+            _run(pg, 0.3)
+            assert "Plies: 2 plies: 2 BID" in pg.evaluate("window.__lab.kin().sub")
+            # none of chapters 24 to 26's text is on another chapter's ops, and the other chapters keep their own readouts (the M2.8 round 3 trap)
+            for op, text in (
+                ("f21.inside-layups", "5 plies: 3 BID + 2 UND"),
+                ("f23.cowl-closeout", "10 plies: 10 BID"),
+                ("f21.close-tank", None),
+                ("f13.carve-glass-nose", None),
+                ("f19.top-skin", None),
+                ("f20.rudder-hang", None),
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                v = pg.evaluate(
+                    "document.getElementById('t-kin').hidden ? '' : document.getElementById('ro-kin').textContent"
+                )
+                if text:
+                    assert v == text, (op, v)
+                assert not any(
+                    t in v
+                    for t in (
+                        "Aft cover",
+                        "LC2",
+                        "Gap seal",
+                        "Feather fill",
+                        "Primer",
+                        "finish weight",
+                        "upholstery",
+                    )
+                ), (op, v)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_the_finish_deltas_and_the_closure_target_are_references_in_no_sum_and_follow_their_ops(
+    rsite,
+):
+    import json as _j
+
+    led = _j.loads((rsite / "ledger.json").read_text())
+    rows = led["prototype_weights"]["rows"]
+    assert (
+        rows["finish_delta_canopy"]["weight_lb"],
+        rows["finish_delta_aileron"]["weight_lb"],
+        rows["finish_delta_wing"]["weight_lb"],
+    ) == (1.0, 0.275, 2.2)
+    inc = led["cg"]["included"] + led["cg_lower_bound"]["included"]
+    assert not any(
+        k in inc
+        for k in ("finish_delta_canopy", "finish_delta_aileron", "finish_delta_wing")
+    )
+    g = _graph(rsite)
+    tgt = _m29(g)["weights"]["closure_target"]
+    assert (tgt["empty_lb"], tgt["empty_arm_in"], tgt["loaded_envelope_fs"]) == (
+        730,
+        111.7,
+        [97.0, 103.0],
+    )
+    light, heavy = tgt["sample_loadings"]
+    assert (light["total_lb"], light["cg_in"], light["inside_envelope"]) == (
+        1113,
+        103.96,
+        False,
+    )
+    assert (heavy["total_lb"], heavy["cg_in"], heavy["inside_envelope"]) == (
+        1323,
+        101.06,
+        True,
+    )
+    ref = ", reference, not in CG"
+    deltas = f"N26MS finish deltas (CP26 page 3 against CP27 page 1): canopy 1 lb, aileron 0.275 lb, wing 2.2 lb{ref}"
+    expect = {
+        "f24.aft-cover": None,
+        "f24.gap-seal": None,
+        "f25.inspect-repair": None,
+        "f25.coarse-fill": deltas,
+        "f25.primer": deltas,
+        "f25.paint-seals": deltas,
+        "f26.cushions-headrests": None,
+        "f26.suitcases": f"Closure target: OM sample empty airplane 730 lb at FS 111.7{ref}",
+        # chapters 21 to 23 keep their own rows
+        "f23.root-rib": "Closure target: OM sample empty airplane 730 lb at FS 111.7"
+        + ref
+        + "; N26MS ladder 693.4 / 698.3 / 713.7 / 761.9 / 777.3 / 815.4 / 860.2 / 883.0 lb",
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, w in expect.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                r = pg.evaluate("window.__lab.ref()")
+                assert (r["value"] if r else None) == w, (op, r)
+                shown = pg.evaluate(
+                    "!document.getElementById('t-ref').hidden && document.getElementById('ro-ref').textContent"
+                )
+                assert (shown or None) == w, (op, shown)
+                # the CG stays "not yet computed" through all three chapters
+                assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
+            pg.evaluate("window.__lab.select('f26.suitcases')")
+            _run(pg, 0.3)
+            sub = pg.evaluate("window.__lab.ref().sub")
+            assert (
+                "light pilot 1113 lb at FS 103.96 (outside the 103 aft limit, as the manual says)"
+                in sub
+                and "heavy pilot 1323 lb at FS 101.06 (inside)" in sub
+                and "FS 97 to 103 is the loaded envelope, not the empty CG" in sub
+                and "CG not yet computed" in sub
+            ), sub
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_the_station_cut_reaches_the_whole_airplane_on_chapters_24_to_26(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ("f24.aft-cover", "f25.primer", "f26.suitcases"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                lo = pg.evaluate("document.getElementById('section-bl').min")
+                hi = pg.evaluate("document.getElementById('section-bl').max")
+                assert float(lo) <= 7 and float(hi) >= 125, (op, lo, hi)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m29_tours_visit_every_chapter_24_to_26_op_in_order_and_end_on_the_last(rsite):
+    g = _graph(rsite)
+    for ch, n, last in (
+        (24, 6, "f24.gap-seal"),
+        (25, 5, "f25.paint-seals"),
+        (26, 2, "f26.suitcases"),
+    ):
+        want = _chapter_ops(g, "roncz", ch)
+        assert len(want) == n and want[-1] == last
+        s, url = serve(rsite)
+        try:
+            with sync_playwright() as p:
+                b, pg, errors = _open_rec(p, url)
+                _to_fuselage(pg)
+                pg.evaluate(f"__lab.select('{want[0]}')")
+                pg.click("#tour")
+                assert pg.evaluate("__lab.touring()") is True
+                seen, _last = _tour_probe(pg, want, {}, after="never")
+                assert seen == want, seen
+                assert pg.evaluate("__lab.touring()") is False
+                assert pg.evaluate("__lab.selected()") == last
+                assert pg.evaluate("__lab.subject()") == "fuselage"
+                assert not errors, errors
+                b.close()
+        finally:
+            s.shutdown()
