@@ -199,7 +199,8 @@ def test_prototype_weights_are_cited_reference_data():  # Review Focus 5
     for k in ("f22", "f28", "panel"):
         check_citation(rows[k]["cite"])
         assert rows[k]["cite"].startswith("cp-text:p26")
-        assert "prototype" in rows[k]["note"] and "uncured" in rows[k]["note"]
+        assert "N26MS" in rows[k]["note"] and "uncured" in rows[k]["note"]
+        assert "CP26 page 3" in rows[k]["cite"]
     assert pw["complete_fuselage_lb"]["weight_lb"] == 183.0
     check_citation(pw["complete_fuselage_lb"]["cite"])
     assert "reference only" in pw["complete_fuselage_lb"]["note"]

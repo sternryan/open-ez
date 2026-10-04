@@ -196,15 +196,15 @@ def fuselage_cg(
                 or _NYC + "mass"
             )
             continue
-        # A lower bound may not contain a term a cited source contradicts: a part modelled heavier than its CP26 prototype
-        # weight is left out (not replaced by the prototype number) until the excess is understood (ledger-closure test).
+        # A lower bound may not contain a term a cited source contradicts: a part modelled heavier than its CP26 builder
+        # weight (N26MS) is left out (not replaced by the builder number) until the excess is understood (ledger-closure test).
         if (
             lower_bound
             and r["part"] in proto
             and r[key] > proto[r["part"]]["weight_lb"]
         ):
             exc[r["part"]] = (
-                f"modelled {r[key]:.2f} lb is above the CP26 prototype weight {proto[r['part']]['weight_lb']:.2f} lb: under review"
+                f"modelled {r[key]:.2f} lb is above the CP26 builder weight (N26MS) {proto[r['part']]['weight_lb']:.2f} lb: under review"
             )
             continue
         inc.append(r["part"])
@@ -325,7 +325,7 @@ def fuselage_ledger_json() -> dict:
         "cg": cg_dict(False),
         "cg_lower_bound": _lower_bound_with_gear(),
         "gear": gear_json(),
-        # CP26 prototype weights (reference rows: F22, F28, panel and the centre-section spar). They are in no sum: the lab shows the spar's
+        # CP26 builder weights, Melvill N26MS (key kept as prototype_weights; reference rows: F22, F28, panel and the centre-section spar). They are in no sum: the lab shows the spar's
         # as a reference row, and cg / cg_lower_bound above never include it.
         "prototype_weights": {
             "rows": {

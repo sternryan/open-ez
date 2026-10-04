@@ -248,7 +248,7 @@ def test_lower_bound_cg_is_the_moment_sum_over_core_sourced_parts():
             "rollover_inserts",
             "step",
             "f22",
-            "f28",  # modelled above the CP26 prototype weights (see test_lower_bound_leaves_out_parts_heavier_than_their_prototype)
+            "f28",  # modelled above the CP26 builder weights (N26MS) (see test_lower_bound_leaves_out_parts_heavier_than_their_prototype)
         }
     )
     assert set(included) == _bodies() - set(excluded)
@@ -274,7 +274,7 @@ def test_lower_bound_leaves_out_parts_heavier_than_their_prototype():
         assert rows[part]["total_mass_lower_bound_lb"] > proto[part]["weight_lb"]
         assert (
             part not in included
-            and "CP26 prototype weight" in excluded[part]
+            and "CP26 builder weight (N26MS)" in excluded[part]
             and "under review" in excluded[part]
         )
     # the panel is below its prototype weight, so it stays in; and nothing is replaced by the prototype number
@@ -339,6 +339,7 @@ def test_ledger_json_exposes_the_cp26_prototype_weights_as_reference_rows_in_no_
     assert {"f22", "f28", "panel", "spar"} <= set(rows)
     spar = rows["spar"]
     assert spar["weight_lb"] == 29.3 and spar["cite"].startswith("cp-text:p26")
+    assert "N26MS" in spar["note"] and "CP26 page 3" in spar["cite"]
     assert "reference only" in spar["note"] and set(spar) == {
         "weight_lb",
         "cite",

@@ -97,18 +97,18 @@ gear:
     cite: ["plans-1980:p171 nose wheel F.S. 17", "om-1980:p35 nose arm about 20"]
     note: "fs_nose_wheel and fs_nose_wheel_manual; unresolved without the A6/A7 side view; every nose part's mass stays unsourced"
 
-# Block 2 M2.4 Task 1: prototype weights as cited REFERENCE values. They are never added to any sum:
+# Block 2 M2.4 Task 1: CP26 builder weights (Melvill N26MS, not the RAF prototype) as cited REFERENCE values. They are never added to any sum:
 # the computed core-plus-glass rows in `materials` stay the model's masses. page_basis: issue (cp-text),
-# printed page 2 of CP26.
+# printed page 3 of CP26 (the key keeps the name `prototype_weights`; the airplane is N26MS, Mike and Sally Melvill).
 prototype_weights:
   rows:
-    f22:   {weight_lb: 1.44, cite: "cp-text:p26 CP26 page 2 F22 bulkhead 1 lb 7 oz", note: "prototype, uncured finish"}
-    f28:   {weight_lb: 0.19, cite: "cp-text:p26 CP26 page 2 F28 bulkhead 3 oz", note: "prototype, uncured finish"}
-    panel: {weight_lb: 2.13, cite: "cp-text:p26 CP26 page 2 instrument panel 2 lb 2 oz", note: "prototype, uncured finish"}
-    # Block 2 M2.5 Task 1: centre-section spar, a prototype weight only. No sourced CG, so it is in no moment sum
+    f22:   {weight_lb: 1.44, cite: "cp-text:p26 CP26 page 3 F22 bulkhead 1 lb 7 oz", note: "builder weight, Melvill N26MS, uncured finish"}
+    f28:   {weight_lb: 0.19, cite: "cp-text:p26 CP26 page 3 F28 bulkhead 3 oz", note: "builder weight, Melvill N26MS, uncured finish"}
+    panel: {weight_lb: 2.13, cite: "cp-text:p26 CP26 page 3 instrument panel 2 lb 2 oz", note: "builder weight, Melvill N26MS, uncured finish"}
+    # Block 2 M2.5 Task 1: centre-section spar, a builder weight (Melvill N26MS) only. No sourced CG, so it is in no moment sum
     # (fuselage_cg matches rows by fuselage part name and there is no `spar` part); the overall CG stays "not yet computed".
-    spar:  {weight_lb: 29.3, cite: "cp-text:p26 CP26 page 2 centre-section spar 29 lb 5 oz", note: "prototype, BID layup of layups 5, 6 and 8; the UND option saves about 3.5 lb (CP25 LPC 26), derived about 25.8 lb; reference only, no CG, not a ledger row"}
+    spar:  {weight_lb: 29.3, cite: "cp-text:p26 CP26 page 3 centre-section spar 29 lb 5 oz", note: "builder weight, Melvill N26MS, BID layup of layups 5, 6 and 8; the UND option saves about 3.5 lb (CP25 LPC 26), derived about 25.8 lb; reference only, no CG, not a ledger row"}
   complete_fuselage_lb:
     weight_lb: 183.0
-    cite: "cp-text:p26 CP26 page 2 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"
+    cite: "cp-text:p26 CP26 page 3 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"
     note: "reference only, for the later ledger-closure test; not used in any sum"
