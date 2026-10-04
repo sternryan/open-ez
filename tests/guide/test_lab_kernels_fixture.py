@@ -192,6 +192,7 @@ def build() -> dict:
             "canopy": sec,
             "wing": {k: v for k, v in sec27.items() if k != "parts"},
             "m28": fe.m28_section(),
+            "m29": fe.m29_section(),
         },
     }
 

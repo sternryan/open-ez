@@ -1733,6 +1733,17 @@ def m29_section() -> dict:
                 "empty_arm_in": led["empty"]["arm_in"],
                 "samples": "both OM sample loadings reproduced exactly: the light pilot 103.96, outside the 103 aft limit as the manual says; the heavy pilot 101.06, inside",
                 "loaded_envelope_fs": [led["envelope"]["fwd_fs"], led["envelope"]["aft_fs"]],
+                "sample_loadings": [
+                    {
+                        "name": k,
+                        "total_lb": led["samples"][k]["book_total_lb"],
+                        "cg_in": led["samples"][k]["book_cg_in"],
+                        "inside_envelope": led["envelope"]["fwd_fs"]
+                        <= led["samples"][k]["book_cg_in"]
+                        <= led["envelope"]["aft_fs"],
+                    }
+                    for k in ("light_pilot", "heavy_pilot")
+                ],
                 "note": "the OM sample empty airplane, 730 lb at FS 111.7, is the closure target; FS 97 to 103 is the loaded envelope, not the empty CG",
             },
             "cg": "not yet computed",

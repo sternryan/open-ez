@@ -3965,6 +3965,841 @@
     },
     "cg": "not yet computed"
    }
+  },
+  "m29": {
+   "parts": {
+    "cover_aft_aft_cover": {
+     "node": "cover.aft.aft_cover",
+     "component": "cover.aft",
+     "fidelity": "representational",
+     "label": "Lower aft cover (fitted shape)",
+     "cite": [
+      "plans-1980:p159",
+      "cp-text:p28"
+     ],
+     "fs_min": 107.4,
+     "fs_max": 125.0,
+     "bl_min": -10.0,
+     "bl_max": 10.0,
+     "show": {
+      "from": "f24.aft-cover"
+     },
+     "op_index": 219
+    },
+    "cover_console_lc1_lc1": {
+     "node": "cover.console_lc1.lc1",
+     "component": "cover.console_lc1",
+     "fidelity": "book",
+     "label": "Console piece LC1 (landing brake)",
+     "cite": [
+      "plans-1980:p159"
+     ],
+     "fs_min": 52.0,
+     "fs_max": 60.0,
+     "bl_min": -9.5,
+     "bl_max": -9.15,
+     "show": {
+      "from": "f24.console-lc1"
+     },
+     "op_index": 220
+    },
+    "cover_consoles_lc2": {
+     "node": "cover.consoles.lc2",
+     "component": "cover.consoles",
+     "fidelity": "representational",
+     "label": "Console top LC2 (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 40.4292,
+     "fs_max": 71.0292,
+     "bl_min": -11.45,
+     "bl_max": -9.1,
+     "show": {
+      "from": "f24.consoles-left"
+     },
+     "op_index": 221
+    },
+    "cover_consoles_lc3": {
+     "node": "cover.consoles.lc3",
+     "component": "cover.consoles",
+     "fidelity": "representational",
+     "label": "Console side LC3 (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 40.4292,
+     "fs_max": 51.0292,
+     "bl_min": -11.45,
+     "bl_max": -11.1,
+     "show": {
+      "from": "f24.consoles-left"
+     },
+     "op_index": 221
+    },
+    "cover_consoles_lc4": {
+     "node": "cover.consoles.lc4",
+     "component": "cover.consoles",
+     "fidelity": "representational",
+     "label": "Console side LC4 (fitted shape)",
+     "cite": [
+      "plans-1980:p160",
+      "cp-text:p24"
+     ],
+     "fs_min": 40.4292,
+     "fs_max": 52.1292,
+     "bl_min": -9.1,
+     "bl_max": -8.75,
+     "show": {
+      "from": "f24.consoles-left"
+     },
+     "op_index": 221
+    },
+    "cover_consoles_lc5": {
+     "node": "cover.consoles.lc5",
+     "component": "cover.consoles",
+     "fidelity": "representational",
+     "label": "Rear console top LC5 (fitted shape)",
+     "cite": [
+      "plans-1980:p160",
+      "plans-1980:p159"
+     ],
+     "fs_min": 73.0292,
+     "fs_max": 91.2292,
+     "bl_min": -10.9995,
+     "bl_max": -9.0995,
+     "show": {
+      "from": "f24.consoles-left"
+     },
+     "op_index": 221
+    },
+    "cover_consoles_lc6": {
+     "node": "cover.consoles.lc6",
+     "component": "cover.consoles",
+     "fidelity": "representational",
+     "label": "Rear console side LC6 (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 73.0292,
+     "fs_max": 87.742,
+     "bl_min": -11.1652,
+     "bl_max": -10.8152,
+     "show": {
+      "from": "f24.consoles-left"
+     },
+     "op_index": 221
+    },
+    "cover_thigh_thigh_floor": {
+     "node": "cover.thigh.thigh_floor",
+     "component": "cover.thigh",
+     "fidelity": "representational",
+     "label": "Thigh-support floor (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 40.05,
+     "fs_max": 52.35,
+     "bl_min": -8.5,
+     "bl_max": 8.5,
+     "show": {
+      "from": "f24.thigh-support"
+     },
+     "op_index": 222
+    },
+    "cover_thigh_thigh_rib_a": {
+     "node": "cover.thigh.thigh_rib_a",
+     "component": "cover.thigh",
+     "fidelity": "representational",
+     "label": "Thigh-support rib (notched for the fuel lines) (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 40.05,
+     "fs_max": 50.85,
+     "bl_min": -2.975,
+     "bl_max": -2.625,
+     "show": {
+      "from": "f24.thigh-support"
+     },
+     "op_index": 222
+    },
+    "cover_thigh_thigh_rib_b": {
+     "node": "cover.thigh.thigh_rib_b",
+     "component": "cover.thigh",
+     "fidelity": "representational",
+     "label": "Thigh-support rib (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 40.05,
+     "fs_max": 50.85,
+     "bl_min": 2.625,
+     "bl_max": 2.975,
+     "show": {
+      "from": "f24.thigh-support"
+     },
+     "op_index": 222
+    },
+    "cover_valve_valve_cover": {
+     "node": "cover.valve.valve_cover",
+     "component": "cover.valve",
+     "fidelity": "representational",
+     "label": "Fuel-valve cover (fitted shape)",
+     "cite": [
+      "plans-1980:p160"
+     ],
+     "fs_min": 47.6,
+     "fs_max": 52.6,
+     "bl_min": -3.3,
+     "bl_max": 3.3,
+     "show": {
+      "from": "f24.thigh-support"
+     },
+     "op_index": 222
+    },
+    "cover_canard_canard_cover": {
+     "node": "cover.canard.canard_cover",
+     "component": "cover.canard",
+     "fidelity": "representational",
+     "label": "Canard cover (fitted shape)",
+     "cite": [
+      "plans-1980:p161"
+     ],
+     "fs_min": 22.3,
+     "fs_max": 27.5,
+     "bl_min": -10.0,
+     "bl_max": 10.0,
+     "show": {
+      "from": "f24.canard-cover"
+     },
+     "op_index": 223
+    },
+    "cover_seal_seal_right": {
+     "node": "cover.seal.seal_right",
+     "component": "cover.seal",
+     "fidelity": "representational",
+     "label": "Right gap seal (fitted shape)",
+     "cite": [
+      "plans-1980:p161"
+     ],
+     "fs_min": 113.5,
+     "fs_max": 118.4,
+     "bl_min": 23.22,
+     "bl_max": 23.72,
+     "show": {
+      "from": "f24.gap-seal"
+     },
+     "op_index": 224
+    },
+    "cover_seal_seal_left": {
+     "node": "cover.seal.seal_left",
+     "component": "cover.seal",
+     "fidelity": "representational",
+     "label": "Left gap seal (fitted shape)",
+     "cite": [
+      "plans-1980:p161"
+     ],
+     "fs_min": 113.5,
+     "fs_max": 118.4,
+     "bl_min": -23.72,
+     "bl_max": -23.22,
+     "show": {
+      "from": "f24.gap-seal"
+     },
+     "op_index": 224
+    },
+    "upholstery_cushions_front_cushion": {
+     "node": "upholstery.cushions.front_cushion",
+     "component": "upholstery.cushions",
+     "fidelity": "representational",
+     "label": "Front seat cushion (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 52.65,
+     "fs_max": 81.07,
+     "bl_min": -8.25,
+     "bl_max": 8.25,
+     "show": {
+      "from": "f26.cushions-headrests"
+     },
+     "op_index": 230
+    },
+    "upholstery_cushions_rear_cushion": {
+     "node": "upholstery.cushions.rear_cushion",
+     "component": "upholstery.cushions",
+     "fidelity": "representational",
+     "label": "Rear seat cushion (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 93.9037,
+     "fs_max": 118.3693,
+     "bl_min": -8.0,
+     "bl_max": 8.0,
+     "show": {
+      "from": "f26.cushions-headrests"
+     },
+     "op_index": 230
+    },
+    "upholstery_headrests_front_headrest": {
+     "node": "upholstery.headrests.front_headrest",
+     "component": "upholstery.headrests",
+     "fidelity": "representational",
+     "label": "Front headrest (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 76.95,
+     "fs_max": 78.95,
+     "bl_min": -2.25,
+     "bl_max": 2.25,
+     "show": {
+      "from": "f26.cushions-headrests"
+     },
+     "op_index": 230
+    },
+    "upholstery_headrests_rear_headrest": {
+     "node": "upholstery.headrests.rear_headrest",
+     "component": "upholstery.headrests",
+     "fidelity": "representational",
+     "label": "Rear headrest (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 113.0,
+     "fs_max": 114.5,
+     "bl_min": -2.25,
+     "bl_max": 2.25,
+     "show": {
+      "from": "f26.cushions-headrests"
+     },
+     "op_index": 230
+    },
+    "upholstery_suitcases_suitcase_right": {
+     "node": "upholstery.suitcases.suitcase_right",
+     "component": "upholstery.suitcases",
+     "fidelity": "representational",
+     "label": "Right suitcase (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 65.0694,
+     "fs_max": 95.0694,
+     "bl_min": 5.2,
+     "bl_max": 10.2,
+     "show": {
+      "from": "f26.suitcases"
+     },
+     "op_index": 231
+    },
+    "upholstery_suitcases_suitcase_left": {
+     "node": "upholstery.suitcases.suitcase_left",
+     "component": "upholstery.suitcases",
+     "fidelity": "representational",
+     "label": "Left suitcase (shortened) (fitted shape)",
+     "cite": [
+      "plans-1980:p170"
+     ],
+     "fs_min": 65.0694,
+     "fs_max": 91.0694,
+     "bl_min": -10.2,
+     "bl_max": -5.2,
+     "show": {
+      "from": "f26.suitcases"
+     },
+     "op_index": 231
+    }
+   },
+   "finish": {
+    "rows": [
+     {
+      "component": "wing.skins",
+      "match": "skin_top",
+      "surface": "wing_upper",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "white"
+       }
+      ],
+      "final_colour": "white"
+     },
+     {
+      "component": "wing.skins",
+      "match": "skin_bottom",
+      "surface": "wing_lower",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "canard.skin_top",
+      "match": null,
+      "surface": "canard_upper",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "white"
+       }
+      ],
+      "final_colour": "white"
+     },
+     {
+      "component": "canard.skin_bottom",
+      "match": null,
+      "surface": "canard_lower",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "cover.canard",
+      "match": null,
+      "surface": "canard_upper",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "white"
+       }
+      ],
+      "final_colour": "white"
+     },
+     {
+      "component": "fuselage.skin_right",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "fuselage.skin_left",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "fuselage.bottom",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "nose.skin",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "strake.skins",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "winglet.skins",
+      "match": null,
+      "surface": "winglet",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "engine.cowl",
+      "match": null,
+      "surface": "cowl",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     },
+     {
+      "component": "cover.aft",
+      "match": null,
+      "surface": "fuselage",
+      "stages": [
+       {
+        "stage": "fill",
+        "from": "f25.feather-fill",
+        "thickness_in": [
+         0.02,
+         0.03
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "primer",
+        "from": "f25.primer",
+        "thickness_in": [
+         0.004,
+         0.008
+        ],
+        "colour": "primer-grey"
+       },
+       {
+        "stage": "paint",
+        "from": "f25.paint-seals",
+        "thickness_in": null,
+        "colour": "primer-grey"
+       }
+      ],
+      "final_colour": "primer-grey"
+     }
+    ],
+    "colours": {
+     "white": "upper wing and canard only (book, plans-1980:p162)",
+     "primer-grey": "everything else; representational, the book prints no airplane colour"
+    },
+    "min_temp_f": 70.0,
+    "weave_in": 0.009,
+    "note": "a layer drawn on the part, never a solid; no finish weight is printed in chapter 25"
+   },
+   "conflicts": {
+    "aft_cover_plies": {
+     "scan_inside_outside": [
+      1,
+      1
+     ],
+     "transcription_inside_outside": [
+      1,
+      2
+     ],
+     "note": "the scan blanks the inside number and hand-edits the outside to one; LPC 54 says one ply; the transcription keeps one and two"
+    },
+    "lc2_length_in": {
+     "scan": 30.6,
+     "transcription": 30.8
+    }
+   },
+   "seal": {
+    "gap_in": 0.5,
+    "front_gap_in": 0.0625,
+    "note": "the 1/2 in glyph cannot be told from 3/4 at this scan resolution"
+   },
+   "weights": {
+    "finish_deltas": {
+     "finish_delta_canopy": {
+      "weight_lb": 1.0
+     },
+     "finish_delta_aileron": {
+      "weight_lb": 0.275
+     },
+     "finish_delta_wing": {
+      "weight_lb": 2.2
+     }
+    },
+    "note": "N26MS finish deltas (CP26 page 3 ready to finish against CP27 page 1 filled and painted): references, never summed; no finish weight is printed and the whole airplane's finish was never weighed in any held source. No upholstery weight is printed.",
+    "closure_target": {
+     "empty_lb": 730,
+     "empty_arm_in": 111.7,
+     "samples": "both OM sample loadings reproduced exactly: the light pilot 103.96, outside the 103 aft limit as the manual says; the heavy pilot 101.06, inside",
+     "loaded_envelope_fs": [
+      97.0,
+      103.0
+     ],
+     "sample_loadings": [
+      {
+       "name": "light_pilot",
+       "total_lb": 1113,
+       "cg_in": 103.96,
+       "inside_envelope": false
+      },
+      {
+       "name": "heavy_pilot",
+       "total_lb": 1323,
+       "cg_in": 101.06,
+       "inside_envelope": true
+      }
+     ],
+     "note": "the OM sample empty airplane, 730 lb at FS 111.7, is the closure target; FS 97 to 103 is the loaded envelope, not the empty CG"
+    },
+    "cg": "not yet computed"
+   }
   }
  }
 }
