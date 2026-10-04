@@ -32,6 +32,6 @@ touch "$SITE/.nojekyll"
 # Orphan commit in a scratch repo, so the working tree and main are never involved.
 git -C "$SITE" init -q -b gh-pages
 git -C "$SITE" add -A
-git -C "$SITE" -c user.name="open-ez publish" -c user.email="noreply@users.noreply.github.com" commit -q -m "Publish public lab build"
+git -C "$SITE" -c user.name="Ryan Stern" -c user.email="206953196+sternryan@users.noreply.github.com" commit -q -m "Publish public lab build"
 git -C "$SITE" push -f "$REMOTE" gh-pages:gh-pages
 echo "pushed gh-pages"
