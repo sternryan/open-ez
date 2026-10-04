@@ -1,0 +1,32 @@
+# Chapter 26 — upholstery (plans p. 26-1, scan page 170; the last page of the plans). Printed: outline sizes only for the cushions, headrests and suitcases. No weight, no station and no material list is printed,
+# and the foam and fabric are not named, so none is stated here. The shapes between the printed dimensions are fitted outlines.
+- id: f26.cushions-headrests
+  chapter: 26
+  title: Cushions and headrests
+  summary: The front cushion is 46 by 16.5 in in plan and 2 in of foam rubber under a fabric cover; its notch reads 6 to 8 in by 6 in and which is which is a guess. The rear seat cushion is 12 in deep and 16 in wide with a back 18 in tall, from 2 in blocks, 4 in high at the front edge. The front headrest is 4.5 by 4.5 by 2 in, bonded to the rollover with contact cement; the rear one is 4.5 by 4.5 by 1.5 in, held by two snapped flaps over the canopy braces. The front seat fits a pilot from 6 ft 3 in to 6 ft 5 in, and a smaller pilot adds cushion. Paint the interior first. No weight is printed, and the later weight-creep warning in the newsletter is only an example.
+  variants: [both]
+  requires: [f25.paint-seals, f08.roll-over-outside, f18.vent-brace]
+  components: [upholstery.cushions, upholstery.headrests]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 170}
+  completion:
+    - Interior painted before any upholstery goes in
+    - Front and rear cushions laid on the seat floors
+    - Front headrest cemented to the rollover, rear headrest snapped over the canopy braces
+- id: f26.suitcases
+  chapter: 26
+  title: Suitcases
+  summary: Each suitcase is 30 in on the long edge, 18 in high at the rear edge, 14 in across the top and 5 in thick full (4.5 in collapsed, a small read). The shell is ABS plastic 0.06 to 0.09 in thick or four plies of BID, with a fabric bag held by snaps every 4 in and a stiffener leg 15 in long. The left one is shortened to clear the landing brake; the cut length is not printed. Two inserts for the unused rear area hold the map cases, the ELT and a survival kit. The shape between the dimensions is a fitted outline. This is the last page of the plans.
+  variants: [both]
+  requires: [f26.cushions-headrests, f24.consoles-left]
+  components: [upholstery.suitcases]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 4, where: "suitcase shell, if not ABS plastic"}
+  sources:
+    - {doc: scan-1980, scan_pp: 170}
+  completion:
+    - Two suitcases made or bought to the printed sizes
+    - Left suitcase shortened to clear the landing brake
+    - Short-pilot inserts made if wanted

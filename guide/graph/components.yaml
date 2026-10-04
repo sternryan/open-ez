@@ -146,3 +146,19 @@
 - {id: engine.bracket, label: "Throttle and mixture bracket (sizes book, shape fitted)", fidelity: unvalidated}
 - {id: engine.cowl, label: "Cowl outline (trim and reinforcement book, shape fitted)", fidelity: unvalidated}
 - {id: engine.rib, label: "Wing-root metal rib (sheet size book, outline fitted)", fidelity: unvalidated}
+# Covers and consoles (chapter 24). Only LC1's stations are printed; the other outlines are fitted shapes.
+- {id: cover.aft, label: "Lower aft cover (block size book, outline fitted, ply count in conflict)", fidelity: unvalidated}
+- {id: cover.console_lc1, label: "Console piece LC1 (FS 52 to 60 book, outline fitted)", fidelity: unvalidated}
+- {id: cover.consoles, label: "Left consoles LC2 to LC6 (sizes book, outlines fitted, LC2 length 30.6 or 30.8)", fidelity: unvalidated}
+- {id: cover.thigh, label: "Thigh support floor and ribs (sizes book, rib curve fitted)", fidelity: unvalidated}
+- {id: cover.valve, label: "Fuel-valve cover (size book)", fidelity: unvalidated}
+- {id: cover.canard, label: "Canard cover (2 in block, outline fitted)", fidelity: unvalidated}
+- {id: cover.seal, label: "Wing and centre-section gap seal (1/2 in gap and 1/16 in front gap book)", fidelity: unvalidated}
+# Finish (chapter 25). A surface layer tagged on the parts, not new solids; thicknesses are book, the grey is a representational colour.
+- {id: finish.fill, label: "Fill layer, feather fill 0.02 to 0.03 in (a tag on the parts, not a solid)", fidelity: unvalidated}
+- {id: finish.primer, label: "Primer layer, 0.004 to 0.008 in, grey (a tag on the parts; the colour is representational)", fidelity: unvalidated}
+- {id: finish.paint, label: "Paint layer, white on the upper wing and canard (a tag on the parts)", fidelity: unvalidated}
+# Upholstery (chapter 26). Sizes are book; the shapes between the dimensions are fitted outlines. No weight is printed.
+- {id: upholstery.cushions, label: "Front and rear seat cushions (sizes book, outlines fitted)", fidelity: unvalidated}
+- {id: upholstery.headrests, label: "Front and rear headrests (sizes book)", fidelity: unvalidated}
+- {id: upholstery.suitcases, label: "Left and right suitcases (sizes book, left shortened by an unprinted length)", fidelity: unvalidated}

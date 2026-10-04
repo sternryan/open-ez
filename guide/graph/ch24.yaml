@@ -1,0 +1,128 @@
+# Chapter 24 — covers and consoles (plans pp. 24-1 to 24-3; scan pages 159-161). Printed: the lower aft cover block and clearances (p159), LC1 with its stations FS 52 to FS 60 (p159), LC2 to LC6 and the
+# thigh-support parts (p160), the canard cover and the wing and centre-section seal (p161). The A-sheets (the thigh-rib curve, the panel, the brake and console locations) are not held, so every shape that lives
+# only there is a fitted outline. Conflicts kept as text: the aft-cover ply count (the scan, LPC 54 and the community transcription disagree) and the length of LC2 (30.6 on the scan, 30.8 in the transcription).
+# No weight is printed anywhere in the chapter, so no op states one.
+- id: f24.aft-cover
+  chapter: 24
+  title: Lower aft cover
+  summary: Make the cover from an 18 by 20 by 2 in chunk of green urethane that sits on the bottom longerons and butts the firewall and the bottom block. Leave about 1/8 in clear round the main gear strut and hollow the block 1/2 in inside the first outline for baggage room. Glass the dished side, bond with flox under weights, then carve and glass the outside with a 1 in lap. The ply count is in conflict. The scan blanks the inside number and edits the outside to one ply, LPC 54 says one, and the community transcription says one inside and two outside. Leave the strut gap open until after paint, then fill it with silicone. The guide follows chapter order here.
+  variants: [both]
+  requires: [f23.root-rib, f15.stainless-firewall, f09.position-gear, f06.bottom-bond]
+  components: [cover.aft]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "inside, dished side (the scan blanks the number; the transcription says 1)"}
+    - {cloth: BID, plies: 1, where: "outside, lapped 1 in (hand edit on the scan; the transcription says 2, conflict)"}
+  sources:
+    - {doc: scan-1980, scan_pp: 159}
+  changes:
+    - {cp: 28, lpc: 54, class: MEO, status: conflict, kind: official, note: "Glass the aft cover with one ply of BID; the scan and the community transcription disagree on the rest of the count."}
+  completion:
+    - Block cut and fitted to the longerons, the firewall and the bottom block, 1/8 in clear of the strut
+    - Block dished 1/2 in inside the first outline
+    - Inside glassed and bonded with flox under weights
+    - Outside carved and glassed with a 1 in lap, ply count noted as a conflict
+    - Strut gap left open until after paint
+- id: f24.console-lc1
+  chapter: 24
+  title: Landing-brake console piece LC1
+  summary: LC1 is the one console piece with printed stations. Cut it 9.1 in by 8 in from 0.35 in type R45 foam so that it runs from FS 52 to FS 60, standing 2.0 in off the fuselage side with its top at WL 11.6; its front edge is 12 in behind the instrument panel. Lay one BID ply on the fuselage side and two on the pilot side, lapping 1/2 in onto the floor. Cut the same seat-belt cutout as on the right side before bonding. Fit the second spacer between the brake bracket and the console, use the longer bolt, and leave the section gap at 2 in, not 1 1/2 in. Do not bond it permanently until the controls are in.
+  variants: [both]
+  requires: [f24.aft-cover, f16.side-consoles, f09.brake-lines]
+  components: [cover.console_lc1]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "fuselage side of LC1"}
+    - {cloth: BID, plies: 2, where: "pilot side of LC1, lapped 1/2 in onto the floor"}
+  sources:
+    - {doc: scan-1980, scan_pp: 159}
+  changes:
+    - {cp: 26, lpc: 0, class: MEO, status: verified, kind: community, note: "The LC1 sketch lacks the seat-belt cutout; cut it before bonding."}
+    - {cp: 28, lpc: 0, class: MAN, status: verified, kind: community, note: "The prefab landing-brake weldment is 1 in short; the brackets sit 1 in left of centre."}
+  completion:
+    - LC1 cut from 0.35 in R45 to 9.1 by 8 in, FS 52 to FS 60
+    - Seat-belt cutout made
+    - Standing 2.0 in off the fuselage side, top at WL 11.6
+    - Glass laid, 1 ply on the fuselage side and 2 on the pilot side
+    - Brake spacer and bolt changed, section gap 2 in
+- id: f24.consoles-left
+  chapter: 24
+  title: Left front and rear consoles LC2 to LC6
+  summary: With every control in, cut the front console top LC2 (30.6 in long, 2.35 wide, 0.3 in bevel at the front, throttle cutout at the rear; the community transcription reads 30.8, unresolved) and its sides LC3 (10.6 in along the top, 9.1 tall, a 3 in step) and LC4 (11.7 by 9.1 in, one hole for the pitch-trim adjust). The rear top LC5 is 18.2 by 1.9 in with a 0.35 in bevel, and the triangular side LC6 is 8 in deep. All are 0.35 in R45, bonded with micro and glass, 2 plies outside and 1 inside. Keep the left rear console short for the left suitcase. The outlines between the printed corners are fitted shapes.
+  variants: [both]
+  requires: [f24.console-lc1, f16.sticks-pushrods, f17.pitch-trim, f22.panel-wiring, f23.carb-bracket]
+  components: [cover.consoles]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "outside of the tops LC2 and LC5"}
+    - {cloth: BID, plies: 1, where: "inside of the sides LC3, LC4 and LC6"}
+  sources:
+    - {doc: scan-1980, scan_pp: 160}
+    - {doc: scan-1980, scan_pp: 159}
+  changes:
+    - {cp: 33, lpc: 0, class: DES, status: verified, kind: community, note: "Do not bond the consoles in permanently until all the controls are installed."}
+  completion:
+    - LC2, LC3 and LC4 cut to the printed sizes (LC2 length noted as 30.6 or 30.8)
+    - Trim-lever hole in LC4 and throttle cutout in LC2
+    - LC5 and LC6 cut, the rear console left short for the suitcase
+    - Pieces bonded with micro and glass, 2 plies outside and 1 inside
+- id: f24.thigh-support
+  chapter: 24
+  title: Front thigh support and fuel-valve cover
+  summary: Cut two ribs 10.8 in long and 3.65 in tall at the front from 0.35 in R45, with a curved top drawn on a sheet this guide does not hold, and notch one for the fuel lines. Cut the floor, 17 by 12.3 in with a 5.6 by 4.5 in notch, heat it to about 280 F and bend it. The ribs stand 5.6 in apart with the fuel valve between. Bond and glass the ribs with one ply, then the floor with one ply inside and two outside, strong enough to stand on. Close the gap under the right console with one more ply. Make the fuel-valve cover from 0.025 in aluminium, 6.6 by 5.0 in, silicone it on with no screws, and mark OFF, LEFT and RIGHT.
+  variants: [both]
+  requires: [f24.consoles-left, f06.bond-panel, f21.plumbing]
+  components: [cover.thigh, cover.valve]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "ribs, bonded to the floor and panel"}
+    - {cloth: BID, plies: 1, where: "floor, inside"}
+    - {cloth: BID, plies: 2, where: "floor, outside, lapping the panel, bottom and consoles"}
+  sources:
+    - {doc: scan-1980, scan_pp: 160}
+  changes:
+    - {cp: 27, lpc: 0, class: MEO, status: verified, kind: community, note: "Close the gap under the right console beneath the thigh support with one ply of BID."}
+  completion:
+    - Two ribs cut, one notched for the fuel lines (curve is a fitted shape)
+    - Floor cut 17 by 12.3 in with the notch, heated and bent
+    - Ribs and floor bonded and glassed, 1 ply inside and 2 outside
+    - Gap under the right console closed
+    - Aluminium cover 6.6 by 5.0 in on with silicone, valve placard marked
+- id: f24.canard-cover
+  chapter: 24
+  title: Canard cover
+  summary: Fit a block of 2 in green urethane to the canard top and the fuselage, oversize, and tape the fuselage, nose, F28 and elevator slot. Bond it with wet micro to the sanded canard and carve it. Glass the outside with two plies of BID lapping about 1/4 in onto the canard. After the cure remove the canard, hollow the foam, and lay two plies of BID inside with flox corners. The plans print no size beyond the 2 in thickness, so the shape is a fitted outline. After paint seal the joint with a white silicone bead and cure it two to three days before the canard comes off. Not over four man-hours.
+  variants: [both]
+  requires: [f24.thigh-support, c12.align-canard, f13.nose-door]
+  components: [cover.canard]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 2, where: "outside, lapped about 1/4 in onto the canard"}
+    - {cloth: BID, plies: 2, where: "inside, on the bare foam, with flox corners"}
+  sources:
+    - {doc: scan-1980, scan_pp: 161}
+  changes:
+    - {cp: 35, lpc: 0, class: OPT, status: verified, kind: community, note: "Soft sponge rubber at the elevator tubes and RTV at the canard-to-fuselage joint cut the air leak."}
+  completion:
+    - Foam block bonded to the sanded canard top and carved
+    - Outside glassed with 2 plies and trimmed
+    - Canard removed, foam hollowed, inside glassed with 2 plies
+    - Silicone seal after paint noted
+- id: f24.gap-seal
+  chapter: 24
+  title: Seal between the wing and the centre section
+  summary: This is the seal that chapter 19 and chapter 23 point to. About half an inch of space separates the wing root from the centre-section spar; the printed fraction cannot be told from 3/4 at this scan resolution. Push urethane foam wedges in with micro on the wing side, let them cure, then sand them to shape and leave 1/16 in at the front. Remove the wing, lay one ply of BID round the foam, and seal the same way along the wing leading-edge and strake gap. After paint fill the small gap with silicone; lay release film on one side if the wings come off often. Air spilling here costs performance and spills engine cooling air.
+  variants: [both]
+  requires: [f24.canard-cover, f19.attach, f21.fairing-caps]
+  components: [cover.seal]
+  geometry_visible: true
+  materials:
+    - {cloth: BID, plies: 1, where: "round the foam wedges"}
+  sources:
+    - {doc: scan-1980, scan_pp: 161}
+    - {doc: scan-1980, scan_pp: 134}
+  completion:
+    - Foam wedges bonded in the 1/2 in gap on the wing side
+    - Wedges sanded to shape with 1/16 in left at the front
+    - One ply of BID laid round the foam with the wing off
+    - Silicone fill after paint noted

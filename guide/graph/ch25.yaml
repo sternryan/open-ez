@@ -1,0 +1,94 @@
+# Chapter 25 — finishing (plans pp. 25-1 to 25-8; scan pages 162-169). Printed: thicknesses (feather fill 0.02 to 0.03 in, primer 0.004 to 0.008 in, weave 0.009 in), fill depth bands (0.03 and 0.20 in),
+# the 70 F rule and the colour rule (p162): white only on the upper wing and canard. The chapter prints NO weight of filler, primer or paint. The finish is a surface layer in the lab, not new solids:
+# a fill layer, then primer grey, then white on the upper wing and canard. The grey is a representational colour; the book prints no airplane colour. The N26MS finish deltas are references (CP26 p3 against CP27 p1),
+# never added to a total, because the painted builder weights already contain their finish.
+- id: f25.inspect-repair
+  chapter: 25
+  title: Inspect the structure and make the sanding spline
+  summary: Make a 9 by 9 in sanding spline from four to six BID plies laid over waxed paper, with a foam pad and two handles. Then inspect and repair every structure before any filler goes on. A dip or hump over 1/16 in across more than 20 percent of the local chord needs a repair, and a 12 in ruler laid on the skin shows it. The holes and voids found here take the coarse fill in the next step. Work in a shop at 70 F or above. The finish colours are decided now, because the glass resin must stay under its softening temperature of 160 F and the surface of a black airplane on a hot day approaches 220 F.
+  variants: [both]
+  requires: [f24.gap-seal, f21.fairing-caps, f22.antennas, f23.root-rib]
+  components: []
+  geometry_visible: false
+  inspection: true
+  sources:
+    - {doc: scan-1980, scan_pp: 162}
+    - {doc: scan-1980, scan_pp: 163}
+    - {doc: scan-1980, scan_pp: 164}
+  changes:
+    - {cp: 16, lpc: 0, class: DES, status: verified, kind: community, note: "Check the surface contour with a feeler gauge: a gap over 0.006 in under a straightedge is too wavy."}
+  completion:
+    - Sanding spline made
+    - Every structure inspected, dips and humps over 1/16 in over 20 percent of the chord repaired
+    - Shop held at 70 F or above
+    - Colours chosen with the 160 F resin limit in mind
+- id: f25.coarse-fill
+  chapter: 25
+  title: Coarse fill
+  summary: Hand-sand the voids, tack-coat with epoxy and lump on dry micro, never Bondo, which is four times as heavy. Fill depth sets the method; under 0.03 in takes feather fill later, 0.03 to 0.20 in takes dry micro, and over 0.20 in takes a block of urethane foam with one or two plies of BID. Wait a full day at minimum before sanding the micro to contour with 36 to 60 grit and a hard block. The plans text prints 35 to 60 once and the sketch 36 to 60; this guide takes the sketch. Sand into the first skin ply only, in local spots up to 2 in across, under 5 percent of the surface.
+  variants: [both]
+  requires: [f25.inspect-repair]
+  components: [finish.fill]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 165}
+    - {doc: scan-1980, scan_pp: 166}
+  changes:
+    - {cp: 12, lpc: 0, class: DES, status: verified, kind: community, note: "Dry micro weighs about 3 lb per gallon, Bondo about 12; use dry micro."}
+  completion:
+    - Voids sanded and tack-coated, dry micro lumped on where 0.03 to 0.20 in deep
+    - Foam block and glass over any depth beyond 0.20 in
+    - Micro cured 24 hours and sanded to contour with 36 to 60 grit
+    - Skin sand-through kept under 5 percent of the surface
+- id: f25.feather-fill
+  chapter: 25
+  title: Feather fill
+  summary: Brush feather fill, with about 25 percent micro-balloons by volume, over the glass to 0.02 to 0.03 in, in a shop at 70 F or above, then sand it with 100 grit and a soft block. Over 95 percent of what goes on comes off as dust, so the finished layer is far thinner than the wet one. The glass weave is 0.009 in rough, which this layer buries. A later Canard Pusher bulletin gives 25 to 50 percent micro-balloons and a 1.5 gal cap for a VariEze, a ratio that differs from this page and is carried here as a conflict. Never put feather fill over primer.
+  variants: [both]
+  requires: [f25.coarse-fill]
+  components: [finish.fill]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 167}
+  changes:
+    - {cp: 21, lpc: 0, class: DES, status: conflict, kind: community, note: "Fog coat, 25 to 50 percent micro-balloons, 100 grit, two or three coats; this is a VariEze bulletin and differs from the plans ratio."}
+  completion:
+    - Feather fill brushed on at 70 F or above
+    - Layer sanded with 100 grit to 0.02 to 0.03 in
+    - Weave texture buried
+- id: f25.primer
+  chapter: 25
+  title: Primer
+  summary: Spray two coats of dark grey lacquer primer, built to 0.004 to 0.008 in, over the sanded feather fill. Sand with 220 grit and then wet with 320. The plans name the Dupont 70S, 100S and 3011S; a later bulletin says 131S replaces the discontinued 100S. The cockpit gets one primer coat and no fill, with the nose-gear window and the fuel gauges masked first. In the lab the whole airplane goes primer grey here, which is a representational colour.
+  variants: [both]
+  requires: [f25.feather-fill]
+  components: [finish.primer]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 168}
+    - {doc: scan-1980, scan_pp: 169}
+  changes:
+    - {cp: 41, lpc: 0, class: DES, status: verified, kind: community, note: "Dupont 131S replaces the discontinued 100S primer; keep one maker's system."}
+  completion:
+    - Two coats of primer sprayed to 0.004 to 0.008 in
+    - Sanded with 220 grit, then wet 320
+    - Cockpit primed once, nose-gear window and gauges masked
+- id: f25.paint-seals
+  chapter: 25
+  title: Paint, seals and marks
+  summary: Spray the finish coat. The rule is white only on the upper wing and canard, with no dark trim there and no stripe except at the canard tip; white absorbs about 10 percent of the sun and black about 95. Trim is allowed on the fuselage, the vertical winglet surfaces and the undersides. After the cure seal the gaps with white silicone and wait two days before any part is separated. No finish weight is printed. The N26MS parts weighed before and after finish give about +1.0 lb on the canopy, +0.275 lb on each aileron and +2.2 lb on each wing, as references only; the whole airplane's finish was never weighed. Then the N-numbers.
+  variants: [both]
+  requires: [f25.primer]
+  components: [finish.paint]
+  geometry_visible: true
+  sources:
+    - {doc: scan-1980, scan_pp: 162}
+    - {doc: scan-1980, scan_pp: 168}
+    - {doc: scan-1980, scan_pp: 169}
+  changes:
+    - {cp: 6, lpc: 0, class: DES, status: verified, kind: community, note: "White paint keeps the glass resin cool; a red stripe ran about 50 F hotter than the adjacent white."}
+  completion:
+    - Finish coat sprayed, white on the upper wing and canard only
+    - Gaps sealed with white silicone and cured two days before parts come apart
+    - N-numbers applied
+    - Finish weight recorded as not printed, with the N26MS deltas as references

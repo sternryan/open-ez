@@ -151,7 +151,7 @@ def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
         i
         for i in order
         if g.ops[i].chapter
-        not in (4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)
+        not in (4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)
         and i not in NEW_R30
         and not i.startswith("r30.elev-")
     ] == CANARD_ORDER
