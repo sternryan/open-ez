@@ -8,6 +8,7 @@ Regenerate after a deliberate kernel change:  .venv/bin/python -m tests.guide.te
 import json
 from pathlib import Path
 
+import cadquery as cq
 import numpy as np
 
 FIXTURE = (
@@ -105,7 +106,28 @@ def build() -> dict:
             for d in (-31.0, -30.0, 0.0, 15.0, 20.0, 22.0)
         ],
     }
+    from core import canopy_book as cbk
+
+    sec = fe.m26_section()["canopy"]
+    axis = (cbk.HINGE_AXIS[0], cbk.HINGE_AXIS[1])
+    pts26 = [[60.0, 0.0, 12.0], [90.0, -8.0, 9.0], [75.0, 8.0, 6.5], [112.0, 3.0, 11.5]]
+    canopy = {
+        "open": [
+            {
+                "pt": p,
+                "deg": d,
+                "out": list(
+                    cq.Vertex.makeVertex(*p)
+                    .rotate(cq.Vector(*axis[0]), cq.Vector(*axis[1]), -d)
+                    .toTuple()
+                ),
+            }
+            for p in pts26
+            for d in (0.0, 30.0, 90.0, 105.0)
+        ]
+    }
     return {
+        "canopy": canopy,
         "controls": controls,
         "elevators": {
             "hinge": hinge,
@@ -119,6 +141,7 @@ def build() -> dict:
             "elevators": ex["elevators"],
             "nose_gear": ng,
             "controls": ctl,
+            "canopy": sec,
         },
     }
 

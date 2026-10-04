@@ -679,7 +679,6 @@ def test_m25_installed_nodes_sit_in_the_airframe_frame(fuse_export):
 # ---- M2.6: the canopy in the lab export ----
 M26_SINGLE = {
     "canopy.plexi",
-    "canopy.frame",
     "canopy.blocks",
     "canopy.vent",
     "canopy.brace_tubes",
@@ -708,7 +707,11 @@ def test_m26_components_are_glb_nodes_named_by_component_id_with_part_children(
         for k in kids:
             assert parent[idx[f"{cid}.{k}"]] == cid
     graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
-    ids = M26_SINGLE | set(M26_GROUPS)
+    # the frame is a group like a fuselage part: its own solid (canopy.frame_part) and the five glass plies (canopy.frame.p1..p5)
+    assert parent[idx["canopy.frame_part"]] == "canopy.frame"
+    for k in range(1, 6):
+        assert parent[idx[f"canopy.frame.p{k}"]] == "canopy.frame"
+    ids = M26_SINGLE | set(M26_GROUPS) | {"canopy.frame"}
     assert ids <= set(graph.components)
     assert all(graph.components[c].fidelity != "no-geometry" for c in ids)
     # the single-part components carry their own mesh; the groups carry it in their children
@@ -733,3 +736,54 @@ def test_m26_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
     lo, hi = x_range("fuselage.rear_cover")
     assert lo == pytest.approx(117.0, abs=1e-3)  # the rear cut
     assert hi == pytest.approx(125.0, abs=1e-3)  # the firewall
+
+
+def test_m26_layup_section_names_every_canopy_part_the_five_plies_and_the_conflicts(
+    fuse_export,
+):
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m26"]
+    parts, nodes, c = ex["parts"], ex["nodes"], ex["canopy"]
+    assert all(r["fidelity"] == "representational" for r in parts.values())
+    assert all("(fitted shape" in r["label"] for r in parts.values())
+    # the five-ply schedule (p110): groove ply first, BID at 45, 2 BID + 2 UND on the sides, 3 BID front and rear
+    order = sorted(nodes, key=lambda k: nodes[k]["op_order"])
+    assert order == [f"canopy.frame.p{i}" for i in range(1, 6)]
+    assert [nodes[k]["cloth"] for k in order] == ["BID", "BID", "UND", "BID", "UND"]
+    assert [nodes[k]["region"] for k in order] == [
+        "overall",
+        "overall",
+        "sides",
+        "ends",
+        "sides",
+    ]
+    assert all(nodes[k]["op"] == "f18.glass-outside" for k in order)
+    assert all(
+        nodes[k]["orientation_deg"] == 45.0 for k in order if nodes[k]["cloth"] == "BID"
+    )
+    # the temporary blocks have their own window, the frame's three shapes follow one another
+    assert parts["canopy_blocks"]["show"] == {
+        "from": "f18.locate-blocks",
+        "until": "f18.carve-inside",
+    }
+    assert parts["canopy_frame_foam"]["show"]["until"] == "f18.carve-outside"
+    assert parts["canopy_frame_carved"]["show"]["from"] == "f18.carve-outside"
+    assert parts["canopy_frame"]["show"] == {"from": "f18.carve-inside"}
+    # pads carry their role; the conflicts are carried as data, never resolved
+    assert {parts[k]["role"] for k in parts if k.startswith("canopy_pads_")} == {
+        "hinge",
+        "latch",
+        "catch",
+    }
+    assert c["latch"]["derived_centres_fs"] == [104.75, 74.75, 44.75]
+    assert c["latch"]["printed_labels_fs"] == [104.0, 74.0, 44.0]
+    assert c["latch"]["gap_in"] == 0.75
+    assert c["front_cut"] == {"fs": 41.65, "datum_named": False}
+    assert (
+        c["hinge"]["max_open_deg"] == 105.0 and c["hinge"]["past_vertical_deg"] == 15.0
+    )
+    assert [(k["id"], k["height_in"], k["wl0"]) for k in c["checks"]] == [
+        ("A", 13.5, 23.0),
+        ("B", 12.3, 23.0),
+    ]

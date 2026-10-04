@@ -168,17 +168,9 @@ def m26_components() -> dict:
     frame (core.canopy_book). A single-part component is one node named by its id; a multi-part one is a group node of that id with children
     named ``<id>.<part>``. In default_components(); not in the canard-only cutaway export. canopy.blocks are the temporary blocks: workshop
     geometry, flagged extras.workshop (see WORKSHOP_COMPONENTS). The open pose is core.canopy_book.open_pose, applied by the lab."""
-    from core.canopy_book import COMPONENT_PARTS, build_canopy
+    from guide import fuselage_export
 
-    parts = {n: p.solid.val().copy() for n, p in build_canopy().items()}
-    out: dict = {}
-    for cid, names in COMPONENT_PARTS.items():
-        out[cid] = (
-            parts[names[0]]
-            if len(names) == 1
-            else {f"{cid}.{n}": parts[n] for n in names}
-        )
-    return out
+    return fuselage_export.m26_components()
 
 
 def _canard_layup(graph) -> dict:

@@ -821,6 +821,265 @@ def m25_section() -> dict:
     }
 
 
+# ---- chapter 18 (M2.6): the canopy ----------------------------------------------------------------------------------------------------
+M26_LIFT = (
+    "canopy.plexi",
+    "canopy.frame",
+    "canopy.pads",
+    "canopy.vent",
+    "canopy.brace_tubes",
+)  # the components that come off with the canopy at f18.cut-remove and sit upside down on the bench until it is hinged back on
+M26_BENCH_OPS = (
+    "f18.trim-plexi",
+    "f18.cut-remove",
+    "f18.vent-brace",
+)  # trimmed on the bench; lifted off at the cut; the last op on the bench
+M26_GLASS_OP = "f18.glass-outside"
+# a part's own window: the temporary blocks while the canopy rests on them and until it is carved inside; the frame's three shapes in turn
+M26_SHOW = {
+    "canopy.blocks": {"from": "f18.locate-blocks", "until": "f18.carve-inside"},
+    "canopy.frame_foam": {"from": "f18.foam-core", "until": "f18.carve-outside"},
+    "canopy.frame_carved": {"from": "f18.carve-outside", "until": "f18.carve-inside"},
+    "canopy.frame": {"from": "f18.carve-inside"},
+}
+M26_LABELS = {
+    "canopy.plexi": "Plexiglass canopy",
+    "canopy.frame_foam": "Foam frame, uncarved",
+    "canopy.frame_carved": "Foam frame, carved",
+    "canopy.frame": "Frame, inside carved",
+    "canopy.frame_glass": "Frame glass, five plies",
+    "canopy.blocks": "Temporary blocks",
+    "canopy.vent": "Vent block",
+    "canopy.brace_tubes": "Brace tubes",
+    "canopy.pads.pads_hinge": "Hinge pads, right, 4",
+    "canopy.pads.pads_latch": "Latch pads, left, 3",
+    "canopy.pads.pad_catch": "Safety-catch pad, left",
+    "canopy.hinges.hinge_fuselage": "Hinges, fuselage leaves",
+    "canopy.hinges.hinge_canopy": "Hinges, canopy leaves",
+    "canopy.latches": "Latches",
+    "canopy.safety_catch.sc1": "Safety catch SC-1",
+    "canopy.safety_catch.sc1_bolt": "Catch bolt",
+    "fuselage.front_cover": "Front cover",
+    "fuselage.rear_cover": "Rear cover",
+    "fuselage.door": "Door",
+}
+# the role of each pad kind (what the lab colours and names it by)
+M26_PAD_ROLE = {
+    "canopy.pads.pads_hinge": "hinge",
+    "canopy.pads.pads_latch": "latch",
+    "canopy.pads.pad_catch": "catch",
+}
+
+
+@lru_cache(maxsize=1)
+def _m26_built() -> dict:
+    """{component id: [(node, part name, FusePart)]} (core.canopy_book.COMPONENT_PARTS), plus the display-only frame shapes."""
+    from core import canopy_book as cbk
+
+    parts = cbk.build_canopy()
+    out: dict = {}
+    for cid, names in cbk.COMPONENT_PARTS.items():
+        out[cid] = [
+            (cid if len(names) == 1 else f"{cid}.{n}", n, parts[n]) for n in names
+        ]
+    return out
+
+
+@lru_cache(maxsize=1)
+def _m26_display() -> dict:
+    """The frame's uncarved and carved shapes and its five glass plies (display only: not part of core.canopy_book.build_canopy, which the
+    non-overlap checks read)."""
+    from core import canopy_book as cbk
+
+    rep = "representational"
+    return {
+        "foam": FusePart(
+            "frame_foam",
+            cbk.frame_foam(),
+            rep,
+            ("plans-1980:p109",),
+            "2 in urethane blocks fitted round the plexiglass before they are carved; taller and proud of the side; shape fitted",
+        ),
+        "carved": FusePart(
+            "frame_carved",
+            cbk.frame_carved(),
+            rep,
+            ("plans-1980:p109", "plans-1980:p110"),
+            "the foam carved to the fuselage contour, 0.06 in low for the glass; no pad pockets yet; shape fitted",
+        ),
+        "plies": cbk.frame_plies(),
+    }
+
+
+def m26_components() -> dict:
+    """glb components for chapter 18 (see guide.export_glb.m26_components): the canopy.frame node carries the frame with the five plies as
+    children (canopy.frame.p1..p5); the uncarved and carved frame shapes are their own display nodes."""
+    out: dict = {}
+    disp = _m26_display()
+    for cid, rows in _m26_built().items():
+        if cid == "canopy.frame":
+            out[cid] = (
+                rows[0][2].solid.val().copy(),
+                {
+                    f"{cid}.p{i + 1}": ply.val().copy()
+                    for i, ply in enumerate(disp["plies"])
+                },
+            )
+        elif len(rows) == 1:
+            out[cid] = rows[0][2].solid.val().copy()
+        else:
+            out[cid] = {node: part.solid.val().copy() for node, _n, part in rows}
+    out["canopy.frame_foam"] = disp["foam"].solid.val().copy()
+    out["canopy.frame_carved"] = disp["carved"].solid.val().copy()
+    return out
+
+
+def m26_section() -> dict:
+    """layup.json["fuselage"]["extras"]["m26"]: part rows (by lab part name) and the frame's five plies as ply rows, the canopy's hinge line and
+    open range, the A and B checks, the latch-pad conflict and the front cut's unnamed datum, as the lab states them."""
+    from core import canopy_book as cbk
+
+    ops_order = list(_op_index())
+    parts: dict[str, dict] = {}
+    nodes: dict[str, dict] = {}
+    disp = _m26_display()
+
+    def row(node, cid, fid, cite, label, lo, hi, turns):
+        r = {
+            "node": node,
+            "component": cid,
+            "fidelity": fid,
+            "label": label + (" (fitted shape)" if fid == "representational" else ""),
+            "cite": list(cite),
+            "fs_min": lo,
+            "fs_max": hi,
+            "fwd_normal": None,
+        }
+        if node in M26_SHOW:
+            r["show"] = dict(M26_SHOW[node])
+        if turns:
+            r["turns"] = True
+        if node in M26_PAD_ROLE:
+            r["role"] = M26_PAD_ROLE[node]
+        return r
+
+    for cid, rows in _m26_built().items():
+        for node, pname, part in rows:
+            lo, hi = _extent([part.solid])
+            parts[node.replace(".", "_")] = row(
+                node,
+                cid,
+                part.fidelity,
+                part.cite,
+                M26_LABELS[node],
+                lo,
+                hi,
+                pname in cbk.CANOPY_ATTACHED,
+            )
+    for key, node in (("foam", "canopy.frame_foam"), ("carved", "canopy.frame_carved")):
+        part = disp[key]
+        lo, hi = _extent([part.solid])
+        parts[node.replace(".", "_")] = row(
+            node,
+            "canopy.frame",
+            part.fidelity,
+            part.cite,
+            M26_LABELS[node],
+            lo,
+            hi,
+            True,
+        )
+    frame_part = _m26_built()["canopy.frame"][0][2]
+    glass_lo, glass_hi = _extent(disp["plies"])
+    parts["canopy_frame_glass"] = {
+        "node": "canopy.frame_glass",
+        "component": "canopy.frame",
+        "fidelity": "representational",
+        "label": M26_LABELS["canopy.frame_glass"]
+        + " (fitted shape; ply thickness exaggerated)",
+        "cite": list(frame_part.cite),
+        "fs_min": glass_lo,
+        "fs_max": glass_hi,
+        "fwd_normal": None,
+        "turns": True,
+    }
+    for i, (ply, (cloth, kind, deg)) in enumerate(
+        zip(disp["plies"], cbk.FRAME_PLY_SCHEDULE)
+    ):
+        x0, x1 = _extent([ply])
+        nodes[f"canopy.frame.p{i + 1}"] = {
+            "part": "canopy_frame_glass",
+            "component": "canopy.frame",
+            "op": M26_GLASS_OP,
+            "op_index": ops_order.index(M26_GLASS_OP),
+            "op_order": i + 1,
+            "order": i + 1,
+            "stack": i + 1,
+            "cloth": cloth,
+            "orientation_deg": deg if cloth == "BID" else 0.0,
+            "where": f"frame ply {i + 1}, {kind}" + (", groove ply" if i == 0 else ""),
+            "region": kind,
+            "fidelity": "representational",
+            "lower_bound": False,
+            "area_in2": round(
+                sum(s.Volume() for s in ply.solids().vals()) / cbk.FITTED_PLY_VIS_T, 3
+            ),
+            "fs_min": x0,
+            "fs_max": x1,
+        }
+    lat = G.canopy_latch_pad_centres_fs
+    labels = G.canopy_latch_labels_fs
+    fa, fb_ = G.canopy_check_a_wl, G.canopy_check_b_wl
+    return {
+        "parts": parts,
+        "nodes": nodes,
+        "canopy": {
+            "lift": list(M26_LIFT),
+            "wl_zero": -fb.z_of_wl(0.0),  # model y = W.L. - wl_zero
+            "hinge": {
+                "y": cbk.HINGE_Y,
+                "z": cbk.HINGE_Z,
+                "max_open_deg": cbk.MAX_OPEN_DEG,
+                "past_vertical_deg": G.canopy_open_past_vertical_deg,
+                "note": "the opening arc is representational (the plans give the hinge line and about 15 deg past vertical, p115)",
+            },
+            "checks": [
+                {
+                    "id": "A",
+                    "fs": cbk.FITTED_HEADREST_FS - 6.0,
+                    "fs_status": "fitted",
+                    "wl0": G.canopy_check_datum_wl,
+                    "wl1": fa,
+                    "min": True,
+                    "height_in": G.canopy_check_a_min_in,
+                },
+                {
+                    "id": "B",
+                    "fs": G.canopy_check_b_fs,
+                    "fs_status": "book",
+                    "wl0": G.canopy_check_datum_wl,
+                    "wl1": fb_,
+                    "min": False,
+                    "height_in": G.canopy_check_b_in,
+                },
+            ],
+            "latch": {
+                "derived_centres_fs": [round(c, 4) for c in lat],
+                "printed_labels_fs": list(labels),
+                "gap_in": round(max(abs(a - b) for a, b in zip(lat, labels)), 4),
+            },
+            "front_cut": {"fs": G.canopy_front_cut_fs, "datum_named": False},
+            "rear_cut_fs": G.canopy_rear_cut_fs,
+            "pads": {
+                "left_aft_edge_fwd_of_cut": list(G.canopy_pad_aft_edge_left_in),
+                "right_aft_edge_fwd_of_cut": list(G.canopy_pad_aft_edge_right_in),
+                "length_in": G.canopy_pad_length_in,
+                "catch_fs": G.canopy_safety_catch_fs,
+            },
+        },
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -908,6 +1167,10 @@ def layup_section() -> dict:
         "bank_note": "positive = left bank, the right side up (core.landing_gear_book.bank_pose); plans-1980:p46",
         "gear_marks": gh,
         "excluded": excluded + _ch9_excluded(),
-        "extras": {**extras_section(), "m25": m25_section()},
+        "extras": {
+            **extras_section(),
+            "m25": m25_section(),
+            "m26": m26_section(),
+        },
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

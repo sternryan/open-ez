@@ -101,7 +101,11 @@ def test_plexi_is_68_long_with_the_nose_5_aft_of_the_panel(parts):
 
 
 def _top_at(part, fs):
-    slab = cq.Workplane("XY").box(0.02, 1.0, 80, centered=(True, True, False)).translate((fs, 0, -30))
+    slab = (
+        cq.Workplane("XY")
+        .box(0.02, 1.0, 80, centered=(True, True, False))
+        .translate((fs, 0, -30))
+    )
     return part.solid.intersect(slab).val().BoundingBox().zmax
 
 
@@ -143,7 +147,9 @@ def test_safety_catch_is_at_fs_56_75_on_the_left(parts):
         assert (c.xmin + c.xmax) / 2 == pytest.approx(56.75, abs=1e-6), n
         assert c.ymax < 0, n
     pad = bb(parts["pad_catch"].solid)
-    assert (pad.xmin + pad.xmax) / 2 == pytest.approx(56.75, abs=1e-6)  # 117 - 59 - 1.25
+    assert (pad.xmin + pad.xmax) / 2 == pytest.approx(
+        56.75, abs=1e-6
+    )  # 117 - 59 - 1.25
 
 
 def test_hinges_are_on_the_right_and_latches_door_and_catch_on_the_left(parts):
@@ -162,15 +168,21 @@ def test_latch_fittings_are_at_the_derived_centres_not_the_printed_labels(parts)
         for s in parts["latches"].solid.solids().vals()
         if s.BoundingBox().xmax - s.BoundingBox().xmin < 2.0
     ]
-    centres = sorted((s.BoundingBox().xmin + s.BoundingBox().xmax) / 2 for s in fittings)
-    assert centres == pytest.approx([44.75, 74.75, 104.75])  # the p117 labels read 44, 74, 104
+    centres = sorted(
+        (s.BoundingBox().xmin + s.BoundingBox().xmax) / 2 for s in fittings
+    )
+    assert centres == pytest.approx(
+        [44.75, 74.75, 104.75]
+    )  # the p117 labels read 44, 74, 104
     rods = [
         s
         for s in parts["latches"].solid.solids().vals()
         if s.BoundingBox().xmax - s.BoundingBox().xmin > 20
     ]
     assert len(rods) == 2
-    assert all(s.BoundingBox().xmax - s.BoundingBox().xmin == pytest.approx(28.4) for s in rods)
+    assert all(
+        s.BoundingBox().xmax - s.BoundingBox().xmin == pytest.approx(28.4) for s in rods
+    )
 
 
 def test_door_is_4_3_by_3_7_on_the_left(parts):
@@ -211,13 +223,17 @@ def test_no_canopy_solid_overlaps_the_fuselage_or_another_canopy_part(parts, fus
     names = list(parts)
     for i, a in enumerate(names):
         for b in names[i + 1 :]:
-            assert volume(comp(parts[a].solid).intersect(comp(parts[b].solid))) < 1e-4, (a, b)
+            assert (
+                volume(comp(parts[a].solid).intersect(comp(parts[b].solid))) < 1e-4
+            ), (a, b)
 
 
 def test_canopy_clears_the_roll_over_structure(parts, fus):
     """The frame bears on the roll-over's canopy insert (ch8) only in the real airplane; here nothing touches it."""
     for n in ("plexi", "frame", "brace_tubes", "vent"):
-        d = BRepExtrema_DistShapeShape(comp(parts[n].solid).wrapped, comp(fus["rollover"].solid).wrapped)
+        d = BRepExtrema_DistShapeShape(
+            comp(parts[n].solid).wrapped, comp(fus["rollover"].solid).wrapped
+        )
         d.Perform()
         assert d.Value() > 0.5, n
 
@@ -234,7 +250,14 @@ def test_open_pose_turns_the_canopy_about_the_right_hinge_line(parts):
     assert b.zmax == pytest.approx(cb.HINGE_Z + (cb.HINGE_Y - c.ymin), abs=0.05)
     assert b.ymin > cb.HINGE_Y - 1.5  # nothing is left over the fuselage
     # parts that stay on the fuselage do not move
-    for n in ("hinge_fuselage", "sc1_bolt", "door", "front_cover", "rear_cover", "blocks"):
+    for n in (
+        "hinge_fuselage",
+        "sc1_bolt",
+        "door",
+        "front_cover",
+        "rear_cover",
+        "blocks",
+    ):
         assert bb(o90[n].solid).xmin == pytest.approx(bb(pts[n]).xmin)
         assert bb(o90[n].solid).ymax == pytest.approx(bb(pts[n]).ymax)
         assert bb(o90[n].solid).zmax == pytest.approx(bb(pts[n]).zmax)
@@ -253,7 +276,12 @@ def test_open_pose_keeps_the_hinge_line_fixed():
     # the pins are the hinge line and stay put in every pose
     for deg in (0.0, 60.0, cb.MAX_OPEN_DEG):
         pins = cb.build_canopy(deg)["hinge_fuselage"].solid
-        cyl = [s for s in pins.solids().vals() if s.BoundingBox().ymax - s.BoundingBox().ymin < 0.5 and s.BoundingBox().zmax - s.BoundingBox().zmin < 0.5]
+        cyl = [
+            s
+            for s in pins.solids().vals()
+            if s.BoundingBox().ymax - s.BoundingBox().ymin < 0.5
+            and s.BoundingBox().zmax - s.BoundingBox().zmin < 0.5
+        ]
         assert len(cyl) == 2
         for s in cyl:
             c = s.Center()
@@ -261,7 +289,9 @@ def test_open_pose_keeps_the_hinge_line_fixed():
 
 
 def test_open_pose_range_and_the_15_deg_past_vertical():
-    assert cb.MAX_OPEN_DEG == 105.0  # 90 + the printed 15 degrees past vertical (representational arc)
+    assert (
+        cb.MAX_OPEN_DEG == 105.0
+    )  # 90 + the printed 15 degrees past vertical (representational arc)
     with pytest.raises(ValueError):
         cb.open_pose(cq.Workplane("XY").box(1, 1, 1), 106.0)
     with pytest.raises(ValueError):
@@ -281,7 +311,11 @@ def test_fitted_constants_carry_the_comment_on_the_statement():
             seen += 1
             toks = [
                 t
-                for t in tokenize.generate_tokens(io.StringIO("\n".join(lines[node.lineno - 1 : node.end_lineno])).readline)
+                for t in tokenize.generate_tokens(
+                    io.StringIO(
+                        "\n".join(lines[node.lineno - 1 : node.end_lineno])
+                    ).readline
+                )
                 if t.type == tokenize.COMMENT
             ]
             assert any("fitted, not book" in t.string for t in toks), node.targets[0].id
@@ -292,3 +326,43 @@ def test_no_hard_coded_fuselage_numbers_for_the_longeron_or_half_width():
     src = (REPO / "core" / "canopy_book.py").read_text()
     for banned in ("11.5", "12.3", "5.6", "8.07", "9.47"):
         assert banned not in src, banned
+
+
+# ---- the frame's display shapes: the uncarved foam and the five glass plies (not part of build_canopy) ----
+def test_foam_is_taller_and_proud_of_the_carved_frame_and_both_are_valid():
+    foam, carved = bb(cb.frame_foam()), bb(cb.frame_carved())
+    assert foam.zmax > carved.zmax + 0.4 and foam.ymax > carved.ymax + 0.3
+    band, blocks = (
+        bb(cb._ring()),
+        bb(cb._ring(cb.FITTED_FOAM_EXTRA_H, cb.FITTED_FOAM_PROUD)),
+    )
+    assert blocks.zmax == pytest.approx(band.zmax + cb.FITTED_FOAM_EXTRA_H, abs=1e-6)
+    for w in (cb.frame_foam(), cb.frame_carved()):
+        assert all(s.isValid() for s in w.solids().vals())
+
+
+def test_five_glass_plies_follow_the_p110_schedule_and_sit_on_the_frame_not_inside_it(
+    parts,
+):
+    plies = cb.frame_plies()
+    assert [(c, k) for c, k, _d in cb.FRAME_PLY_SCHEDULE] == [
+        ("BID", "overall"),
+        ("BID", "overall"),
+        ("UND", "sides"),
+        ("BID", "ends"),
+        ("UND", "sides"),
+    ]
+    assert len(plies) == 5 and all(vol_of(p) > 1.0 for p in plies)
+    ring = cb._ring()
+    for k, p in enumerate(plies):
+        for s in p.solids().vals():
+            assert s.isValid(), k
+        # nothing of a ply is inside the frame band it lies on (the shell is grown outward)
+        assert vol_of(p.intersect(ring)) < 1e-6, k
+    # the side UND stops short of both ends (3 in lap onto the front and rear BID), the end BID covers them
+    sides, ends = bb(plies[2]), bb(plies[3])
+    assert sides.xmin == pytest.approx(cb.FITTED_ENDS_FS[0] - cb.UND_LAP_IN, abs=1e-3)
+    assert sides.xmax == pytest.approx(cb.FITTED_ENDS_FS[1] + cb.UND_LAP_IN, abs=1e-3)
+    assert ends.xmin < 42.0 and ends.xmax == pytest.approx(117.0, abs=1e-3)
+    # stacked outward: each ply starts where the one under it ends
+    assert bb(plies[1]).zmax > bb(plies[0]).zmax

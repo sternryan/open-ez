@@ -37,13 +37,17 @@ _P108, _P109, _P110, _P111, _P112, _P113, _P114, _P115, _P116, _P117 = (
 # Fitted, not book. Each is a stand-in; none enters config, GEOMETRY_PROVENANCE or a ledger readout.
 FITTED_PLEXI_T = 0.125  # fitted, not book: plexiglass thickness (not in the plans)
 FITTED_PLEXI_INSET = 0.6  # fitted, not book: bubble base sits this far inside the side's outer face (the glass frame takes the rest)
-FITTED_FRAME_H = 1.0  # fitted, not book: height of the foam and glass sill band above the longerons
+FITTED_FRAME_H = (
+    1.0  # fitted, not book: height of the foam and glass sill band above the longerons
+)
 FITTED_SUPER_N = 3.0  # fitted, not book: section squareness (2 = ellipse); picked so the bubble clears the roll-over structure
 FITTED_HEADREST_FS = 88.0  # fitted, not book: headrest station (chapter 26); only sets where check A is taken
 FITTED_TOP_MARGIN_A = 0.3  # fitted, not book: bubble top above the check A minimum, so A is met with margin
 FITTED_NOSE_TOP_WL = 25.0  # fitted, not book: bubble top at the nose tip
 FITTED_NOSE_HALF_W = 1.5  # fitted, not book: bubble half width at the nose tip
-FITTED_NOSE_BLEND_FS = 62.0  # fitted, not book: station where the plan outline reaches full width
+FITTED_NOSE_BLEND_FS = (
+    62.0  # fitted, not book: station where the plan outline reaches full width
+)
 FITTED_TOP_KNOTS = (
     (52.0, 31.0),
     (66.0, 35.9),
@@ -51,29 +55,63 @@ FITTED_TOP_KNOTS = (
 )  # fitted, not book: bubble top (FS, WL) between the printed constraints
 FITTED_AFT_END_TOP_WL = 30.0  # fitted, not book: bubble top at its aft end (the rear edge trim line cants aft, p108)
 FITTED_ARCH_T = 0.6  # fitted, not book: extra frame thickness outside the glass at the rear arch (equals the frame band width)
-FITTED_FRONT_COVER_H = (1.0, 2.5)  # fitted, not book: front cover height above the sill at F28 and at the front cut
-FITTED_REAR_COVER_H = (7.0, 0.5)  # fitted, not book: rear cover height above the sill at the rear cut and at the firewall
-FITTED_PAD_H = FITTED_FRAME_H  # fitted, not book: pads fill the frame band to its full height
+FITTED_FRONT_COVER_H = (
+    1.0,
+    2.5,
+)  # fitted, not book: front cover height above the sill at F28 and at the front cut
+FITTED_REAR_COVER_H = (
+    7.0,
+    0.5,
+)  # fitted, not book: rear cover height above the sill at the rear cut and at the firewall
+FITTED_PAD_H = (
+    FITTED_FRAME_H  # fitted, not book: pads fill the frame band to its full height
+)
 FITTED_HINGE_PIN_R = 0.15  # fitted, not book: hinge pin radius
 FITTED_HINGE_LEAF_T = 0.0625  # fitted, not book: hinge leaf thickness
 FITTED_HINGE_LEAF_H = 1.5  # fitted, not book: hinge leaf height each side of the pin
 FITTED_LATCH_LEN = 1.5  # fitted, not book: fore-aft length of each C7/C8 fitting
-FITTED_LATCH_LEG = (0.45, 0.6)  # fitted, not book: C7/C8 leg and height (printed 0.45 and 0.6 on p117), placed on the frame
-FITTED_LATCH_ROD_R = 5 / 32  # fitted, not book: C6 tube radius (printed 5/16 OD); stand-off from the frame is fitted
-FITTED_LATCH_ROD_LEN = 28.4  # fitted, not book: C6 length as printed (p117), centred between two latches
-FITTED_LATCH_ROD_OUT = 0.9  # fitted, not book: C6 stand-off outboard of the frame outer face
+FITTED_LATCH_LEG = (
+    0.45,
+    0.6,
+)  # fitted, not book: C7/C8 leg and height (printed 0.45 and 0.6 on p117), placed on the frame
+FITTED_LATCH_ROD_R = (
+    5 / 32
+)  # fitted, not book: C6 tube radius (printed 5/16 OD); stand-off from the frame is fitted
+FITTED_LATCH_ROD_LEN = (
+    28.4  # fitted, not book: C6 length as printed (p117), centred between two latches
+)
+FITTED_LATCH_ROD_OUT = (
+    0.9  # fitted, not book: C6 stand-off outboard of the frame outer face
+)
 FITTED_SC1_LEN = 2.5  # fitted, not book: SC-1 plate fore-aft length (pad length)
-FITTED_SC1_DROP = 1.2  # fitted, not book: SC-1 hangs this far below the sill to reach the catch bolt
-FITTED_SC1_BOLT_DROP = 0.8  # fitted, not book: catch bolt this far below the longeron WL
+FITTED_SC1_DROP = (
+    1.2  # fitted, not book: SC-1 hangs this far below the sill to reach the catch bolt
+)
+FITTED_SC1_BOLT_DROP = (
+    0.8  # fitted, not book: catch bolt this far below the longeron WL
+)
 FITTED_SC1_BOLT_R = 0.125  # fitted, not book: catch bolt radius
-FITTED_SC1_BOLT_OUT = 0.6  # fitted, not book: catch bolt protrudes this far out of the side
-FITTED_DOOR_FS = 3.0 + G.fs_panel  # fitted, not book: p116 "3 in aft of the instrument panel", panel station itself in conflict; low confidence
-FITTED_DOOR_TOP_BELOW = 3.0  # fitted, not book: p116 "3 in below the top of the longeron", hand digit
+FITTED_SC1_BOLT_OUT = (
+    0.6  # fitted, not book: catch bolt protrudes this far out of the side
+)
+FITTED_DOOR_FS = (
+    3.0 + G.fs_panel
+)  # fitted, not book: p116 "3 in aft of the instrument panel", panel station itself in conflict; low confidence
+FITTED_DOOR_TOP_BELOW = (
+    3.0  # fitted, not book: p116 "3 in below the top of the longeron", hand digit
+)
 FITTED_DOOR_T = 0.1  # fitted, not book: door plate thickness (printed .025 aluminium, thickened to show)
 FITTED_VENT_H = 0.8  # fitted, not book: vent block depth under the bubble roof
-FITTED_VENT_FS = (52.0, 58.0)  # fitted, not book: vent block fore and aft stations (p112 gives clear area 4.5 by 6 only)
+FITTED_VENT_FS = (
+    52.0,
+    58.0,
+)  # fitted, not book: vent block fore and aft stations (p112 gives clear area 4.5 by 6 only)
 FITTED_VENT_W = 4.5  # fitted, not book: vent width (printed 4.5 clear, medium)
-FITTED_BRACE_FS = (90.0, 100.0, 104.5)  # fitted, not book: front tube and aft pair; the derived front tube FS 82 hits the roll-over (FS 79 to 83.6)
+FITTED_BRACE_FS = (
+    90.0,
+    100.0,
+    104.5,
+)  # fitted, not book: front tube and aft pair; the derived front tube FS 82 hits the roll-over (FS 79 to 83.6)
 FITTED_BRACE_WL = 30.0  # fitted, not book: brace tube height
 FITTED_BRACE_R = 5 / 32  # fitted, not book: printed 5/16 OD arrow shaft
 FITTED_BLOCKS_FS = (
@@ -82,16 +120,32 @@ FITTED_BLOCKS_FS = (
     (98.0, 102.0),
     (106.0, 110.0),
 )  # fitted, not book: four temporary blocks (full-size outlines are on p108 only)
+FITTED_SKIN_STANDOFF = 0.4  # fitted, not book: the lab draws the fuselage skin plies about 0.36 in outside the side's face (guide.fuselage_export), so fittings on the side stand off by this
+FITTED_FOAM_EXTRA_H = 1.2  # fitted, not book: the uncarved foam blocks stand this far above the finished sill band (2 in blocks, p109)
+FITTED_FOAM_PROUD = 0.5  # fitted, not book: the uncarved foam stands this far outside the fuselage side before it is carved to the contour
+FITTED_PLY_VIS_T = 0.07  # fitted, not book: drawn thickness of one glass ply (visual only; a cured BID ply is about 0.01 in)
+FITTED_ENDS_FS = (
+    52.0,
+    106.0,
+)  # fitted, not book: where the front and rear regions of the frame end and begin (BID front and rear, UND sides)
 FITTED_BLOCK_W = 1.0  # fitted, not book: block width inboard of the side
 FITTED_BLOCK_H = 2.0  # fitted, not book: block height above the longerons
 
+UND_LAP_IN = 3.0  # book: p110 the side UND laps 3 in onto the front and rear BID
+
 # derived from the printed values (not fitted)
-NOSE_FS = G.fs_panel + 5.0  # p109: nose tip 5.0 in aft of the instrument panel (FS 44.75)
+NOSE_FS = (
+    G.fs_panel + 5.0
+)  # p109: nose tip 5.0 in aft of the instrument panel (FS 44.75)
 PLEXI_AFT_FS = NOSE_FS + G.canopy_plexi_length_in  # p108: 68 in long (FS 112.75)
 _SIDE_T = G.side_panel_thickness  # the side's outer face is half_width + this
 HINGE_Y = (
-    max(half_width(f) for f in (G.canopy_hinge_spans_fs[1][0], G.canopy_hinge_spans_fs[1][1]))
+    max(
+        half_width(f)
+        for f in (G.canopy_hinge_spans_fs[1][0], G.canopy_hinge_spans_fs[1][1])
+    )
     + _SIDE_T
+    + FITTED_SKIN_STANDOFF
     + FITTED_HINGE_LEAF_T
     + FITTED_HINGE_PIN_R
 )  # the straight hinge line stands off the widest hinge station; the aft hinge leaf stands further off
@@ -140,14 +194,19 @@ def top_wl(fs: float) -> float:
     return float(_TOP(fs))
 
 
-def _arc(w: float, h: float, base_z: float, reverse: bool = False) -> list[tuple[float, float]]:
+def _arc(
+    w: float, h: float, base_z: float, reverse: bool = False
+) -> list[tuple[float, float]]:
     """Half super-ellipse over the sill, from the right base (+w) over the top to the left base (-w)."""
     pts = []
     for i in range(_N_ARC + 1):
         th = math.pi * i / _N_ARC
         c, s = math.cos(th), math.sin(th)
         pts.append(
-            (w * math.copysign(abs(c) ** (2 / FITTED_SUPER_N), c), base_z + h * abs(s) ** (2 / FITTED_SUPER_N))
+            (
+                w * math.copysign(abs(c) ** (2 / FITTED_SUPER_N), c),
+                base_z + h * abs(s) ** (2 / FITTED_SUPER_N),
+            )
         )
     return pts[::-1] if reverse else pts
 
@@ -176,7 +235,9 @@ def _loft_stations() -> list[float]:
     n = int((PLEXI_AFT_FS - NOSE_FS) / _LOFT_STEP)
     fs = {NOSE_FS + i * _LOFT_STEP for i in range(n)} | {PLEXI_AFT_FS}
     fs.update(x for x, _h in plan_bend_points() if NOSE_FS < x < PLEXI_AFT_FS)
-    fs.update((FITTED_HEADREST_FS - 6.0, G.canopy_check_b_fs))  # the stations of checks A and B, so the ruled bubble meets them exactly
+    fs.update(
+        (FITTED_HEADREST_FS - 6.0, G.canopy_check_b_fs)
+    )  # the stations of checks A and B, so the ruled bubble meets them exactly
     return sorted(fs)
 
 
@@ -188,23 +249,19 @@ def _loft(stations: list[float], pts_fn) -> cq.Workplane:
             wp = wp.workplane(offset=fs - prev)
             prev = fs
         wp = wp.polyline(pts_fn(fs)).close()
-    return wp.loft(ruled=True, combine=True)  # ruled: the base edge follows the plan polyline exactly
+    return wp.loft(
+        ruled=True, combine=True
+    )  # ruled: the base edge follows the plan polyline exactly
 
 
 def _compound(solids: list[cq.Workplane]) -> cq.Workplane:
     return cq.Workplane("XY").add(cq.Compound.makeCompound([w.val() for w in solids]))
 
 
-def _plan_prism(
-    pts: list[tuple[float, float]], z0: float, z1: float
-) -> cq.Workplane:
+def _plan_prism(pts: list[tuple[float, float]], z0: float, z1: float) -> cq.Workplane:
     """Plan polygon (FS, y) extruded between two z levels."""
     return (
-        cq.Workplane("XY")
-        .workplane(offset=z0)
-        .polyline(pts)
-        .close()
-        .extrude(z1 - z0)
+        cq.Workplane("XY").workplane(offset=z0).polyline(pts).close().extrude(z1 - z0)
     )
 
 
@@ -224,7 +281,9 @@ def _side_ring(a: float, b: float, y_of) -> list[tuple[float, float]]:
     return right + left
 
 
-def _band_poly(f0: float, f1: float, y_in, y_out, sign: float) -> list[tuple[float, float]]:
+def _band_poly(
+    f0: float, f1: float, y_in, y_out, sign: float
+) -> list[tuple[float, float]]:
     """A side strip (plan view) between two lines, y_in and y_out are functions of FS."""
     st = _stations(f0, f1)
     a = [(f, sign * y_in(f)) for f in st]
@@ -233,7 +292,9 @@ def _band_poly(f0: float, f1: float, y_in, y_out, sign: float) -> list[tuple[flo
 
 
 def _frame_band_in(fs: float) -> float:
-    return outer_y(fs) - FITTED_PLEXI_INSET  # the bubble's outer face at the sill, same as plexi_half_width past the nose blend
+    return (
+        outer_y(fs) - FITTED_PLEXI_INSET
+    )  # the bubble's outer face at the sill, same as plexi_half_width past the nose blend
 
 
 # ---- the solids ----------------------------------------------------------------------------------------------
@@ -242,29 +303,98 @@ def plexi() -> cq.Workplane:
     return _loft(_loft_stations(), section_points)
 
 
-def frame_ring() -> cq.Workplane:
-    """Foam and glass sill band round the bubble, plus the rear arch. Pads are cut out of it by ``frame``."""
+def _ring(h_extra: float = 0.0, proud: float = 0.0) -> cq.Workplane:
+    """The sill band round the bubble's footprint, ``h_extra`` taller and ``proud`` further out (the uncarved foam, the glass plies)."""
     f_front = G.canopy_front_cut_fs
-    outer = _plan_prism(_side_ring(f_front, PLEXI_AFT_FS, outer_y), Z_TOP, Z_TOP + FITTED_FRAME_H)
+    outer = _plan_prism(
+        _side_ring(f_front, PLEXI_AFT_FS, lambda f: outer_y(f) + proud),
+        Z_TOP,
+        Z_TOP + FITTED_FRAME_H + h_extra,
+    )
     # the bubble footprint (plan), nose rounded; extended past the aft end so the cut is clean
-    st = _loft_stations()  # the same stations as the bubble, so the cut follows its ruled base edge exactly
+    st = (
+        _loft_stations()
+    )  # the same stations as the bubble, so the cut follows its ruled base edge exactly
     right = [(f, plexi_half_width(f)) for f in st]
-    foot = right + [(PLEXI_AFT_FS + 1.0, right[-1][1]), (PLEXI_AFT_FS + 1.0, -right[-1][1])] + [
-        (f, -plexi_half_width(f)) for f in reversed(st)
-    ]
-    inner = _plan_prism(foot, Z_TOP - 0.5, Z_TOP + FITTED_FRAME_H + 0.5)
-    ring = outer.cut(inner)
-    arch = _loft([PLEXI_AFT_FS, G.canopy_rear_cut_fs], _arch_points)
-    return ring.union(arch)
+    foot = (
+        right
+        + [(PLEXI_AFT_FS + 1.0, right[-1][1]), (PLEXI_AFT_FS + 1.0, -right[-1][1])]
+        + [(f, -plexi_half_width(f)) for f in reversed(st)]
+    )
+    inner = _plan_prism(foot, Z_TOP - 0.5, Z_TOP + FITTED_FRAME_H + h_extra + 0.5)
+    return outer.cut(inner)
 
 
-def _arch_points(fs: float) -> list[tuple[float, float]]:
+def _arch(extra: float = 0.0) -> cq.Workplane:
+    return _loft(
+        [PLEXI_AFT_FS, G.canopy_rear_cut_fs], lambda fs: _arch_points(fs, extra)
+    )
+
+
+def _arch_points(fs: float, extra: float = 0.0) -> list[tuple[float, float]]:
     """Rear arch section: the glass section at the aft end, thickened outside, base width following the fuselage side."""
     w = outer_y(fs) - FITTED_PLEXI_INSET
     h = top_wl(PLEXI_AFT_FS) - G.canopy_check_datum_wl
-    outer = _arc(w + FITTED_ARCH_T, h + FITTED_ARCH_T, Z_TOP)
+    outer = _arc(w + FITTED_ARCH_T + extra, h + FITTED_ARCH_T + extra, Z_TOP)
     inner = _arc(w - FITTED_PLEXI_T, h - FITTED_PLEXI_T, Z_TOP, reverse=True)
     return outer + inner
+
+
+def frame_ring() -> cq.Workplane:
+    """Foam and glass sill band round the bubble, plus the rear arch. Pads are cut out of it by ``frame``."""
+    return _ring().union(_arch())
+
+
+def frame_foam() -> cq.Workplane:
+    """The foam frame before it is carved (f18.foam-core): taller and proud of the fuselage side, as fitted blocks."""
+    return _ring(FITTED_FOAM_EXTRA_H, FITTED_FOAM_PROUD).union(_arch(FITTED_FOAM_PROUD))
+
+
+# the five-ply schedule (p110 box): 1 BID overall, 2 BID overall, 3 UND sides, 4 BID front and rear, 5 UND sides (all BID at 45 deg)
+FRAME_PLY_SCHEDULE = (
+    ("BID", "overall", 45.0),
+    ("BID", "overall", 45.0),
+    ("UND", "sides", 0.0),
+    ("BID", "ends", 45.0),
+    ("UND", "sides", 0.0),
+)
+
+
+def _fs_slab(f0: float, f1: float) -> cq.Workplane:
+    return (
+        cq.Workplane("XY")
+        .box(f1 - f0, 200.0, 80.0, centered=False)
+        .translate((f0, -100.0, Z_TOP - 5.0))
+    )
+
+
+def _ply_region(kind: str) -> cq.Workplane | None:
+    front, rear = FITTED_ENDS_FS
+    if kind == "overall":
+        return None
+    if kind == "sides":  # the side UND laps 3 in onto the front and rear
+        return _fs_slab(front - UND_LAP_IN, rear + UND_LAP_IN)
+    return _fs_slab(0.0, front).union(_fs_slab(rear, 200.0))
+
+
+def frame_plies() -> list[cq.Workplane]:
+    """The five glass plies over the frame, in lay order: thin shells grown outward from the sill band's top and the rear arch's outer face,
+    each FITTED_PLY_VIS_T thick (drawn, not to scale), restricted to the region the schedule gives it."""
+    env = [
+        _ring(k * FITTED_PLY_VIS_T).union(_arch(k * FITTED_PLY_VIS_T))
+        for k in range(len(FRAME_PLY_SCHEDULE) + 1)
+    ]
+    out = []
+    for k, (_cloth, kind, _deg) in enumerate(FRAME_PLY_SCHEDULE, start=1):
+        shell = env[k].cut(env[k - 1])
+        reg = _ply_region(kind)
+        out.append(shell if reg is None else shell.intersect(reg))
+    return out
+
+
+def frame_carved() -> cq.Workplane:
+    """The frame carved to the fuselage contour, before the inside is carved (f18.carve-outside): the band and arch with no pad pockets."""
+    return frame_ring()
 
 
 def _pad_box(fs_aft_edge_fwd: float, left: bool) -> cq.Workplane:
@@ -322,7 +452,9 @@ def blocks() -> cq.Workplane:
     out = []
     for f0, f1 in FITTED_BLOCKS_FS:
         for sg in (1.0, -1.0):
-            poly = _band_poly(f0, f1, lambda f: half_width(f) - FITTED_BLOCK_W, half_width, sg)
+            poly = _band_poly(
+                f0, f1, lambda f: half_width(f) - FITTED_BLOCK_W, half_width, sg
+            )
             out.append(_plan_prism(poly, Z_TOP, Z_TOP + FITTED_BLOCK_H))
     return _compound(out)
 
@@ -332,10 +464,15 @@ def vent() -> cq.Workplane:
     f0, f1 = FITTED_VENT_FS
     r = FITTED_VENT_W / 2
     c = f1 - r
-    arc = [(c + r * math.cos(a), r * math.sin(a)) for a in np.radians(np.linspace(-150, 150, 25))]
+    arc = [
+        (c + r * math.cos(a), r * math.sin(a))
+        for a in np.radians(np.linspace(-150, 150, 25))
+    ]
     prism = _plan_prism([(f0, 0.0), *arc], Z_TOP, Z_TOP + 60.0)
     inner_filled = _inner_filled()
-    return prism.intersect(inner_filled).cut(inner_filled.translate((0, 0, -FITTED_VENT_H)))
+    return prism.intersect(inner_filled).cut(
+        inner_filled.translate((0, 0, -FITTED_VENT_H))
+    )
 
 
 def _inner_filled() -> cq.Workplane:
@@ -369,7 +506,10 @@ def hinge_fuselage() -> cq.Workplane:
     out = []
     for f0, f1 in G.canopy_hinge_spans_fs:
         out.append(
-            cq.Workplane("YZ").circle(FITTED_HINGE_PIN_R).extrude(f1 - f0).translate((f0, HINGE_Y, HINGE_Z))
+            cq.Workplane("YZ")
+            .circle(FITTED_HINGE_PIN_R)
+            .extrude(f1 - f0)
+            .translate((f0, HINGE_Y, HINGE_Z))
         )
         y0 = HINGE_Y - FITTED_HINGE_PIN_R - FITTED_HINGE_LEAF_T
         out.append(
@@ -405,14 +545,18 @@ def latches() -> cq.Workplane:
             .box(FITTED_LATCH_LEN, leg, hgt, centered=False)
             .translate((c - FITTED_LATCH_LEN / 2, -y - leg, Z_TOP + 0.15))
         )
-    for a, b in zip(centres[:-1], centres[1:]):  # centres[0] is the rear latch, centres[2] the front
+    for a, b in zip(
+        centres[:-1], centres[1:]
+    ):  # centres[0] is the rear latch, centres[2] the front
         mid = (a + b) / 2
         y = -(max(outer_y(a), outer_y(b)) + FITTED_LATCH_ROD_OUT)
         out.append(
             cq.Workplane("YZ")
             .circle(FITTED_LATCH_ROD_R)
             .extrude(FITTED_LATCH_ROD_LEN)
-            .translate((mid - FITTED_LATCH_ROD_LEN / 2, y, Z_TOP + FITTED_FRAME_H * 0.5 + 0.3))
+            .translate(
+                (mid - FITTED_LATCH_ROD_LEN / 2, y, Z_TOP + FITTED_FRAME_H * 0.5 + 0.3)
+            )
         )
     return _compound(out)
 
@@ -426,7 +570,7 @@ def sc1() -> cq.Workplane:
     """SC-1: a thin plate on the left safety-catch pad that hangs below the sill, with a slot for the catch bolt."""
     x0, x1 = _sc1_x()
     c = G.canopy_safety_catch_fs
-    y = outer_y(c)
+    y = outer_y(c) + FITTED_SKIN_STANDOFF
     plate = (
         cq.Workplane("XY")
         .box(x1 - x0, 0.02, FITTED_SC1_DROP + FITTED_FRAME_H, centered=False)
@@ -444,7 +588,7 @@ def sc1() -> cq.Workplane:
 def sc1_bolt() -> cq.Workplane:
     """The catch bolt on the fuselage side at FS 56.75, through the SC-1 slot."""
     c = G.canopy_safety_catch_fs
-    y = outer_y(c)
+    y = outer_y(c) + FITTED_SKIN_STANDOFF
     return (
         cq.Workplane("XZ")
         .circle(FITTED_SC1_BOLT_R)
@@ -458,7 +602,7 @@ def sc1_bolt() -> cq.Workplane:
 def door() -> cq.Workplane:
     """Left door plate on the side outer face, 4.3 long by 3.7 high; its station is a low-confidence fit."""
     ln, ht = G.canopy_door_size_in
-    y = outer_y(FITTED_DOOR_FS)
+    y = outer_y(FITTED_DOOR_FS) + FITTED_SKIN_STANDOFF
     z_top = z_of_wl(G.canopy_check_datum_wl - FITTED_DOOR_TOP_BELOW)
     return (
         cq.Workplane("XY")
