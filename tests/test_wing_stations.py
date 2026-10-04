@@ -147,7 +147,10 @@ def test_aileron_inboard_end_is_a_conflict_pair():
 
 
 def test_attach_bolt_spacing_is_a_conflict_pair():
-    assert (G.wing_spar_join_bolt_spacing_in, G.wing_spar_join_bolt_spacing_text_in) == (
+    assert (
+        G.wing_spar_join_bolt_spacing_in,
+        G.wing_spar_join_bolt_spacing_text_in,
+    ) == (
         28.85,
         28.83,
     )
@@ -184,10 +187,11 @@ def test_cap_schedules_are_the_base_schedule_and_say_so():
     assert run == pytest.approx(141.3, abs=0.2)
 
 
-def test_analysis_fields_carry_the_book_value_in_a_note_and_do_not_move():
-    assert (G.wing_span, G.wing_root_bl, G.wing_washout) == (313.2, 23.3, 1.0)
-    assert "314" in P["wing_span"]["note"]
-    assert "23.3 appears on no page" in P["wing_root_bl"]["note"]
+def test_analysis_fields_carry_the_book_value_in_a_note():
+    # M2.8: span and root BL moved to the book values (ledger rows); washout still does not move
+    assert (G.wing_span, G.wing_root_bl, G.wing_washout) == (314.0, 23.0, 1.0)
+    assert "313.2" in P["wing_span"]["note"]
+    assert "which appears on no page" in P["wing_root_bl"]["note"]
     assert P["wing_washout"]["status"] == "unsourced"
     assert "0.96" in P["wing_washout"]["note"] and "2.7" in P["wing_washout"]["note"]
 

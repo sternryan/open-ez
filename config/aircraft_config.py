@@ -101,9 +101,9 @@ class GeometricParams:
     """Primary aircraft geometry - all dimensions in inches unless noted."""
 
     # === MAIN WING (Eppler 1230 Modified) ===
-    wing_span: float = 313.2  # Total span (26.1 ft, om-1980:p3)
+    wing_span: float = 314.0  # Total span, 2 x tip rib BL 157 (plans-1980:p126); OM 26.1 ft = 313.2 is a conflict
     wing_root_chord: float = (
-        49.90  # Root chord at BL 23.3, derived (see GEOMETRY_PROVENANCE)
+        49.97  # Root chord at BL 23.0, derived (see GEOMETRY_PROVENANCE)
     )
     wing_tip_chord: float = 20.0  # Tip chord at B.L. 157 (plans-1980:p126)
     wing_sweep_le: float = 22.98  # Leading edge sweep (degrees), plans-1980:p126
@@ -128,7 +128,7 @@ class GeometricParams:
     fs_rear_seat: float = 103.0  # book: passenger CG station, om-1980:p25 (not a bulkhead; F28 is a forward bulkhead)
     fs_firewall: float = 125.0  # book: plans-1980:p101 firewall line at F.S. 125
     fs_tail: float = 168.5  # converted-unsourced (internal 214.0 shifted); no printed aft-end station
-    wing_root_bl: float = 23.3  # wing root butt line
+    wing_root_bl: float = 23.0  # wing root butt line, plans-1980:p118/p119/p126/p147
     wing_le_anchor: Tuple[float, float] = (
         113.9,
         58.0,
@@ -770,10 +770,14 @@ class GeometricParams:
         1.5  # above the wing plane: p171 W.L. 18.9 - 17.4; see GEOMETRY_PROVENANCE
     )
     winglet_height: float = (
-        16.0  # Winglet vertical span in inches (Long-EZ winglets, Rutan Ch.19)
+        47.0  # Winglet vertical span, WL 18.4 to 65.4 (plans-1980:p135)
     )
-    winglet_root_chord: float = 20.0  # Winglet root chord at wing tip junction (inches)
-    winglet_tip_chord: float = 12.0  # Winglet tip chord (inches)
+    winglet_root_chord: float = (
+        27.1  # Winglet root chord, derived from p135 FS 159.7 and 186.8
+    )
+    winglet_tip_chord: float = (
+        11.4  # Winglet tip chord, derived-unsourced (scaled off the 1/5 drawing)
+    )
 
     # === CANARD DOWNWASH ===
     canard_vertical_offset_in: float = (
@@ -1137,16 +1141,16 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "downwash separation, canard to wing plane; same evidence as canard_le_wl (18.9-17.4 = 1.5); the book drawings put the canard 1.5-2.4 in above the wing plane, 12 had no source",
     ),
     "wing_span": _p(
-        "book",
-        "om-1980:p3 wing span 26.1 ft",
+        "derived",
+        "plans-1980:p126 tip rib at B.L. 157 (also p171)",
         "high",
-        "26.1 ft = 313.2 in; plans tip rib at B.L. 157 (plans-1980:p126) gives 314 (2 x 157). Not moved in M2.7: the analysis planform changes the NP (Block 3); the chapter 19 build model uses wing_book_rib_bl",
+        "2 x 157 = 314.0 (was 313.2, om-1980:p3 26.1 ft). The OM figure is not a rounding of 314 (26.17 ft rounds to 26.2), so it stays a noted conflict and the plans govern geometry. Moved in M2.8 with a ledger row; the analysis NP moves with it",
     ),
     "wing_root_chord": _p(
         "derived",
         "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157",
         "medium",
-        "linear taper through the printed chords, extrapolated to root BL 23.3: 42.7 + (55.5-23.3)*(42.7-20.0)/(157-55.5); taper is straight (31.35 printed at BL 106.25 matches)",
+        "linear taper through the printed chords, extrapolated to root BL 23.0: 42.7 + (55.5-23.0)*(42.7-20.0)/(157-55.5) = 49.97 (was 49.90 at BL 23.3, moved with wing_root_bl in M2.8); taper is straight (31.35 printed at BL 106.25 matches)",
     ),
     "wing_tip_chord": _p(
         "book",
@@ -1218,8 +1222,10 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "straight taper extended to BL 0: wing_root_chord + wing_root_bl*(wing_root_chord - wing_tip_chord)/wing_panel_span = 55.11; sets the reference area span*(c0 + ct)/2 = 81.68 sq ft, cross-check om-1980:p3 wing area 81.99 (0.4%)",
     ),
     "wing_root_bl": _p(
-        "unsourced",
-        note="root butt line 23.3, carried from the existing config comment; plans-1980:p126 prints BL 23 (TE meets the cowl at B.L. 23 F.S. 148.4) and 23.3 appears on no page; not a root chord station; not moved in M2.7 (the build model uses BL 23 from wing_book_rib_bl)",
+        "book",
+        "plans-1980:p126 prints BL 23",
+        "high",
+        "23.0 (was 23.3, which appears on no page). p118, p119 and p147 print the same BL 23. Moved in M2.8 with a ledger row. wing_root_chord moves 49.90 to 49.97 with it (the same straight taper evaluated at BL 23.0)",
     ),
     "fs_f22": _p(
         "derived",
@@ -2655,28 +2661,71 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "tip washout 1.0 deg matches no page. The book twist is 0.6 washin at BL 55.5, 0.96 washout at 106.25 and 2.7 washout at the tip (wing_book_washout_deg, plans-1980:p126); not moved here because it changes the NP (Block 3)",
     ),
     "winglet_height": _p(
-        "unsourced",
-        "",
-        "n/a",
-        "16 in matches no page. The book upper fin is 47.0 tall (WL 18.4 to 65.4) plus a 8.6 lower fin (plans-1980:p135); the chapter 20 build model uses winglet_book_* fields. VSPAERO not re-run (TODOS)",
+        "book",
+        "plans-1980:p135 WL 65.4 less WL 18.4",
+        "high",
+        "47.0 (was 16.0, which matched no page); same value as winglet_height_book_in. The 8.6 lower fin is not in the analysis winglet. Moved in M2.8 with a ledger row",
     ),
     "winglet_root_chord": _p(
-        "unsourced",
-        "",
-        "n/a",
-        "20 in matches no page. The book root chord is about 27.1 (winglet_root_chord_book_in, plans-1980:p135); analysis field left as is",
+        "derived",
+        "plans-1980:p135 root TE 186.8 less LE line 159.7",
+        "medium",
+        "27.1 (was 20.0, which matched no page); same value as winglet_root_chord_book_in. Moved in M2.8 with a ledger row",
     ),
     "winglet_tip_chord": _p(
-        "unsourced",
-        "",
-        "n/a",
-        "12 in matches no page. The book tip chord is about 11.4 (derived-medium, winglet_book_tip_chord_in, plans-1980:p135); analysis field left as is",
+        "derived-unsourced",
+        "plans-1980:p135 1/5 drawing scaled by the printed rudder widths",
+        "low",
+        "11.4 (was 12.0, which matched no page); same value as winglet_book_tip_chord_in. A scaled drawing read, not a source. Moved in M2.8 with a ledger row",
     ),
     "datum_offset_in": _p(
         "book",
         "om-1980:p25 datum F.S. 0.0",
         "high",
         "published frame by definition (offset 0); was 45.5, fitted to NP; retired",
+    ),
+}
+
+
+# Provenance flags for the analysis weight, arm and engine fields that are not geometry (M2.8; values unchanged).
+# Same shape and statuses as GEOMETRY_PROVENANCE; tests/test_m28_weight_flags.py reads it. Fixing the values is
+# ledger closure (milestone 2.n), not M2.8.
+WEIGHT_PROVENANCE: dict[str, dict] = {
+    "wing_weight_lb": _p(
+        "conflict",
+        "cp-text:p26 64 lb per wing with winglets and rudder",
+        "low",
+        "85.0 lb for both wings is unsourced. CP26 p3 gives 64 lb per wing complete with winglets and rudder (60 lb painted without rudder and aileron, CP26 p16), so 2 x 64 = 128 lb, but that is one builder's airplane (N26MS). Both values are kept; ledger closure decides",
+    ),
+    "engine_cg_arm_in": _p(
+        "conflict",
+        "plans-1980:p171 firewall FS 125; om-1980:p25 oil FS 140",
+        "high",
+        "8.0 in, commented 'forward of firewall', contradicts every held source: the engine is aft of the firewall (FS 125), oil is at FS 140 (om-1980:p25) and the starter and alternator are at station 150+ (cp-text:p27). No engine arm is printed in any held source. The value is unchanged; ledger closure replaces it",
+    ),
+    "engine_mass_kg": _p(
+        "conflict",
+        "plans-1980:p156 engine with accessories at most 246 lb",
+        "medium",
+        "113 kg is 249.1 lb (commented '250 lb dry'), over the 246 lb book limit and 6 lb over engine_dry_weight_lb 243. The two fields disagree; the value is unchanged and ledger closure picks one",
+    ),
+    "engine_dry_weight_lb": _p(
+        "unsourced",
+        "plans-1980:p156 limit 246 lb is a limit, not a weight",
+        "low",
+        "243 lb matches no page. The book prints only the limits: engine with accessories at most 246 lb and vibrating mass at most 286 lb (plans-1980:p156). Disagrees with engine_mass_kg (249.1 lb)",
+    ),
+    "electrical_weight_lb": _p(
+        "conflict",
+        "cp-text:p27 CP27 page 4",
+        "medium",
+        "25 lb as one row at FS 119.5 is the wrong shape. The 25 Ah battery sits in the nose (plans-1980:p149, p155; about +19 lb over the small battery) and the starter, ring gear and alternator are at station 150+ (cp-text:p27); the plans print 'electric start adds over 25 lb' (plans-1980:p149). Unsourced as a row; the ledger closure splits it",
+    ),
+    "electrical_arm_in": _p(
+        "conflict",
+        "cp-text:p27 CP27 page 4",
+        "medium",
+        "119.5 in is converted-unsourced and sits where neither the battery (nose, about FS 0 to 22, A6 only) nor the starter and alternator (FS 150+) are. Unchanged; ledger closure replaces it",
     ),
 }
 

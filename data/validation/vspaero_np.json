@@ -1,41 +1,41 @@
 {
   "source": "vspaero_vlm_np",
   "vsp_version": "OpenVSP 3.48.2",
-  "timestamp": "2026-09-30T01:19:35.650160+00:00",
+  "timestamp": "2026-10-04T09:27:03.333736+00:00",
   "alpha_range_deg": [
     -2.0,
     6.0,
     9
   ],
   "geometry": {
-    "wing_span_in": 313.2,
+    "wing_span_in": 314.0,
     "canard_span_in": 141.6,
-    "wing_root_bl": 23.3,
-    "wing_panel_span_in": 133.3,
-    "wing_root_chord_in": 49.9,
+    "wing_root_bl": 23.0,
+    "wing_panel_span_in": 134.0,
+    "wing_root_chord_in": 49.97,
     "wing_tip_chord_in": 20.0,
     "wing_sweep_le_deg": 22.98,
     "wing_washout_deg": 1.0,
     "wing_incidence_deg": 0.0,
-    "fs_wing_le": 99.185017,
+    "fs_wing_le": 99.057798,
     "wing_le_wl": 0.0,
     "canard_chord_in": 13.02,
     "canard_sweep_le_deg": 0.0,
     "canard_incidence_deg": -1.5,
     "fs_canard_le": 18.7,
     "canard_le_wl": 1.5,
-    "wing_centerline_chord_in": 55.126332,
+    "wing_centerline_chord_in": 55.114104,
     "vlm_wing_inboard_bl": 0.0
   },
   "method": "VSPAERO vortex lattice (VLM), gross reference wing (BL 0 to tip) + canard, thin surfaces, Mach 0, Y-symmetry",
-  "np_fs": 112.3616,
-  "dCMy_dCL": -0.23229451768509998,
-  "fit_r_squared": 0.9987301540867506,
+  "np_fs": 112.4122,
+  "dCMy_dCL": -0.233593579710344,
+  "fit_r_squared": 0.9986615465774372,
   "formula": "NP = Xref - (dCMy/dCL) * cref; least-squares slope over the sweep",
   "reference": {
-    "Sref_sqin": 11764.783525881468,
-    "bref_in": 313.2,
-    "cref_in": 40.30046429579024,
+    "Sref_sqin": 11792.914402985074,
+    "bref_in": 314.0,
+    "cref_in": 40.2928906938242,
     "Xref_fs": 103.0,
     "RefFlag": "manual",
     "note": "Sref = gross reference trapezoid (wing_area_sqft x 144), bref = wing_span, cref = MAC of the gross trapezoid; Xref = Xcg (moment reference). NP is independent of Sref/cref: CL and CMy share them."
@@ -44,57 +44,57 @@
   "sweep": [
     {
       "alpha_deg": -2.0,
-      "CL": -0.241105742948,
-      "CD": 0.007095993925,
-      "CMy": 0.023690211347
+      "CL": -0.238122162975,
+      "CD": 0.007162301958,
+      "CMy": 0.022317002669
     },
     {
       "alpha_deg": -1.0,
-      "CL": -0.154013843152,
-      "CD": 0.006436281469,
-      "CMy": 0.010818928462
+      "CL": -0.152054247396,
+      "CD": 0.006468529345,
+      "CMy": 0.010120466563
     },
     {
       "alpha_deg": 0.0,
-      "CL": -0.044688430995,
-      "CD": 0.006182279082,
-      "CMy": -0.018211844546
+      "CL": -0.044214221098,
+      "CD": 0.006182927298,
+      "CMy": -0.018283820335
     },
     {
       "alpha_deg": 1.0,
-      "CL": 0.056176674466,
-      "CD": 0.006325059115,
-      "CMy": -0.043720994219
+      "CL": 0.056297270417,
+      "CD": 0.006321970163,
+      "CMy": -0.043847545256
     },
     {
       "alpha_deg": 2.0,
-      "CL": 0.153023339489,
-      "CD": 0.007028610194,
-      "CMy": -0.066776255391
+      "CL": 0.153020391691,
+      "CD": 0.007026641326,
+      "CMy": -0.067089798264
     },
     {
       "alpha_deg": 3.0,
-      "CL": 0.247246826978,
-      "CD": 0.008423142823,
-      "CMy": -0.087245941585
+      "CL": 0.247244414495,
+      "CD": 0.008420871591,
+      "CMy": -0.087816930958
     },
     {
       "alpha_deg": 4.0,
-      "CL": 0.339587793304,
-      "CD": 0.010566227496,
-      "CMy": -0.106637976946
+      "CL": 0.339625618448,
+      "CD": 0.010561342379,
+      "CMy": -0.107482995649
     },
     {
       "alpha_deg": 5.0,
-      "CL": 0.437278799533,
-      "CD": 0.01389345611,
-      "CMy": -0.132122581573
+      "CL": 0.437349144408,
+      "CD": 0.013883523984,
+      "CMy": -0.133251150065
     },
     {
       "alpha_deg": 6.0,
-      "CL": 0.529903056895,
-      "CD": 0.017781820843,
-      "CMy": -0.151679046983
+      "CL": 0.530010241436,
+      "CD": 0.017766032882,
+      "CMy": -0.153075475467
     }
   ]
 }

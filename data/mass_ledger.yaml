@@ -1,5 +1,7 @@
 # Mass/CG ledger. Block 1: the empty aircraft is one row (Block 2 decomposes it).
 # Page numbers are the transcription's printed pages (see data/sources/registry.yaml om-1980 note).
+# The closure target for the empty weight and CG (om-1980:p25, p35). 111.7 is AFT of the 103 limit: the 97 to 103 band
+# below is the LOADED envelope (om-1980:p28), not the empty CG.
 empty: {weight_lb: 730, arm_in: 111.7, cite: "om-1980:p25 sample empty aircraft 730 at 111.7"}
 loads:
   oil:       {arm_in: 140.0, cite: "om-1980:p25 oil row station 140"}

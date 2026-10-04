@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-09-30T01:35:41.405083+00:00",
+    "generated": "2026-10-04T09:27:06.566016+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -17,22 +17,22 @@
     },
     "checks": {
       "stability": {
-        "np_fs": 110.68224245766193,
+        "np_fs": 110.78799690337203,
         "aft_limit_fs": 103.0,
-        "static_margin_pct": 19.0624,
+        "static_margin_pct": 19.3285,
         "pass": true,
-        "mac_in": 40.30046429579024
+        "mac_in": 40.2928906938242
       },
       "two_method_np": {
         "status": "fail",
-        "analytic": 110.68224245766193,
-        "vlm": 112.3616,
-        "delta": 1.6793575423380673,
+        "analytic": 110.78799690337203,
+        "vlm": 112.4122,
+        "delta": 1.6242030966279657,
         "bound_in": 1.0,
         "vlm_source": {
           "file": "data/validation/vspaero_np.json",
           "vsp_version": "OpenVSP 3.48.2",
-          "timestamp": "2026-09-30T01:19:35.650160+00:00",
+          "timestamp": "2026-10-04T09:27:03.333736+00:00",
           "method": "VSPAERO vortex lattice (VLM), gross reference wing (BL 0 to tip) + canard, thin surfaces, Mach 0, Y-symmetry"
         }
       }
@@ -52,7 +52,7 @@
     {
       "metric_id": "neutral_point_fs",
       "description": "Longitudinal Neutral Point (published datum)",
-      "computed": 110.6822,
+      "computed": 110.788,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -66,12 +66,12 @@
     {
       "metric_id": "cg_range_fwd_fs",
       "description": "Forward CG limit (published datum)",
-      "computed": 103.7465,
+      "computed": 103.8536,
       "reference": 97.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 6.746533,
-      "error_pct": 6.955188,
+      "error_abs": 6.85359,
+      "error_pct": 7.065557,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_fwd_fs",
       "units": "inches (published FS datum)"
@@ -79,12 +79,12 @@
     {
       "metric_id": "cg_range_aft_fs",
       "description": "Aft CG limit (published datum)",
-      "computed": 107.5993,
+      "computed": 107.7056,
       "reference": 103.0,
       "tolerance_abs": 1.0,
       "tolerance_pct": null,
-      "error_abs": 4.599257,
-      "error_pct": 4.465298,
+      "error_abs": 4.705591,
+      "error_pct": 4.568535,
       "grade": "FAIL",
       "source": "reference_data.json:aircraft_specs.cg_range_aft_fs",
       "units": "inches (published FS datum)"
@@ -92,7 +92,7 @@
     {
       "metric_id": "static_margin_pct",
       "description": "Static margin at the manual's aft CG limit FS 103 (om-1980:p28), % MAC",
-      "computed": 19.0624,
+      "computed": 19.3285,
       "reference": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
@@ -206,16 +206,16 @@
     {
       "metric_id": "wing_area_sqft",
       "description": "Main wing planform area",
-      "computed": 81.6999,
+      "computed": 81.8952,
       "reference": 81.99,
       "tolerance_abs": 2.0,
       "tolerance_pct": null,
-      "error_abs": 0.290114,
-      "error_pct": 0.353841,
+      "error_abs": 0.094761,
+      "error_pct": 0.115576,
       "grade": "PASS",
       "source": "reference_data.json:aircraft_specs.wing_area_sqft",
       "units": "square feet",
-      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft). Model area is the gross reference trapezoid: the straight panel taper (plans-1980:p126) extended to BL 0, both sides, tip to tip. Exposed panels alone (wing_root_bl to tip): 64.71 sq ft."
+      "convention_note": "Reference is the manual's wing area, which excludes the canard (om-1980:p3; total 94.8 sq ft). Model area is the gross reference trapezoid: the straight panel taper (plans-1980:p126) extended to BL 0, both sides, tip to tip. Exposed panels alone (wing_root_bl to tip): 65.11 sq ft."
     }
   ]
 }

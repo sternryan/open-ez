@@ -26,7 +26,7 @@ def test_tip_lands_at_the_book_tip_rib():
 def test_panel_runs_from_the_root_bl_not_span_over_two_outboard_of_it():
     assert G.wing_panel_span == pytest.approx(G.wing_span / 2 - G.wing_root_bl)
     assert G.wing_root_bl + G.wing_panel_span == pytest.approx(G.wing_tip_bl)
-    assert G.wing_panel_span == pytest.approx(133.3, abs=0.01)
+    assert G.wing_panel_span == pytest.approx(134.0, abs=0.01)
     # the retired convention put the tip near BL 180
     assert G.wing_root_bl + G.wing_span / 2 > 175
 
@@ -54,7 +54,7 @@ def test_tip_leading_edge_fs_is_wing_le_plus_panel_times_tan_sweep():
     """CadQuery-independent geometry fact: the tip LE sits panel*tan(sweep) aft of the root LE."""
     tip_le = G.fs_wing_le + G.wing_panel_span * math.tan(math.radians(G.wing_sweep_le))
     assert tip_le - G.fs_wing_le == pytest.approx(
-        133.3 * math.tan(math.radians(G.wing_sweep_le)), abs=0.05
+        134.0 * math.tan(math.radians(G.wing_sweep_le)), abs=0.05
     )
     assert tip_le > G.fs_wing_le
 
@@ -135,17 +135,17 @@ def _printed_taper_chord_at(bl):
 
 
 def test_centerline_chord_extends_the_printed_taper_to_bl_zero():
-    # the model's own line (root 49.90 at BL 23.3, tip 20.0 at BL 156.6) extended to BL 0
+    # the model's own line (root 49.97 at BL 23.0, tip 20.0 at BL 157.0) extended to BL 0
     own = (
         G.wing_root_chord
         + G.wing_root_bl * (G.wing_root_chord - G.wing_tip_chord) / G.wing_panel_span
     )
     assert G.wing_centerline_chord == pytest.approx(own, rel=1e-12)
-    # the printed line puts the 20.0 tip at BL 157, not 156.6, so the two differ by ~0.014 in
+    # the model's tip is now the printed BL 157, so the two lines coincide
     assert G.wing_centerline_chord == pytest.approx(
         _printed_taper_chord_at(0.0), abs=0.02
     )
-    # the root chord at BL 23.3 lies on the same line
+    # the root chord at BL 23.0 lies on the same line
     assert G.wing_root_chord == pytest.approx(
         _printed_taper_chord_at(G.wing_root_bl), abs=0.01
     )
@@ -172,11 +172,11 @@ def test_exposed_area_fails_the_1pct_reference_check():
         / 144
     )
     assert G.wing_exposed_area_sqft == pytest.approx(exposed, abs=0.01)
-    assert G.wing_exposed_area_sqft == pytest.approx(64.71, abs=0.01)
+    assert G.wing_exposed_area_sqft == pytest.approx(65.11, abs=0.01)
     assert not _within_1pct_of_manual(G.wing_exposed_area_sqft)
 
 
 def test_aspect_ratio_is_span_squared_over_reference_area():
     expect = (G.wing_span / 12) ** 2 / G.wing_area_sqft
     assert G.wing_aspect_ratio == pytest.approx(expect, rel=1e-9)
-    assert G.wing_aspect_ratio == pytest.approx(8.34, abs=0.02)
+    assert G.wing_aspect_ratio == pytest.approx(8.36, abs=0.02)

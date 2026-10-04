@@ -115,8 +115,8 @@ def test_book_stations():
     expect = 113.9 - (58.0 - g.wing_root_bl) * math.tan(math.radians(g.wing_sweep_le))
     assert g.fs_wing_le == pytest.approx(expect)
     assert g.fs_wing_le == pytest.approx(
-        99.19, abs=0.01
-    )  # 22.98 deg sweep, root BL 23.3
+        99.06, abs=0.01
+    )  # 22.98 deg sweep, root BL 23.0
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["status"] == "cp-corrected"
     assert GEOMETRY_PROVENANCE["wing_le_anchor"]["source"].startswith("cp-text:p25")
 
@@ -176,14 +176,14 @@ def test_sourced_entries_cite_the_registry():  # Review Focus 1
 def test_wing_planform_is_the_book():  # Task 7
     g = config.geometry
     P = GEOMETRY_PROVENANCE
-    assert g.wing_span == 313.2
+    assert g.wing_span == 314.0
     assert g.wing_sweep_le == 22.98
     assert g.wing_tip_chord == 20.0
     assert g.wing_dihedral == 0.0
-    assert g.wing_root_bl == 23.3
+    assert g.wing_root_bl == 23.0
     assert (P["wing_span"]["status"], P["wing_span"]["source"]) == (
-        "book",
-        "om-1980:p3 wing span 26.1 ft",
+        "derived",
+        "plans-1980:p126 tip rib at B.L. 157 (also p171)",
     )
     assert (P["wing_sweep_le"]["status"], P["wing_sweep_le"]["source"]) == (
         "book",
@@ -197,7 +197,7 @@ def test_wing_planform_is_the_book():  # Task 7
         "book",
         "plans-1980:p134 wing flat at 17.4 waterline plane",
     )
-    assert P["wing_root_bl"]["status"] == "unsourced"
+    assert P["wing_root_bl"]["status"] == "book"
 
 
 def test_wing_root_chord_is_derived_from_the_printed_chords():
@@ -206,16 +206,16 @@ def test_wing_root_chord_is_derived_from_the_printed_chords():
         55.5,
         20.0,
         157.0,
-        23.3,
+        23.0,
     )  # chord at 55.5, BL, tip chord, tip BL, root BL
     c1, bl1, c2, bl2, bl0 = inputs
     root = c1 + (bl1 - bl0) * (c1 - c2) / (bl2 - bl1)
     assert config.geometry.wing_root_chord == pytest.approx(round(root, 2), abs=1e-9)
-    assert config.geometry.wing_root_chord == 49.90
+    assert config.geometry.wing_root_chord == 49.97
     e = GEOMETRY_PROVENANCE["wing_root_chord"]
     assert e["status"] == "derived"
     assert e["source"] == "plans-1980:p126 chords 42.7 at BL 55.5, 20.0 at BL 157"
-    assert "42.7 + (55.5-23.3)*(42.7-20.0)/(157-55.5)" in e["note"]
+    assert "42.7 + (55.5-23.0)*(42.7-20.0)/(157-55.5)" in e["note"]
     # the printed mid chord (31.35 at BL 106.25) lies on the same straight taper
     assert c1 + (106.25 - bl1) * (c2 - c1) / (bl2 - bl1) == pytest.approx(
         31.35, abs=0.01

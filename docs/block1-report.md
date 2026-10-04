@@ -219,7 +219,7 @@ Each item names the evidence that would clear it.
 - **Empty weight.** Model 640 lb against the manual's approximate 750. The model's structural sum is a partial model. Clears with the Block 2 decomposition of the empty weight.
 - **CG limits.** Computed 99.57 / 103.42 against 97 / 103 (ledger rows 12, 13, 16, 18, 45, 52; was 99.12 / 102.91). Forward is +2.57 in off (FAIL); aft passes. They follow the NP by construction. Clears with an independent CG-limit calculation, or a source for the NP.
 - **Two-method NP fails.** Analytic 106.50 vs VLM 112.36, +5.86 in against the 1.0 in bound (ledger row 53). Both methods now model the same wing; the gap is the analytic interference model (full-span far-field canard downwash). Clears with a partial-span downwash model chosen from a textbook source before it is run, and the canard waterline conflict resolved.
-- **Wing structural arms and canard arm.** The canard arm uses the canard chord FLAG; wing arms wait for Block 2. Empty weight and CG fwd stay FAIL until then.
+- **Wing structural arms and canard arm.** The canard arm uses the canard chord FLAG; wing arms wait for Block 2. Empty weight stays FAIL until then. (M2.8 correction: the CG limits are NP-derived and graded against the loaded envelope FS 97 to 103; they do not wait on the ledger, and the empty CG is 111.7 in the OM sample, never graded against that band; ledger row 63.)
 
 ## 4. Spec section 4, "Done when"
 

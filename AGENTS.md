@@ -109,7 +109,7 @@ Do not copy numbers into this file; they go stale. Read:
   Diagnosis and numbers: `docs/block1-report.md`.
 - Canard planform is GU-sized (conflict flag); the Roncz planform is unconfirmed.
 - The elevator torque tube is 1 in OD (book); the canard section is fitted to an airfoil file (`data/airfoils/roncz_r1145ms.dat`) that is thinner than the tube: unresolved, labelled so in the lab. Check the file's provenance and t/c in the Block 1 airfoil look before any printed plug.
-- Empty weight and CG limits fail against the manual; they wait on the Block 2 ledger.
+- Empty weight fails against the manual and waits on the Block 2 ledger; its target is the OM sample empty airplane, 730 lb at FS 111.7 (om-1980:p25, p35). The computed CG limits fail against FS 97 to 103, the LOADED CG envelope (om-1980:p28); they follow the neutral point and do not wait on the ledger. The empty CG is never graded against 97 to 103.
 - The fuselage box (`core/fuselage_book.py`, chapters 4–9) and the nose (`core/nose_book.py`,
   chapter 13) tag every part `book`, `derived` or `representational`; F22, F28, the panel, the
   firewall, the bottom, the gear strut, the NG30 plates and the nose outline are fitted shapes (their

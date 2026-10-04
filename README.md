@@ -51,18 +51,20 @@ are in [`docs/block1-report.md`](docs/block1-report.md). In short:
 - **Book-sourced:** wing span, tip chord and sweep; the main fuselage stations (nose, firewall,
   seats, strake leading edge); the wing leading-edge anchor (from a Canard Pusher correction); max
   gross weight, approximate empty weight and the CG envelope from the owner's manual. The wing
-  reference area (81.70 sq ft) comes within 0.4% of the manual's 81.99.
+  reference area (81.90 sq ft) comes within 0.2% of the manual's 81.99.
 - **Flagged:** the canard waterline and incidence, the fuselage tail station and length, the wing
   root butt line, the strake trailing edge, most structural weight arms, and the neutral point,
   stall speed and airfoil coefficients in the reference data (not found in any source held).
 - **The canard is GU-sized.** The repo uses the Roncz R1145MS canard airfoil, but no source for the
   Roncz canard's chord was found, so the planform uses the GU canard's span and area from the
   owner's manual and is flagged as a conflict.
-- **The two-method neutral point check fails.** The analytic method gives FS 110.68 and VSPAERO
-  gives FS 112.36, against a bound of 1.0 in. It is left failing on purpose rather than tuned. The
+- **The two-method neutral point check fails.** The analytic method gives FS 110.79 and VSPAERO
+  gives FS 112.41, against a bound of 1.0 in. It is left failing on purpose rather than tuned. The
   report's diagnosis is the analytic model of canard downwash on the swept wing.
-- **Empty weight and CG limits fail** against the manual. The structural weight model is partial;
-  the per-part ledger in Block 2 is meant to close it.
+- **Empty weight and the CG limits fail** against the manual. The structural weight model is partial;
+  the per-part ledger in Block 2 is meant to close the empty weight (target: the manual's sample, 730 lb
+  at FS 111.7). The CG limits are graded against the loaded envelope FS 97 to 103 and follow the neutral
+  point; the empty CG is not graded against that band.
 - **Nothing here is validated against hardware.** The G-code has never run on a machine, and no
   part has been built from these files.
 

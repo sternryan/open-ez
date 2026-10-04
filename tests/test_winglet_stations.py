@@ -118,12 +118,20 @@ def test_jig_a_and_b_close_within_a_quarter_inch_and_c_needs_a_lean():
     assert P["winglet_cant_in"]["status"] == "derived-unsourced"
 
 
-def test_analysis_fields_are_unsourced_and_do_not_move():
+def test_analysis_fields_carry_the_book_values():
+    # M2.8: the analysis winglet moved to the p135 values (ledger rows)
     assert (G.winglet_height, G.winglet_root_chord, G.winglet_tip_chord) == (
-        16.0,
-        20.0,
-        12.0,
+        pytest.approx(G.winglet_height_book_in),
+        pytest.approx(G.winglet_root_chord_book_in),
+        pytest.approx(G.winglet_book_tip_chord_in),
     )
+    assert (G.winglet_height, G.winglet_root_chord, G.winglet_tip_chord) == (
+        47.0,
+        27.1,
+        11.4,
+    )
+    assert P["winglet_height"]["status"] == "book"
+    assert P["winglet_root_chord"]["status"] == "derived"
+    assert P["winglet_tip_chord"]["status"] == "derived-unsourced"
     for k in ("winglet_height", "winglet_root_chord", "winglet_tip_chord"):
-        assert P[k]["status"] == "unsourced"
-        assert "plans-1980:p135" in P[k]["note"]
+        assert "plans-1980:p135" in P[k]["source"]
