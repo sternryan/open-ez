@@ -169,6 +169,7 @@ export function layupText(materials: MaterialLite[]): { value: string; sub: stri
  * The ops with a readout of their own, and what it says (null: none). The conflicts and bounds come first; an op that also has a layup schedule appends it.
  */
 export function m28Kin(opId: string | null, d: M28Data, materials: MaterialLite[] = []): { label: string; value: string; sub: string } | null {
+  if (!opId || !/^f2[123]\./.test(opId)) return null // chapters 21 to 23 only: another chapter's readout (the nose wheel's conflict) is never displaced by a layup schedule
   const lay = layupText(materials)
   const pick = (): { label: string; value: string; sub: string } | null => {
     switch (opId) {

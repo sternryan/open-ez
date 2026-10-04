@@ -150,6 +150,10 @@ test('the layup schedules come from the ops own materials: collapsed by cloth, w
   assert.equal(both.value, fuelText(d).value)
   assert.ok(both.sub.includes('Plies: 5 plies: 3 BID + 2 UND'), both.sub)
   assert.equal(m28Kin('f21.jig-bond', d, []), null)
+  // another chapter's op keeps its own readout, however many plies it has (chapter 13's nose wheel conflict was displaced by a layup schedule)
+  assert.equal(m28Kin('f13.carve-glass-nose', d, m), null)
+  assert.equal(m28Kin('f19.top-skin', d, m), null)
+  assert.equal(m28Kin(null, d, m), null)
 })
 
 const rowsLed = {
