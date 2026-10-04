@@ -2731,6 +2731,1240 @@
     ],
     "note": "CP26 builder weights, reference only, in no sum"
    }
+  },
+  "m28": {
+   "parts": {
+    "strake_ribs_rib_r23_right": {
+     "node": "strake.ribs.rib_r23.right",
+     "component": "strake.ribs",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Rib R23 (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 73.3,
+     "fs_max": 97.2,
+     "bl_min": 22.825,
+     "bl_max": 23.175,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_ribs_rib_r23_left": {
+     "node": "strake.ribs.rib_r23.left",
+     "component": "strake.ribs",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Rib R23 (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 73.3,
+     "fs_max": 97.2,
+     "bl_min": -23.175,
+     "bl_max": -22.825,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_ribs_rib_r45_right": {
+     "node": "strake.ribs.rib_r45.right",
+     "component": "strake.ribs",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Rib R45 (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 99.85,
+     "fs_max": 121.7854,
+     "bl_min": 44.825,
+     "bl_max": 45.175,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_ribs_rib_r45_left": {
+     "node": "strake.ribs.rib_r45.left",
+     "component": "strake.ribs",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Rib R45 (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 99.85,
+     "fs_max": 121.7854,
+     "bl_min": -45.175,
+     "bl_max": -44.825,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_b23_right": {
+     "node": "strake.baffles.b23.right",
+     "component": "strake.baffles",
+     "side": "right",
+     "fidelity": "derived",
+     "label": "Baffle B23",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.2,
+     "fs_max": 118.47,
+     "bl_min": 22.825,
+     "bl_max": 23.175,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_b23_left": {
+     "node": "strake.baffles.b23.left",
+     "component": "strake.baffles",
+     "side": "left",
+     "fidelity": "derived",
+     "label": "Baffle B23",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.2,
+     "fs_max": 118.47,
+     "bl_min": -23.175,
+     "bl_max": -22.825,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_db_right": {
+     "node": "strake.baffles.db.right",
+     "component": "strake.baffles",
+     "side": "right",
+     "fidelity": "derived",
+     "label": "Diagonal baffle DB",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.0649,
+     "fs_max": 115.4528,
+     "bl_min": 22.8888,
+     "bl_max": 45.1112,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_db_left": {
+     "node": "strake.baffles.db.left",
+     "component": "strake.baffles",
+     "side": "left",
+     "fidelity": "derived",
+     "label": "Diagonal baffle DB",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.0649,
+     "fs_max": 115.4528,
+     "bl_min": -45.1112,
+     "bl_max": -22.8888,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_bab_right": {
+     "node": "strake.baffles.bab.right",
+     "component": "strake.baffles",
+     "side": "right",
+     "fidelity": "derived",
+     "label": "Baffle BAB",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.0458,
+     "fs_max": 103.4886,
+     "bl_min": 11.4919,
+     "bl_max": 23.0828,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_bab_left": {
+     "node": "strake.baffles.bab.left",
+     "component": "strake.baffles",
+     "side": "left",
+     "fidelity": "derived",
+     "label": "Baffle BAB",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 97.0458,
+     "fs_max": 103.4886,
+     "bl_min": -23.0828,
+     "bl_max": -11.4919,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_baffles_od_right": {
+     "node": "strake.baffles.od.right",
+     "component": "strake.baffles",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Outboard diagonal OD (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 99.4343,
+     "fs_max": 122.6824,
+     "bl_min": 44.8378,
+     "bl_max": 54.5221,
+     "show": {
+      "from": "f21.od-outlet"
+     },
+     "op_index": 202
+    },
+    "strake_baffles_od_left": {
+     "node": "strake.baffles.od.left",
+     "component": "strake.baffles",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Outboard diagonal OD (fitted shape)",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 99.4343,
+     "fs_max": 122.6824,
+     "bl_min": -54.5221,
+     "bl_max": -44.8378,
+     "show": {
+      "from": "f21.od-outlet"
+     },
+     "op_index": 202
+    },
+    "strake_leading_edge_tle_right": {
+     "node": "strake.leading_edge.tle.right",
+     "component": "strake.leading_edge",
+     "side": "right",
+     "fidelity": "derived",
+     "label": "Tank leading-edge strip TLE",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 73.3,
+     "fs_max": 99.7251,
+     "bl_min": 22.732,
+     "bl_max": 45.0,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_leading_edge_tle_left": {
+     "node": "strake.leading_edge.tle.left",
+     "component": "strake.leading_edge",
+     "side": "left",
+     "fidelity": "derived",
+     "label": "Tank leading-edge strip TLE",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 73.3,
+     "fs_max": 99.7251,
+     "bl_min": -45.0,
+     "bl_max": -22.732,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_leading_edge_ble_right": {
+     "node": "strake.leading_edge.ble.right",
+     "component": "strake.leading_edge",
+     "side": "right",
+     "fidelity": "derived",
+     "label": "Baggage leading-edge strip BLE",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.9088,
+     "fs_max": 73.4461,
+     "bl_min": 12.3993,
+     "bl_max": 23.0,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_leading_edge_ble_left": {
+     "node": "strake.leading_edge.ble.left",
+     "component": "strake.leading_edge",
+     "side": "left",
+     "fidelity": "derived",
+     "label": "Baggage leading-edge strip BLE",
+     "cite": [
+      "plans-1980:p141",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.9088,
+     "fs_max": 73.4461,
+     "bl_min": -23.0,
+     "bl_max": -12.3993,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_skins_skin_bottom_right": {
+     "node": "strake.skins.skin_bottom.right",
+     "component": "strake.skins",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Strake bottom skin (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.4,
+     "fs_max": 122.8655,
+     "bl_min": 10.308,
+     "bl_max": 54.6226,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_skins_skin_bottom_left": {
+     "node": "strake.skins.skin_bottom.left",
+     "component": "strake.skins",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Strake bottom skin (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.4,
+     "fs_max": 122.8655,
+     "bl_min": -54.6226,
+     "bl_max": -10.308,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198
+    },
+    "strake_skins_skin_top_right": {
+     "node": "strake.skins.skin_top.right",
+     "component": "strake.skins",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Strake top skin (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.4,
+     "fs_max": 122.8655,
+     "bl_min": 10.308,
+     "bl_max": 54.6226,
+     "show": {
+      "from": "f21.close-tank"
+     },
+     "op_index": 201
+    },
+    "strake_skins_skin_top_left": {
+     "node": "strake.skins.skin_top.left",
+     "component": "strake.skins",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Strake top skin (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 50.4,
+     "fs_max": 122.8655,
+     "bl_min": -54.6226,
+     "bl_max": -10.308,
+     "show": {
+      "from": "f21.close-tank"
+     },
+     "op_index": 201
+    },
+    "strake_skins_cutout_baggage_right": {
+     "node": "strake.skins.cutout_baggage.right",
+     "component": "strake.skins",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Baggage opening in the fuselage side (material removed) (fitted shape)",
+     "cite": [
+      "plans-1980:p142"
+     ],
+     "fs_min": 50.7873,
+     "fs_max": 74.5873,
+     "bl_min": 11.45,
+     "bl_max": 12.35,
+     "show": {
+      "from": "f21.fuselage-cutouts"
+     },
+     "op_index": 197,
+     "void": true
+    },
+    "strake_skins_cutout_baggage_left": {
+     "node": "strake.skins.cutout_baggage.left",
+     "component": "strake.skins",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Baggage opening in the fuselage side (material removed) (fitted shape)",
+     "cite": [
+      "plans-1980:p142"
+     ],
+     "fs_min": 50.7873,
+     "fs_max": 74.5873,
+     "bl_min": -12.35,
+     "bl_max": -11.45,
+     "show": {
+      "from": "f21.fuselage-cutouts"
+     },
+     "op_index": 197,
+     "void": true
+    },
+    "strake_skins_cutout_tank_right": {
+     "node": "strake.skins.cutout_tank.right",
+     "component": "strake.skins",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Tank opening in the fuselage side (material removed) (fitted shape)",
+     "cite": [
+      "plans-1980:p142"
+     ],
+     "fs_min": 86.5873,
+     "fs_max": 101.5873,
+     "bl_min": 10.5072,
+     "bl_max": 12.1201,
+     "show": {
+      "from": "f21.fuselage-cutouts"
+     },
+     "op_index": 197,
+     "void": true
+    },
+    "strake_skins_cutout_tank_left": {
+     "node": "strake.skins.cutout_tank.left",
+     "component": "strake.skins",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Tank opening in the fuselage side (material removed) (fitted shape)",
+     "cite": [
+      "plans-1980:p142"
+     ],
+     "fs_min": 86.5873,
+     "fs_max": 101.5873,
+     "bl_min": -12.1201,
+     "bl_max": -10.5072,
+     "show": {
+      "from": "f21.fuselage-cutouts"
+     },
+     "op_index": 197,
+     "void": true
+    },
+    "strake_sump_sump_blister_right": {
+     "node": "strake.sump.sump_blister.right",
+     "component": "strake.sump",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Sump blister (fitted shape)",
+     "cite": [
+      "plans-1980:p144",
+      "plans-1980:p147"
+     ],
+     "fs_min": 103.5,
+     "fs_max": 124.5,
+     "bl_min": 9.6643,
+     "bl_max": 13.8838,
+     "show": {
+      "from": "f21.outside-bottom"
+     },
+     "op_index": 203
+    },
+    "strake_sump_sump_blister_left": {
+     "node": "strake.sump.sump_blister.left",
+     "component": "strake.sump",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Sump blister (fitted shape)",
+     "cite": [
+      "plans-1980:p144",
+      "plans-1980:p147"
+     ],
+     "fs_min": 103.5,
+     "fs_max": 124.5,
+     "bl_min": -13.8838,
+     "bl_max": -9.6643,
+     "show": {
+      "from": "f21.outside-bottom"
+     },
+     "op_index": 203
+    },
+    "strake_tank_tank_right": {
+     "node": "strake.tank.tank.right",
+     "component": "strake.tank",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Fuel tank volume (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p147",
+      "om-1980:p4"
+     ],
+     "fs_min": 74.7,
+     "fs_max": 121.7554,
+     "bl_min": 10.408,
+     "bl_max": 44.725,
+     "show": {
+      "from": "f21.close-tank"
+     },
+     "op_index": 201,
+     "inset": true
+    },
+    "strake_tank_tank_left": {
+     "node": "strake.tank.tank.left",
+     "component": "strake.tank",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Fuel tank volume (fitted shape)",
+     "cite": [
+      "plans-1980:p142",
+      "plans-1980:p147",
+      "om-1980:p4"
+     ],
+     "fs_min": 74.7,
+     "fs_max": 121.7554,
+     "bl_min": -44.725,
+     "bl_max": -10.408,
+     "show": {
+      "from": "f21.close-tank"
+     },
+     "op_index": 201,
+     "inset": true
+    },
+    "strake_fairing_fairing_right": {
+     "node": "strake.fairing.fairing.right",
+     "component": "strake.fairing",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Leading-edge fairing block (fitted shape)",
+     "cite": [
+      "plans-1980:p145",
+      "plans-1980:p147"
+     ],
+     "fs_min": 100.7,
+     "fs_max": 121.7,
+     "bl_min": 45.8609,
+     "bl_max": 54.4226,
+     "show": {
+      "from": "f21.fairing-caps"
+     },
+     "op_index": 206
+    },
+    "strake_fairing_fairing_left": {
+     "node": "strake.fairing.fairing.left",
+     "component": "strake.fairing",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Leading-edge fairing block (fitted shape)",
+     "cite": [
+      "plans-1980:p145",
+      "plans-1980:p147"
+     ],
+     "fs_min": 100.7,
+     "fs_max": 121.7,
+     "bl_min": -54.4226,
+     "bl_max": -45.8609,
+     "show": {
+      "from": "f21.fairing-caps"
+     },
+     "op_index": 206
+    },
+    "strake_fittings_drain_insert_right": {
+     "node": "strake.fittings.drain_insert.right",
+     "component": "strake.fittings",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Drain insert (fitted shape)",
+     "cite": [
+      "plans-1980:p143",
+      "plans-1980:p146",
+      "plans-1980:p147"
+     ],
+     "fs_min": 74.5,
+     "fs_max": 75.5,
+     "bl_min": 22.0,
+     "bl_max": 23.0,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198,
+     "inset": true
+    },
+    "strake_fittings_drain_insert_left": {
+     "node": "strake.fittings.drain_insert.left",
+     "component": "strake.fittings",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Drain insert (fitted shape)",
+     "cite": [
+      "plans-1980:p143",
+      "plans-1980:p146",
+      "plans-1980:p147"
+     ],
+     "fs_min": 74.5,
+     "fs_max": 75.5,
+     "bl_min": -23.0,
+     "bl_max": -22.0,
+     "show": {
+      "from": "f21.jig-bond"
+     },
+     "op_index": 198,
+     "inset": true
+    },
+    "strake_fittings_vent_line_right": {
+     "node": "strake.fittings.vent_line.right",
+     "component": "strake.fittings",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Vent line (fitted shape)",
+     "cite": [
+      "plans-1980:p143"
+     ],
+     "fs_min": 105.875,
+     "fs_max": 106.125,
+     "bl_min": 11.6225,
+     "bl_max": 11.8725,
+     "show": {
+      "from": "f21.vent-screen"
+     },
+     "op_index": 200
+    },
+    "strake_fittings_vent_line_left": {
+     "node": "strake.fittings.vent_line.left",
+     "component": "strake.fittings",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Vent line (fitted shape)",
+     "cite": [
+      "plans-1980:p143"
+     ],
+     "fs_min": 105.875,
+     "fs_max": 106.125,
+     "bl_min": -11.8725,
+     "bl_max": -11.6225,
+     "show": {
+      "from": "f21.vent-screen"
+     },
+     "op_index": 200
+    },
+    "strake_fittings_screen_right": {
+     "node": "strake.fittings.screen.right",
+     "component": "strake.fittings",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Outlet screen (fitted shape)",
+     "cite": [
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 115.175,
+     "fs_max": 116.425,
+     "bl_min": 13.375,
+     "bl_max": 14.625,
+     "show": {
+      "from": "f21.vent-screen"
+     },
+     "op_index": 200
+    },
+    "strake_fittings_screen_left": {
+     "node": "strake.fittings.screen.left",
+     "component": "strake.fittings",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Outlet screen (fitted shape)",
+     "cite": [
+      "plans-1980:p143",
+      "plans-1980:p147"
+     ],
+     "fs_min": 115.175,
+     "fs_max": 116.425,
+     "bl_min": -14.625,
+     "bl_max": -13.375,
+     "show": {
+      "from": "f21.vent-screen"
+     },
+     "op_index": 200
+    },
+    "strake_fittings_outlet_tube_right": {
+     "node": "strake.fittings.outlet_tube.right",
+     "component": "strake.fittings",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Outlet tube end (fitted shape)",
+     "cite": [
+      "plans-1980:p144"
+     ],
+     "fs_min": 111.8125,
+     "fs_max": 112.1875,
+     "bl_min": 10.697,
+     "bl_max": 11.097,
+     "show": {
+      "from": "f21.od-outlet"
+     },
+     "op_index": 202
+    },
+    "strake_fittings_outlet_tube_left": {
+     "node": "strake.fittings.outlet_tube.left",
+     "component": "strake.fittings",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Outlet tube end (fitted shape)",
+     "cite": [
+      "plans-1980:p144"
+     ],
+     "fs_min": 111.8125,
+     "fs_max": 112.1875,
+     "bl_min": -11.097,
+     "bl_max": -10.697,
+     "show": {
+      "from": "f21.od-outlet"
+     },
+     "op_index": 202
+    },
+    "strake_fittings_fuel_cap_right": {
+     "node": "strake.fittings.fuel_cap.right",
+     "component": "strake.fittings",
+     "side": "right",
+     "fidelity": "representational",
+     "label": "Fuel cap (fitted shape)",
+     "cite": [
+      "plans-1980:p145"
+     ],
+     "fs_min": 108.875,
+     "fs_max": 111.125,
+     "bl_min": 32.875,
+     "bl_max": 35.125,
+     "show": {
+      "from": "f21.fairing-caps"
+     },
+     "op_index": 206
+    },
+    "strake_fittings_fuel_cap_left": {
+     "node": "strake.fittings.fuel_cap.left",
+     "component": "strake.fittings",
+     "side": "left",
+     "fidelity": "representational",
+     "label": "Fuel cap (fitted shape)",
+     "cite": [
+      "plans-1980:p145"
+     ],
+     "fs_min": 108.875,
+     "fs_max": 111.125,
+     "bl_min": -35.125,
+     "bl_max": -32.875,
+     "show": {
+      "from": "f21.fairing-caps"
+     },
+     "op_index": 206
+    },
+    "elec_battery_shelf_shelf": {
+     "node": "elec.battery_shelf.shelf",
+     "component": "elec.battery_shelf",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Battery shelf (fitted shape)",
+     "cite": [
+      "plans-1980:p155"
+     ],
+     "fs_min": 7.2,
+     "fs_max": 14.8,
+     "bl_min": 2.1,
+     "bl_max": 6.9,
+     "show": {
+      "from": "f22.battery-shelf"
+     },
+     "op_index": 210,
+     "pocket": true
+    },
+    "elec_battery_shelf_cover": {
+     "node": "elec.battery_shelf.cover",
+     "component": "elec.battery_shelf",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Battery cover (fitted shape)",
+     "cite": [
+      "plans-1980:p155"
+     ],
+     "fs_min": 7.29,
+     "fs_max": 14.71,
+     "bl_min": 2.19,
+     "bl_max": 6.81,
+     "show": {
+      "from": "f22.battery-shelf"
+     },
+     "op_index": 210,
+     "pocket": true
+    },
+    "elec_battery_shelf_strap": {
+     "node": "elec.battery_shelf.strap",
+     "component": "elec.battery_shelf",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Battery strap (fitted shape)",
+     "cite": [
+      "plans-1980:p155"
+     ],
+     "fs_min": 9.5,
+     "fs_max": 10.0,
+     "bl_min": 2.16,
+     "bl_max": 6.84,
+     "show": {
+      "from": "f22.battery-shelf"
+     },
+     "op_index": 210,
+     "pocket": true
+    },
+    "elec_battery_battery": {
+     "node": "elec.battery.battery",
+     "component": "elec.battery",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Battery, 25 Ah (station not printed) (fitted shape)",
+     "cite": [
+      "plans-1980:p150",
+      "plans-1980:p151",
+      "plans-1980:p155"
+     ],
+     "fs_min": 7.5,
+     "fs_max": 14.5,
+     "bl_min": 2.4,
+     "bl_max": 6.6,
+     "show": {
+      "from": "f22.battery-shelf"
+     },
+     "op_index": 210,
+     "pocket": true
+    },
+    "elec_relays_start_relay": {
+     "node": "elec.relays.start_relay",
+     "component": "elec.relays",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Start relay (fitted shape)",
+     "cite": [
+      "plans-1980:p149",
+      "plans-1980:p152"
+     ],
+     "fs_min": 20.3,
+     "fs_max": 22.0,
+     "bl_min": 3.0,
+     "bl_max": 4.5,
+     "show": {
+      "from": "f22.firewall-terminals"
+     },
+     "op_index": 211,
+     "pocket": true
+    },
+    "elec_relays_overvoltage_unit": {
+     "node": "elec.relays.overvoltage_unit",
+     "component": "elec.relays",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Over-voltage unit (fitted shape)",
+     "cite": [
+      "plans-1980:p149"
+     ],
+     "fs_min": 20.3,
+     "fs_max": 22.0,
+     "bl_min": 5.0,
+     "bl_max": 6.5,
+     "show": {
+      "from": "f22.firewall-terminals"
+     },
+     "op_index": 211,
+     "pocket": true
+    },
+    "elec_wiring_battery_cable": {
+     "node": "elec.wiring.battery_cable",
+     "component": "elec.wiring",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Battery cable (fitted shape)",
+     "cite": [
+      "plans-1980:p152"
+     ],
+     "fs_min": 14.7395,
+     "fs_max": 20.2205,
+     "bl_min": 3.6014,
+     "bl_max": 4.6486,
+     "show": {
+      "from": "f22.firewall-terminals"
+     },
+     "op_index": 211,
+     "pocket": true
+    },
+    "elec_wiring_panel_bundle": {
+     "node": "elec.wiring.panel_bundle",
+     "component": "elec.wiring",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Panel wire bundle (fitted shape)",
+     "cite": [
+      "plans-1980:p153"
+     ],
+     "fs_min": 39.1,
+     "fs_max": 39.7,
+     "bl_min": -9.6,
+     "bl_max": 9.9,
+     "show": {
+      "from": "f22.panel-wiring"
+     },
+     "op_index": 208
+    },
+    "elec_wiring_firewall_cable": {
+     "node": "elec.wiring.firewall_cable",
+     "component": "elec.wiring",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Cable to the firewall (fitted shape)",
+     "cite": [
+      "plans-1980:p153"
+     ],
+     "fs_min": 39.4,
+     "fs_max": 124.8,
+     "bl_min": 9.45,
+     "bl_max": 9.75,
+     "show": {
+      "from": "f22.firewall-terminals"
+     },
+     "op_index": 211
+    },
+    "elec_lights_light_right": {
+     "node": "elec.lights.light_right",
+     "component": "elec.lights",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Right position light (green) (fitted shape)",
+     "cite": [
+      "plans-1980:p151",
+      "plans-1980:p155"
+     ],
+     "fs_min": 156.0,
+     "fs_max": 158.4,
+     "bl_min": 157.05,
+     "bl_max": 158.65,
+     "show": {
+      "from": "f22.wing-wiring"
+     },
+     "op_index": 212
+    },
+    "elec_lights_light_left": {
+     "node": "elec.lights.light_left",
+     "component": "elec.lights",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Left position light (red) (fitted shape)",
+     "cite": [
+      "plans-1980:p151",
+      "plans-1980:p155"
+     ],
+     "fs_min": 156.0,
+     "fs_max": 158.4,
+     "bl_min": -158.65,
+     "bl_max": -157.05,
+     "show": {
+      "from": "f22.wing-wiring"
+     },
+     "op_index": 212
+    },
+    "elec_lights_strobe_supply": {
+     "node": "elec.lights.strobe_supply",
+     "component": "elec.lights",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Strobe power supply (fitted shape)",
+     "cite": [
+      "plans-1980:p149",
+      "plans-1980:p155"
+     ],
+     "fs_min": 82.85,
+     "fs_max": 86.85,
+     "bl_min": -10.8,
+     "bl_max": -7.8,
+     "show": {
+      "from": "f22.wing-wiring"
+     },
+     "op_index": 212
+    },
+    "elec_antennas_nav_strip_right": {
+     "node": "elec.antennas.nav_strip_right",
+     "component": "elec.antennas",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Right nav antenna strip (fitted shape)",
+     "cite": [
+      "plans-1980:p152"
+     ],
+     "fs_min": 23.658,
+     "fs_max": 24.158,
+     "bl_min": 13.0,
+     "bl_max": 35.8,
+     "show": {
+      "from": "f22.antennas"
+     },
+     "op_index": 213
+    },
+    "elec_antennas_nav_strip_left": {
+     "node": "elec.antennas.nav_strip_left",
+     "component": "elec.antennas",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Left nav antenna strip (fitted shape)",
+     "cite": [
+      "plans-1980:p152"
+     ],
+     "fs_min": 23.658,
+     "fs_max": 24.158,
+     "bl_min": -35.8,
+     "bl_max": -13.0,
+     "show": {
+      "from": "f22.antennas"
+     },
+     "op_index": 213
+    },
+    "elec_antennas_comm_strips": {
+     "node": "elec.antennas.comm_strips",
+     "component": "elec.antennas",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Comm antenna strips (in the right winglet) (fitted shape)",
+     "cite": [
+      "plans-1980:p152"
+     ],
+     "fs_min": 187.9687,
+     "fs_max": 192.6124,
+     "bl_min": 156.6686,
+     "bl_max": 158.3464,
+     "show": {
+      "from": "f22.antennas"
+     },
+     "op_index": 213,
+     "in_foam": true
+    },
+    "engine_block_block": {
+     "node": "engine.block.block",
+     "component": "engine.block",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Engine block (installation in Section II, not held) (fitted shape)",
+     "cite": [
+      "plans-1980:p156",
+      "plans-1980:p171",
+      "cp-text:p32"
+     ],
+     "fs_min": 126.695,
+     "fs_max": 157.305,
+     "bl_min": -16.0,
+     "bl_max": 16.0,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_bracket_bracket": {
+     "node": "engine.bracket.bracket",
+     "component": "engine.bracket",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Throttle and mixture bracket (fitted shape)",
+     "cite": [
+      "plans-1980:p156"
+     ],
+     "fs_min": 131.0,
+     "fs_max": 137.5,
+     "bl_min": -1.25,
+     "bl_max": 1.25,
+     "show": {
+      "from": "f23.carb-bracket"
+     },
+     "op_index": 215
+    },
+    "engine_cowl_cowl": {
+     "node": "engine.cowl.cowl",
+     "component": "engine.cowl",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Cowl outline (fitted shape)",
+     "cite": [
+      "plans-1980:p156",
+      "plans-1980:p157",
+      "plans-1980:p171"
+     ],
+     "fs_min": 125.4,
+     "fs_max": 148.4,
+     "bl_min": -23.0,
+     "bl_max": 23.0,
+     "show": {
+      "from": "f23.cowl-trim"
+     },
+     "op_index": 216
+    },
+    "engine_rib_rib_right": {
+     "node": "engine.rib.rib_right",
+     "component": "engine.rib",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Right wing-root metal rib (fitted shape)",
+     "cite": [
+      "plans-1980:p157",
+      "plans-1980:p158"
+     ],
+     "fs_min": 125.05,
+     "fs_max": 148.4,
+     "bl_min": 22.95,
+     "bl_max": 22.97,
+     "show": {
+      "from": "f23.root-rib"
+     },
+     "op_index": 218
+    },
+    "engine_rib_rib_left": {
+     "node": "engine.rib.rib_left",
+     "component": "engine.rib",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Left wing-root metal rib (fitted shape)",
+     "cite": [
+      "plans-1980:p157",
+      "plans-1980:p158"
+     ],
+     "fs_min": 125.05,
+     "fs_max": 148.4,
+     "bl_min": -22.97,
+     "bl_max": -22.95,
+     "show": {
+      "from": "f23.root-rib"
+     },
+     "op_index": 218
+    }
+   },
+   "fuel": {
+    "model_gal_per_side": 26.0,
+    "plans_gal_per_tank": 25.5,
+    "om_gal_per_tank": 28.0,
+    "om_total_gal": 52.0,
+    "envelope_gal_per_side": 24.6,
+    "lb_per_gal": 6.0,
+    "arm_fs": 104.5,
+    "note": "capacity is a conflict, kept as text: the plans print 25.5 per tank, the manual 28 per tank and 52 in all; the model keeps 26 per side; the shaded envelope is a fitted shape, not a measurement"
+   },
+   "conflicts": {
+    "cutout_aft_top_depth": {
+     "mid_in": 1.4,
+     "aft_end_in": 1.9
+    },
+    "baggage_arm": {
+     "om_fs": 90.0,
+     "plan_centroid_fs": 80.6
+    },
+    "layup_7_numbering": [
+     "f21.od-outlet",
+     "f21.outside-bottom"
+    ]
+   },
+   "battery": {
+    "fs_range": [
+     0.0,
+     22.0
+    ],
+    "model_fs": 11.0,
+    "status": "positioned-from-text, low: the station is on A6 (not held); drawn at the middle of the range for illustration only",
+    "added_lb": 19.0,
+    "starter_fs_min": 150.0,
+    "relay_fs": 22.0
+   },
+   "engine": {
+    "down_thrust_deg": 2.0,
+    "crank_bl": 0.0,
+    "block_in": [
+     30.0,
+     32.0,
+     18.0
+    ],
+    "block_fwd_fs": 127.0,
+    "limits_lb": [
+     246.0,
+     286.0
+    ],
+    "oil": {
+     "lb": 8.0,
+     "fs": 140.0
+    },
+    "striped": [
+     "engine.block.block"
+    ],
+    "note": "installation is in Sections IIA, IIC and IIL, not held; no engine, mount, prop or exhaust station is printed"
+   },
+   "weights": {
+    "rows": [
+     "n26ms_empty_1",
+     "n26ms_empty_2",
+     "n26ms_empty_3",
+     "n26ms_empty_4",
+     "n26ms_empty_5",
+     "n26ms_empty_6",
+     "n26ms_empty_7",
+     "n26ms_empty_8",
+     "dynafocal_mount",
+     "cowl_glass",
+     "cowl_graphite"
+    ],
+    "note": "CP27 page 4 N26MS empty-weight ladder, the dynafocal mount (CP26) and the cowl (CP27): reference only, in no sum",
+    "closure_target": {
+     "empty_lb": 730,
+     "empty_arm_in": 111.7,
+     "cite": "om-1980:p25 sample empty aircraft 730 at 111.7",
+     "loaded_envelope_fs": [
+      97.0,
+      103.0
+     ],
+     "note": "the OM sample empty airplane is the closure target; FS 97 to 103 is the loaded envelope, not the empty CG"
+    },
+    "cg": "not yet computed"
+   }
   }
  }
 }

@@ -7,6 +7,8 @@ export interface Op {
   summary: string
   variants: string[]
   completion?: string[]
+  /** the op's own ply schedule (cloth, plies, where), where the research gives one */
+  materials?: { cloth: string; plies: number; where: string }[]
   stub?: boolean
   components: string[]
 }

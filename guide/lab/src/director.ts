@@ -298,11 +298,11 @@ export function chapterTour(graph: TourGraph, variant: string, chapter: number):
 }
 
 /** Our names for the fuselage chapters' title cards. */
-const FUSE_CHAPTER_NAME: Record<number, string> = { 11: 'Roncz elevators', 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installation', 13: 'Nose and nose gear', 14: 'Centre-section spar', 15: 'Firewall', 16: 'Controls', 17: 'Trim', 18: 'Canopy', 19: 'Wings', 20: 'Winglets and rudders' }
+const FUSE_CHAPTER_NAME: Record<number, string> = { 11: 'Roncz elevators', 4: 'Bulkheads and panels', 5: 'Fuselage sides', 6: 'Fuselage assembly', 7: 'Fuselage exterior', 8: 'Roll-over structure and seat belts', 9: 'Main landing gear', 12: 'Canard installation', 13: 'Nose and nose gear', 14: 'Centre-section spar', 15: 'Firewall', 16: 'Controls', 17: 'Trim', 18: 'Canopy', 19: 'Wings', 20: 'Winglets and rudders', 21: 'Strakes and fuel', 22: 'Electrical system', 23: 'Engine and cowl' }
 /** the Roncz elevators' chapter: a canard-subject tour */
 export const ELEVATOR_CHAPTER = 11
 /** the chapters whose tours close on their own last op (the canard and elevators installed, the nose), not the bare finished airplane */
-const CLOSE_ON_LAST_OP = new Set([12, 13, 14, 15, 16, 17, 18, 19, 20])
+const CLOSE_ON_LAST_OP = new Set([12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23])
 export const chapterCard = (ch: number) => `Chapter ${ch} \u2014 ${FUSE_CHAPTER_NAME[ch] ?? 'Fuselage'}`
 /** The front seat bulkhead spans FS 63.55-81.75; the chapter 6 film ends its cut inside that, at this station. */
 export const FUSE_CUT_FS = 72

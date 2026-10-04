@@ -28,6 +28,8 @@ import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
 import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
 import { AILERON_OP, RUDDER_OP, aileronProgress, rudderProgress, clampAileronDeg, clampRudderDeg, wingKin, wingRow, aileronText, rudderText, aileronShort, rudderShort, type WingData } from './logic/wing'
+import { m28Kin, m28Row, type M28Data } from './logic/strake'
+import type { FusePartRow } from './logic/fuselage'
 import { HINGE_OP, CUT_OP, liftProgress, openProgress, clampOpenDeg, canopyKin, canopyRow, openText, openShort, type CanopyData } from './logic/canopy'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
@@ -524,7 +526,7 @@ async function boot() {
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
     // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) and the canopy (chapter 18, "extras".m26) join them the same way, the cap and frame plies among the box's plies
-    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}), ...(fuseRaw.extras?.m27?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}), ...(fuseRaw.extras?.m27?.nodes ?? {}) } } : null
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}), ...(fuseRaw.extras?.m27?.parts ?? {}), ...((fuseRaw.extras?.m28?.parts ?? {}) as unknown as Record<string, FusePartRow>) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}), ...(fuseRaw.extras?.m27?.nodes ?? {}) } } : null
     // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
     const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
@@ -859,6 +861,10 @@ async function boot() {
         const k = wingKin(selected, WING, aileronNow(), rudderNow())
         if (k) return k
       }
+      if (subject === 'fuselage' && bay && M28) {
+        const k = m28Kin(selected, M28, graph.ops.find((o) => o.id === selected)?.materials ?? [])
+        if (k) return k
+      }
       if (subject === 'fuselage' && bay && CTL && selected === STICK_OP) {
         return { label: 'Pitch stick and elevators', value: stickText(stickNow(), CTL), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
       }
@@ -883,6 +889,7 @@ async function boot() {
     }
     // chapter 18: the canopy lifts off at the cut op (a sim-time animation) and swings open on the hinge op; a person's slider takes the opening over
     const CANOPY: CanopyData | null = fuseRaw?.extras?.m26?.canopy ?? null
+    const M28: M28Data | null = fuseRaw?.extras?.m28 ?? null
     let canopyManual: number | null = null
     const liftNow = (): number => (selected === CUT_OP ? liftProgress(opT) : 1)
     const canopyNow = (): number => (!CANOPY || selected !== HINGE_OP ? 0 : clampOpenDeg(canopyManual ?? openProgress(opT) * CANOPY.hinge.max_open_deg, CANOPY.hinge.max_open_deg))
@@ -1152,7 +1159,7 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
-      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order))
+      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order))
       updateKin()
     }
     const updateReadout = () => {
@@ -1265,7 +1272,7 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
-    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20].includes(chapterOf(selected))
+    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
@@ -1373,6 +1380,15 @@ async function boot() {
         at: () => bay.abcAnchor('wprp', fwp),
         vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.abc.visible ? 1 : 0),
         priority: () => 4, tie: () => 0,
+      })
+    }
+    // chapter 21: the strake jig table is a fitted shape too (the plans say only a flat table, level with the longerons)
+    if (bay && M28) {
+      flabels.add({
+        id: 'strake.jig_table', text: 'Strake jig table (fitted shape)', color: hex(HATCH_COLOR), cls: 'fitted',
+        at: () => bay.strakeTableAnchor(fwp),
+        vis: budgeted('strake.jig_table', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.strakeTable.visible, () => 30),
+        priority: () => labelPriority({ inOp: false, cut: false, fitted: true }), tie: () => 0,
       })
     }
     if (bay && CTL) {
@@ -1709,7 +1725,7 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.ground = () => groundRow(ledger)
-    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order)
+    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order) ?? m28Row(ledger, M28, selected, graph.order)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
     hook.gearMarks = () => {

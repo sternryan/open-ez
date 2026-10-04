@@ -7,7 +7,7 @@
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
  * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | { wing: { bl: number; fs?: number; z?: number } } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | { wing: { bl: number; fs?: number; z?: number } } | 'box' | 'marks' | 'bench' | 'strake-table'; dist: number; el: number; az: number; pan?: number; up?: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -235,8 +235,41 @@ export const M27_VIEWS: Record<string, FuseView> = {
   'f20.rudder-hang': { focus: at(180, 36, 160), dist: 55, el: 14, az: 24, pan: -8 },
 }
 
+/**
+ * Chapters 21 to 23, the strakes and fuel, the electrical system, the engine and cowl. The strake ops frame the strake on the airplane (on its gear, the
+ * nose toward -X) from the room side and above: the left strake is the near one. The cutting op frames the right strake's kit on the layup table (`strake-table`).
+ * The electrical ops aim at their parts (the nose, F22 and the firewall, the wingtip, the canard's foil, the winglet's); the engine ops look from behind,
+ * left of the tail (az -40 to -55), where the block, the bracket and the cowl are in front of the firewall's aft face.
+ */
+const strakeAt = (fs: number, bl: number, wl: number, dist: number, el: number, az: number, o: Partial<FuseView> = {}): FuseView => ({ focus: at(fs, wl, bl), dist, el, az, ...o })
+export const M28_VIEWS: Record<string, FuseView> = {
+  'f21.cut-parts': { focus: 'strake-table', dist: 150, el: 46, az: 0, up: 0 },
+  'f21.fuselage-cutouts': strakeAt(76, -12, 14, 120, 24, 16),
+  'f21.jig-bond': strakeAt(88, -32, 15, 205, 52, 14),
+  'f21.inside-layups': strakeAt(94, -32, 17, 190, 54, 14),
+  'f21.vent-screen': strakeAt(110, -13, 17, 82, 50, 18),
+  'f21.close-tank': strakeAt(98, -30, 17, 200, 56, 14),
+  'f21.od-outlet': strakeAt(106, -32, 17, 170, 54, 20),
+  'f21.outside-bottom': strakeAt(104, -26, 14, 190, 48, 14),
+  'f21.outside-top': strakeAt(90, -32, 18, 210, 54, 14),
+  'f21.pressure-check': strakeAt(98, -30, 17, 200, 56, 14),
+  'f21.fairing-caps': strakeAt(104, -38, 18, 150, 50, 16),
+  'f21.plumbing': strakeAt(90, 0, 14, 240, 42, 20),
+  'f22.panel-wiring': strakeAt(39, 0, 9, 62, 40, -28),
+  'f22.microswitches': strakeAt(39, 0, 9, 62, 40, -28),
+  'f22.battery-shelf': strakeAt(11, 0, 3, 44, 34, 38),
+  'f22.firewall-terminals': strakeAt(26, 4, 5, 70, 32, 40),
+  'f22.wing-wiring': strakeAt(157, -156, 18, 46, 16, 14),
+  'f22.antennas': strakeAt(24, -24, 18, 96, 60, 0),
+  'f23.engine-install': strakeAt(142, 0, 20, 110, 24, -48),
+  'f23.carb-bracket': strakeAt(134, 0, 14, 74, 24, -42),
+  'f23.cowl-trim': strakeAt(137, 0, 21, 112, 26, -46),
+  'f23.cowl-closeout': strakeAt(137, 0, 21, 112, 26, -46),
+  'f23.root-rib': strakeAt(137, -23, 19, 70, 16, -34),
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? M27_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? M27_VIEWS[opId] ?? M28_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {
