@@ -15,7 +15,9 @@ GRAPH_DIR = Path(__file__).parent / "graph"
 
 # Workshop-only geometry: kept in the glb so the lab can show it in its jig scene, flagged `extras.workshop` on its node (GLTFLoader
 # puts a node's extras in userData) so the lab hides it by default and an installed-airframe view never shows it.
-WORKSHOP_COMPONENTS = frozenset({"spar.jig", "canopy.blocks"})
+WORKSHOP_COMPONENTS = frozenset(
+    {"spar.jig", "canopy.blocks", "wing.jigs", "winglet.jig"}
+)
 
 
 def export_components(components: dict, out: Path) -> Path:
@@ -109,6 +111,7 @@ def default_components() -> dict:
         **nose_components(),
         **m25_components(),
         **m26_components(),
+        **m27_components(),
     }
 
 
@@ -171,6 +174,16 @@ def m26_components() -> dict:
     from guide import fuselage_export
 
     return fuselage_export.m26_components()
+
+
+def m27_components() -> dict:
+    """The wings and winglets (chapters 19 and 20), both sides, one glb component per graph id, in place on the airplane with the aileron and rudder neutral
+    (core.wing_book, core.winglet_book). Each component is a group node of its id with children ``<id>.<part>.<right|left>`` (ply parts: one child per ply).
+    In default_components(); not in the canard-only cutaway export. wing.jigs and winglet.jig are workshop geometry, flagged extras.workshop (see
+    WORKSHOP_COMPONENTS). The aileron and rudder poses are core.wing_book.aileron_pose and core.winglet_book.rudder_pose, applied by the lab."""
+    from guide import fuselage_export
+
+    return fuselage_export.m27_components()
 
 
 def _canard_layup(graph) -> dict:

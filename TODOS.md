@@ -38,6 +38,11 @@ an undimensioned image.
   rather than patching the placeholder.
 - **Kernel validation.** The laminate kernel has been checked against one textbook E-glass case.
   It needs published carbon and glass data before Block 3 relies on it (roadmap section 5).
+- **Analysis wing and winglet fields (M2.7).** `wing_span`, `wing_root_bl`, `wing_washout` and the
+  `winglet_*` analysis fields match no plans page (the build model reads the `*_book_*` fields; see their
+  `GEOMETRY_PROVENANCE` notes). Moving them changes the NP, so it waits for Block 3, and the VSPAERO leg
+  must be re-run then (OpenVSP is not installed on this machine). `wing_weight_lb` 85.0 (both wings,
+  unsourced) must be reconciled with 2 x 64 lb (CP26) at ledger closure.
 
 ## Completed
 

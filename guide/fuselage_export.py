@@ -374,9 +374,9 @@ def ply_shells() -> dict[str, cq.Workplane]:
 
 
 @lru_cache(maxsize=1)
-def _base_and_stages() -> (
-    tuple[dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]]
-):
+def _base_and_stages() -> tuple[
+    dict[str, cq.Workplane], dict[str, tuple[tuple[str, str, cq.Workplane], ...]]
+]:
     """(the shape each part node shows first, {node: ((op, stage node, shape), ...)} in graph order)."""
     parts = _parts()
     base = {name: part.solid for name, part in parts.items()}
@@ -1080,6 +1080,252 @@ def m26_section() -> dict:
     }
 
 
+# ---- chapters 19 and 20 (M2.7): the wings and the winglets -----------------------------------------------------------------------------
+SIDES = ("right", "left")
+M27_PLY_PARTS = {  # part name -> (op the plies are laid in, component)
+    "shear_web": ("f19.shear-web", "wing.shear_web"),
+    "cap_bottom": ("f19.bottom-cap", "wing.spar_caps"),
+    "cap_top": ("f19.top-cap", "wing.spar_caps"),
+    "skin_bottom": ("f19.bottom-skin", "wing.skins"),
+    "skin_top": ("f19.top-skin", "wing.skins"),
+    "skin_out": ("f20.skins", "winglet.skins"),
+    "skin_in": ("f20.skins", "winglet.skins"),
+    "layup_3": ("f20.outside-layups", "winglet.layups"),
+}
+M27_PLY_CLOTH = {  # (part, ply k) -> cloth; the rest are UND (the wing cores' skins, caps, web) or BID (the winglet's)
+    ("skin_bottom", 3): "BID",
+    ("skin_out", 3): "BID",
+}
+M27_SHOW_FROM = {  # a part's first op (the lab shows it from here on)
+    "jigs": "f19.jig",
+    "fc1": "f19.mount-cores",
+    "fc2": "f19.mount-cores",
+    "fc3": "f19.mount-cores",
+    "fc4": "f19.le-cores",
+    "fc5": "f19.le-cores",
+    "hardpoints": "f19.hardpoints",
+    "conduit": "f19.rudder-conduit",
+    "ribs": "f19.ribs",
+    "aileron": "f19.aileron-cut",
+    "hinge_pins": "f19.aileron-build",
+    "hinge_leaves": "f19.aileron-build",
+    "aileron_rod": "f19.aileron-build",
+    "torque_tube": "f19.aileron-build",
+    "controls": "f19.controls",
+    "spar_bolts": "f19.attach",
+    "upper_core": "f20.cut-cores",
+    "tip_cap": "f20.skins",
+    "jig_lines": "f20.jig",
+    "block_a": "f20.outside-layups",
+    "lower_fin": "f20.lower-fin",
+    "rudder": "f20.rudder-cut",
+    "belhorn": "f20.rudder-hang",
+    "rudder_hinge": "f20.rudder-hang",
+}
+M27_LABELS = {
+    "jigs": "Wing jigs",
+    "fc1": "Core FC1, inboard",
+    "fc2": "Core FC2, centre aft",
+    "fc3": "Core FC3, outboard aft",
+    "fc4": "Core FC4, centre leading edge",
+    "fc5": "Core FC5, outboard leading edge",
+    "hardpoints": "Hard points and plates",
+    "shear_web": "Shear web plies",
+    "cap_bottom": "Bottom spar cap plies",
+    "cap_top": "Top spar cap plies",
+    "skin_bottom": "Bottom skin plies",
+    "skin_top": "Top skin plies",
+    "conduit": "Rudder conduit",
+    "ribs": "Root rib and incidence board",
+    "aileron": "Aileron",
+    "hinge_pins": "Aileron hinges, wing side",
+    "hinge_leaves": "Aileron hinges, aileron side",
+    "aileron_rod": "Aileron balance rod",
+    "torque_tube": "Aileron torque tube",
+    "controls": "Root bay controls",
+    "spar_bolts": "Wing attach bolts",
+    "upper_core": "Upper fin core",
+    "tip_cap": "Tip cap",
+    "jig_lines": "Jig lines A, B and C",
+    "layup_3": "Corner layup 3, UND plies",
+    "block_a": "Block A",
+    "lower_fin": "Lower fin",
+    "rudder": "Rudder",
+    "belhorn": "Rudder belhorn",
+    "rudder_hinge": "Rudder hinge",
+    "skin_out": "Winglet skin, outboard plies",
+    "skin_in": "Winglet skin, inboard plies",
+}
+
+
+@lru_cache(maxsize=1)
+def _m27_built() -> dict:
+    """{side: ({part: FusePart}, {part: [ply solids]})} for the wings and the winglets together (core.wing_book, core.winglet_book)."""
+    from core import wing_book as wb
+    from core import winglet_book as wl
+
+    out = {}
+    for side in SIDES:
+        parts = {**wb.build_wing(side), **wl.build_winglet(side)}
+        plies = {**wb.build_plies(side), **wl.build_plies(side)}
+        out[side] = (parts, plies)
+    return out
+
+
+def _m27_component_parts() -> dict:
+    from core import wing_book as wb
+    from core import winglet_book as wl
+
+    return {**wb.COMPONENT_PARTS, **wl.COMPONENT_PARTS}
+
+
+def m27_components() -> dict:
+    """glb components for chapters 19 and 20 (see guide.export_glb.m27_components). A component is a group node named by its id; the children are
+    ``<id>.<part>.<right|left>`` and, for the ply parts, one child per ply (``<id>.<part>.<side>.p<k>``) instead of the merged solid. The winglet skins
+    are plies only. All solids are in the airplane frame with the wings and winglets in place and the aileron and rudder neutral."""
+    built = _m27_built()
+    out: dict = {}
+    for cid, names in _m27_component_parts().items():
+        nodes: dict = {}
+        for side in SIDES:
+            parts, plies = built[side]
+            for n in names:
+                if n in M27_PLY_PARTS:
+                    for k, ply in enumerate(plies[n], 1):
+                        nodes[f"{cid}.{n}.{side}.p{k}"] = ply.val().copy()
+                else:
+                    nodes[f"{cid}.{n}.{side}"] = parts[n].solid.val().copy()
+            if cid == "winglet.skins":
+                for n in ("skin_out", "skin_in"):
+                    for k, ply in enumerate(plies[n], 1):
+                        nodes[f"{cid}.{n}.{side}.p{k}"] = ply.val().copy()
+        out[cid] = nodes
+    return out
+
+
+def m27_section() -> dict:
+    """layup.json["fuselage"]["extras"]["m27"]: part rows and ply rows by node, the aileron and rudder hinge axes and stops, the three wing conflicts, the
+    A, B and C closure and the derived lean, as the lab states them. Representational parts say "fitted shape"."""
+    from core import wing_book as wb
+    from core import winglet_book as wl
+
+    ops_order = list(_op_index())
+    built = _m27_built()
+    comp = {n: cid for cid, names in _m27_component_parts().items() for n in names}
+    comp["skin_out"] = comp["skin_in"] = "winglet.skins"
+    parts: dict[str, dict] = {}
+    nodes: dict[str, dict] = {}
+    for side in SIDES:
+        fparts, plies = built[side]
+        for n, part in fparts.items():
+            if n in M27_PLY_PARTS and n != "layup_3":
+                pass
+            node = f"{comp[n]}.{n}.{side}"
+            bb = cq.Compound.makeCompound([part.solid.val()]).BoundingBox()
+            row = {
+                "node": node,
+                "component": comp[n],
+                "side": side,
+                "fidelity": part.fidelity,
+                "label": M27_LABELS[n]
+                + (" (fitted shape)" if part.fidelity == "representational" else ""),
+                "cite": list(part.cite),
+                "fs_min": round(bb.xmin, 4),
+                "fs_max": round(bb.xmax, 4),
+                "bl_min": round(bb.ymin, 4),
+                "bl_max": round(bb.ymax, 4),
+                "show": {"from": M27_SHOW_FROM.get(n) or M27_PLY_PARTS[n][0]},
+            }
+            if n in wb.AILERON_ATTACHED:
+                row["turns"] = "aileron"
+            if n in wl.RUDDER_ATTACHED:
+                row["turns"] = "rudder"
+            if n in wb.WORKSHOP_PARTS or n in wl.WORKSHOP_PARTS:
+                row["workshop"] = True
+            if n in M27_PLY_PARTS:
+                row["plies"] = len(plies[n])
+            parts[f"{comp[n]}_{n}_{side}".replace(".", "_")] = row
+        for n, (op, cid) in M27_PLY_PARTS.items():
+            for k, ply in enumerate(plies[n], 1):
+                bb = ply.val().BoundingBox()
+                nodes[f"{cid}.{n}.{side}.p{k}"] = {
+                    "part": f"{comp[n]}_{n}_{side}".replace(".", "_"),
+                    "component": cid,
+                    "side": side,
+                    "op": op,
+                    "op_index": ops_order.index(op),
+                    "op_order": k,
+                    "order": k,
+                    "stack": k,
+                    "cloth": M27_PLY_CLOTH.get(
+                        (n, k), "UND" if n != "layup_3" else "UND"
+                    ),
+                    "fidelity": "representational",
+                    "lower_bound": False,
+                    "fs_min": round(bb.xmin, 4),
+                    "fs_max": round(bb.xmax, 4),
+                }
+    a0, a1 = wb.aileron_axis()
+    r0, r1 = wl.rudder_axis()
+    abc = wl.abc_closure()
+    return {
+        "parts": parts,
+        "nodes": nodes,
+        "aileron": {
+            "axis": [list(a0), list(a1)],
+            "max_up_deg": wb.MAX_UP_DEG,
+            "inboard_bl": G.wing_aileron_inboard_bl,
+            "inboard_bl_p171": G.wing_aileron_inboard_bl_p171,
+            "outboard_bl": G.wing_aileron_outboard_bl,
+            "hinge_fs": list(G.wing_aileron_hinge_fs),
+            "note": "the 20 deg stop is printed (p125, p131); the deflection arc is representational",
+        },
+        "rudder": {
+            "axis": [list(r0), list(r1)],
+            "max_deg": wl.MAX_RUDDER_DEG,
+            "hinge_fs": G.winglet_book_rudder_hinge_fs,
+            "widths_in": list(G.winglet_book_rudder_widths_in),
+            "positive": "trailing edge outboard (+y)",
+        },
+        "conflicts": {
+            "le_bl_106_25": {
+                "printed_fs": G.wing_book_le_fs_bl_106_25_printed,
+                "derived_fs": round(G.wing_le_fs_bl_106_25_derived, 4),
+                "line_fs": round(G.wing_le_fs_bl_106_25_line, 4),
+            },
+            "aileron_inboard": {
+                "p124_bl": G.wing_aileron_inboard_bl,
+                "p171_bl": G.wing_aileron_inboard_bl_p171,
+            },
+            "attach_bolt_spacing": {
+                "drawing_in": G.wing_spar_join_bolt_spacing_in,
+                "text_in": G.wing_spar_join_bolt_spacing_text_in,
+            },
+        },
+        "winglet": {
+            "abc_book_in": list(G.winglet_book_jig_abc_in),
+            "abc_model_in": [round(abc[k], 4) for k in ("A", "B", "C")],
+            "abc_residual_in": [round(abc[k], 4) for k in ("dA", "dB", "dC")],
+            "abc_tol_in": list(G.winglet_book_jig_tol_in),
+            "lean_in": round(G.winglet_cant_in, 4),
+            "lean_status": "derived-unsourced, low: no cant or toe is printed",
+            "tip_chord_in": G.winglet_book_tip_chord_in,
+            "tip_chord_status": "derived-unsourced, medium: a pixel read, not a page value",
+            "wprp": list(G.winglet_book_jig_wprp),
+        },
+        "weights": {
+            "rows": [
+                "wing_ch19",
+                "wing_complete",
+                "aileron",
+                "upper_winglet",
+                "lower_winglet",
+            ],
+            "note": "CP26 builder weights, reference only, in no sum",
+        },
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -1171,6 +1417,7 @@ def layup_section() -> dict:
             **extras_section(),
             "m25": m25_section(),
             "m26": m26_section(),
+            "m27": m27_section(),
         },
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }

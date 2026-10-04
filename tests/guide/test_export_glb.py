@@ -442,6 +442,8 @@ def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_s
         "controls.",
         "trim.",
         "canopy.",
+        "wing.",
+        "winglet.",
     )
     assert all(k.startswith(fam) for k in comps), [
         k for k in comps if not k.startswith(fam)
@@ -657,14 +659,18 @@ def test_m25_components_are_glb_nodes_named_by_component_id_with_part_children(
     assert all(graph.components[c].fidelity != "no-geometry" for c in M25_IDS)
 
 
-def test_the_spar_jig_and_the_canopy_blocks_are_flagged_workshop_and_nothing_else_is(
+def test_the_jigs_and_the_canopy_blocks_are_flagged_workshop_and_nothing_else_is(
     fuse_export,
 ):
     j = _glb_json(fuse_export)
     flagged = {
         n["name"] for n in j["nodes"] if n.get("extras", {}).get("workshop") is True
     }
-    assert flagged == {"spar.jig", "canopy.blocks"}
+    assert flagged == {"spar.jig", "canopy.blocks", "wing.jigs", "winglet.jig"} | {
+        n["name"]
+        for n in j["nodes"]
+        if n["name"].startswith(("wing.jigs.", "winglet.jig."))
+    }
 
 
 def test_m25_installed_nodes_sit_in_the_airframe_frame(fuse_export):
@@ -786,4 +792,167 @@ def test_m26_layup_section_names_every_canopy_part_the_five_plies_and_the_confli
     assert [(k["id"], k["height_in"], k["wl0"]) for k in c["checks"]] == [
         ("A", 13.5, 23.0),
         ("B", 12.3, 23.0),
+    ]
+
+
+# ---- M2.7: the wings and winglets in the lab export ----
+M27_WING = {
+    "wing.jigs",
+    "wing.cores",
+    "wing.hardpoints",
+    "wing.shear_web",
+    "wing.spar_caps",
+    "wing.skins",
+    "wing.conduit",
+    "wing.ribs",
+    "wing.aileron",
+    "wing.aileron_hinges",
+    "wing.controls",
+    "wing.attach",
+}
+M27_WINGLET = {
+    "winglet.cores",
+    "winglet.skins",
+    "winglet.jig",
+    "winglet.layups",
+    "winglet.block_a",
+    "winglet.lower_fin",
+    "winglet.rudder",
+    "winglet.rudder_hinge",
+}
+
+
+def test_m27_components_are_group_nodes_with_a_child_per_part_and_side_and_per_ply(
+    fuse_export,
+):
+    j = _glb_json(fuse_export)
+    names = {n["name"] for n in j["nodes"]}
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    parent = _parents(j)
+    assert M27_WING | M27_WINGLET <= names
+    graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    assert M27_WING | M27_WINGLET <= set(graph.components)
+    for cid, kid in (
+        ("wing.cores", "wing.cores.fc1.right"),
+        ("wing.cores", "wing.cores.fc5.left"),
+        ("wing.aileron", "wing.aileron.aileron.right"),
+        ("wing.aileron_hinges", "wing.aileron_hinges.aileron_rod.left"),
+        ("wing.attach", "wing.attach.spar_bolts.right"),
+        ("winglet.rudder", "winglet.rudder.rudder.right"),
+        ("winglet.rudder", "winglet.rudder.belhorn.left"),
+        ("winglet.cores", "winglet.cores.upper_core.right"),
+        ("wing.shear_web", "wing.shear_web.shear_web.right.p6"),
+        ("wing.spar_caps", "wing.spar_caps.cap_top.left.p7"),
+        ("wing.spar_caps", "wing.spar_caps.cap_bottom.right.p5"),
+        ("wing.skins", "wing.skins.skin_top.right.p3"),
+        ("winglet.skins", "winglet.skins.skin_out.left.p3"),
+        ("winglet.layups", "winglet.layups.layup_3.right.p7"),
+    ):
+        assert parent[idx[kid]] == cid, kid
+    # the ply parts are plies only: the merged solid is not exported beside them
+    assert "wing.shear_web.shear_web.right" not in names
+    assert all(
+        "mesh" in j["nodes"][idx[n]]
+        for n in names
+        if n.startswith(("wing.cores.", "winglet.rudder.")) and n.count(".") == 3
+    )
+
+
+def test_m27_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
+    j = _glb_json(fuse_export)
+    acc = j["accessors"]
+    mesh_of = {n["name"]: n["mesh"] for n in j["nodes"] if "mesh" in n}
+
+    def box(name):
+        ps = [
+            acc[p["attributes"]["POSITION"]]
+            for p in j["meshes"][mesh_of[name]]["primitives"]
+        ]
+        return (
+            [min(a["min"][i] for a in ps) for i in range(3)],
+            [max(a["max"][i] for a in ps) for i in range(3)],
+        )
+
+    lo, hi = box("wing.cores.fc5.right")
+    assert hi[0] == pytest.approx(164.2, abs=1e-2)  # the shear web face at the tip, FS
+    assert hi[1] == pytest.approx(157.0, abs=1e-3)  # the tip rib, BL
+    lo, hi = box("wing.cores.fc5.left")
+    assert lo[1] == pytest.approx(-157.0, abs=1e-3)  # the left wing is the mirror
+    lo, hi = box("wing.aileron.aileron.right")
+    assert (lo[1], hi[1]) == (
+        pytest.approx(55.5, abs=1e-3),
+        pytest.approx(118.1, abs=1e-3),
+    )
+    lo, hi = box("winglet.cores.upper_core.right")
+    assert hi[0] == pytest.approx(196.6, abs=1e-2)  # the top TE corner FS
+    assert hi[2] == pytest.approx(48.0, abs=1e-3)  # WL 65.4, model z = WL - 17.4
+    lo, hi = box("winglet.rudder.rudder.right")
+    assert lo[0] == pytest.approx(176.8, abs=1e-3)  # the rudder hinge FS
+
+
+def test_m27_layup_section_names_every_part_the_plies_the_axes_and_the_conflicts(
+    fuse_export,
+):
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m27"]
+    parts, nodes = ex["parts"], ex["nodes"]
+    assert len(parts) == 60 and len(nodes) == 72  # 30 parts a side, 36 plies a side
+    assert {r["fidelity"] for r in parts.values()} == {"representational", "derived"}
+    assert all(
+        "(fitted shape" in r["label"]
+        for r in parts.values()
+        if r["fidelity"] == "representational"
+    )
+    assert all(r["component"] in (M27_WING | M27_WINGLET) for r in parts.values())
+    turns = {r["turns"] for r in parts.values() if "turns" in r}
+    assert turns == {"aileron", "rudder"}
+    assert {r["node"] for r in parts.values() if r.get("workshop")} == {
+        "wing.jigs.jigs.right",
+        "wing.jigs.jigs.left",
+        "winglet.jig.jig_lines.right",
+        "winglet.jig.jig_lines.left",
+    }
+    # the ply schedules: 6 web plies, 5 + 7 caps, 3 + 3 skin plies, 7 corner plies (a side)
+    by_op = {}
+    for k, v in nodes.items():
+        if v["side"] == "right":
+            by_op.setdefault(v["op"], []).append(k)
+    assert {op: len(ks) for op, ks in by_op.items()} == {
+        "f19.shear-web": 6,
+        "f19.bottom-cap": 5,
+        "f19.top-cap": 7,
+        "f19.bottom-skin": 3,
+        "f19.top-skin": 3,
+        "f20.skins": 5,
+        "f20.outside-layups": 7,
+    }
+    assert nodes["wing.skins.skin_bottom.right.p3"]["cloth"] == "BID"
+    assert nodes["winglet.skins.skin_out.right.p3"]["cloth"] == "BID"
+    # the aileron and rudder kinematics inputs, and the stops
+    a, r = ex["aileron"], ex["rudder"]
+    assert a["max_up_deg"] == 20.0 and r["max_deg"] == 30.0
+    assert a["axis"][0][:2] == [149.7, 55.5] or a["axis"][0][1] == 55.5
+    assert a["inboard_bl"] == 55.5 and a["inboard_bl_p171"] == 54.3
+    assert r["hinge_fs"] == 176.8 and r["widths_in"] == [10.0, 12.14, 11.5]
+    # the three conflicts are carried as data, never resolved
+    c = ex["conflicts"]
+    assert c["le_bl_106_25"]["printed_fs"] == 134.95
+    assert c["le_bl_106_25"]["derived_fs"] == pytest.approx(134.45)
+    assert (
+        c["attach_bolt_spacing"]["drawing_in"],
+        c["attach_bolt_spacing"]["text_in"],
+    ) == (28.85, 28.83)
+    w = ex["winglet"]
+    assert w["abc_book_in"] == [102.15, 108.35, 118.35]
+    assert w["abc_residual_in"][2] == pytest.approx(0.0, abs=1e-3)
+    assert abs(w["abc_residual_in"][0]) < 0.1 and abs(w["abc_residual_in"][1]) <= 0.25
+    assert w["lean_in"] == pytest.approx(3.58, abs=0.02) and "low" in w["lean_status"]
+    assert w["tip_chord_in"] == 11.4 and "not a page value" in w["tip_chord_status"]
+    assert ex["weights"]["rows"] == [
+        "wing_ch19",
+        "wing_complete",
+        "aileron",
+        "upper_winglet",
+        "lower_winglet",
     ]

@@ -62,6 +62,8 @@ def real(tmp_path_factory):
                 "controls.",
                 "trim.",
                 "canopy.",
+                "wing.",
+                "winglet.",
             )
         ):
             continue
