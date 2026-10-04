@@ -113,6 +113,7 @@ def default_components() -> dict:
         **m26_components(),
         **m27_components(),
         **m28_components(),
+        **m29_components(),
     }
 
 
@@ -195,6 +196,15 @@ def m28_components() -> dict:
     from guide import fuselage_export
 
     return fuselage_export.m28_components()
+
+
+def m29_components() -> dict:
+    """The covers, consoles, thigh support, canard cover and gap seal (chapter 24) and the upholstery (chapter 26), one glb component per graph id, in place on the
+    airplane (core.covers_book, core.upholstery_book). Each component is a group node of its id with children ``<id>.<part>``. In default_components(); not in the
+    canard-only cutaway export. The finish of chapter 25 is not geometry (a layup.json tag, see layup.json extras m29). All parts are fitted shapes apart from LC1."""
+    from guide import fuselage_export
+
+    return fuselage_export.m29_components()
 
 
 def _canard_layup(graph) -> dict:

@@ -447,6 +447,8 @@ def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_s
         "strake.",
         "elec.",
         "engine.",
+        "cover.",
+        "upholstery.",
     )
     assert all(k.startswith(fam) for k in comps), [
         k for k in comps if not k.startswith(fam)
@@ -1160,4 +1162,149 @@ def test_m28_adds_no_ledger_sum_the_cg_stays_not_yet_computed(fuse_export):
             "cowl_glass",
             "cowl_graphite",
         }
+        assert not [k for k in new if k in cg["included"] + list(cg["excluded"])]
+
+
+# ---- Block 2 M2.9: chapters 24 and 26 in the lab export; the chapter 25 finish as tags in layup.json ----
+M29_COVERS = {
+    "cover.aft",
+    "cover.console_lc1",
+    "cover.consoles",
+    "cover.thigh",
+    "cover.valve",
+    "cover.canard",
+    "cover.seal",
+}
+M29_UPH = {"upholstery.cushions", "upholstery.headrests", "upholstery.suitcases"}
+
+
+def test_m29_components_are_group_nodes_with_a_child_per_part(fuse_export):
+    j = _glb_json(fuse_export)
+    names = {n["name"] for n in j["nodes"]}
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    parent = _parents(j)
+    assert M29_COVERS | M29_UPH <= names
+    graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    assert M29_COVERS | M29_UPH <= set(graph.components)
+    for cid, kid in (
+        ("cover.aft", "cover.aft.aft_cover"),
+        ("cover.console_lc1", "cover.console_lc1.lc1"),
+        ("cover.consoles", "cover.consoles.lc4"),
+        ("cover.thigh", "cover.thigh.thigh_rib_a"),
+        ("cover.valve", "cover.valve.valve_cover"),
+        ("cover.canard", "cover.canard.canard_cover"),
+        ("cover.seal", "cover.seal.seal_left"),
+        ("upholstery.cushions", "upholstery.cushions.rear_cushion"),
+        ("upholstery.headrests", "upholstery.headrests.front_headrest"),
+        ("upholstery.suitcases", "upholstery.suitcases.suitcase_left"),
+    ):
+        assert parent[idx[kid]] == cid, kid
+    assert all(
+        "mesh" in j["nodes"][idx[n]]
+        for n in names
+        if n.startswith(("cover.", "upholstery.")) and n.count(".") >= 2
+    )
+    assert not [
+        n["name"]
+        for n in j["nodes"]
+        if n["name"].startswith(("cover.", "upholstery."))
+        and n.get("extras", {}).get("workshop")
+    ]
+
+
+def test_m29_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
+    j = _glb_json(fuse_export)
+    acc = j["accessors"]
+    mesh_of = {n["name"]: n["mesh"] for n in j["nodes"] if "mesh" in n}
+
+    def box(name):
+        ps = [
+            acc[p["attributes"]["POSITION"]]
+            for p in j["meshes"][mesh_of[name]]["primitives"]
+        ]
+        return (
+            [min(a["min"][i] for a in ps) for i in range(3)],
+            [max(a["max"][i] for a in ps) for i in range(3)],
+        )
+
+    lo, hi = box("cover.console_lc1.lc1")
+    assert (lo[0], hi[0]) == (
+        pytest.approx(52.0, abs=1e-3),
+        pytest.approx(60.0, abs=1e-3),
+    )
+    assert hi[2] == pytest.approx(11.6 - 17.4, abs=1e-3)  # WL 11.6, model z = WL - 17.4
+    assert hi[1] < 0  # the consoles are on the left
+    lo, hi = box("cover.aft.aft_cover")
+    assert lo[0] == pytest.approx(107.4, abs=1e-3) and hi[0] <= 125.0 + 1e-3
+    lo, hi = box("upholstery.suitcases.suitcase_right")
+    assert hi[2] - lo[2] == pytest.approx(18.0, abs=1e-3)
+
+
+def test_m29_layup_section_names_every_part_the_finish_the_conflicts_and_the_reference_weights(
+    fuse_export,
+):
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m29"]
+    parts = ex["parts"]
+    assert len(parts) == 14 + 6
+    assert {r["component"] for r in parts.values()} == M29_COVERS | M29_UPH
+    assert {r["fidelity"] for r in parts.values()} == {"book", "representational"}
+    assert [r["node"] for r in parts.values() if r["fidelity"] == "book"] == [
+        "cover.console_lc1.lc1"
+    ]
+    assert all(
+        "(fitted shape" in r["label"]
+        for r in parts.values()
+        if r["fidelity"] == "representational"
+    )
+    ops = set(load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph").ops)
+    assert all(r["show"]["from"] in ops for r in parts.values())
+    # the finish: a tag per surface, white only on the upper wing and canard, no weight
+    f = ex["finish"]
+    white = {r["component"] for r in f["rows"] if r["final_colour"] == "white"}
+    assert white == {"wing.skins", "canard.skin_top", "cover.canard"}
+    assert {r["final_colour"] for r in f["rows"]} == {"white", "primer-grey"}
+    assert f["min_temp_f"] == 70.0 and "never a solid" in f["note"]
+    assert "no finish weight" in f["note"]
+    # conflicts and references
+    c = ex["conflicts"]
+    assert c["aft_cover_plies"]["scan_inside_outside"] == [1, 1]
+    assert c["aft_cover_plies"]["transcription_inside_outside"] == [1, 2]
+    assert (c["lc2_length_in"]["scan"], c["lc2_length_in"]["transcription"]) == (
+        30.6,
+        30.8,
+    )
+    assert (ex["seal"]["gap_in"], ex["seal"]["front_gap_in"]) == (0.5, 0.0625)
+    w = ex["weights"]
+    assert {k: v["weight_lb"] for k, v in w["finish_deltas"].items()} == {
+        "finish_delta_canopy": 1.0,
+        "finish_delta_aileron": 0.275,
+        "finish_delta_wing": 2.2,
+    }
+    assert (
+        "never summed" in w["note"] and "No upholstery weight is printed" in w["note"]
+    )
+    t = w["closure_target"]
+    assert (t["empty_lb"], t["empty_arm_in"]) == (730, 111.7)
+    assert t["loaded_envelope_fs"] == [97.0, 103.0]
+    assert (
+        "103.96" in t["samples"]
+        and "outside" in t["samples"]
+        and "101.06" in t["samples"]
+    )
+    assert "not the empty CG" in t["note"] and w["cg"] == "not yet computed"
+
+
+def test_m29_adds_no_ledger_sum_the_finish_rows_are_references(fuse_export):
+    led = json.loads((fuse_export.parent / "ledger.json").read_text())
+    assert led["cg"]["arm_in"] is None and led["cg"]["weight_lb"] == 0.0
+    new = {
+        "finish_delta_canopy",
+        "finish_delta_aileron",
+        "finish_delta_wing",
+        "wing_painted",
+    }
+    assert new <= set(led["prototype_weights"]["rows"])
+    for cg in (led["cg"], led["cg_lower_bound"]):
         assert not [k for k in new if k in cg["included"] + list(cg["excluded"])]

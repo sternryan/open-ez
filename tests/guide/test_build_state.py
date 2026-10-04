@@ -67,6 +67,8 @@ def real(tmp_path_factory):
                 "strake.",
                 "elec.",
                 "engine.",
+                "cover.",
+                "upholstery.",
             )
         ):
             continue

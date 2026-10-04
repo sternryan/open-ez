@@ -1591,6 +1591,155 @@ def m28_section() -> dict:
     }
 
 
+# ---- chapters 24 to 26 (M2.9): covers and consoles, finishing, upholstery ---------------------------------------------------------------
+M29_SHOW_FROM = {  # a part's first op (the lab shows it from here on)
+    "aft_cover": "f24.aft-cover",
+    "lc1": "f24.console-lc1",
+    "lc2": "f24.consoles-left",
+    "lc3": "f24.consoles-left",
+    "lc4": "f24.consoles-left",
+    "lc5": "f24.consoles-left",
+    "lc6": "f24.consoles-left",
+    "thigh_floor": "f24.thigh-support",
+    "thigh_rib_a": "f24.thigh-support",
+    "thigh_rib_b": "f24.thigh-support",
+    "valve_cover": "f24.thigh-support",
+    "canard_cover": "f24.canard-cover",
+    "seal_right": "f24.gap-seal",
+    "seal_left": "f24.gap-seal",
+    "front_cushion": "f26.cushions-headrests",
+    "rear_cushion": "f26.cushions-headrests",
+    "front_headrest": "f26.cushions-headrests",
+    "rear_headrest": "f26.cushions-headrests",
+    "suitcase_right": "f26.suitcases",
+    "suitcase_left": "f26.suitcases",
+}
+M29_LABELS = {
+    "aft_cover": "Lower aft cover",
+    "lc1": "Console piece LC1 (landing brake)",
+    "lc2": "Console top LC2",
+    "lc3": "Console side LC3",
+    "lc4": "Console side LC4",
+    "lc5": "Rear console top LC5",
+    "lc6": "Rear console side LC6",
+    "thigh_floor": "Thigh-support floor",
+    "thigh_rib_a": "Thigh-support rib (notched for the fuel lines)",
+    "thigh_rib_b": "Thigh-support rib",
+    "valve_cover": "Fuel-valve cover",
+    "canard_cover": "Canard cover",
+    "seal_right": "Right gap seal",
+    "seal_left": "Left gap seal",
+    "front_cushion": "Front seat cushion",
+    "rear_cushion": "Rear seat cushion",
+    "front_headrest": "Front headrest",
+    "rear_headrest": "Rear headrest",
+    "suitcase_right": "Right suitcase",
+    "suitcase_left": "Left suitcase (shortened)",
+}
+
+
+@lru_cache(maxsize=1)
+def _m29_built() -> dict:
+    """{part name: FusePart} for chapters 24 and 26 (core.covers_book, core.upholstery_book)."""
+    from core import covers_book as cv
+    from core import upholstery_book as up
+
+    return {**cv.build_covers(), **up.build_upholstery()}
+
+
+def _m29_component_parts() -> dict:
+    from core import covers_book as cv
+    from core import upholstery_book as up
+
+    return {**cv.COMPONENT_PARTS, **up.COMPONENT_PARTS}
+
+
+def m29_components() -> dict:
+    """glb components for chapters 24 and 26 (see guide.export_glb.m29_components). A component is a group node named by its id; the children are ``<id>.<part>``.
+    All solids are in the airplane frame, in place. The finish of chapter 25 is not geometry: it is the ``finish`` rows of the layup m29 section."""
+    built = _m29_built()
+    return {
+        cid: {f"{cid}.{n}": built[n].solid.val().copy() for n in names}
+        for cid, names in _m29_component_parts().items()
+    }
+
+
+def m29_section() -> dict:
+    """layup.json["fuselage"]["extras"]["m29"]: a row per part (node, component, fidelity, label, cite, extents, the op it shows from), the finish layer (a tag per
+    surface: three coats, thicknesses and colours, applied by the lab), the chapter 24 conflicts, and the weight references (never summed)."""
+    from core import covers_book as cv
+    from core.ledger import load_ledger
+
+    built = _m29_built()
+    ops_order = list(_op_index())
+    parts: dict[str, dict] = {}
+    for cid, names in _m29_component_parts().items():
+        for n in names:
+            part = built[n]
+            bb = cq.Compound.makeCompound([part.solid.val()]).BoundingBox()
+            op = M29_SHOW_FROM[n]
+            parts[f"{cid}_{n}".replace(".", "_")] = {
+                "node": f"{cid}.{n}",
+                "component": cid,
+                "fidelity": part.fidelity,
+                "label": M29_LABELS[n]
+                + (" (fitted shape)" if part.fidelity == "representational" else ""),
+                "cite": list(part.cite),
+                "fs_min": round(bb.xmin, 4),
+                "fs_max": round(bb.xmax, 4),
+                "bl_min": round(bb.ymin, 4),
+                "bl_max": round(bb.ymax, 4),
+                "show": {"from": op},
+                "op_index": ops_order.index(op),
+            }
+    rows = load_ledger()["prototype_weights"]["rows"]
+    led = load_ledger()
+    return {
+        "parts": parts,
+        "finish": {
+            "rows": cv.finish_rows(),
+            "colours": {
+                "white": "upper wing and canard only (book, plans-1980:p162)",
+                "primer-grey": "everything else; representational, the book prints no airplane colour",
+            },
+            "min_temp_f": G.fin_book_min_temp_f,
+            "weave_in": G.fin_book_weave_in,
+            "note": "a layer drawn on the part, never a solid; no finish weight is printed in chapter 25",
+        },
+        "conflicts": {
+            "aft_cover_plies": {
+                "scan_inside_outside": list(G.cov_book_aft_cover_plies),
+                "transcription_inside_outside": list(G.cov_book_aft_cover_plies_cobelu),
+                "note": "the scan blanks the inside number and hand-edits the outside to one; LPC 54 says one ply; the transcription keeps one and two",
+            },
+            "lc2_length_in": {
+                "scan": G.cov_book_lc2_len_in,
+                "transcription": G.cov_book_lc2_len_cobelu_in,
+            },
+        },
+        "seal": {
+            "gap_in": G.cov_book_seal_gap_in,
+            "front_gap_in": G.cov_book_seal_front_gap_in,
+            "note": "the 1/2 in glyph cannot be told from 3/4 at this scan resolution",
+        },
+        "weights": {
+            "finish_deltas": {
+                k: {"weight_lb": rows[k]["weight_lb"]}
+                for k in ("finish_delta_canopy", "finish_delta_aileron", "finish_delta_wing")
+            },
+            "note": "N26MS finish deltas (CP26 page 3 ready to finish against CP27 page 1 filled and painted): references, never summed; no finish weight is printed and the whole airplane's finish was never weighed in any held source. No upholstery weight is printed.",
+            "closure_target": {
+                "empty_lb": led["empty"]["weight_lb"],
+                "empty_arm_in": led["empty"]["arm_in"],
+                "samples": "both OM sample loadings reproduced exactly: the light pilot 103.96, outside the 103 aft limit as the manual says; the heavy pilot 101.06, inside",
+                "loaded_envelope_fs": [led["envelope"]["fwd_fs"], led["envelope"]["aft_fs"]],
+                "note": "the OM sample empty airplane, 730 lb at FS 111.7, is the closure target; FS 97 to 103 is the loaded envelope, not the empty CG",
+            },
+            "cg": "not yet computed",
+        },
+    }
+
+
 def layup_section() -> dict:
     """layup.json["fuselage"]: what the lab needs to lay, place, label and cut the chapter 4-9 parts and plies."""
     parts = _parts()
@@ -1684,6 +1833,7 @@ def layup_section() -> dict:
             "m26": m26_section(),
             "m27": m27_section(),
             "m28": m28_section(),
+            "m29": m29_section(),
         },
         "plan_bend": [[round(x, 4), round(h, 4)] for x, h in plan_bend_points()],
     }
