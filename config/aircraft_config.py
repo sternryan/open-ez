@@ -531,7 +531,7 @@ class GeometricParams:
     canopy_check_b_in: float = 12.3  # book: p109 at 15 in forward of the firewall
     canopy_check_datum_wl: float = 23.0  # book: p109 top of the longerons, as WL
     canopy_front_cut_fs: float = (
-        41.65  # derived-unsourced: p111 14.0 aft of an unnamed vertical read as F28
+        41.65  # conflict: p111 14.0 aft of an unnamed vertical; F28 reading carried
     )
     canopy_latch_labels_fs: Tuple[float, float, float] = (
         104.0,
@@ -1895,10 +1895,10 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "book", "plans-1980:p109 checks A and B above the longerons, WL 23", "high"
     ),
     "canopy_front_cut_fs": _p(
-        "derived-unsourced",
+        "conflict",
         "plans-1980:p111 14.0 aft of an unnamed vertical",
         "low",
-        "read as F28 (FS 27.65) + 14.0; the datum is not named, so this is representational",
+        "two readings, no page names the datum: the F28 notch (FS 27.65) gives 41.65, carried; the panel (FS 39.75, step 6 text warns against cutting it) gives 53.75, which plans-1980:p112 contradicts (front left pad FS 43.5 to 46 lies forward of it); unresolved, drawn representational",
     ),
     "canopy_latch_labels_fs": _p(
         "conflict",

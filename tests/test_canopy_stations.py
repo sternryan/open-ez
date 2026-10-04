@@ -40,10 +40,14 @@ def test_rear_cut_is_cp_corrected_with_the_three_agreeing_checks():
     assert sc == pytest.approx(G.canopy_safety_catch_fs)
 
 
-def test_front_cut_is_representational_not_a_book_value():
+def test_front_cut_is_a_conflict_not_a_book_value():
     assert G.canopy_front_cut_fs == 41.65
-    assert P["canopy_front_cut_fs"]["status"] == "derived-unsourced"
+    assert P["canopy_front_cut_fs"]["status"] == "conflict"
     assert "unnamed" in P["canopy_front_cut_fs"]["source"]
+    # both datum readings are named, with the page that bears on the second
+    note = P["canopy_front_cut_fs"]["note"]
+    assert "41.65" in note and "53.75" in note and "plans-1980:p112" in note
+    assert G.fs_panel + 14.0 == pytest.approx(53.75)
     # 27.65 + 14.0: the F28 reading
     assert G.fs_f28 + 14.0 == pytest.approx(G.canopy_front_cut_fs)
 
