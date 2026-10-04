@@ -441,6 +441,7 @@ def test_default_export_sorts_into_the_labs_subjects_by_prefix_and_the_cutaway_s
         "firewall.",
         "controls.",
         "trim.",
+        "canopy.",
     )
     assert all(k.startswith(fam) for k in comps), [
         k for k in comps if not k.startswith(fam)
@@ -656,12 +657,14 @@ def test_m25_components_are_glb_nodes_named_by_component_id_with_part_children(
     assert all(graph.components[c].fidelity != "no-geometry" for c in M25_IDS)
 
 
-def test_the_spar_jig_is_flagged_workshop_and_nothing_else_is(fuse_export):
+def test_the_spar_jig_and_the_canopy_blocks_are_flagged_workshop_and_nothing_else_is(
+    fuse_export,
+):
     j = _glb_json(fuse_export)
     flagged = {
         n["name"] for n in j["nodes"] if n.get("extras", {}).get("workshop") is True
     }
-    assert flagged == {"spar.jig"}
+    assert flagged == {"spar.jig", "canopy.blocks"}
 
 
 def test_m25_installed_nodes_sit_in_the_airframe_frame(fuse_export):
@@ -671,3 +674,62 @@ def test_m25_installed_nodes_sit_in_the_airframe_frame(fuse_export):
     pos = j["meshes"][mesh_of["spar.box"]]["primitives"][0]["attributes"]["POSITION"]
     assert acc[pos]["min"][0] == pytest.approx(118.5, abs=1e-3)  # FS, inches
     assert acc[pos]["max"][0] == pytest.approx(129.898, abs=1e-2)
+
+
+# ---- M2.6: the canopy in the lab export ----
+M26_SINGLE = {
+    "canopy.plexi",
+    "canopy.frame",
+    "canopy.blocks",
+    "canopy.vent",
+    "canopy.brace_tubes",
+    "canopy.latches",
+    "fuselage.front_cover",
+    "fuselage.rear_cover",
+    "fuselage.door",
+}
+M26_GROUPS = {
+    "canopy.pads": ("pads_hinge", "pads_latch", "pad_catch"),
+    "canopy.hinges": ("hinge_fuselage", "hinge_canopy"),
+    "canopy.safety_catch": ("sc1", "sc1_bolt"),
+}
+
+
+def test_m26_components_are_glb_nodes_named_by_component_id_with_part_children(
+    fuse_export,
+):
+    j = _glb_json(fuse_export)
+    names = {n["name"] for n in j["nodes"]}
+    assert M26_SINGLE <= names
+    parent = _parents(j)
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    for cid, kids in M26_GROUPS.items():
+        assert cid in names
+        for k in kids:
+            assert parent[idx[f"{cid}.{k}"]] == cid
+    graph = load_graph(Path(__file__).resolve().parents[2] / "guide" / "graph")
+    ids = M26_SINGLE | set(M26_GROUPS)
+    assert ids <= set(graph.components)
+    assert all(graph.components[c].fidelity != "no-geometry" for c in ids)
+    # the single-part components carry their own mesh; the groups carry it in their children
+    assert all("mesh" in j["nodes"][idx[c]] for c in M26_SINGLE)
+
+
+def test_m26_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
+    j = _glb_json(fuse_export)
+    acc = j["accessors"]
+    mesh_of = {n["name"]: n["mesh"] for n in j["nodes"] if "mesh" in n}
+
+    def x_range(name):
+        ps = [
+            acc[p["attributes"]["POSITION"]]
+            for p in j["meshes"][mesh_of[name]]["primitives"]
+        ]
+        return min(a["min"][0] for a in ps), max(a["max"][0] for a in ps)
+
+    lo, hi = x_range("canopy.plexi")
+    assert lo == pytest.approx(44.75, abs=1e-3)  # nose, 5.0 aft of the panel
+    assert hi == pytest.approx(112.75, abs=1e-3)  # 68 in long
+    lo, hi = x_range("fuselage.rear_cover")
+    assert lo == pytest.approx(117.0, abs=1e-3)  # the rear cut
+    assert hi == pytest.approx(125.0, abs=1e-3)  # the firewall

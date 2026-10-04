@@ -61,6 +61,7 @@ def real(tmp_path_factory):
                 "firewall.",
                 "controls.",
                 "trim.",
+                "canopy.",
             )
         ):
             continue

@@ -81,7 +81,9 @@ def test_ledger_json_shape_and_cg_unchanged():
     j = fuselage_ledger_json()
     row = j["prototype_weights"]["rows"]["canopy"]
     assert set(row) == {"weight_lb", "cite", "note"} and row["weight_lb"] == 16.0
-    assert {"f22", "f28", "panel", "spar", "canopy"} <= set(j["prototype_weights"]["rows"])
+    assert {"f22", "f28", "panel", "spar", "canopy"} <= set(
+        j["prototype_weights"]["rows"]
+    )
     for cg in (j["cg"], j["cg_lower_bound"]):
         assert "canopy" not in cg["included"] + list(cg["excluded"])
     assert j["cg"]["arm_in"] is None and j["cg"]["weight_lb"] == 0.0

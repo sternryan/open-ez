@@ -15,7 +15,7 @@ GRAPH_DIR = Path(__file__).parent / "graph"
 
 # Workshop-only geometry: kept in the glb so the lab can show it in its jig scene, flagged `extras.workshop` on its node (GLTFLoader
 # puts a node's extras in userData) so the lab hides it by default and an installed-airframe view never shows it.
-WORKSHOP_COMPONENTS = frozenset({"spar.jig"})
+WORKSHOP_COMPONENTS = frozenset({"spar.jig", "canopy.blocks"})
 
 
 def export_components(components: dict, out: Path) -> Path:
@@ -100,7 +100,7 @@ def default_components() -> dict:
     from guide import fuselage_export
 
     # The lab sorts the glb's nodes into subjects by prefix: canard.* and elevator.* are the canard subject; fuselage.*, gear.*, nose.*,
-    # spar.*, firewall.*, controls.* and trim.* the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
+    # spar.*, firewall.*, controls.*, trim.* and canopy.* the fuselage subject (the canard and elevators are also shown installed on it for chapters 12-13). The canard-only cutaway export
     # (canard_components) stays canard alone.
     return {
         **canard_components(),
@@ -108,6 +108,7 @@ def default_components() -> dict:
         **fuselage_export.components(),
         **nose_components(),
         **m25_components(),
+        **m26_components(),
     }
 
 
@@ -160,6 +161,24 @@ def m25_components() -> dict:
     from guide import fuselage_export
 
     return fuselage_export.m25_components()
+
+
+def m26_components() -> dict:
+    """The canopy and its hardware (chapter 18), one glb component per graph id, all closed and at their installed positions in the fuselage
+    frame (core.canopy_book). A single-part component is one node named by its id; a multi-part one is a group node of that id with children
+    named ``<id>.<part>``. In default_components(); not in the canard-only cutaway export. canopy.blocks are the temporary blocks: workshop
+    geometry, flagged extras.workshop (see WORKSHOP_COMPONENTS). The open pose is core.canopy_book.open_pose, applied by the lab."""
+    from core.canopy_book import COMPONENT_PARTS, build_canopy
+
+    parts = {n: p.solid.val().copy() for n, p in build_canopy().items()}
+    out: dict = {}
+    for cid, names in COMPONENT_PARTS.items():
+        out[cid] = (
+            parts[names[0]]
+            if len(names) == 1
+            else {f"{cid}.{n}": parts[n] for n in names}
+        )
+    return out
 
 
 def _canard_layup(graph) -> dict:
