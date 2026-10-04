@@ -51,7 +51,8 @@ complete as the plans draw it, and the ledger holds every sourced builder weight
   (om-1980:p25, p35). The FS 97 to 103 band is the LOADED CG envelope (om-1980:p28), not the empty CG. The ledger
   closure (after 2.9) must:
   - reproduce an empty weight and CG comparable to 730 lb at 111.7, with the tolerance set in the 2.n spec;
-  - put the OM sample loadings inside 97 to 103.
+  - reproduce both OM sample loadings exactly: the light pilot at 103.96, OUTSIDE 97 to 103 as the manual says, and
+    the heavy pilot at 101.06, inside (corrected in M2.9; "both inside" was wrong).
   Any existing test or doc that grades the empty CG against 97 to 103 is wrong and gets fixed or re-labelled,
   with a ledger row.
 - **Folded analysis values, where the book settles them** (lead instruction 2026-10-04):

@@ -91,3 +91,5 @@ def test_om_sample_empty_is_the_closure_target_not_the_loaded_band():
     )  # the empty CG is aft of the loaded limit
     # the loaded samples are what the 97 to 103 band grades (om-1980:p26)
     assert env["fwd_fs"] <= led["samples"]["heavy_pilot"]["book_cg_in"] <= env["aft_fs"]
+    # the light pilot sample is OUTSIDE the aft limit, as the OM itself says (om-1980:p25)
+    assert led["samples"]["light_pilot"]["book_cg_in"] > env["aft_fs"]

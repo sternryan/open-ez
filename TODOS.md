@@ -29,8 +29,9 @@ an undimensioned image.
   method chosen from a textbook source before it is run, per the ledger. Do not widen the bound.
 - **Empty weight.** Waits on Block 2 ledger closure (per-part mass from geometry and ply schedules).
   Target: the OM sample empty airplane, 730 lb at FS 111.7 (om-1980:p25, p35), with a tolerance set in
-  the 2.n spec; the OM also says about 750 lb normally equipped. The ledger sample loadings must land
-  inside FS 97 to 103.
+  the 2.n spec; the OM also says about 750 lb normally equipped. The ledger must reproduce both OM sample
+  loadings exactly: the light pilot at 103.96 (OUTSIDE the 103 aft limit, as the manual says) and the heavy
+  pilot at 101.06 (inside).
 - **CG limits.** Computed from the NP, graded against the LOADED envelope FS 97 to 103 (om-1980:p28).
   They do not wait on the ledger. The empty CG (111.7 in the OM sample) is outside that band by design
   and is never graded against it (ledger row 63).

@@ -3260,7 +3260,7 @@ WEIGHT_PROVENANCE: dict[str, dict] = {
         "conflict",
         "cp-text:p26 64 lb per wing with winglets and rudder",
         "low",
-        "85.0 lb for both wings is unsourced. CP26 p3 gives 64 lb per wing complete with winglets and rudder (60 lb painted without rudder and aileron, CP26 p16), so 2 x 64 = 128 lb, but that is one builder's airplane (N26MS). Both values are kept; ledger closure decides",
+        "85.0 lb for both wings is unsourced. CP26 p3 gives 64 lb per wing complete with winglets and rudder (60 lb painted without rudder and aileron, CP27 p1), so 2 x 64 = 128 lb, but that is one builder's airplane (N26MS). Both values are kept; ledger closure decides",
     ),
     "engine_cg_arm_in": _p(
         "conflict",
