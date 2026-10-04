@@ -82,7 +82,9 @@ def test_order_follows_the_plans_with_the_door_before_the_latches(g):
     pos = {i: order.index(i) for i in CH18}
     assert "f18.door" in g.ops["f18.latches"].requires
     assert pos["f18.door"] < pos["f18.latches"] < pos["f18.safety-catch"]
-    assert pos["f18.cut-remove"] < pos["f18.carve-inside"] < pos["f18.pads-inside-glass"]
+    assert (
+        pos["f18.cut-remove"] < pos["f18.carve-inside"] < pos["f18.pads-inside-glass"]
+    )
     assert pos["f18.glass-outside"] < pos["f18.cut-remove"]
     assert "f18.cut-remove" in needs(g, "f18.front-cover")
     assert "f18.hinges" in g.ops["f18.latches"].requires
@@ -95,7 +97,9 @@ def test_earlier_chapters_come_first(g):
     assert "f07.skin-left" in needs(g, "f18.door")
     assert "f06.bond-firewall" in needs(g, "f18.hinges")
     # nothing earlier waits on the canopy
-    assert not [o.id for o in g.ops.values() if o.chapter < 18 and needs(g, o.id) & set(CH18)]
+    assert not [
+        o.id for o in g.ops.values() if o.chapter < 18 and needs(g, o.id) & set(CH18)
+    ]
 
 
 def test_components_are_the_agreed_set_all_with_geometry(g):
@@ -122,7 +126,11 @@ def test_pad_plies_and_schedule(g):
     rows = g.ops["f18.pads-inside-glass"].materials
     assert rows[0]["plies"] == 15
     glass = g.ops["f18.glass-outside"].materials
-    assert {(m["cloth"], m["plies"]) for m in glass} == {("BID", 2), ("UND", 2), ("BID", 3)}
+    assert {(m["cloth"], m["plies"]) for m in glass} == {
+        ("BID", 2),
+        ("UND", 2),
+        ("BID", 3),
+    }
 
 
 def test_own_words(g):
