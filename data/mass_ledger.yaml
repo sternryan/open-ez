@@ -108,6 +108,9 @@ prototype_weights:
     # Block 2 M2.5 Task 1: centre-section spar, a builder weight (Melvill N26MS) only. No sourced CG, so it is in no moment sum
     # (fuselage_cg matches rows by fuselage part name and there is no `spar` part); the overall CG stays "not yet computed".
     spar:  {weight_lb: 29.3, cite: "cp-text:p26 CP26 page 3 centre-section spar 29 lb 5 oz", note: "builder weight, Melvill N26MS, BID layup of layups 5, 6 and 8; the UND option saves about 3.5 lb (CP25 LPC 26), derived about 25.8 lb; reference only, no CG, not a ledger row"}
+    # Block 2 M2.6: the canopy, a builder weight (Melvill N26MS) only, like the spar. No sourced CG or split between the bubble, frame
+    # and hardware, so it is in no moment sum; the overall CG stays "not yet computed".
+    canopy: {weight_lb: 16.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; 17 lb with hinges, filled and painted (CP27 p1); reference only, no CG, not a ledger row"}
   complete_fuselage_lb:
     weight_lb: 183.0
     cite: "cp-text:p26 CP26 page 3 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"

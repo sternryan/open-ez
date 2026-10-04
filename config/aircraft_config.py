@@ -500,6 +500,46 @@ class GeometricParams:
         0.4  # book, medium: Roncz spacer at the elevator-end rod end
     )
 
+    # === CANOPY (chapter 18, M2.6) ===
+    # plans-1980 pdf pages p108-p117. The bubble contour is a vendor part with no printed section, so the loft is
+    # representational (core.canopy_book); only the stations below are printed.
+    canopy_plexi_length_in: float = 68.0  # book: p108 trimmed plexiglass length
+    canopy_rear_cut_fs: float = (
+        117.0  # book: p111 rear cut at the longeron (CP27 LPC 43)
+    )
+    canopy_pad_length_in: float = 2.5  # book: p112 each of the eight pads
+    canopy_pad_aft_edge_left_in: Tuple[float, float, float, float] = (
+        11.0,
+        41.0,
+        59.0,
+        71.0,
+    )  # book: p112 forward of the rear cut; 59 is the safety-catch pad
+    canopy_pad_aft_edge_right_in: Tuple[float, float, float, float] = (
+        20.0,
+        25.5,
+        48.0,
+        53.5,
+    )  # book: p112 hinge pads
+    canopy_safety_catch_fs: float = 56.75  # book: p116 SC-1 bolt station
+    canopy_door_size_in: Tuple[float, float] = (
+        4.3,
+        3.7,
+    )  # book: p116 left door, long by high
+    canopy_check_a_min_in: float = (
+        13.5  # book: p109 canopy top above the longerons, at least
+    )
+    canopy_check_b_in: float = 12.3  # book: p109 at 15 in forward of the firewall
+    canopy_check_datum_wl: float = 23.0  # book: p109 top of the longerons, as WL
+    canopy_front_cut_fs: float = (
+        41.65  # derived-unsourced: p111 14.0 aft of an unnamed vertical read as F28
+    )
+    canopy_latch_labels_fs: Tuple[float, float, float] = (
+        104.0,
+        74.0,
+        44.0,
+    )  # conflict: p117 printed labels, against the derived centres
+    canopy_open_past_vertical_deg: float = 15.0  # book: p115 text
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -587,6 +627,36 @@ class GeometricParams:
     def trim_pth_leftmost_fs(self) -> float:
         """Derived: panel face FS 40 plus the 9.5 dimension (p106); the p106 label reads 49.8."""
         return self.trim_panel_face_fs_in + self.trim_pth_dim_from_panel_in
+
+    @property
+    def canopy_latch_pad_centres_fs(self) -> Tuple[float, float, float]:
+        """Derived: rear cut less the left pad aft edge (11, 41, 71) less half the 2.5 pad (p112); the p117 labels read 104, 74, 44."""
+        a = self.canopy_pad_aft_edge_left_in
+        half = self.canopy_pad_length_in / 2
+        c = self.canopy_rear_cut_fs
+        return (c - a[0] - half, c - a[1] - half, c - a[3] - half)
+
+    @property
+    def canopy_hinge_spans_fs(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+        """Derived: aft and forward hinge, each the span of its two right pads (p112, p114): FS 89 to 97 and 61 to 69."""
+        r, ln = self.canopy_pad_aft_edge_right_in, self.canopy_pad_length_in
+        c = self.canopy_rear_cut_fs
+        return ((c - r[1] - ln, c - r[0]), (c - r[3] - ln, c - r[2]))
+
+    @property
+    def canopy_check_a_wl(self) -> float:
+        """Derived: top of the longerons (WL 23) plus 13.5 (p109), at least; measured 6 in forward of the headrest."""
+        return self.canopy_check_datum_wl + self.canopy_check_a_min_in
+
+    @property
+    def canopy_check_b_wl(self) -> float:
+        """Derived: WL 23 plus 12.3 (p109)."""
+        return self.canopy_check_datum_wl + self.canopy_check_b_in
+
+    @property
+    def canopy_check_b_fs(self) -> float:
+        """Derived: 15 in forward of the firewall line (p109)."""
+        return self.fs_firewall - 15.0
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -1773,6 +1843,101 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "cobelu:pch30 ch30 extra 0.4 CS-202 spacer at the elevator-end rod end",
         "medium",
         "GU plans list two CS202, the Roncz parts list three",
+    ),
+    # --- chapter 18 (M2.6): canopy ---
+    "canopy_plexi_length_in": _p(
+        "book", "plans-1980:p108 plexiglass 68 long", "high", "printed twice, identical"
+    ),
+    "canopy_rear_cut_fs": _p(
+        "cp-corrected",
+        "cp-text:p27 CP27 LPC 43 rear cut FS 117",
+        "high",
+        "p111 prints FS 117 and 8 in to the firewall (125 - 8); LPC 43 corrects the hinge dimensions on p114 to run from FS 117; 117 - 59 - 1.25 = 56.75 agrees with SC-1",
+    ),
+    "canopy_pad_length_in": _p("book", "plans-1980:p112 pads 2.5 long", "high"),
+    "canopy_pad_aft_edge_left_in": _p(
+        "book",
+        "plans-1980:p112 left pads 11, 41, 59, 71 forward of FS 117",
+        "high",
+        "distance to each pad's aft edge; the 59 pad is the safety catch",
+    ),
+    "canopy_pad_aft_edge_right_in": _p(
+        "book",
+        "plans-1980:p112 right pads 20, 25.5, 48, 53.5 forward of FS 117",
+        "high",
+        "distance to each pad's aft edge; these are the four hinge pads (p113)",
+    ),
+    "canopy_safety_catch_fs": _p(
+        "book",
+        "plans-1980:p116 SC-1 at F.S. 56.75",
+        "high",
+        "CP25 p3 says 57; compatible",
+    ),
+    "canopy_door_size_in": _p(
+        "book",
+        "plans-1980:p116 door 4.3 by 3.7",
+        "high",
+        "left side; position is not dimensioned to a station",
+    ),
+    "canopy_check_a_min_in": _p(
+        "book",
+        "plans-1980:p109 check A at least 13.5",
+        "high",
+        "CP26 p7 repeats it; measured 6 in forward of the headrest",
+    ),
+    "canopy_check_b_in": _p(
+        "book",
+        "plans-1980:p109 check B 12.3",
+        "high",
+        "at 15 in forward of the firewall; CP26 p7 allows trimming the aft flange",
+    ),
+    "canopy_check_datum_wl": _p(
+        "book", "plans-1980:p109 checks A and B above the longerons, WL 23", "high"
+    ),
+    "canopy_front_cut_fs": _p(
+        "derived-unsourced",
+        "plans-1980:p111 14.0 aft of an unnamed vertical",
+        "low",
+        "read as F28 (FS 27.65) + 14.0; the datum is not named, so this is representational",
+    ),
+    "canopy_latch_labels_fs": _p(
+        "conflict",
+        "plans-1980:p117 latch labels FS 104, 74, 44",
+        "medium",
+        "pair with canopy_latch_pad_centres_fs 104.75, 74.75, 44.75 derived; 0.75 in apart, unresolved (labels may mark a pad forward edge)",
+    ),
+    "canopy_open_past_vertical_deg": _p(
+        "book",
+        "plans-1980:p115 canopy opens about 15 degrees past vertical",
+        "high",
+        "text",
+    ),
+    "canopy_latch_pad_centres_fs": _p(
+        "conflict",
+        "plans-1980:p112 rear cut 117, left pad aft edges 11, 41, 71, pad 2.5",
+        "high",
+        "derived 104.75, 74.75, 44.75; the p117 labels read 104, 74, 44 (canopy_latch_labels_fs); property",
+    ),
+    "canopy_hinge_spans_fs": _p(
+        "derived",
+        "plans-1980:p112 right pad stations, p114 hinge",
+        "medium",
+        "FS 89 to 97 and 61 to 69, each the span of two 2.5 in pads; the hinge length itself is not printed; property",
+    ),
+    "canopy_check_a_wl": _p(
+        "derived",
+        "plans-1980:p109 WL 23 plus 13.5",
+        "high",
+        "WL 36.5 at least; property",
+    ),
+    "canopy_check_b_wl": _p(
+        "derived", "plans-1980:p109 WL 23 plus 12.3", "high", "WL 35.3; property"
+    ),
+    "canopy_check_b_fs": _p(
+        "derived",
+        "plans-1980:p109 15 in forward of the firewall FS 125",
+        "high",
+        "FS 110; property",
     ),
     "datum_offset_in": _p(
         "book",
