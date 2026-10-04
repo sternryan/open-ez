@@ -7,7 +7,7 @@
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
  * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | { wing: { bl: number; fs?: number; z?: number } } | 'box' | 'marks' | 'bench'; dist: number; el: number; az: number; pan?: number; up?: number }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -191,8 +191,52 @@ export const M26_VIEWS: Record<string, FuseView> = {
   'f18.safety-catch': { focus: at(57, 24, -12), dist: 34, el: 24, az: 10, up: 2 },
 }
 
+/**
+ * Chapters 19 and 20, the wings and the winglets. The right wing is built on its own bench (`wing`: the B.L. the camera aims at, at the middle of the
+ * chord and thickness, or the given F.S. and z; the bench stand is the op's: stood leading edge up in the jigs on the floor, or flat on the table
+ * for the two bottom ops). The root is at the left of the frame, the tip at the right; the camera comes from the room side (az 0), which sees the top
+ * surface in the jigs. From the attach op the wings are on the airplane (the finished box on its gear; `at` aims at a point of it), and chapter 20
+ * builds the winglet on the right wingtip (B.L. 157, FS 160 to 197, up to z 48).
+ */
+const wingAt = (bl: number, dist: number, el: number, az: number, o: Partial<FuseView> & { fs?: number; z?: number } = {}): FuseView => {
+  const { fs, z, ...rest } = o
+  return { focus: { wing: { bl, fs, z } }, dist, el, az, ...rest }
+}
+export const M27_VIEWS: Record<string, FuseView> = {
+  // the five jigs on the floor, the whole line of them in frame from the root end and a little above
+  'f19.jig': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  // the cores are cut and cut out flat on the table, bottom up, leading edge toward the room
+  'f19.cut-cores': wingAt(90, 270, 50, 0, { pan: -10, up: 6 }),
+  'f19.core-cutouts': wingAt(42, 140, 50, 0, { pan: -16, up: 6 }),
+  'f19.mount-cores': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  'f19.hardpoints': wingAt(39, 54, 74, 6, { fs: 128.5, pan: -4, up: -1 }),
+  'f19.shear-web': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  'f19.pads-plates': wingAt(39, 54, 74, 6, { fs: 128.5, pan: -4, up: -1 }),
+  'f19.le-cores': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  'f19.bottom-cap': wingAt(90, 270, 50, 0, { pan: -10, up: 6 }),
+  'f19.bottom-skin': wingAt(90, 270, 50, 0, { pan: -10, up: 6 }),
+  'f19.top-cap': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  'f19.rudder-conduit': wingAt(120, 150, 24, 20, { pan: -12, up: 0 }),
+  'f19.top-skin': wingAt(90, 270, 22, 26, { pan: -10, up: -4 }),
+  'f19.ribs': wingAt(36, 120, 22, 14, { pan: -16, up: -2 }),
+  'f19.aileron-cut': wingAt(88, 190, 24, 22, { pan: -12, up: -2 }),
+  'f19.aileron-build': wingAt(88, 190, 24, 22, { pan: -12, up: -2 }),
+  'f19.controls': wingAt(27, 44, 8, 86, { fs: 142, pan: -6, up: 0 }),
+  // both wings on the airplane, from the nose end and above: the spar join in the middle
+  'f19.attach': { focus: at(129, 20, 39), dist: 80, el: 52, az: 22, pan: -10 },
+  'f20.cut-cores': { focus: at(178, 40, 156), dist: 120, el: 22, az: 24, pan: -12 },
+  'f20.skins': { focus: at(178, 40, 156), dist: 120, el: 22, az: 24, pan: -12 },
+  'f20.trim': { focus: at(178, 40, 156), dist: 120, el: 22, az: 24, pan: -12 },
+  'f20.jig': { focus: at(172, 30, 108), dist: 210, el: 24, az: 22, pan: -10 },
+  'f20.inside-layups': { focus: at(178, 40, 156), dist: 120, el: 22, az: 24, pan: -12 },
+  'f20.outside-layups': { focus: at(178, 40, 156), dist: 120, el: 22, az: 24, pan: -12 },
+  'f20.lower-fin': { focus: at(178, 24, 158), dist: 120, el: 16, az: 24, pan: -12 },
+  'f20.rudder-cut': { focus: at(182, 38, 158), dist: 100, el: 20, az: 24, pan: -10 },
+  'f20.rudder-hang': { focus: at(180, 36, 160), dist: 55, el: 14, az: 24, pan: -8 },
+}
+
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }
-export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? DEFAULT
+export const fuseView = (opId: string): FuseView => FUSE_VIEWS[opId] ?? NOSE_VIEWS[opId] ?? M25_VIEWS[opId] ?? M26_VIEWS[opId] ?? M27_VIEWS[opId] ?? DEFAULT
 
 /** Eye offset from the target, in inches, in the station's frame (+Y up, +Z toward the room, -X toward the nose end). */
 export function viewOffset(v: FuseView): [number, number, number] {

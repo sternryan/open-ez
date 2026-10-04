@@ -43,6 +43,16 @@
       <input type="range" id="canopy-open" min="0" max="105" step="1" value="0" aria-label="Canopy: how far open on its right hinges, in degrees" aria-describedby="canopy-val">
       <span class="val mono" id="canopy-val"></span>
     </div>
+    <div class="crow slide" id="aileron-ctl" hidden>
+      <span class="label lead">Aileron</span>
+      <input type="range" id="aileron-defl" min="0" max="20" step="0.5" value="0" aria-label="Aileron: how far up, in degrees, to its 20 degree stop" aria-describedby="aileron-val">
+      <span class="val mono" id="aileron-val"></span>
+    </div>
+    <div class="crow slide" id="rudder-ctl" hidden>
+      <span class="label lead">Rudder</span>
+      <input type="range" id="rudder-defl" min="-30" max="30" step="0.5" value="0" aria-label="Rudder: trailing edge in or out, in degrees, to 30 degrees either way" aria-describedby="rudder-val">
+      <span class="val mono" id="rudder-val"></span>
+    </div>
   </aside>
 
   <div id="viewpop" class="card" role="group" aria-label="Display settings" hidden>

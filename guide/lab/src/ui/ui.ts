@@ -21,6 +21,9 @@ export interface UIHandlers {
   onStick?(deflUp: number): void
   /** the canopy control (chapter 18's hinge op): how far open the person set it, degrees */
   onCanopy?(deg: number): void
+  /** the aileron and rudder controls (chapter 19's aileron op, chapter 20's rudder op): degrees up, and degrees with the trailing edge outboard positive */
+  onAileron?(deg: number): void
+  onRudder?(deg: number): void
 }
 /** How the section slider reads: the canard's B.L. (the default) or the fuselage's FS. */
 export interface SectionScale { min: number; max: number; fmt: (v: number) => string; label: string }
@@ -124,6 +127,10 @@ export function initUI(h: UIHandlers, store: Store) {
   stickEl.addEventListener('input', () => h.onStick?.(+stickEl.value))
   const canopyEl = $('canopy-open') as HTMLInputElement
   canopyEl.addEventListener('input', () => h.onCanopy?.(+canopyEl.value))
+  const aileronEl = $('aileron-defl') as HTMLInputElement
+  aileronEl.addEventListener('input', () => h.onAileron?.(+aileronEl.value))
+  const rudderEl = $('rudder-defl') as HTMLInputElement
+  rudderEl.addEventListener('input', () => h.onRudder?.(+rudderEl.value))
   $('quality-seg').addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest('button[data-q]') as HTMLElement | null
     if (b) h.onQuality(b.dataset.q as 'high' | 'mid' | 'low' | 'auto')
@@ -247,6 +254,20 @@ export function initUI(h: UIHandlers, store: Store) {
       if (+canopyEl.max !== max) canopyEl.max = String(max)
       if (+canopyEl.value !== deg) canopyEl.value = String(deg)
       $('canopy-val').textContent = text
+    },
+    /** the aileron control: shown only on its op; `deg` is how far up (degrees), `text` its short reading */
+    setAileron(show: boolean, deg: number, text: string, max = 20) {
+      $('aileron-ctl').hidden = !show
+      if (+aileronEl.max !== max) aileronEl.max = String(max)
+      if (+aileronEl.value !== deg) aileronEl.value = String(deg)
+      $('aileron-val').textContent = text
+    },
+    /** the rudder control: shown only on its op; `deg` is the angle (trailing edge outboard positive) */
+    setRudder(show: boolean, deg: number, text: string, max = 30) {
+      $('rudder-ctl').hidden = !show
+      if (+rudderEl.max !== max) { rudderEl.max = String(max); rudderEl.min = String(-max) }
+      if (+rudderEl.value !== deg) rudderEl.value = String(deg)
+      $('rudder-val').textContent = text
     },
     setSubject(s: Subject) {
       for (const b of document.querySelectorAll('#subject button[data-subject]')) b.setAttribute('aria-pressed', String((b as HTMLElement).dataset.subject === s))

@@ -17,6 +17,7 @@ import { fuseView, viewOffset } from './fuseShots'
 import { M25_CHAPTERS, M25_FIRST_OP, SPAR_BENCH_LAST, ELEV_OPS, STOPS_FROM, SPAR_FIT_OP, SPAR_COMPONENTS, m25Place, boxGhostAt } from './logic/m25'
 import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
+import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -56,6 +57,8 @@ export interface FMesh {
   extra: boolean
   /** a chapter 14-17 part (layup.json "extras".m25): the spar (on the bench, then in the box), the firewall face, the controls and the trim; shown on those chapters' ops only */
   m25: boolean
+  /** a chapter 19-20 part (layup.json "extras".m27): the wing on its bench and the airplane, the winglet on its tip */
+  m27: boolean
 }
 
 // Representational colours (the canard's rule: tell materials apart, not a measured product colour).
@@ -94,6 +97,19 @@ const M25_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, numb
   canopy_latches: ['metal', 0xe6b23a, 0.6, 0.35], canopy_safety_catch_sc1: ['metal', 0xd5d8dc, 0.9, 0.3], canopy_safety_catch_sc1_bolt: ['metal', 0x6d737a, 0.9, 0.3],
   fuselage_front_cover: ['wood', 0xd9d4c4, 0, 0.7], fuselage_rear_cover: ['wood', 0xd9d4c4, 0, 0.7], fuselage_door: ['metal', 0xe4e8ec, 0.3, 0.4],
 }
+/** the chapter 19-20 parts' looks by part, both sides (colour, metalness, roughness; a part not listed is drawn as foam): REPRESENTATIONAL colours */
+const M27_LOOK: Record<string, ['wood' | 'metal', number, number, number]> = {
+  wing_jigs_jigs: ['wood', 0xb48a58, 0, 0.62], wing_hardpoints_hardpoints: ['wood', 0x6e4328, 0, 0.7], wing_ribs_ribs: ['wood', 0xd9d4c4, 0, 0.7],
+  wing_conduit_conduit: ['wood', 0x2e2e30, 0, 0.7], wing_aileron_aileron: ['wood', 0xe9e3d3, 0, 0.55],
+  wing_aileron_hinges_hinge_pins: ['metal', 0xd5d8dc, 0.85, 0.3], wing_aileron_hinges_hinge_leaves: ['metal', 0xb4bac2, 0.85, 0.3],
+  wing_aileron_hinges_aileron_rod: ['metal', 0xc4c8cd, 0.85, 0.35], wing_aileron_hinges_torque_tube: ['metal', 0x9aa0a6, 0.9, 0.35],
+  wing_controls_controls: ['metal', 0x3d4249, 0.7, 0.4], wing_attach_spar_bolts: ['metal', 0x2f3338, 0.7, 0.4],
+  winglet_block_a_block_a: ['wood', 0xe0c88c, 0, 0.8], winglet_skins_tip_cap: ['wood', 0xd9d4c4, 0, 0.7], winglet_rudder_rudder: ['wood', 0xe9e3d3, 0, 0.55],
+  winglet_rudder_belhorn: ['metal', 0x3d4249, 0.7, 0.4], winglet_rudder_hinge_rudder_hinge: ['metal', 0x3d4249, 0.7, 0.4], winglet_jig_jig_lines: ['metal', 0x3a8fb0, 0.4, 0.5],
+}
+for (const [k, v] of Object.entries(M27_LOOK)) for (const side of ['right', 'left']) M25_LOOK[`${k}_${side}`] = v
+/** the chapter 19 wing stands on the shop floor in its jigs: this far from the room's middle line (world Z, metres; clear of the jig bench, whose own legs and top stand nearer the wall) */
+const WING_FLOOR_Z = -0.2
 /** the plexiglass's opacity: glass reads as glass when the parts behind it show through (and not as a pane of nothing) */
 export const GLASS_OPACITY = 0.34
 /** the spar's parts that slide into the box as one (the bench's, less the jig) */
@@ -180,6 +196,14 @@ export class FuselageBay {
   /** the A and B checks' dimension lines (jig frame), shown on their op only */
   readonly checks = new THREE.Group()
   private checkAnchors = new Map<string, THREE.Vector3>()
+  /** chapters 19-20: the wing data, the names of the wing and winglet parts, the aileron (up) and rudder (out) now in degrees, the wing's two stands on the bench, and the A, B and C jig lines */
+  private wing: (WingData & { parts: Record<string, unknown> }) | null = null
+  private m27Parts = new Set<string>()
+  private aileronDeg = 0
+  private rudderDeg = 0
+  private wingStandM = new Map<string, THREE.Matrix4>()
+  readonly abc = new THREE.Group()
+  private abcAnchors = new Map<string, THREE.Vector3>()
   private m25Chapter = false
   /** how far aft the firewall face's parts are drawn (inches): the aft glass ply's thickness over the stainless sheet's station, plus a hair */
   private firewallAside = 0
@@ -201,7 +225,9 @@ export class FuselageBay {
     const extraParts = new Set(Object.keys(data.extras?.nose_parts ?? {}))
     this.canopy = data.extras?.m26?.canopy ?? null
     this.m26Parts = new Set(Object.keys(data.extras?.m26?.parts ?? {}))
-    const m25Parts = new Set([...Object.keys(data.extras?.m25?.parts ?? {}), ...this.m26Parts])
+    this.wing = data.extras?.m27 ?? null
+    this.m27Parts = new Set(Object.keys(data.extras?.m27?.parts ?? {}))
+    const m25Parts = new Set([...Object.keys(data.extras?.m25?.parts ?? {}), ...this.m26Parts, ...this.m27Parts])
     this.ctl = data.extras?.m25?.controls ?? null
     const ng = data.extras?.nose_gear
     if (ng) {
@@ -276,7 +302,7 @@ export class FuselageBay {
       const cid = row ? row.component : prow.component
       this.meshes.push({
         name: p.name, part, cid, ply, row, fidelity: prow.fidelity, hatch, spec, jig, table, jigMat, tableMat, carrier,
-        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part), m25: m25Parts.has(part),
+        base: p.geo, stages, show: prow.show, jigOnly: JIG_ONLY.has(cid), void: !!prow.void, extra: extraParts.has(part), m25: m25Parts.has(part), m27: this.m27Parts.has(part),
       })
       this.infos.push({ name: p.name, component: row ? row.component : prow.component, ply })
     }
@@ -305,13 +331,14 @@ export class FuselageBay {
     this.buildGhost()
     this.buildStops()
     this.buildChecks()
+    this.buildAbc()
     {
       const ply = Math.max(...Object.values(data.nodes).filter((n) => n.part === 'firewall').map((n) => n.fs_max), -Infinity)
       const sheet = data.extras?.m25?.parts.fuselage_firewall_stainless?.fs_min
       this.firewallAside = sheet !== undefined && ply > sheet ? ply - sheet + 0.02 : 0
     }
     this.group.add(this.gearTable, this.cradles['bank-left-45'], this.cradles['bank-right-45'], this.noseStand)
-    this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops, this.checks)
+    this.jigFrame.add(this.marks, this.installed, this.ghost, this.stops, this.checks, this.abc)
     this.installed.name = 'installedCanard'
     this.installed.visible = false
     this.setPose('upright')
@@ -659,12 +686,13 @@ export class FuselageBay {
 
   placeOf(m: FMesh, opId: string | null): Placement {
     if (this.m26Parts.has(m.part)) return this.canopyPlaceOf(m, opId) === 'airplane' ? 'jig' : 'table'
+    if (m.m27) return wingPlace(opId, this.order) === 'airplane' ? 'jig' : 'table'
     if (m.m25) return m25Place(m.cid, opId, this.order) === 'bench' ? 'table' : 'jig'
     return placement(m.cid, opId, this.order, this.dry)
   }
 
   opCount(opId: string | null): number {
-    return opId ? this.meshes.filter((m) => m.ply?.op === opId).length : 0
+    return opId ? this.meshes.filter((m) => m.ply?.op === opId && (!m.m27 || this.wingShown(m, opId))).length : 0 // (the left wing's plies wait for the attach: they are not counted before it)
   }
 
   /**
@@ -685,6 +713,10 @@ export class FuselageBay {
     this.m25Chapter = m25On
     const selOp = sel ? this.opOf.get(sel) ?? null : null
     const boxGhost = m25On && boxGhostAt(selOp)
+    // chapter 19's bench ops (the wing in its jigs or on the table): the airplane is not drawn, only the wing's own parts
+    const wingBench = m25On && onWingBench(sel, this.order)
+    // an op that works on something buried in the wing (the hard points, the root controls, the attach bolts): the rest of the wing goes faint so the op's own parts show through it
+    const wingGhost = m25On && wingGhostAt(selOp)
     // the spar is built on the layup table (chapter 14's bench ops): the box stands on the jig bench between the camera and it, so it is not drawn then
     const benchOps = m25On && !!sel && this.order.indexOf(sel) >= this.order.indexOf(M25_FIRST_OP) && this.order.indexOf(sel) <= this.order.indexOf(SPAR_BENCH_LAST)
     const cur = state && sel ? opIdx.get(sel) : undefined, count = this.opCount(sel)
@@ -701,7 +733,7 @@ export class FuselageBay {
       // the nose-gear box lies on the jig bench until it is mounted on F22 (logic/fuselage.ts onBench): drawn there from its own op on
       const benched = st !== 'ghost' && !m.ply && onBench(m.cid, sel, this.order)
       const where = st === 'ghost' ? 'jig' : benched ? 'table' : this.placeOf(m, sel)
-      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || shownAt(m.show, sel, this.order)) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn) && (!m.m25 || m25On) && !(benchOps && !m.m25 && where === 'jig')
+      const shown = st !== 'hidden' && !(m.ply && st === 'current' && ph.unroll <= 0) && (benched || shownAt(m.show, sel, this.order)) && !(m.jigOnly && where === 'table' && !benched) && (!m.extra || noseOn) && (!m.m25 || m25On) && !(benchOps && !m.m25 && where === 'jig') && !(wingBench && !m.m27) && (!m.m27 || this.wingShown(m, sel))
       // the shape for this op: the node's own, or a later stage (carved, cut, holed)
       const stage = stageAt(m.stages.map((s) => ({ from: s.from, node: s.node })), sel, this.order)
       const geo = stage ? m.stages.find((s) => s.node === stage)!.geo : m.base
@@ -713,17 +745,18 @@ export class FuselageBay {
       if (m.part === 'datum_board' && m.jig.visible) boards = true
       if (m.table.visible) {
         const face = this.faceFor(m.carrier, sel)
-        m.table.matrix.copy(benched ? this.benchMatrix() : this.m26Parts.has(m.part) ? this.canopyMatrix(m, sel) : m.m25 ? this.sparBenchMatrix(this.sparStand(sel)) : this.tableMatrix(m.carrier, face))
+        m.table.matrix.copy(benched ? this.benchMatrix() : this.m26Parts.has(m.part) ? this.canopyMatrix(m, sel) : m.m27 ? this.wingMatrix(m, sel) : m.m25 ? this.sparBenchMatrix(this.sparStand(sel)) : this.tableMatrix(m.carrier, face))
         m.table.matrixWorldNeedsUpdate = true
         sig += m.carrier + face + (benched ? 'b' : '')
       }
       // what is buried in the faint box is drawn through it (x-ray), so the op's own parts read; otherwise as any part
-      const xray = boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)
+      const wingFaint = wingGhost && m.m27 && !selOp!.components.includes(m.cid) && m.cid !== 'wing.jigs'
+      const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingGhost && m.m27 && !wingFaint)
       for (const mt of [m.jigMat, m.tableMat]) mt.depthTest = !xray
       m.jig.renderOrder = m.table.renderOrder = xray ? 5 : 0
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
-      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') }
+      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') || wingFaint }
       setPlyLook(m.jigMat, look)
       setPlyLook(m.tableMat, look)
       sig += (m.jig.visible ? 'j' : m.table.visible ? 't' : '-') + (cast ? '1' : '0')
@@ -736,8 +769,9 @@ export class FuselageBay {
     this.marksOn = boards
     // chapters 12-13: the canard and the elevators stand installed on the airplane (never on a chapter 4-9 op, nor on the finished ch 4-9 box)
     this.installed.visible = !!state && (CANARD_INSTALLED_CHAPTERS.has(chapter) || (!!sel && ELEV_OPS.has(sel)))
-    this.stops.visible = m25On && chapter !== 18 && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM) // (the canopy's ops leave the cockpit's stops out of the frame and the labels)
+    this.stops.visible = m25On && chapter < 18 && !!sel && this.order.indexOf(sel) >= this.order.indexOf(STOPS_FROM) // (the canopy's ops leave the cockpit's stops out of the frame and the labels)
     this.checks.visible = m25On && sel === CANOPY_CHECK_OP
+    this.abc.visible = m25On && sel === WINGLET_JIG_OP
     this.applyM25()
     sig += this.installed.visible ? 'c' : ''
     const strut = this.meshes.find((m) => m.part === 'gear_nose_strut')
@@ -790,7 +824,7 @@ export class FuselageBay {
     const where = this.placeOf(m, opId)
     const mat = where === 'jig'
       ? this.restMatrix(this.poseFor(opId))
-      : this.m26Parts.has(m.part) ? this.canopyMatrix(m, opId) : m.m25 ? this.sparBenchMatrix(this.sparStand(opId)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
+      : this.m26Parts.has(m.part) ? this.canopyMatrix(m, opId) : m.m27 ? this.wingMatrix(m, opId) : m.m25 ? this.sparBenchMatrix(this.sparStand(opId)) : this.tableMatrix(m.carrier, this.faceFor(m.carrier, opId))
     const g = where === 'jig' ? m.base : m.table.geometry
     return g.boundingBox!.clone().applyMatrix4(mat)
   }
@@ -817,6 +851,11 @@ export class FuselageBay {
         const onBench = c.clone().applyMatrix4(this.canopyBenchMatrix(v.focus.canopy !== 'bench-up'))
         if (v.focus.canopy === 'mid') target.copy(onBench).lerp(c.clone().applyMatrix4(this.restMatrix(this.poseFor(id))), 0.5)
         else target.copy(onBench)
+      } else if (typeof v.focus === 'object' && 'wing' in v.focus) {
+        // the wing at B.L. `bl` (model z = -bl), at the middle of its chord and thickness (or the given F.S. and z): in the jigs or on the table (the bench ops) or on the airplane
+        const w = v.focus.wing, place = wingPlace(id, this.order), c = this.wingBox(place === 'jig').getCenter(new THREE.Vector3())
+        const p = new THREE.Vector3(w.fs ?? c.x, w.z !== undefined ? w.z : c.y, -w.bl)
+        target.copy(p).applyMatrix4(place === 'airplane' ? this.restMatrix(this.poseFor(id)) : this.wingStandMatrix(place))
       } else if (typeof v.focus === 'object' && 'at' in v.focus) {
         target.set(...v.focus.at).applyMatrix4(this.restMatrix(this.poseFor(id)))
       } else if (v.focus === 'box' || v.focus === 'marks') {
@@ -998,6 +1037,9 @@ export class FuselageBay {
         mat.makeTranslation(r1.x - r0.x, r1.y - r0.y, r1.z - r0.z)
       } else if (this.canopy && this.m26Parts.has(m.part) && this.data.parts[m.part]?.turns && this.canopyPlaceOf(m, this.selOp) === 'airplane') {
         mat.copy(this.openMatrix())
+      } else if (this.wing && m.m27 && wingPlace(this.selOp, this.order) === 'airplane') {
+        const d = this.deflection(m)
+        if (d) mat.copy(d)
       }
       m.jig.matrixAutoUpdate = false
       m.jig.matrix.copy(mat)
@@ -1005,6 +1047,7 @@ export class FuselageBay {
     }
     this.applyElevators()
     this.applyCanopy()
+    this.applyWing()
     this.jigFrame.updateMatrixWorld(true)
   }
 
@@ -1172,6 +1215,119 @@ export class FuselageBay {
     if (!a || !this.checks.visible) return null
     return out.copy(a).applyMatrix4(this.jigFrame.matrixWorld)
   }
+
+  // ---- chapters 19 and 20: the wing on its bench (in the jigs, flat on the table), on the airplane, the aileron and rudder, the winglet's A, B and C ----
+
+  /** the wing's bench set (the right wing and its jigs) as one box in the model frame, inches: where it would stand whether or not it is built yet, so the wing keeps one place on the bench */
+  private wingBox(withJigs: boolean): THREE.Box3 {
+    const bx = new THREE.Box3()
+    for (const m of this.meshes) if (m.m27 && m.part.endsWith('_right') && m.cid.startsWith('wing.') && (withJigs || m.cid !== 'wing.jigs')) bx.union(m.base.boundingBox!)
+    return bx
+  }
+  /**
+   * The right wing on its bench (REPRESENTATIONAL: the book gives the jigs' spacing, not the room). 'jig': stood leading edge up on the shop floor in
+   * its five jigs, its span along the room's length with the root to the left, the top surface toward the room. 'table': laid flat on the layup table,
+   * bottom up, leading edge toward the room (the bottom cap and skin are laid with the wing this way up). One rigid matrix each, the model frame to the world.
+   */
+  wingStandMatrix(stand: 'jig' | 'table'): THREE.Matrix4 {
+    const hit = this.wingStandM.get(stand)
+    if (hit) return hit
+    const bx = this.wingBox(stand === 'jig'), c = bx.getCenter(new THREE.Vector3())
+    const L = new THREE.Matrix4()
+    if (stand === 'jig') L.makeBasis(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1), new THREE.Vector3(-1, 0, 0)) // F.S. down, up out toward the room, B.L. along +X
+    else L.makeBasis(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(-1, 0, 0)) // F.S. toward the room, up down, B.L. along +X
+    const M0 = new THREE.Matrix4().makeScale(INCH, INCH, INCH).multiply(L).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z))
+    const lo = bx.clone().applyMatrix4(M0).min.y
+    const T = STATION.table, J = STATION.jig
+    const M = (stand === 'table' ? new THREE.Matrix4().makeTranslation(T.x, T.topY + 0.002 - lo, T.z) : new THREE.Matrix4().makeTranslation(J.x, 0.002 - lo, WING_FLOOR_Z)).multiply(M0)
+    this.wingStandM.set(stand, M)
+    return M
+  }
+  /** the world matrix of a wing or winglet part's table mesh for `opId`: the stand, then its own deflection (the aileron and rudder swing on the bench too) */
+  private wingMatrix(m: FMesh, opId: string | null): THREE.Matrix4 {
+    const place = wingPlace(opId, this.order)
+    const M = this.wingStandMatrix(place === 'table' && m.cid !== 'wing.jigs' ? 'table' : 'jig') // the jigs stay on the floor while the wing is on the table
+    const d = this.deflection(m)
+    return d ? M.clone().multiply(d) : M
+  }
+  /** is this wing or winglet mesh drawn on `opId`: the left side waits for the attach, the workshop parts have their own ops, and the jigs stand only with the wing upright */
+  private wingShown(m: FMesh, opId: string | null): boolean {
+    const row = this.data.parts[m.part]
+    return sideShown(m.part.endsWith('_left') ? 'left' : 'right', opId, this.order) && (!row?.workshop || workshopShown(m.cid, opId, this.order))
+  }
+  /** the local matrix (model inches) that swings an aileron or rudder part about its hinge axis: right side only, null at rest */
+  private deflection(m: FMesh): THREE.Matrix4 | null {
+    const w = this.wing, t = this.data.parts[m.part]?.turns
+    if (!w || !t || !m.part.endsWith('_right')) return null
+    const aileron = t === 'aileron', deg = aileron ? -this.aileronDeg : this.rudderDeg
+    if (deg === 0) return null
+    const ax = (aileron ? w.aileron.axis : w.rudder.axis).map((q) => this.pm(q as [number, number, number]))
+    const A = ax[0], dir = ax[1].clone().sub(A).normalize()
+    return new THREE.Matrix4().makeTranslation(A.x, A.y, A.z).multiply(new THREE.Matrix4().makeRotationAxis(dir, (deg * Math.PI) / 180)).multiply(new THREE.Matrix4().makeTranslation(-A.x, -A.y, -A.z))
+  }
+  /** keep the wing's table meshes where their stand and swing put them */
+  private applyWing() {
+    if (!this.wing) return
+    for (const m of this.meshes) {
+      if (!m.m27 || !m.table.visible) continue
+      m.table.matrix.copy(this.wingMatrix(m, this.selOp))
+      m.table.matrixWorldNeedsUpdate = true
+    }
+    this.tableGroup.updateMatrixWorld(true)
+  }
+  /** the aileron up `deg` degrees and the rudder out `deg` degrees (positive: the trailing edge outboard), both 0 at rest */
+  setAileron(deg: number) {
+    if (deg === this.aileronDeg) return
+    this.aileronDeg = deg
+    this.applyM25()
+  }
+  get aileronUpDeg(): number { return this.aileronDeg }
+  setRudder(deg: number) {
+    if (deg === this.rudderDeg) return
+    this.rudderDeg = deg
+    this.applyM25()
+  }
+  get rudderOutDeg(): number { return this.rudderDeg }
+
+  /**
+   * The winglet jig's A, B and C (plans-1980:p136), in the box's frame: a line from the wing reference point (WPRP, BL 55.5 and FS 149.6) to each of the
+   * three jig targets: the leading-edge mark on the wing top, the root trailing edge and the tip trailing edge. The book's lengths are the labels (main.ts).
+   */
+  private buildAbc() {
+    const w = this.wing
+    if (!w) return
+    const mat = new THREE.MeshBasicMaterial({ color: 0x2fc4ff, toneMapped: false, depthTest: false })
+    const P = (k: 'wprp' | 'a' | 'b' | 'c') => this.pm(w.winglet.points[k] as [number, number, number])
+    const line = (p0: THREE.Vector3, p1: THREE.Vector3, r: number) => {
+      const d = p1.clone().sub(p0), len = d.length()
+      const b = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 8), mat)
+      b.position.copy(p0).addScaledVector(d, 0.5)
+      b.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize())
+      b.castShadow = false; b.receiveShadow = false; b.renderOrder = 9
+      this.abc.add(b)
+    }
+    const o = P('wprp')
+    for (const k of ['a', 'b', 'c'] as const) {
+      const t = P(k)
+      line(o, t, 0.28)
+      const u = t.clone().sub(o), n = u.length(), up = new THREE.Vector3(0, 1, 0)
+      line(t.clone().addScaledVector(up, -1.4), t.clone().addScaledVector(up, 1.4), 0.2) // a tick at the target
+      this.abcAnchors.set(k, t.clone().add(new THREE.Vector3(0, 2.4, 0)))
+      void n
+    }
+    line(o.clone().add(new THREE.Vector3(0, -1.4, 0)), o.clone().add(new THREE.Vector3(0, 1.4, 0)), 0.2)
+    this.abcAnchors.set('wprp', o.clone().add(new THREE.Vector3(0, 2.4, 0)))
+    this.abc.name = 'winglet.abc'
+    this.abc.visible = false
+  }
+  /** an A, B, C or reference-point label anchor (world metres), or null while the lines are not shown */
+  abcAnchor(k: 'wprp' | 'a' | 'b' | 'c', out: THREE.Vector3): THREE.Vector3 | null {
+    const a = this.abcAnchors.get(k)
+    if (!a || !this.abc.visible) return null
+    return out.copy(a).applyMatrix4(this.jigFrame.matrixWorld)
+  }
+  /** a label text for a jig line, "A 102.15 in" */
+  abcText(k: 'a' | 'b' | 'c'): string { return this.wing ? abcLabel(this.wing, k) : k }
 
   // ---- chapters 12-13: the installed canard, the nose gear's retraction and its other axle candidate ----
 

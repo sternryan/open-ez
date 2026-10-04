@@ -126,8 +126,56 @@ def build() -> dict:
             for d in (0.0, 30.0, 90.0, 105.0)
         ]
     }
+    from core import wing_book as wbk
+    from core import winglet_book as wlk
+
+    sec27 = fe.m27_section()
+    pts27 = [
+        [150.0, 60.0, 2.0],
+        [160.0, 90.0, 3.0],
+        [165.0, 117.0, 1.5],
+        [176.8, 160.0, 12.0],
+        [186.0, 158.0, 30.0],
+    ]
+    wing = {
+        "aileron": [
+            {
+                "pt": p,
+                "deg": d,
+                "out": list(
+                    cq.Vertex.makeVertex(*p)
+                    .rotate(
+                        cq.Vector(*wbk.aileron_axis()[0]),
+                        cq.Vector(*wbk.aileron_axis()[1]),
+                        -d,
+                    )
+                    .toTuple()
+                ),
+            }
+            for p in pts27
+            for d in (0.0, 10.0, 20.0)
+        ],
+        "rudder": [
+            {
+                "pt": p,
+                "deg": d,
+                "out": list(
+                    cq.Vertex.makeVertex(*p)
+                    .rotate(
+                        cq.Vector(*wlk.rudder_axis()[0]),
+                        cq.Vector(*wlk.rudder_axis()[1]),
+                        d,
+                    )
+                    .toTuple()
+                ),
+            }
+            for p in pts27
+            for d in (-30.0, 0.0, 15.0, 30.0)
+        ],
+    }
     return {
         "canopy": canopy,
+        "wing": wing,
         "controls": controls,
         "elevators": {
             "hinge": hinge,
@@ -142,6 +190,7 @@ def build() -> dict:
             "nose_gear": ng,
             "controls": ctl,
             "canopy": sec,
+            "wing": {k: v for k, v in sec27.items() if k != "parts"},
         },
     }
 

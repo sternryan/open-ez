@@ -27,6 +27,7 @@ import { Labels } from './ui/labels'
 import { layersAt, summarize, fmtBl, type LayupNode } from './logic/section'
 import { FuselageBay } from './fuselageBay'
 import { FUSE_PREFIXES, M25_CHAPTERS, SPAR_FIT_OP, STICK_OP, slideProgress } from './logic/m25'
+import { AILERON_OP, RUDDER_OP, aileronProgress, rudderProgress, clampAileronDeg, clampRudderDeg, wingKin, wingRow, aileronText, rudderText, aileronShort, rudderShort, type WingData } from './logic/wing'
 import { HINGE_OP, CUT_OP, liftProgress, openProgress, clampOpenDeg, canopyKin, canopyRow, openText, openShort, type CanopyData } from './logic/canopy'
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
@@ -138,6 +139,9 @@ interface LabHook {
   sparSlide(): { inches: number; distance: number } | null
   /** chapter 18: the canopy's opening now (degrees; whether a person has set it), its readout, whether its control shows, how far it has lifted off at the cut (0 on the airplane, 1 on the bench), and the A and B checks' dimension lines shown */
   canopy(): { openDeg: number; manual: boolean; text: string; shown: boolean; liftK: number; checks: boolean } | null; setCanopyOpen(deg: number): void
+  /** chapters 19-20: the aileron (degrees up) and the rudder (degrees, trailing edge outboard positive) now, whether a person has set them, their readouts, whether their controls show, and the winglet's A, B and C lines shown */
+  wing(): { aileronDeg: number; rudderDeg: number; aileronManual: boolean; rudderManual: boolean; aileronText: string; rudderText: string; aileronShown: boolean; rudderShown: boolean; abc: boolean } | null
+  setAileron(deg: number): void; setRudder(deg: number): void
   /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
   hide(prefixes: string[]): void
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
@@ -166,7 +170,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null, ref: () => null,
-  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, canopy: () => null, setCanopyOpen: () => {}, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, canopy: () => null, setCanopyOpen: () => {}, wing: () => null, setAileron: () => {}, setRudder: () => {}, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -520,7 +524,7 @@ async function boot() {
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
     // the spar, firewall face, controls and trim (chapters 14-17, layup.json "extras".m25) and the canopy (chapter 18, "extras".m26) join them the same way, the cap and frame plies among the box's plies
-    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}) } } : null
+    const fuseData: FuseLayup | null = fuseRaw ? { ...fuseRaw, parts: { ...fuseRaw.parts, ...(fuseRaw.extras?.nose_parts ?? {}), ...(fuseRaw.extras?.m25?.parts ?? {}), ...(fuseRaw.extras?.m26?.parts ?? {}), ...(fuseRaw.extras?.m27?.parts ?? {}) }, nodes: { ...fuseRaw.nodes, ...(fuseRaw.extras?.m25?.nodes ?? {}), ...(fuseRaw.extras?.m26?.nodes ?? {}), ...(fuseRaw.extras?.m27?.nodes ?? {}) } } : null
     // what the subject's original state() reported before chapters 11-13: the box's parts and plies (tests and callers keep that contract)
     const fuseLegacy = new Set<string>(fuseRaw ? [...Object.values(fuseRaw.parts).map((r) => r.node), ...Object.keys(fuseRaw.nodes)] : [])
     // the fuselage's part nodes and their later shapes (stages: the carve, the canard opening, the access holes) group like components
@@ -851,6 +855,10 @@ async function boot() {
         const k = canopyKin(selected, CANOPY, canopyNow())
         if (k) return k
       }
+      if (subject === 'fuselage' && bay && WING) {
+        const k = wingKin(selected, WING, aileronNow(), rudderNow())
+        if (k) return k
+      }
       if (subject === 'fuselage' && bay && CTL && selected === STICK_OP) {
         return { label: 'Pitch stick and elevators', value: stickText(stickNow(), CTL), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
       }
@@ -879,12 +887,22 @@ async function boot() {
     const liftNow = (): number => (selected === CUT_OP ? liftProgress(opT) : 1)
     const canopyNow = (): number => (!CANOPY || selected !== HINGE_OP ? 0 : clampOpenDeg(canopyManual ?? openProgress(opT) * CANOPY.hinge.max_open_deg, CANOPY.hinge.max_open_deg))
     const updateCanopy = () => ui.setCanopy(subject === 'fuselage' && selected === HINGE_OP && !!CANOPY, canopyNow(), openShort(canopyNow()), CANOPY?.hinge.max_open_deg)
+    // chapters 19-20: the aileron swings up to its stop on its hinge op, the rudder out to 30 deg on its own; a person's slider takes either over
+    const WING: WingData | null = fuseRaw?.extras?.m27 ?? null
+    let aileronManual: number | null = null, rudderManual: number | null = null
+    const aileronNow = (): number => (!WING || selected !== AILERON_OP ? 0 : clampAileronDeg(aileronManual ?? aileronProgress(opT) * WING.aileron.max_up_deg, WING.aileron.max_up_deg))
+    const rudderNow = (): number => (!WING || selected !== RUDDER_OP ? 0 : clampRudderDeg(rudderManual ?? rudderProgress(opT) * WING.rudder.max_deg, WING.rudder.max_deg))
+    const updateWingCtl = () => {
+      ui.setAileron(subject === 'fuselage' && selected === AILERON_OP && !!WING, aileronNow(), aileronShort(aileronNow()), WING?.aileron.max_up_deg)
+      ui.setRudder(subject === 'fuselage' && selected === RUDDER_OP && !!WING, rudderNow(), rudderShort(rudderNow()), WING?.rudder.max_deg)
+    }
     const stickShort = (d: number) => (Math.abs(d) < 0.05 ? 'Neutral' : d > 0 ? `${d.toFixed(1)} up` : `${(-d).toFixed(1)} down`)
     const updateStick = () => ui.setStick(subject === 'fuselage' && selected === STICK_OP && !!CTL, stickNow(), stickShort(stickNow()))
-    const updateKin = () => { ui.setKin(kinNow()); updateStick(); updateCanopy() }
+    const updateKin = () => { ui.setKin(kinNow()); updateStick(); updateCanopy(); updateWingCtl() }
     const snapKin = () => { // a page opened on an op (no flight): the elevators start where the op has them
       if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()) }
       if (bay && subject === 'fuselage' && CANOPY) { bay.setCanopyLift(liftNow()); bay.setCanopyOpen(canopyNow()) }
+      if (bay && subject === 'fuselage' && WING) { bay.setAileron(aileronNow()); bay.setRudder(rudderNow()) }
       elevDx = elevMode() === 'apart' ? APART_IN : 0
       elevDeg = 0
       applyElev()
@@ -914,6 +932,12 @@ async function boot() {
           if (lk !== bay.canopyLiftK || od !== bay.canopyOpenDeg) pipeline.shadowDirty = true
           bay.setCanopyLift(lk)
           bay.setCanopyOpen(od)
+        }
+        if (WING) {
+          const ad = aileronNow(), rd = rudderNow()
+          if (ad !== bay.aileronUpDeg || rd !== bay.rudderOutDeg) pipeline.shadowDirty = true
+          bay.setAileron(ad)
+          bay.setRudder(rd)
         }
       }
       updateKin()
@@ -1128,7 +1152,7 @@ async function boot() {
       ui.setReadout({ station: fsecOn ? fmtFs(fsecFs) : 'Section off', layers, plies: n ? `${lay} / ${n}` : null, cloth: cloth || 'none yet' })
       ui.setCg(cgRow(ledger))
       ui.setGround(groundRow(ledger))
-      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order))
+      ui.setRef(sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order))
       updateKin()
     }
     const updateReadout = () => {
@@ -1241,7 +1265,7 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
-    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18].includes(chapterOf(selected))
+    const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
@@ -1333,6 +1357,23 @@ async function boot() {
           priority: () => 4, tie: () => 0,
         })
       }
+    }
+    // chapter 20: the winglet jig's A, B and C, drawn from the wing reference point (the book's lengths; the reference point is named with its station)
+    if (bay && WING) {
+      for (const k of ['a', 'b', 'c'] as const) {
+        flabels.add({
+          id: `winglet.abc.${k}`, text: bay.abcText(k), color: '#2fc4ff', cls: '',
+          at: () => bay.abcAnchor(k, fwp),
+          vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.abc.visible ? 1 : 0),
+          priority: () => 4, tie: () => 0,
+        })
+      }
+      flabels.add({
+        id: 'winglet.abc.wprp', text: `Reference point: BL ${WING.winglet.wprp[1]}, FS ${WING.winglet.wprp[0]}`, color: '#2fc4ff', cls: '',
+        at: () => bay.abcAnchor('wprp', fwp),
+        vis: () => (subject === 'fuselage' && (tourOv.labels ?? labelsOn) && bay.abc.visible ? 1 : 0),
+        priority: () => 4, tie: () => 0,
+      })
     }
     if (bay && CTL) {
       flabels.add({
@@ -1438,9 +1479,10 @@ async function boot() {
       if (bay && subject === 'fuselage') { bay.setPose(bay.poseFor(id), fly); aimKey(); bay.setNose(noseTNow()); fitCutRange() }
       openOp()
       if (!fly) snapKin()
-      canopyManual = null
+      canopyManual = null; aileronManual = null; rudderManual = null
       if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()); paint() } // the spar starts clear of the box on its fit op; the stick at the op's own start
       if (bay && subject === 'fuselage' && CANOPY) { bay.setCanopyLift(liftNow()); bay.setCanopyOpen(canopyNow()); paint() } // the canopy starts on the airplane at its cut op, closed at the hinge op
+      if (bay && subject === 'fuselage' && WING) { bay.setAileron(aileronNow()); bay.setRudder(rudderNow()); paint() } // the aileron and rudder start neutral on their own ops
       if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
@@ -1613,6 +1655,8 @@ async function boot() {
         select(ops.some((o) => o.id === selected) ? selected : (ops[0]?.id ?? null))
       },
       onSubject(s) { if (s !== subject) { userAct(); setSubject(s) } },
+      onAileron(d) { userAct(); aileronManual = d; if (bay && WING) { bay.setAileron(aileronNow()); pipeline.shadowDirty = true } updateKin() },
+      onRudder(d) { userAct(); rudderManual = d; if (bay && WING) { bay.setRudder(rudderNow()); pipeline.shadowDirty = true } updateKin() },
       onCanopy(d) { userAct(); canopyManual = d; if (bay && CANOPY) { bay.setCanopyOpen(canopyNow()); pipeline.shadowDirty = true } updateKin() },
       onStick(d) { userAct(); stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() },
       onHome: () => goto(homeShot(), true),
@@ -1665,7 +1709,7 @@ async function boot() {
     hook.fuseShots = () => Object.fromEntries([...fuseShotIds].map((id) => [id, snap(id)!]))
     hook.cg = () => cgRow(ledger)
     hook.ground = () => groundRow(ledger)
-    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order)
+    hook.ref = () => sparRow(ledger, selected, graph.order) ?? canopyRow(ledger, selected, graph.order) ?? wingRow(ledger, selected, graph.order)
     hook.fuseToWorld = (q) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.jigFrame.matrixWorld).toArray() : q)
     hook.fuseRestToWorld = (q, p) => (bay ? new THREE.Vector3(q[0], q[1], q[2]).applyMatrix4(bay.restMatrix(p as JigPose)).toArray() : q)
     hook.gearMarks = () => {
@@ -1688,6 +1732,9 @@ async function boot() {
     hook.setStick = (d) => { stickManual = d; if (bay && CTL) { bay.setStick(stickNow()); pipeline.shadowDirty = true } updateKin() }
     hook.canopy = () => (bay && CANOPY ? { openDeg: bay.canopyOpenDeg, manual: canopyManual !== null, text: openText(bay.canopyOpenDeg, CANOPY.hinge), shown: !document.getElementById('canopy-ctl')!.hidden, liftK: bay.canopyLiftK, checks: bay.checks.visible } : null)
     hook.setCanopyOpen = (d) => { canopyManual = d; if (bay && CANOPY) { bay.setCanopyOpen(canopyNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.wing = () => (bay && WING ? { aileronDeg: bay.aileronUpDeg, rudderDeg: bay.rudderOutDeg, aileronManual: aileronManual !== null, rudderManual: rudderManual !== null, aileronText: aileronText(bay.aileronUpDeg, WING.aileron.max_up_deg), rudderText: rudderText(bay.rudderOutDeg, WING.rudder.max_deg), aileronShown: !document.getElementById('aileron-ctl')!.hidden, rudderShown: !document.getElementById('rudder-ctl')!.hidden, abc: bay.abc.visible } : null)
+    hook.setAileron = (d) => { aileronManual = d; if (bay && WING) { bay.setAileron(aileronNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.setRudder = (d) => { rudderManual = d; if (bay && WING) { bay.setRudder(rudderNow()); pipeline.shadowDirty = true } updateKin() }
     hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.touring = () => director.active

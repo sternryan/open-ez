@@ -1098,9 +1098,9 @@ M27_PLY_CLOTH = {  # (part, ply k) -> cloth; the rest are UND (the wing cores' s
 }
 M27_SHOW_FROM = {  # a part's first op (the lab shows it from here on)
     "jigs": "f19.jig",
-    "fc1": "f19.mount-cores",
-    "fc2": "f19.mount-cores",
-    "fc3": "f19.mount-cores",
+    "fc1": "f19.cut-cores",
+    "fc2": "f19.cut-cores",
+    "fc3": "f19.cut-cores",
     "fc4": "f19.le-cores",
     "fc5": "f19.le-cores",
     "hardpoints": "f19.hardpoints",
@@ -1148,6 +1148,8 @@ M27_LABELS = {
     "tip_cap": "Tip cap",
     "jig_lines": "Jig lines A, B and C",
     "layup_3": "Corner layup 3, UND plies",
+    "skin_out": "Winglet outside skin plies",
+    "skin_in": "Winglet inside skin plies",
     "block_a": "Block A",
     "lower_fin": "Lower fin",
     "rudder": "Rudder",
@@ -1245,6 +1247,23 @@ def m27_section() -> dict:
             if n in M27_PLY_PARTS:
                 row["plies"] = len(plies[n])
             parts[f"{comp[n]}_{n}_{side}".replace(".", "_")] = row
+        # laid plies with no merged solid: a part row each so the lab can name and stripe them
+        for n in ("skin_out", "skin_in"):
+            bbs = [ply.val().BoundingBox() for ply in plies[n]]
+            parts[f"winglet_skins_{n}_{side}"] = {
+                "node": f"winglet.skins.{n}.{side}",
+                "component": "winglet.skins",
+                "side": side,
+                "fidelity": "representational",
+                "label": M27_LABELS[n] + " (fitted shape)",
+                "cite": list(fparts["tip_cap"].cite),
+                "fs_min": round(min(b.xmin for b in bbs), 4),
+                "fs_max": round(max(b.xmax for b in bbs), 4),
+                "bl_min": round(min(b.ymin for b in bbs), 4),
+                "bl_max": round(max(b.ymax for b in bbs), 4),
+                "show": {"from": M27_PLY_PARTS[n][0]},
+                "plies": len(plies[n]),
+            }
         for n, (op, cid) in M27_PLY_PARTS.items():
             for k, ply in enumerate(plies[n], 1):
                 bb = ply.val().BoundingBox()
@@ -1302,6 +1321,16 @@ def m27_section() -> dict:
                 "text_in": G.wing_spar_join_bolt_spacing_text_in,
             },
         },
+        "shear_web": {
+            "zones": [list(z) for z in G.wing_shear_web_zones],
+            "outboard_plies_printed": G.wing_shear_web_outboard_plies_printed,
+            "note": "CP26 LPC 31: the outboard zone is 2 plies, the plans print 3",
+        },
+        "shear_web": {
+            "zones": [list(z) for z in G.wing_shear_web_zones],
+            "outboard_plies_printed": G.wing_shear_web_outboard_plies_printed,
+            "note": "CP26 LPC 31: the outboard zone is 2 plies, the plans print 3",
+        },
         "winglet": {
             "abc_book_in": list(G.winglet_book_jig_abc_in),
             "abc_model_in": [round(abc[k], 4) for k in ("A", "B", "C")],
@@ -1312,6 +1341,7 @@ def m27_section() -> dict:
             "tip_chord_in": G.winglet_book_tip_chord_in,
             "tip_chord_status": "derived-unsourced, medium: a pixel read, not a page value",
             "wprp": list(G.winglet_book_jig_wprp),
+            "points": {k: [round(c, 4) for c in v] for k, v in wl.jig_points().items()},
         },
         "weights": {
             "rows": [

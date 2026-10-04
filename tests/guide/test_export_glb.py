@@ -897,7 +897,19 @@ def test_m27_layup_section_names_every_part_the_plies_the_axes_and_the_conflicts
         "extras"
     ]["m27"]
     parts, nodes = ex["parts"], ex["nodes"]
-    assert len(parts) == 60 and len(nodes) == 72  # 30 parts a side, 36 plies a side
+    # 32 parts a side (the two winglet skin ply parts have a row of their own, so the lab can name and stripe them), 36 plies a side
+    assert len(parts) == 64 and len(nodes) == 72
+    assert {n["part"] for n in nodes.values()} <= set(parts), (
+        "every ply's part has a row"
+    )
+    assert ex["shear_web"]["zones"] == [
+        [23.0, 70.0, 6],
+        [70.0, 120.0, 4],
+        [120.0, 157.0, 2],
+    ]
+    assert ex["shear_web"]["outboard_plies_printed"] == 3
+    pts = ex["winglet"]["points"]
+    assert pts["wprp"][:2] == [149.6, 55.5] and set(pts) == {"wprp", "a", "b", "c"}
     assert {r["fidelity"] for r in parts.values()} == {"representational", "derived"}
     assert all(
         "(fitted shape" in r["label"]

@@ -10,6 +10,7 @@
  */
 
 import { CUT_OP, HINGE_OP, liftDuration, openDuration } from './canopy'
+import { AILERON_OP, RUDDER_OP, aileronDuration, rudderDuration } from './wing'
 import { SPAR_FIT_OP, STICK_OP, slideDuration } from './m25'
 
 // ---- elevators (core/elevators_kin.py) ----
@@ -176,6 +177,8 @@ export const KIN_HOLD: Record<string, number> = {
   [SPAR_FIT_OP]: slideDuration(), // the spar slides in from the side (chapter 14)
   [CUT_OP]: liftDuration(), // the canopy lifts off and turns over on the bench (chapter 18)
   [HINGE_OP]: openDuration(), // the canopy swings open on its right hinges (chapter 18)
+  [AILERON_OP]: aileronDuration(), // the aileron swings up to its stop (chapter 19)
+  [RUDDER_OP]: rudderDuration(), // the rudder swings out to 30 deg (chapter 20)
   [STICK_OP]: travelDuration() + 0.8, // the stick sweeps the Roncz travel, the pushrod and elevators with it (chapter 16)
   'r30.elev-uptravel-test': travelDuration() + 0.8,
   'r30.elev-travel-check': travelDuration() + 0.8,
