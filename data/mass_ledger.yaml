@@ -115,12 +115,26 @@ prototype_weights:
     canopy: {weight_lb: 16.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; 17 lb with hinges, filled and painted (CP27 p1); reference only, no CG, not a ledger row"}
     # Block 2 M2.7: the wing, aileron and winglets, builder weights (Melvill N26MS) only, like the spar and canopy. No sourced CG, so they are in
     # no moment sum (fuselage_cg matches rows by fuselage part name and there is no wing part); the overall CG stays "not yet computed". The
-    # analysis wing_weight_lb 85.0 (both wings, unsourced) is not changed here; ledger closure must reconcile it with 2 x 64 = 128 lb.
+    # analysis wing_weight_lb 85.0 (both wings, unsourced) is not changed here; ledger closure must reconcile it with 2 x 64 = 128 lb (a conflict, flagged in config WEIGHT_PROVENANCE and TODOS).
     wing_ch19: {weight_lb: 51.5, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; one wing complete to the end of chapter 19 (51 lb 8 oz); reference only, no CG, not a ledger row"}
     wing_complete: {weight_lb: 64.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; one wing with both winglets and the rudder, ready to finish; reference only, no CG, not a ledger row"}
     aileron: {weight_lb: 5.125, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; aileron with mass balance, hinges and torque tube (5 lb 2 oz); reference only, no CG, not a ledger row"}
     upper_winglet: {weight_lb: 6.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; upper winglet with antenna and coax; reference only, no CG, not a ledger row"}
     lower_winglet: {weight_lb: 1.19, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; lower winglet (1 lb 3 oz); reference only, no CG, not a ledger row"}
+    # Block 2 M2.8: the N26MS empty-weight ladder (CP27 page 4) and two chapter 23 builder weights. Reference only: the ladder rows are different
+    # configurations of ONE airplane (each step re-adds, 693.4 + 4.9 = 698.3 and so on), so they are never summed, and none has a sourced CG. They are the
+    # context for the OM sample empty weight 730 lb at FS 111.7 (om-1980:p25), the ledger-closure target (2.n); CG stays "not yet computed".
+    n26ms_empty_1: {weight_lb: 693.4, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 empty-weight ladder step 1: basic empty, VFR panel, g meter, turn and bank, no alternator, no starter, graphite cowl, small battery; reference only, no CG, not a ledger row"}
+    n26ms_empty_2: {weight_lb: 698.3, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 2: step 1 plus the small alternator (4.9 lb); reference only, no CG, not a ledger row"}
+    n26ms_empty_3: {weight_lb: 713.7, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 3: step 2 plus com, nav and transponder (15.4 lb); reference only, no CG, not a ledger row"}
+    n26ms_empty_4: {weight_lb: 761.9, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 4: step 1 plus a 60 A alternator, starter, ring gear, brackets, relays and the 25 Ah battery (68.5 lb); reference only, no CG, not a ledger row"}
+    n26ms_empty_5: {weight_lb: 777.3, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 5: step 4 plus avionics (15.4 lb); reference only, no CG, not a ledger row"}
+    n26ms_empty_6: {weight_lb: 815.4, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 6: step 5 plus lights, tires, dynafocal mount, NACA inlet, heat and other extras (38.1 lb); fully equipped; reference only, no CG, not a ledger row"}
+    n26ms_empty_7: {weight_lb: 860.2, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 7: step 6 plus provisions for a 108 lb pilot at CG 102.2, a second 25 Ah battery and 15 lb of lead ahead of NG31 (44.8 lb); the text says 1.8 in forward of the aft limit, which 103 less 102.2 does not give; reference only, no CG, not a ledger row"}
+    n26ms_empty_8: {weight_lb: 883.0, cite: "cp-text:p27", note: "builder weight, Melvill N26MS, CP27 page 4 ladder step 8: step 7 plus twelve small items (22.8 lb); reference only, no CG, not a ledger row"}
+    dynafocal_mount: {weight_lb: 5.19, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3 dynafocal engine mount (5 lb 3 oz); the 183 lb fuselage excludes it; reference only, no CG, not a ledger row"}
+    cowl_glass: {weight_lb: 18.0, cite: "cp-text:p27", note: "published weight (CP27 page 5): the standard Lycoming Long-EZ cowl, both halves, in glass; reference only, no CG, not a ledger row"}
+    cowl_graphite: {weight_lb: 12.0, cite: "cp-text:p27", note: "published weight (CP27 page 5): the same cowl in graphite (Kevlar within 1 lb of graphite, CP28 p10); reference only, no CG, not a ledger row"}
   complete_fuselage_lb:
     weight_lb: 183.0
     cite: "cp-text:p26 CP26 page 3 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"

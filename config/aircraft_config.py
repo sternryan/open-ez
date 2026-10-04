@@ -757,6 +757,180 @@ class GeometricParams:
         13.2  # book: p137 rudder conduit from the winglet TE
     )
 
+    # === STRAKE AND FUEL BOOK (chapter 21, M2.8) ===
+    # plans-1980 pdf pages p141 to p148 (printed 21-1 to 21-8). The R23 and R45 rib outlines (A14), the OD outline and the jig board use are on
+    # sheets the owner does not hold: the build model draws them as fitted shapes (core.strake_book).
+    # The prefix is stk_ because tests/test_nose_elevator_stations.py bans any field name containing 'rake' (gear rake) and 'strake' does.
+    stk_book_le_fs_fuselage: float = 50.0  # book: plans-1980:p147: strake LE at the fuselage side, F.S. 50 (p171 agrees)
+    stk_book_le_fs_bl_23: float = 73.3  # book: plans-1980:p147: TLE and BLE kink at BL 23, F.S. 73.3 (p171 agrees)
+    stk_book_le_fs_bl_45: float = (
+        99.5  # book: plans-1980:p147: LE at BL 45 where R45 meets the TLE, F.S. 99.5
+    )
+    stk_book_spar_fwd_fs_bl_23: float = (
+        118.5  # book: plans-1980:p147: spar forward face at BL 23, F.S. 118.5
+    )
+    stk_book_spar_slope_deg: float = 8.57  # derived: plans-1980:p118: spar face sweeps aft 8.57 deg per BL out (4.9 over 32.5 on p118)
+    stk_book_bab_fuselage_fs: float = 103.5  # book: plans-1980:p147: BAB meets the fuselage side at F.S. 103.5 (the aft edge of the baggage cutout)
+    stk_book_sump_fs: Tuple[float, float] = (
+        103.5,
+        125.0,
+    )  # derived: plans-1980:p144: sump blister runs F.S. 103.5 to 125, flush with the firewall (p144 note, p171 FS 125)
+    stk_book_fuselage_side_bl: Tuple[float, float] = (
+        12.1,
+        11.3,
+    )  # derived-unsourced: plans-1980:p147: fuselage side BL at F.S. 50 and at F.S. 103.5, scaled off the p147 image (plus or minus 0.
+    stk_book_foam_thickness_in: float = 0.35  # book: plans-1980:p141: type 45 PV core, 0.35 in thick, for every strake part and skin
+    stk_book_tle_in: Tuple[float, float] = (
+        33.5,
+        2.55,
+    )  # book: plans-1980:p141: TLE fuel tank leading edge, 33.5 long by 2.55 wide, 90 deg corners
+    stk_book_ble_in: Tuple[float, float] = (
+        25.5,
+        2.55,
+    )  # book: plans-1980:p141: BLE baggage leading edge, 25.5 long by 2.55 wide
+    stk_book_b23_in: Tuple[float, float] = (
+        21.3,
+        7.3,
+    )  # book: plans-1980:p141: B23 baffle, 21.3 long by 7.3 high
+    stk_book_bab_in: Tuple[float, float, float] = (
+        13.4,
+        7.3,
+        7.75,
+    )  # book: plans-1980:p141: BAB baffle, 13.4 long, 7.3 high outboard and 7.75 high inboard (the 7.75 is medium)
+    stk_book_db_in: Tuple[float, float, float] = (
+        28.5,
+        7.3,
+        6.5,
+    )  # book: plans-1980:p141: DB diagonal baffle, 28.5 long, 7.3 high at the fore end and 6.5 at the aft end (the 6.5 is
+    stk_book_b23_hole_in: Tuple[float, float] = (
+        5.0,
+        3.0,
+    )  # book: plans-1980:p141: B23 oval hole 5 long by 3 high, 3 in from the right end and 3 in clear of the bottom edge
+    stk_book_notch_radius_in: Tuple[float, float] = (
+        0.8,
+        1.3,
+    )  # book: plans-1980:p141: B23 and DB corner notch radii, 0.8 on top and 1.3 on the bottom, centres 2 in from each en
+    stk_book_skin_top_in: Tuple[float, float, float, float] = (
+        23.9,
+        44.3,
+        44.3,
+        67.2,
+    )  # book: plans-1980:p142: top skin foam edges A, B, C and D (outboard skin A, B and C
+    stk_book_skin_bottom_in: Tuple[float, float, float, float] = (
+        23.7,
+        44.1,
+        44.1,
+        67.0,
+    )  # book: plans-1980:p142: bottom skin foam edges A, B, C and D
+    stk_book_skin_spar_edge_in: Tuple[float, float] = (
+        32.0,
+        4.9,
+    )  # book: plans-1980:p142: outboard skin spar edge 32.0 long along the bevel, offset aft 4.9, square at the aft corne
+    stk_book_cutout_fwd_in: Tuple[Tuple[float, float, float], ...] = (
+        (65.8, 4.0, 6.55),
+        (63.0, 2.9, 7.35),
+        (60.0, 2.15, 7.9),
+        (56.0, 1.7, 8.45),
+        (52.0, 1.55, 8.8),
+        (47.0, 1.45, 9.05),
+        (42.0, 1.40, 9.1),
+    )  # book: plans-1980:p142: baggage cutout in the fuselage side: station forward of the spar face, top-edge depth and
+    stk_book_cutout_aft_in: Tuple[float, float, float, float] = (
+        30.0,
+        15.0,
+        1.40,
+        9.15,
+    )  # book: plans-1980:p142: tank cutout in the fuselage side: round forward end begins 30.0 forward of the spar face,
+    stk_book_cutout_aft_top_alt_in: float = 1.90  # conflict: plans-1980:p142: the tank cutout top depth reads 1.90 near the aft end and 1.40 at mid length in the same d
+    stk_book_jig_rib_height_in: Tuple[float, float] = (
+        2.65,
+        3.45,
+    )  # book: plans-1980:p143: the WL 17.4 mark on R45 is 2.65 above the jig table and on R23 3.45 above (the strake bott
+    stk_book_sump_blister_in: Tuple[float, float, float] = (
+        21.0,
+        2.75,
+        0.5,
+    )  # book: plans-1980:p144: sump blister 21 long, 2.75 deep, 0.5 flange all round
+    stk_book_baggage_limit_lb: float = 100.0  # book: om-1980:p4: each strake baggage floor is structurally good for 100 lb (OM weights page)
+    fuel_book_lb_per_gal: float = (
+        6.0  # book: om-1980:p25: 6.0 lb per gal (40 gal = 240 lb, om-1980:p26)
+    )
+    fuel_book_arm_fs: float = 104.5  # book: om-1980:p26: fuel arm F.S. 104.5 (rows 240 lb moment 25080 and 150 lb moment 15675 both close)
+    fuel_book_capacity_plans_gal: float = (
+        25.5  # conflict: plans-1980:p141: plans: two tanks of 25.5 gal each (51 total)
+    )
+    fuel_book_capacity_om_gal: float = 28.0  # conflict: om-1980:p8: OM: two 28 gal tanks (56) but also a 52 gal total (also cp-text CP24 p13)
+    fuel_book_capacity_om_total_gal: float = 52.0  # book: om-1980:p8: OM: 52 gal total capacity (cp-text CP24 p13 spec table agrees)
+
+    # === ELECTRICAL BOOK (chapter 22, M2.8) ===
+    # plans-1980 pdf pages p149 to p155. No fuselage station or weight is printed in the chapter; the battery station is on A6 (not held).
+    elec_book_battery_v: float = 12.0  # book: plans-1980:p150: 12 V system
+    elec_book_battery_ah: float = 25.0  # book: plans-1980:p150: 25 Ah in the nose in both systems 'to provide the correct CG' (p149)
+    elec_book_battery_fs_range: Tuple[float, float] = (
+        0.0,
+        22.0,
+    )  # positioned-from-text: plans-1980:p155: the battery sits on a nose shelf bonded to NG30 and F6 (p155)
+    elec_book_battery_model_fs: float = 11.0  # unsourced: no page: the model draws the battery at the middle of the F.S. 0 to 22 range for illustration only
+    elec_book_battery_added_lb: float = 19.0  # derived: cp-text:p27: the 25 Ah nose battery 'accepts a 19 lb increase' over the small battery (CP27 p4): a prin
+    elec_book_shelf_in: Tuple[float, float] = (
+        0.6,
+        0.4,
+    )  # book: plans-1980:p155: battery shelf 0.6 above the floor mark and cover wrap gap 0.4 (small hand digits)
+    elec_book_starter_fs_min: float = 150.0  # positioned-from-text: cp-text:p27: starter, ring gear and alternator 'way back at station 150+' (CP27 p4): a lower bound, not
+    elec_book_relay_fs: float = 22.0  # positioned-from-text: plans-1980:p149: mount the start relay and over-voltage unit on the front of F22 (p149)
+    elec_book_nav_strip_in: float = 22.8  # cp-corrected: cp-text:p30: nav antenna copper strips are 22.8 in, not 24 (CP30 LPC 78)
+    elec_book_comm_strip_in: float = 20.3  # cp-corrected: cp-text:p26: comm antenna in the winglet: two foil strips 20.3 in, three balums (CP26 p8)
+
+    # === ENGINE BOOK (chapter 23, M2.8) ===
+    # plans-1980 pdf pages p156 to p158: a three-page delta; the installation lives in Sections IIA, IIC and IIL (not held).
+    eng_book_engine_max_lb: float = 246.0  # book: plans-1980:p156: engine with accessories at most 246 lb (a limit, not a weight)
+    eng_book_vibrating_max_lb: float = 286.0  # book: plans-1980:p156: vibrating mass (engine, accessories, exhaust, prop, extensions, oil) at most 286 lb
+    eng_book_oil_lb: float = 8.0  # book: om-1980:p25: oil 8 lb
+    eng_book_oil_fs: float = (
+        140.0  # book: om-1980:p25: oil station F.S. 140.0 (moment 1120)
+    )
+    eng_book_down_thrust_deg: float = 2.0  # cp-corrected: cp-text:p32: 2 deg down thrust, plus or minus 1, prop flange higher than the magneto end
+    eng_book_crank_bl: float = (
+        0.0  # cp-corrected: cp-text:p32: crankshaft on BL 0 in plan (CP32 p5)
+    )
+    eng_book_block_in: Tuple[float, float, float] = (
+        30.0,
+        32.0,
+        20.0,
+    )  # unsourced: no page: O-235-sized block, length (along the crank), width and height
+    eng_book_block_fwd_fs: float = 127.0  # unsourced: no page: front of the engine block, aft of the firewall (F.S. 125) and the mount
+    eng_book_block_wl: float = 23.0  # unsourced: no page: WL of the block centre
+    eng_book_prop_dia_in: float = 60.0  # conflict: plans-1980:p171: back cover 'max dia 60' (the inch mark is smudged)
+    eng_book_cowl_trim_in: float = 9.0  # book: plans-1980:p157: trim about 9 in off each outboard end of the VariEze cowl
+    eng_book_cowl_reinf_in: Tuple[int, float] = (
+        4,
+        2.0,
+    )  # book: plans-1980:p157: 4 plies BID at 45 deg, 2 in wide, in 4 places just inboard of the 9 in trim line (the band
+    eng_book_cowl_aft_shift_in: float = 0.7  # cp-corrected: cp-text:p27: the Lycoming cowl moves aft 0.7 in against the VariEze and the engine moves aft with the d
+    eng_book_rib_in: Tuple[float, float, float, float, float] = (
+        0.020,
+        20.0,
+        24.0,
+        1.2,
+        0.5,
+    )  # book: plans-1980:p158: wing-root metal rib: 6061-0 sheet 0.020 thick (p157 text prints 0.20, a typo), 20 by 24 sh
+    eng_book_bracket_plate_in: Tuple[float, float, float] = (
+        6.5,
+        2.5,
+        0.063,
+    )  # book: plans-1980:p156: throttle and mixture bracket plate seen from below, 6.5 long by 2.5 wide, 0.063 2024-T3 (f
+    eng_book_bracket_holes_in: Tuple[float, float, float, float] = (
+        2.0,
+        3.6,
+        1.8,
+        1.25,
+    )  # book: plans-1980:p156: oil-drain hole dia 2.0 centred 3.6 from the carb hole centre, carb hole dia 1.8 (hand '1-8
+    eng_book_bracket_angle_in: Tuple[float, float, float] = (
+        2.0,
+        2.0,
+        0.063,
+    )  # book: plans-1980:p156: upright 2 by 2 formed angle, 0.063, eight rivets (the rivet prefix is smudged)
+
     # === DATUM OFFSET (internal -> published coordinate translation) ===
     datum_offset_in: float = 0.0  # stations are in the published frame
     # Was 45.5, fitted so the computed NP matched published FS 108 (retired 2026-09-29).
@@ -935,6 +1109,30 @@ class GeometricParams:
         dz = self.winglet_height_book_in
         c = self.winglet_book_jig_abc_in[2]
         return lateral - math.sqrt(c * c - dx * dx - dz * dz)
+
+    @property
+    def stk_book_spar_fwd_fs_bl_45(self) -> float:
+        """Derived: spar forward face at BL 45, 118.5 + (45 - 23) tan 8.57 deg (121.8)."""
+        return self.stk_book_spar_fwd_fs_bl_23 + (45.0 - 23.0) * math.tan(
+            math.radians(self.stk_book_spar_slope_deg)
+        )
+
+    @property
+    def stk_book_junction_fs(self) -> float:
+        """Derived: where R23, B23, BAB and DB meet on BL 23, the spar face less the printed B23 length (97.2; p147 derives 97.3)."""
+        return self.stk_book_spar_fwd_fs_bl_23 - self.stk_book_b23_in[0]
+
+    @property
+    def stk_book_db_far_fs(self) -> float:
+        """Derived: where DB meets R45, the junction plus the DB run along FS that closes its printed length over 22 in of BL (115.3)."""
+        return self.stk_book_junction_fs + math.sqrt(
+            self.stk_book_db_in[0] ** 2 - (45.0 - 23.0) ** 2
+        )
+
+    @property
+    def eng_book_vibrating_allowance_lb(self) -> float:
+        """Derived: 286 lb vibrating mass less the 246 lb engine, the 40 lb left for prop, exhaust, extensions and oil."""
+        return self.eng_book_vibrating_max_lb - self.eng_book_engine_max_lb
 
     # === DERIVED DIMENSIONS (computed at runtime) ===
     @property
@@ -2678,6 +2876,373 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "low",
         "11.4 (was 12.0, which matched no page); same value as winglet_book_tip_chord_in. A scaled drawing read, not a source. Moved in M2.8 with a ledger row",
     ),
+    # --- chapters 21 to 23 (M2.8): strakes and fuel, electrical, engine ---
+    "stk_book_le_fs_fuselage": _p(
+        "book",
+        "plans-1980:p147",
+        "high",
+        "strake LE at the fuselage side, F.S. 50 (p171 agrees); the LE is a polyline, not a line: 73.3 at BL 23, 99.5 at BL 45, the wing LE at BL 58",
+    ),
+    "stk_book_le_fs_bl_23": _p(
+        "book",
+        "plans-1980:p147",
+        "high",
+        "TLE and BLE kink at BL 23, F.S. 73.3 (p171 agrees)",
+    ),
+    "stk_book_le_fs_bl_45": _p(
+        "book",
+        "plans-1980:p147",
+        "high",
+        "LE at BL 45 where R45 meets the TLE, F.S. 99.5; StrakeConfig.fs_trailing_edge 99.5 is this number, not a strake trailing edge",
+    ),
+    "stk_book_spar_fwd_fs_bl_23": _p(
+        "book",
+        "plans-1980:p147",
+        "high",
+        "spar forward face at BL 23, F.S. 118.5; this, not 99.5, is the strake aft boundary",
+    ),
+    "stk_book_spar_slope_deg": _p(
+        "derived",
+        "plans-1980:p118",
+        "medium",
+        "spar face sweeps aft 8.57 deg per BL out (4.9 over 32.5 on p118); p142 prints 4.9 over 32.0 = 8.71, the 0.14 deg gap is print tolerance",
+    ),
+    "stk_book_bab_fuselage_fs": _p(
+        "book",
+        "plans-1980:p147",
+        "high",
+        "BAB meets the fuselage side at F.S. 103.5 (the aft edge of the baggage cutout)",
+    ),
+    "stk_book_sump_fs": _p(
+        "derived",
+        "plans-1980:p144",
+        "medium",
+        "sump blister runs F.S. 103.5 to 125, flush with the firewall (p144 note, p171 FS 125); the 21 in blister from 103.5 reaches 124.5, within 0.5",
+    ),
+    "stk_book_fuselage_side_bl": _p(
+        "derived-unsourced",
+        "plans-1980:p147",
+        "low",
+        "fuselage side BL at F.S. 50 and at F.S. 103.5, scaled off the p147 image (plus or minus 0.7 in); not dimensioned on the page, so representational; the baggage and tank outlines depend on it",
+    ),
+    "stk_book_foam_thickness_in": _p(
+        "book",
+        "plans-1980:p141",
+        "high",
+        "type 45 PV core, 0.35 in thick, for every strake part and skin",
+    ),
+    "stk_book_tle_in": _p(
+        "book",
+        "plans-1980:p141",
+        "high",
+        "TLE fuel tank leading edge, 33.5 long by 2.55 wide, 90 deg corners",
+    ),
+    "stk_book_ble_in": _p(
+        "book",
+        "plans-1980:p141",
+        "high",
+        "BLE baggage leading edge, 25.5 long by 2.55 wide",
+    ),
+    "stk_book_b23_in": _p(
+        "book",
+        "plans-1980:p141",
+        "high",
+        "B23 baffle, 21.3 long by 7.3 high; p147 derives 21.2 (spar face 118.5 less the DB junction)",
+    ),
+    "stk_book_bab_in": _p(
+        "book",
+        "plans-1980:p141",
+        "medium",
+        "BAB baffle, 13.4 long, 7.3 high outboard and 7.75 high inboard (the 7.75 is medium); p147 derives 13.2",
+    ),
+    "stk_book_db_in": _p(
+        "book",
+        "plans-1980:p141",
+        "medium",
+        "DB diagonal baffle, 28.5 long, 7.3 high at the fore end and 6.5 at the aft end (the 6.5 is medium); p147 derives 28.3",
+    ),
+    "stk_book_b23_hole_in": _p(
+        "book",
+        "plans-1980:p141",
+        "medium",
+        "B23 oval hole 5 long by 3 high, 3 in from the right end and 3 in clear of the bottom edge (hand digits)",
+    ),
+    "stk_book_notch_radius_in": _p(
+        "book",
+        "plans-1980:p141",
+        "medium",
+        "B23 and DB corner notch radii, 0.8 on top and 1.3 on the bottom, centres 2 in from each end (small print)",
+    ),
+    "stk_book_skin_top_in": _p(
+        "book",
+        "plans-1980:p142",
+        "high",
+        "top skin foam edges A, B, C and D (outboard skin A, B and C; inboard skin D along the fuselage)",
+    ),
+    "stk_book_skin_bottom_in": _p(
+        "book",
+        "plans-1980:p142",
+        "high",
+        "bottom skin foam edges A, B, C and D; the 0.2 difference from the top is the 1 in bevel offset",
+    ),
+    "stk_book_skin_spar_edge_in": _p(
+        "book",
+        "plans-1980:p142",
+        "high",
+        "outboard skin spar edge 32.0 long along the bevel, offset aft 4.9, square at the aft corner",
+    ),
+    "stk_book_cutout_fwd_in": _p(
+        "book",
+        "plans-1980:p142",
+        "medium",
+        "baggage cutout in the fuselage side: station forward of the spar face, top-edge depth and bottom-edge depth below WL 23 (top of the longeron); the 4.0 and 1.40 reads are medium",
+    ),
+    "stk_book_cutout_aft_in": _p(
+        "book",
+        "plans-1980:p142",
+        "medium",
+        "tank cutout in the fuselage side: round forward end begins 30.0 forward of the spar face, aft edge 15.0, top depth 1.40, bottom depth 9.15 below WL 23",
+    ),
+    "stk_book_cutout_aft_top_alt_in": _p(
+        "conflict",
+        "plans-1980:p142",
+        "low",
+        "the tank cutout top depth reads 1.90 near the aft end and 1.40 at mid length in the same drawing; whether 1.90 is a sight-gauge notch or a misprint is not settled, both are carried",
+    ),
+    "stk_book_jig_rib_height_in": _p(
+        "book",
+        "plans-1980:p143",
+        "high",
+        "the WL 17.4 mark on R45 is 2.65 above the jig table and on R23 3.45 above (the strake bottom follows the spar bottom, about 2.1 deg)",
+    ),
+    "stk_book_sump_blister_in": _p(
+        "book",
+        "plans-1980:p144",
+        "high",
+        "sump blister 21 long, 2.75 deep, 0.5 flange all round; the 5 in dimension and the exact outline are not unambiguous (prefab SB is 3 ply BID)",
+    ),
+    "stk_book_baggage_limit_lb": _p(
+        "book",
+        "om-1980:p4",
+        "high",
+        "each strake baggage floor is structurally good for 100 lb (OM weights page)",
+    ),
+    "fuel_book_lb_per_gal": _p(
+        "book",
+        "om-1980:p25",
+        "high",
+        "6.0 lb per gal (40 gal = 240 lb, om-1980:p26); the analysis fuel_density_lb_per_gal 6.01 is the avgas figure and is not moved",
+    ),
+    "fuel_book_arm_fs": _p(
+        "book",
+        "om-1980:p26",
+        "high",
+        "fuel arm F.S. 104.5 (rows 240 lb moment 25080 and 150 lb moment 15675 both close); the derived plan centroid of the tank is 103.85",
+    ),
+    "fuel_book_capacity_plans_gal": _p(
+        "conflict",
+        "plans-1980:p141",
+        "high",
+        "plans: two tanks of 25.5 gal each (51 total); the OM prints 28 each and 52 total, so the sources disagree; the model keeps 26 per side (StrakeConfig.tank_volume_gal) and carries both",
+    ),
+    "fuel_book_capacity_om_gal": _p(
+        "conflict",
+        "om-1980:p8",
+        "high",
+        "OM: two 28 gal tanks (56) but also a 52 gal total (also cp-text CP24 p13); 52 total is 26 per side, which fits neither 25.5 nor 28",
+    ),
+    "fuel_book_capacity_om_total_gal": _p(
+        "book",
+        "om-1980:p8",
+        "high",
+        "OM: 52 gal total capacity (cp-text CP24 p13 spec table agrees)",
+    ),
+    "elec_book_battery_v": _p(
+        "book",
+        "plans-1980:p150",
+        "high",
+        "12 V system; the battery is a Gill PSG-9, 25 Ah (p150 and p151, om-1980:p10 agrees on 12 V 25 Ah)",
+    ),
+    "elec_book_battery_ah": _p(
+        "book",
+        "plans-1980:p150",
+        "high",
+        "25 Ah in the nose in both systems 'to provide the correct CG' (p149)",
+    ),
+    "elec_book_battery_fs_range": _p(
+        "positioned-from-text",
+        "plans-1980:p155",
+        "low",
+        "the battery sits on a nose shelf bonded to NG30 and F6 (p155); its station is on A6 only, not held, so only the nose box range F.S. 0 (NG31, about) to 22 (F22, derived in M2.4) is known; representational",
+    ),
+    "elec_book_battery_model_fs": _p(
+        "unsourced",
+        "",
+        "low",
+        "the model draws the battery at the middle of the F.S. 0 to 22 range for illustration only; no source gives a station",
+    ),
+    "elec_book_battery_added_lb": _p(
+        "derived",
+        "cp-text:p27",
+        "medium",
+        "the 25 Ah nose battery 'accepts a 19 lb increase' over the small battery (CP27 p4): a printed delta, not an absolute battery weight",
+    ),
+    "elec_book_shelf_in": _p(
+        "book",
+        "plans-1980:p155",
+        "medium",
+        "battery shelf 0.6 above the floor mark and cover wrap gap 0.4 (small hand digits)",
+    ),
+    "elec_book_starter_fs_min": _p(
+        "positioned-from-text",
+        "cp-text:p27",
+        "low",
+        "starter, ring gear and alternator 'way back at station 150+' (CP27 p4): a lower bound, not an arm",
+    ),
+    "elec_book_relay_fs": _p(
+        "positioned-from-text",
+        "plans-1980:p149",
+        "low",
+        "mount the start relay and over-voltage unit on the front of F22 (p149); F22 is F.S. 22 (fs_f22, derived)",
+    ),
+    "elec_book_nav_strip_in": _p(
+        "cp-corrected",
+        "cp-text:p30",
+        "high",
+        "nav antenna copper strips are 22.8 in, not 24 (CP30 LPC 78); two strips under the canard",
+    ),
+    "elec_book_comm_strip_in": _p(
+        "cp-corrected",
+        "cp-text:p26",
+        "high",
+        "comm antenna in the winglet: two foil strips 20.3 in, three balums (CP26 p8)",
+    ),
+    "eng_book_engine_max_lb": _p(
+        "book",
+        "plans-1980:p156",
+        "high",
+        "engine with accessories at most 246 lb (a limit, not a weight); O-200 or O-235 only",
+    ),
+    "eng_book_vibrating_max_lb": _p(
+        "book",
+        "plans-1980:p156",
+        "high",
+        "vibrating mass (engine, accessories, exhaust, prop, extensions, oil) at most 286 lb; 286 less 246 leaves a 40 lb allowance (derived)",
+    ),
+    "eng_book_oil_lb": _p(
+        "book",
+        "om-1980:p25",
+        "high",
+        "oil 8 lb",
+    ),
+    "eng_book_oil_fs": _p(
+        "book",
+        "om-1980:p25",
+        "high",
+        "oil station F.S. 140.0 (moment 1120); the only printed engine-side arm",
+    ),
+    "eng_book_down_thrust_deg": _p(
+        "cp-corrected",
+        "cp-text:p32",
+        "high",
+        "2 deg down thrust, plus or minus 1, prop flange higher than the magneto end (CP32 p5; CP38 p5 agrees); crank axis on BL 0 in plan",
+    ),
+    "eng_book_crank_bl": _p(
+        "cp-corrected",
+        "cp-text:p32",
+        "high",
+        "crankshaft on BL 0 in plan (CP32 p5)",
+    ),
+    "eng_book_block_in": _p(
+        "unsourced",
+        "",
+        "low",
+        "O-235-sized block, length (along the crank), width and height; no engine dimension is printed in any held source (Sections IIA, IIC and IIL are not held); striped representational in the lab",
+    ),
+    "eng_book_block_fwd_fs": _p(
+        "unsourced",
+        "",
+        "low",
+        "front of the engine block, aft of the firewall (F.S. 125) and the mount; with the block length it puts oil (140) inside and the starter end (150+) at the aft face; no source gives it",
+    ),
+    "eng_book_block_wl": _p(
+        "unsourced",
+        "",
+        "low",
+        "WL of the block centre; the book prints no prop or crank height (the fuselage top is about WL 32.8 at the firewall, p171, medium)",
+    ),
+    "eng_book_prop_dia_in": _p(
+        "conflict",
+        "plans-1980:p171",
+        "medium",
+        "back cover 'max dia 60' (the inch mark is smudged); om-1980:p5 prints a 58 in disc and cp-text CP42 p5 lists 62 in props; all three are carried, the config uses 60",
+    ),
+    "eng_book_cowl_trim_in": _p(
+        "book",
+        "plans-1980:p157",
+        "high",
+        "trim about 9 in off each outboard end of the VariEze cowl",
+    ),
+    "eng_book_cowl_reinf_in": _p(
+        "book",
+        "plans-1980:p157",
+        "high",
+        "4 plies BID at 45 deg, 2 in wide, in 4 places just inboard of the 9 in trim line (the band position, 9 to 11 in, is medium)",
+    ),
+    "eng_book_cowl_aft_shift_in": _p(
+        "cp-corrected",
+        "cp-text:p27",
+        "high",
+        "the Lycoming cowl moves aft 0.7 in against the VariEze and the engine moves aft with the dynafocal mount (CP27 p5)",
+    ),
+    "eng_book_rib_in": _p(
+        "book",
+        "plans-1980:p158",
+        "high",
+        "wing-root metal rib: 6061-0 sheet 0.020 thick (p157 text prints 0.20, a typo), 20 by 24 sheet, two 1.2 flanges, 0.5 edge offset; the outline is a hand drawing with no coordinates",
+    ),
+    "eng_book_bracket_plate_in": _p(
+        "book",
+        "plans-1980:p156",
+        "high",
+        "throttle and mixture bracket plate seen from below, 6.5 long by 2.5 wide, 0.063 2024-T3 (figure 23-1)",
+    ),
+    "eng_book_bracket_holes_in": _p(
+        "book",
+        "plans-1980:p156",
+        "medium",
+        "oil-drain hole dia 2.0 centred 3.6 from the carb hole centre, carb hole dia 1.8 (hand '1-8', could be 1.6) centred 1.25 from the forward end",
+    ),
+    "eng_book_bracket_angle_in": _p(
+        "book",
+        "plans-1980:p156",
+        "medium",
+        "upright 2 by 2 formed angle, 0.063, eight rivets (the rivet prefix is smudged)",
+    ),
+    "stk_book_spar_fwd_fs_bl_45": _p(
+        "derived",
+        "plans-1980:p147",
+        "medium",
+        "118.5 + 22 tan 8.57 = 121.8; property (the OD and R45 end here; the slope is a two-page average)",
+    ),
+    "stk_book_junction_fs": _p(
+        "derived",
+        "plans-1980:p147",
+        "medium",
+        "118.5 less the printed B23 length 21.3 = 97.2; p147 scaling gives 97.3 (B23 21.2); property",
+    ),
+    "stk_book_db_far_fs": _p(
+        "derived",
+        "plans-1980:p141",
+        "medium",
+        "97.2 + sqrt(28.5^2 - 22^2) = 115.3; p147 shows about 115 at the R45 and spar corner; the printed 28.5 and the derived 28.3 differ by 0.2; property",
+    ),
+    "eng_book_vibrating_allowance_lb": _p(
+        "derived",
+        "plans-1980:p156",
+        "high",
+        "286 - 246 = 40 lb for prop, exhaust, extensions and oil; derived, not printed; property",
+    ),
     "datum_offset_in": _p(
         "book",
         "om-1980:p25 datum F.S. 0.0",
@@ -2720,6 +3285,12 @@ WEIGHT_PROVENANCE: dict[str, dict] = {
         "cp-text:p27 CP27 page 4",
         "medium",
         "25 lb as one row at FS 119.5 is the wrong shape. The 25 Ah battery sits in the nose (plans-1980:p149, p155; about +19 lb over the small battery) and the starter, ring gear and alternator are at station 150+ (cp-text:p27); the plans print 'electric start adds over 25 lb' (plans-1980:p149). Unsourced as a row; the ledger closure splits it",
+    ),
+    "tank_volume_gal": _p(
+        "conflict",
+        "plans-1980:p141 25.5 gal per tank; om-1980:p8 28 gal per tank and 52 total",
+        "high",
+        "26 gal per side is half the OM 52 gal total and matches neither the plans (25.5) nor the OM per-tank figure (28). Both source values are in fuel_book_capacity_plans_gal and fuel_book_capacity_om_gal; the model keeps 26 and says so (M2.8)",
     ),
     "electrical_arm_in": _p(
         "conflict",
@@ -2957,12 +3528,12 @@ class StrakeConfig:
 
     # === GEOMETRY ===
     fs_leading_edge: float = 50.0  # book: plans-1980:p147 strake LE at fuselage side F.S. 50 (p171 agrees; LE is swept: 73.3 at BL 23, 99.5 at BL 45)
-    fs_trailing_edge: float = 99.5  # converted-unsourced (internal 145.0 shifted); no printed strake TE — 99.5 is coincidentally the book LE at BL 45
+    fs_trailing_edge: float = 99.5  # converted-unsourced (internal 145.0 shifted); NOT a strake TE: 99.5 is the book LE at BL 45 (stk_book_le_fs_bl_45); the book aft boundary is the spar face, F.S. 118.5 at BL 23 (stk_book_spar_fwd_fs_bl_23)
     inboard_width: float = 8.0  # At fuselage junction (inches)
     outboard_taper: float = 0.6  # Width reduction ratio at BL 23.3
 
     # === TANKAGE ===
-    tank_volume_gal: float = 26.0  # Per side (fuel mode)
+    tank_volume_gal: float = 26.0  # Per side (fuel mode); conflict: plans 25.5, OM 28 (fuel_book_capacity_*), 52 total kept as 26 per side
     baffle_spacing: float = 6.0  # Anti-slosh baffle spacing (inches)
 
     # === E-Z BATTERY CONVERSION ===

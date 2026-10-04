@@ -10,6 +10,7 @@ from config.aircraft_config import (
     PROVENANCE_STATUSES,
     WEIGHT_PROVENANCE,
     PropulsionConfig,
+    StrakeConfig,
     StructuralWeightParams,
     config,
 )
@@ -18,7 +19,7 @@ G = config.geometry
 
 
 def _field_value(name):
-    for cls in (PropulsionConfig, StructuralWeightParams):
+    for cls in (PropulsionConfig, StructuralWeightParams, StrakeConfig):
         if name in {f.name for f in dataclasses.fields(cls)}:
             return getattr(cls(), name)
     raise AssertionError(name)
@@ -32,6 +33,7 @@ def test_flagged_fields_exist_and_keep_their_values():
         "engine_dry_weight_lb": 243.0,
         "electrical_weight_lb": 25.0,
         "electrical_arm_in": 119.5,
+        "tank_volume_gal": 26.0,
     }
     assert set(values) == set(WEIGHT_PROVENANCE)
     for name, v in values.items():
