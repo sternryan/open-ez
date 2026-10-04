@@ -18,7 +18,7 @@ import { M25_CHAPTERS, M25_FIRST_OP, SPAR_BENCH_LAST, ELEV_OPS, STOPS_FROM, SPAR
 import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
 import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, wingXrayAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
-import { m28Where, partBase, KIT_PARTS, KIT_LIFT_IN, ANTENNAS_OP, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, GLASS_PARTS, type M28Data, type M28PartRow } from './logic/strake'
+import { m28Where, partBase, glassOpacity, KIT_PARTS, KIT_LIFT_IN, ANTENNAS_OP, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, GLASS_PARTS, type M28Data, type M28PartRow } from './logic/strake'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -103,7 +103,7 @@ const M25_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, numb
 /** the chapter 21-23 parts' looks by part name (colour, metalness, roughness; kind 'glass' draws it see-through; a part not listed is drawn as foam): REPRESENTATIONAL colours */
 const M28_LOOK: Record<string, ['wood' | 'metal' | 'glass', number, number, number]> = {
   tank: ['glass', GLASS_PARTS.tank, 0, 0.1], cutout_baggage: ['glass', GLASS_PARTS.cutout_baggage, 0, 0.3], cutout_tank: ['glass', GLASS_PARTS.cutout_tank, 0, 0.3],
-  sump_blister: ['wood', 0xd9d4c4, 0, 0.7], drain_insert: ['metal', 0xd5d8dc, 0.85, 0.3], vent_line: ['metal', 0x3d4249, 0.7, 0.4], screen: ['metal', 0xb4bac2, 0.85, 0.3],
+  sump_blister: ['wood', 0xc77a3a, 0, 0.7], drain_insert: ['metal', 0xd5d8dc, 0.85, 0.3], vent_line: ['metal', 0x3d4249, 0.7, 0.4], screen: ['metal', 0xb4bac2, 0.85, 0.3],
   outlet_tube: ['metal', 0xd5d8dc, 0.85, 0.3], fuel_cap: ['metal', 0xe6b23a, 0.6, 0.35],
   shelf: ['wood', 0xd9d4c4, 0, 0.7], battery: ['wood', 0x2f3a46, 0, 0.5], cover: ['wood', 0xe9e3d3, 0, 0.7], strap: ['wood', 0x2e2e30, 0, 0.7],
   start_relay: ['metal', 0x3d4249, 0.7, 0.4], overvoltage_unit: ['metal', 0x6d737a, 0.7, 0.4], battery_cable: ['wood', 0xc23b2f, 0, 0.5], firewall_cable: ['wood', 0xc23b2f, 0, 0.5], panel_bundle: ['wood', 0x2e2e30, 0, 0.7],
@@ -288,7 +288,8 @@ export class FuselageBay {
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color, metalness, roughness, hatch, hatchSoft, name: part })
         tableMat = partMaterial(null, { color, metalness, roughness, hatch, hatchSoft, name: part })
-        if (kind === 'glass') for (const mt of [jigMat, tableMat]) { mt.userData.glass = GLASS_OPACITY; mt.transparent = true; mt.opacity = GLASS_OPACITY; mt.depthWrite = false; mt.side = THREE.DoubleSide }
+        const glassK = (this.m28Parts.has(part) ? glassOpacity(partBase(this.m28!.parts[part])) : null) ?? GLASS_OPACITY
+        if (kind === 'glass') for (const mt of [jigMat, tableMat]) { mt.userData.glass = glassK; mt.transparent = true; mt.opacity = glassK; mt.depthWrite = false; mt.side = THREE.DoubleSide }
       } else if (WOOD[part] !== undefined) {
         spec = { kind: 'part', angles: [] }
         jigMat = partMaterial(this.cut, { color: WOOD[part], hatch, hatchSoft, name: part })
@@ -787,6 +788,8 @@ export class FuselageBay {
       const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') || wingFaint || m28Faint }
       setPlyLook(m.jigMat, look)
       setPlyLook(m.tableMat, look)
+      // a chapter 21-23 part drawn through the faint airplane joins the transparent pass (sorted by its render order, after the faint layers) and writes no depth, so the faint layers in front blend over it and none is drawn under it
+      if (m.m28) for (const mt of [m.jigMat, m.tableMat]) { const t = xray || !!mt.userData.glass; if (mt.transparent !== t) { mt.transparent = t; mt.needsUpdate = true } if (xray) mt.depthWrite = false }
       sig += (m.jig.visible ? 'j' : m.table.visible ? 't' : '-') + (cast ? '1' : '0')
     }
     this.tableGroup.updateMatrixWorld(true)

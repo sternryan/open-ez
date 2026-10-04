@@ -101,7 +101,7 @@ test('the kit is the only thing on the table: the airplane is not drawn then; th
     assert.equal(strakeTableShown(op, order), on, String(op))
   }
   assert.ok(KIT_LIFT_IN > 8, 'the top core clears the ribs and baffles')
-  assert.deepEqual([...M28_GHOST_OPS].sort(), ['f21.close-tank', 'f21.fuselage-cutouts', 'f21.od-outlet', 'f21.outside-bottom', 'f21.pressure-check', 'f22.antennas', 'f22.battery-shelf', 'f22.firewall-terminals', 'f22.panel-wiring', 'f23.carb-bracket', 'f23.root-rib'])
+  assert.deepEqual([...M28_GHOST_OPS].sort(), ['f21.close-tank', 'f21.fuselage-cutouts', 'f21.od-outlet', 'f21.outside-bottom', 'f21.pressure-check', 'f21.vent-screen', 'f22.antennas', 'f22.battery-shelf', 'f22.firewall-terminals', 'f22.panel-wiring', 'f23.carb-bracket', 'f23.root-rib'])
   assert.ok(m28GhostAt({ id: BATTERY_OP }) && !m28GhostAt({ id: 'f21.jig-bond' }) && !m28GhostAt(null))
   const op = (id: string, components: string[]) => ({ id, components })
   // the tank ops expose only the tank (the skins would hide it); the others their own components

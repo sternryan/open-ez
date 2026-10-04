@@ -238,16 +238,16 @@ export const M27_VIEWS: Record<string, FuseView> = {
 /**
  * Chapters 21 to 23, the strakes and fuel, the electrical system, the engine and cowl. The strake ops frame the strake on the airplane (on its gear, the
  * nose toward -X) from the room side and above: the left strake is the near one. The cutting op frames the right strake's kit on the layup table (`strake-table`).
- * The electrical ops aim at their parts (the nose, F22 and the firewall, the wingtip, the canard's foil, the winglet's); the engine ops look from behind,
+ * The electrical ops aim at their parts (the nose, F22 and the firewall, the right wingtip (the left tip stands beyond the shop's wall), the canard's foil, the winglet's); the engine ops look from behind,
  * left of the tail (az -40 to -55), where the block, the bracket and the cowl are in front of the firewall's aft face.
  */
 const strakeAt = (fs: number, bl: number, wl: number, dist: number, el: number, az: number, o: Partial<FuseView> = {}): FuseView => ({ focus: at(fs, wl, bl), dist, el, az, ...o })
 export const M28_VIEWS: Record<string, FuseView> = {
-  'f21.cut-parts': { focus: 'strake-table', dist: 150, el: 46, az: 0, up: 0 },
+  'f21.cut-parts': { focus: 'strake-table', dist: 150, el: 58, az: 0, up: 0 },
   'f21.fuselage-cutouts': strakeAt(76, -12, 14, 120, 24, 16),
   'f21.jig-bond': strakeAt(88, -32, 15, 205, 52, 14),
   'f21.inside-layups': strakeAt(94, -32, 17, 190, 54, 14),
-  'f21.vent-screen': strakeAt(110, -13, 17, 82, 50, 18),
+  'f21.vent-screen': strakeAt(111, -14, 16, 64, 52, 14),
   'f21.close-tank': strakeAt(98, -30, 17, 200, 56, 14),
   'f21.od-outlet': strakeAt(106, -32, 17, 170, 54, 20),
   'f21.outside-bottom': strakeAt(104, -26, 14, 190, 48, 14),
@@ -259,13 +259,13 @@ export const M28_VIEWS: Record<string, FuseView> = {
   'f22.microswitches': strakeAt(39, 0, 9, 62, 40, -28),
   'f22.battery-shelf': strakeAt(11, 0, 3, 44, 34, 38),
   'f22.firewall-terminals': strakeAt(26, 4, 5, 70, 32, 40),
-  'f22.wing-wiring': strakeAt(157, -156, 18, 46, 16, 14),
+  'f22.wing-wiring': strakeAt(157, 157.8, 18.6, 40, 18, 100),
   'f22.antennas': strakeAt(24, -24, 18, 96, 60, 0),
   'f23.engine-install': strakeAt(142, 0, 20, 110, 24, -48),
   'f23.carb-bracket': strakeAt(134, 0, 14, 74, 24, -42),
   'f23.cowl-trim': strakeAt(137, 0, 21, 112, 26, -46),
   'f23.cowl-closeout': strakeAt(137, 0, 21, 112, 26, -46),
-  'f23.root-rib': strakeAt(137, -23, 19, 70, 16, -34),
+  'f23.root-rib': strakeAt(137, -23, 19, 64, 12, 0),
 }
 
 const DEFAULT: FuseView = { focus: 'box', dist: 130, el: 38, az: 16 }

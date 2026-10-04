@@ -142,6 +142,8 @@ interface LabHook {
   /** chapter 18: the canopy's opening now (degrees; whether a person has set it), its readout, whether its control shows, how far it has lifted off at the cut (0 on the airplane, 1 on the bench), and the A and B checks' dimension lines shown */
   canopy(): { openDeg: number; manual: boolean; text: string; shown: boolean; liftK: number; checks: boolean } | null; setCanopyOpen(deg: number): void
   /** chapters 19-20: the aileron (degrees up) and the rudder (degrees, trailing edge outboard positive) now, whether a person has set them, their readouts, whether their controls show, and the winglet's A, B and C lines shown */
+  /** chapter 21: the strake jig table (a fitted shape under the strake) is drawn */
+  strakeTable(): boolean
   wing(): { aileronDeg: number; rudderDeg: number; aileronManual: boolean; rudderManual: boolean; aileronText: string; rudderText: string; aileronShown: boolean; rudderShown: boolean; abc: boolean } | null
   setAileron(deg: number): void; setRudder(deg: number): void
   /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
@@ -161,7 +163,7 @@ declare global { interface Window { __lab?: LabHook } }
 
 const hook: LabHook = {
   ready: false, meshNames: () => [], stats: () => ({ calls: 0, triangles: 0, pixels: 0 }), advance: () => {},
-  touring: () => false, tourIndex: () => -1,
+  touring: () => false, tourIndex: () => -1, strakeTable: () => false,
   selected: () => null, select: () => {}, camera: () => ({ pos: [0, 0, 0], target: [0, 0, 0], fov: 0 }), shot: () => null, flying: () => false,
   pose: () => 'upright', flipping: () => false, tableTopY: () => TABLE_TOP_Y, labShots: () => ({}),
   material: () => null, setWet: () => {}, meshBox: () => null,
@@ -1387,7 +1389,7 @@ async function boot() {
       flabels.add({
         id: 'strake.jig_table', text: 'Strake jig table (fitted shape)', color: hex(HATCH_COLOR), cls: 'fitted',
         at: () => bay.strakeTableAnchor(fwp),
-        vis: budgeted('strake.jig_table', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.strakeTable.visible, () => 30),
+        vis: budgeted('strake.jig_table', () => subject === 'fuselage' && !!(tourOv.labels ?? labelsOn) && bay.strakeTable.visible, () => 85),
         priority: () => labelPriority({ inOp: false, cut: false, fitted: true }), tie: () => 0,
       })
     }
@@ -1753,6 +1755,7 @@ async function boot() {
     hook.setRudder = (d) => { rudderManual = d; if (bay && WING) { bay.setRudder(rudderNow()); pipeline.shadowDirty = true } updateKin() }
     hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
+    hook.strakeTable = () => !!bay && bay.strakeTable.visible
     hook.touring = () => director.active
     hook.tourIndex = () => director.seg
     hook.selected = () => selected

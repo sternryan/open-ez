@@ -17,6 +17,7 @@ export const CUT_PARTS_OP = 'f21.cut-parts'
 export const CUTOUTS_OP = 'f21.fuselage-cutouts'
 export const JIG_BOND_OP = 'f21.jig-bond'
 export const INSIDE_LAYUPS_OP = 'f21.inside-layups'
+export const VENT_OP = 'f21.vent-screen'
 export const CLOSE_TANK_OP = 'f21.close-tank'
 export const OD_OUTLET_OP = 'f21.od-outlet'
 export const OUTSIDE_BOTTOM_OP = 'f21.outside-bottom'
@@ -44,8 +45,8 @@ export const KIT_PARTS = new Set(['rib_r23', 'rib_r45', 'b23', 'db', 'bab', 'od'
 export const KIT_LIFT_IN = 12
 /** the ops that show the tank: the rest of the airplane (the skins included) goes faint and the tank volume is drawn through it */
 export const TANK_OPS = new Set([CLOSE_TANK_OP, PRESSURE_OP])
-/** the ops that work on something buried in the airplane (the openings in the fuselage side, the outboard diagonal and outlet inside the closed strake, the sump blister under it, the panel's wiring, the nose battery, the relays behind F22, the foil, the bracket under the block, the thin root rib inside the cowl): the rest is drawn faint */
-export const M28_GHOST_OPS = new Set([CUTOUTS_OP, CLOSE_TANK_OP, OD_OUTLET_OP, OUTSIDE_BOTTOM_OP, PRESSURE_OP, PANEL_WIRING_OP, BATTERY_OP, TERMINALS_OP, ANTENNAS_OP, BRACKET_OP, ROOT_RIB_OP])
+/** the ops that work on something buried in the airplane (the openings in the fuselage side, the vent line and screen low in the tank, the outboard diagonal and outlet inside the closed strake, the sump blister under it, the panel's wiring, the nose battery, the relays behind F22, the foil, the bracket under the block, the thin root rib inside the cowl): the rest is drawn faint */
+export const M28_GHOST_OPS = new Set([CUTOUTS_OP, VENT_OP, CLOSE_TANK_OP, OD_OUTLET_OP, OUTSIDE_BOTTOM_OP, PRESSURE_OP, PANEL_WIRING_OP, BATTERY_OP, TERMINALS_OP, ANTENNAS_OP, BRACKET_OP, ROOT_RIB_OP])
 /** the jig table is under the strake while its bottom is bonded and glassed inside, until the tank is closed and the strake comes off it for the outside skins */
 export const TABLE_FROM = JIG_BOND_OP
 export const TABLE_UNTIL = OD_OUTLET_OP
@@ -104,8 +105,9 @@ export const m28GhostAt = (op: { id: string } | null): boolean => !!op && M28_GH
 export const m28Exposed = (op: { id: string; components: string[] } | null, cid: string): boolean => !!op && (TANK_OPS.has(op.id) ? cid === 'strake.tank' : op.components.includes(cid))
 
 /** the op's parts a half-translucent look reads best (the tank's fuel, the openings' removed material): REPRESENTATIONAL colours */
-export const GLASS_PARTS: Record<string, number> = { tank: 0x58b4e8, cutout_baggage: 0xd8574a, cutout_tank: 0xd8574a }
-export const GLASS_OPACITY_28 = { tank: 0.42, cutout: 0.5 }
+export const GLASS_PARTS: Record<string, number> = { tank: 0x2a7fd0, cutout_baggage: 0xd8574a, cutout_tank: 0xd8574a }
+/** how see-through each is (the default glass is 0.34): the fuel volume and the removed material read as solid colour through the faint airplane, the cowl lets the block show */
+export const glassOpacity = (base: string): number | null => (base === 'tank' ? 0.6 : base.startsWith('cutout_') ? 0.55 : null)
 
 // ---- readouts ----
 
