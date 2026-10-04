@@ -1,4 +1,4 @@
-VERDICT: FAIL (bounded, round 1)
+VERDICT: PASS WITH NITS (round 2); round 1 FAIL (bounded)
 
 # Block 2 M2.7 visual review (chapters 19 and 20, wings and winglets), Opus captain
 
@@ -33,3 +33,15 @@ Reviewed branch m27-crewA at 9fd18d0, using crew B's WebKit 1180x820 shots of al
 - Tiny hardware (hinges, bolts) reads small. It is labelled.
 - `f19.core-cutouts`: the camera clips a jig face at the left edge.
 - The rudder hinge is seen through the faint winglet, from the wall side.
+
+## Round 2 (captain, after crew B commit "visual review round 1" fixes)
+Re-shot ops: `f19.attach`, `f19.controls`, `f19.hardpoints`, `f19.pads-plates`, `f19.core-cutouts`, `f20.cut-cores`, `f20.skins`,
+`f20.trim` (and `f20.jig` for comparison).
+- `f19.attach`: the fuselage (canopy, firewall, gear) with both wings running out from the spar; the bolts are labelled. The room
+  walls limit the camera to about 3.4 m, so the tips are cut off; it reads as wings on the airplane. Pass, nit.
+- `f19.controls`, `f19.hardpoints`, `f19.pads-plates`: the root bay, hard points and plates read against the inboard core with the
+  jigs and wing outline in frame. Pass.
+- `f19.core-cutouts`: the jig-face clip is gone. Pass.
+- `f20.cut-cores`, `f20.skins`, `f20.trim`: the winglet lies flat on the bench (core, then the skin plies 5 of 5, then trimmed); it
+  first stands on the tip at `f20.jig`. Pass.
+Remaining nits: full span cannot be framed inside the room on `f19.attach`; tiny hardware still reads small.
