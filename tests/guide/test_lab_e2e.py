@@ -182,7 +182,7 @@ def _bar_ops(g, variant):
         in byid[i]["variants"]
         + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
         and byid[i]["chapter"]
-        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)
         and not byid[i]["stub"]
     ]
 
@@ -2782,7 +2782,7 @@ _BOOK_BOND_ORDER = (
 
 
 def _fuse_ops(
-    g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+    g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23)
 ):
     byid = {o["id"]: o for o in g["ops"]}
     return [
@@ -6718,8 +6718,12 @@ def _m27_expect(g, row, op):
         return "none"
     attach = order.index("f19.attach")
     if op in _M27_WINGLET_BENCH:  # the right winglet alone, flat on the table
-        right_winglet = row["component"].startswith("winglet.") and row["side"] == "right"
-        return "table" if right_winglet and row["component"] != "winglet.jig" else "none"
+        right_winglet = (
+            row["component"].startswith("winglet.") and row["side"] == "right"
+        )
+        return (
+            "table" if right_winglet and row["component"] != "winglet.jig" else "none"
+        )
     if row["side"] == "left" and i < attach:
         return "none"
     if row["component"] == "wing.jigs":
@@ -7318,9 +7322,9 @@ def test_m27_tours_visit_every_chapter_19_and_20_op_in_order_hold_the_swings_and
                 assert pg.evaluate("__lab.touring()") is True
                 seen, last = _tour_probe(pg, want, {hold: probe}, after="never")
                 assert seen == want, seen
-                assert last[hold] == last_expect, (
-                    last
-                )  # the swing reached its stop before the tour left the op
+                assert (
+                    last[hold] == last_expect
+                ), last  # the swing reached its stop before the tour left the op
                 assert pg.evaluate("__lab.touring()") is False
                 assert pg.evaluate("__lab.selected()") == want[-1]
                 assert pg.evaluate("__lab.subject()") == "fuselage"
@@ -7359,16 +7363,32 @@ def test_m27_round2_the_winglet_lies_flat_on_the_bench_until_its_jig_and_the_win
                 _run(pg, 0.5)
                 bx = pg.evaluate(f"window.__lab.meshBox('{core}')")
                 span = [bx[1][i] - bx[0][i] for i in range(3)]
-                assert span[1] < 0.2 * max(span[0], span[2]), (op, span)  # thin in the vertical
+                assert span[1] < 0.2 * max(span[0], span[2]), (
+                    op,
+                    span,
+                )  # thin in the vertical
                 assert 0.7 < bx[0][1] < 1.0, (op, bx)  # on the table top
                 pl = pg.evaluate("window.__lab.placement()")
-                assert pl["wing_cores_fc1_right"] == "none" and pl["winglet_cores_upper_core_left"] == "none", op
-                assert pl["spar_box"] == "none" and pl["winglet_cores_upper_core_right"] == "table"
+                assert (
+                    pl["wing_cores_fc1_right"] == "none"
+                    and pl["winglet_cores_upper_core_left"] == "none"
+                ), op
+                assert (
+                    pl["spar_box"] == "none"
+                    and pl["winglet_cores_upper_core_right"] == "table"
+                )
             pg.evaluate("window.__lab.select('f20.jig')")
             _run(pg, 0.5)
             bx = pg.evaluate(f"window.__lab.meshBox('{core}')")
-            assert bx[1][1] - bx[0][1] > 0.9, bx  # standing on the wingtip (about 48 in tall)
-            assert pg.evaluate("window.__lab.placement()")["winglet_cores_upper_core_right"] == "jig"
+            assert (
+                bx[1][1] - bx[0][1] > 0.9
+            ), bx  # standing on the wingtip (about 48 in tall)
+            assert (
+                pg.evaluate("window.__lab.placement()")[
+                    "winglet_cores_upper_core_right"
+                ]
+                == "jig"
+            )
             # (1) both wings on the fuselage at the spar: each wing's cores are on screen
             pg.evaluate("window.__lab.select('f19.attach')")
             _run(pg, 6)
@@ -7383,8 +7403,550 @@ def test_m27_round2_the_winglet_lies_flat_on_the_bench_until_its_jig_and_the_win
                 pg.evaluate(f"window.__lab.select('{op}')")
                 _run(pg, 6)
                 assert _pixels_of(pg, sub) >= 100, op
-                assert _pixels_of(pg, ["wing.cores"]) >= 3000, op  # the core (or its faint outline) fills a good part of the frame
+                assert (
+                    _pixels_of(pg, ["wing.cores"]) >= 3000
+                ), op  # the core (or its faint outline) fills a good part of the frame
             assert not errors, errors
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.8: chapters 21 to 23, the strakes and fuel tanks, the electrical system, the engine and cowl.
+# ======================================================================================================================
+_M28_CH = (21, 22, 23)
+_M28_KIT = (
+    "rib_r23",
+    "rib_r45",
+    "b23",
+    "db",
+    "bab",
+    "od",
+    "tle",
+    "ble",
+    "skin_bottom",
+    "skin_top",
+)
+
+
+def _m28_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [
+        i for i in g["order"] if byid[i]["chapter"] in _M28_CH and not byid[i]["stub"]
+    ], byid
+
+
+def _m28(g):
+    return g["layup"]["fuselage"]["extras"]["m28"]
+
+
+def _m28_base(row):
+    """The part's own name inside its component ("rib_r23" from "strake.ribs.rib_r23.right")."""
+    name = row["node"][len(row["component"]) + 1 :]
+    return name.rsplit(".", 1)[0] if name.endswith((".right", ".left")) else name
+
+
+def _m28_expect(g, row, op):
+    """'table' | 'jig' | 'none': where a chapter 21-23 part is on `op`. The right strake's kit lies on the layup table on the cutting op (the left is the
+    mirror, cut the same way); the openings in the fuselage side show on their own op only; everything else stands in its place from the op its row names."""
+    order = g["order"]
+    i = order.index(op)
+    frm = order.index(row["show"]["from"])
+    if row.get("void"):
+        return "jig" if op == row["show"]["from"] else "none"
+    if (
+        row["component"].startswith("strake.")
+        and _m28_base(row) in _M28_KIT
+        and op == "f21.cut-parts"
+    ):
+        return "table" if row["side"] == "right" else "none"
+    return "jig" if i >= frm else "none"
+
+
+def test_m28_the_chapters_follow_chapter_20_in_book_order_and_every_op_is_on_the_bar(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m28_ops(g)
+    order = g["order"]
+    assert len(ops) == 12 + 6 + 5
+    # the ch17/18-vs-19/20 trap: a later chapter's ops placed after an earlier one's. Nothing of chapters 14 to 20 (the two chapter 16 ops that wait on the
+    # wings included) comes after the first chapter 21 op, and chapters 21, 22, 23 follow in that order, unbroken
+    first21 = order.index("f21.cut-parts")
+    assert all(
+        byid[o]["chapter"] >= 21 for o in order[first21:] if byid[o]["chapter"] < 30
+    ), [o for o in order[first21:] if byid[o]["chapter"] < 21]
+    seq = [byid[o]["chapter"] for o in order[first21:]]
+    assert seq == sorted(seq) and set(seq) == {21, 22, 23}
+    assert (
+        order.index("f20.rudder-hang")
+        < order.index("f16.rudder-cable-rig")
+        < order.index("f16.brake-cables")
+        < first21
+    )
+    assert order.index("f19.attach") < order.index("f16.aileron-linkage") < first21
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            chips = _chips(pg)
+            assert set(ops) <= set(chips)
+            bar = [c for c in chips if c in ops]
+            assert bar == ops  # in graph order
+            i = chips.index(ops[0])
+            assert (
+                chips[i : i + len(ops)] == ops
+            )  # unbroken, after the chapter 16 ops that wait on the wings
+            assert chips.index("f16.brake-cables") < i
+            assert not [o for o in chips[i:] if byid[o]["chapter"] < 21]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_every_chapter_21_to_23_op_shows_its_parts_in_build_order_striped_and_labelled_the_kit_on_the_table_then_the_airplane(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m28_ops(g)
+    rows = _m28(g)["parts"]
+    assert len(rows) == 2 * 20 + 15 + 5
+    assert all(r["fidelity"] in ("representational", "derived") for r in rows.values())
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    want = _m28_expect(g, row, op)
+                    assert pl[name] == want, (op, name, pl[name], want)
+            # the kit lies alone on the layup table: the airplane (box, spar, canopy, wings) is not drawn; every other chapter 21-23 op has it on its gear
+            pg.evaluate("window.__lab.select('f21.cut-parts')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["spar_box"] == "none" and pl["canopy_plexi"] == "none"
+            assert pl["wing_cores_fc1_right"] == "none"
+            kit = [n for n, r in rows.items() if pl[n] == "table"]
+            assert len(kit) == len(_M28_KIT) and all(
+                rows[n]["side"] == "right" for n in kit
+            )
+            for op in ops[1:]:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.2)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert (
+                    pl["spar_box"] == "jig"
+                    and pl["canopy_plexi"] == "jig"
+                    and pl["wing_cores_fc1_left"] == "jig"
+                ), op
+            # nothing of any of the three chapters before chapter 21's first op
+            for op in ("f20.rudder-hang", "f16.brake-cables", "f19.attach", None):
+                pg.evaluate(f"window.__lab.select({json.dumps(op)})")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (
+                    op,
+                    [n for n in rows if pl[n] != "none"],
+                )
+            # by the end of chapter 21 both strakes stand, and by the end of chapter 23 every part
+            pg.evaluate("window.__lab.select('f21.plumbing')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            for side in ("right", "left"):
+                assert pl[f"strake_skins_skin_top_{side}"] == "jig"
+                assert pl[f"strake_ribs_rib_r45_{side}"] == "jig"
+                assert pl[f"strake_tank_tank_{side}"] == "jig"
+            assert pl["elec_battery_shelf_shelf"] == "none"
+            pg.evaluate("window.__lab.select('f23.root-rib')")
+            _run(pg, 1)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert [n for n, r in rows.items() if pl[n] != "none"] == [
+                n for n, r in rows.items() if not r.get("void")
+            ]
+            # every part is a fitted shape unless python tagged it derived: striped and named so on screen
+            for name, row in rows.items():
+                rep = row["fidelity"] == "representational"
+                assert rep == ("(fitted shape" in row["label"]), name
+                m = pg.evaluate(f"window.__lab.material('{row['node']}')")
+                assert (
+                    m and bool(m["hatch"]) == rep and m["fidelity"] == row["fidelity"]
+                ), (
+                    name,
+                    m,
+                )
+            blk = rows["engine_block_block"]
+            assert (
+                "Section II, not held" in blk["label"]
+                and "(fitted shape" in blk["label"]
+            )
+            assert "station not printed" in rows["elec_battery_battery"]["label"]
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# what each op that adds a new part shows, as the part-name prefixes to leave out of the frame: the pixels that differ are that part on screen
+_M28_SUBJECT = {
+    "f21.cut-parts": ["strake.ribs", "strake.baffles", "strake.skins"],
+    "f21.fuselage-cutouts": ["strake.skins.cutout"],
+    "f21.jig-bond": ["strake.ribs.rib_r23", "strake.ribs.rib_r45"],
+    "f21.vent-screen": ["strake.fittings.screen"],
+    "f21.close-tank": ["strake.tank"],
+    "f21.od-outlet": ["strake.baffles.od"],
+    "f21.outside-bottom": ["strake.sump"],
+    "f21.fairing-caps": ["strake.fairing"],
+    "f22.panel-wiring": ["elec.wiring.panel_bundle"],
+    "f22.battery-shelf": ["elec.battery"],
+    "f22.firewall-terminals": ["elec.relays"],
+    "f22.wing-wiring": ["elec.lights"],
+    "f22.antennas": ["elec.antennas"],
+    "f23.engine-install": ["engine.block"],
+    "f23.carb-bracket": ["engine.bracket"],
+    "f23.cowl-trim": ["engine.cowl"],
+    "f23.root-rib": ["engine.rib"],
+}
+# the ops whose layups, tests or plumbing add no part of their own (plies and plumbing are not drawn): their own parts still show, below
+_M28_NO_NEW_PART = (
+    "f21.inside-layups",
+    "f21.outside-top",
+    "f21.pressure-check",
+    "f21.plumbing",
+    "f22.microswitches",
+    "f23.cowl-closeout",
+)
+
+
+def test_m28_every_chapter_21_to_23_op_puts_its_subject_on_screen_not_hidden_inside_another_solid(
+    rsite,
+):
+    """Pixels decide: the frame with the op's subject and the same frame without it must differ, for the op's own parts and for the one thing each
+    op adds (the kit, the openings, the ribs, the screen, the tank, the diagonal, the sump, the fairing, the wiring, the battery, the relays,
+    the lights, the foil, the block, the bracket, the cowl, the rib). 1180x820, the WebKit and Chromium frames both."""
+    g = _graph(rsite)
+    ops, byid = _m28_ops(g)
+    assert set(_M28_SUBJECT) | set(_M28_NO_NEW_PART) == set(ops)
+    assert not set(_M28_SUBJECT) & set(_M28_NO_NEW_PART)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            seen_all, seen_one = {}, {}
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                comps = byid[op]["components"]
+                if comps:
+                    seen_all[op] = _pixels_of(pg, [f"{c}." for c in comps])
+                if op in _M28_SUBJECT:
+                    seen_one[op] = _pixels_of(pg, _M28_SUBJECT[op])
+            print(seen_all, seen_one)
+            weak = {o: n for o, n in seen_all.items() if n < 100}
+            assert not weak, f"the op's own parts are not visible on screen: {weak}"
+            weak = {o: n for o, n in seen_one.items() if n < 100}
+            assert not weak, f"what the op adds is not visible on screen: {weak}"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize(
+    "op", ["f21.cut-parts", "f21.close-tank", "f22.battery-shelf", "f23.engine-install"]
+)
+def test_m28_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsite, op):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 390, 844, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate(f"window.__lab.select('{op}')")
+            _run(pg, 7)
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert pg.evaluate("document.documentElement.scrollHeight") <= 844
+            labs = pg.evaluate("window.__lab.labelsAll()")
+            assert sum(1 for x in labs if _legible(x)) <= 10
+            _bare(pg)
+            assert _pixels_of(pg, _M28_SUBJECT[op], 390, 844) >= 150, op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_the_tank_is_a_shaded_volume_and_the_strake_jig_table_stands_only_while_the_strake_is_on_it(
+    rsite,
+):
+    g = _graph(rsite)
+    rows = _m28(g)["parts"]
+    tank = rows["strake_tank_tank_right"]["node"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f21.close-tank')")
+            _run(pg, 3)
+            m = pg.evaluate(f"window.__lab.material('{tank}')")
+            assert m["transparent"] is True and 0.15 < m["opacity"] <= 0.7, m
+            # the rest of the airplane is drawn faint so the volume reads through the skins: the tank is solid, a skin is ghosted
+            st = pg.evaluate("window.__lab.stateAll()")
+            assert st[tank] in ("built", "current")
+            # the jig table (a fitted shape under the strake) from the bond to the closing of the tank, labelled
+            seen = {}
+            for op in (
+                "f21.cut-parts",
+                "f21.fuselage-cutouts",
+                "f21.jig-bond",
+                "f21.inside-layups",
+                "f21.vent-screen",
+                "f21.close-tank",
+                "f21.od-outlet",
+                "f21.plumbing",
+                "f22.battery-shelf",
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 1)
+                seen[op] = pg.evaluate("window.__lab.strakeTable()")
+            assert seen == {
+                "f21.cut-parts": False,
+                "f21.fuselage-cutouts": False,
+                "f21.jig-bond": True,
+                "f21.inside-layups": True,
+                "f21.vent-screen": True,
+                "f21.close-tank": True,
+                "f21.od-outlet": False,
+                "f21.plumbing": False,
+                "f22.battery-shelf": False,
+            }, seen
+            pg.evaluate("window.__lab.select('f21.jig-bond')")
+            _run(pg, 3)
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+            t = labs["strake.jig_table"]
+            assert _legible(t) and t["text"] == "Strake jig table (fitted shape)", t
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_the_fuel_conflict_the_battery_range_the_starter_bound_and_the_engine_limits_are_text_on_their_ops_never_a_bare_number(
+    rsite,
+):
+    g = _graph(rsite)
+    d = _m28(g)
+    assert (
+        d["fuel"]["plans_gal_per_tank"],
+        d["fuel"]["om_gal_per_tank"],
+        d["fuel"]["om_total_gal"],
+        d["fuel"]["model_gal_per_side"],
+    ) == (25.5, 28.0, 52.0, 26.0)
+    assert (
+        d["battery"]["fs_range"] == [0.0, 22.0]
+        and d["battery"]["starter_fs_min"] == 150.0
+    )
+    assert d["engine"]["limits_lb"] == [246.0, 286.0]
+    fuel = "Tank capacity: plans 2 x 25.5 gal, manual 2 x 28 gal (52 in all); model 26 a side"
+    want = {
+        "f21.cut-parts": fuel,
+        "f21.close-tank": fuel,
+        "f21.pressure-check": fuel,
+        "f21.fairing-caps": fuel,
+        "f21.fuselage-cutouts": "Tank hole aft end: 1.9 in below WL 23 once, 1.4 in elsewhere on the page",
+        "f22.battery-shelf": "Battery station: FS 0 to 22, not printed (A6 only)",
+        "f22.firewall-terminals": "Starter, ring gear and alternator: station 150 or aft (CP27 page 4), not drawn",
+        "f23.engine-install": "Engine with accessories at most 246 lb, vibrating mass at most 286 lb; oil 8 lb at FS 140",
+    }
+    subs = {
+        "f21.cut-parts": ("Unresolved", "24.6 gal a side", "fitted shape"),
+        "f21.fuselage-cutouts": ("Unresolved", "FS 90 in the manual", "FS 80.6"),
+        "f22.battery-shelf": ("FS 11 for illustration only",),
+        "f22.firewall-terminals": ("A bound, not a station",),
+        "f23.engine-install": ("Fitted shape; installation in Section II, not held",),
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, text in want.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                assert pg.evaluate("window.__lab.kin().value") == text, op
+                assert pg.evaluate("document.getElementById('t-kin').hidden") is False
+                assert (
+                    pg.evaluate("document.getElementById('ro-kin').textContent") == text
+                )
+                sub = pg.evaluate("document.getElementById('ro-kin-sub').textContent")
+                for frag in subs.get(op, ()):
+                    assert frag in sub, (op, frag, sub)
+            # the two layup-7 ops carry the numbering conflict; a layup op without a conflict carries its schedule
+            for op in ("f21.od-outlet", "f21.outside-bottom"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                v = pg.evaluate("window.__lab.kin().value")
+                assert "printed twice" in v, (op, v)
+                assert "Unresolved" in pg.evaluate("window.__lab.kin().sub")
+            pg.evaluate("window.__lab.select('f21.inside-layups')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.kin().value") == "5 plies: 3 BID + 2 UND"
+            pg.evaluate("window.__lab.select('f23.cowl-closeout')")
+            _run(pg, 0.3)
+            assert pg.evaluate("window.__lab.kin().value") == "10 plies: 10 BID"
+            # none of them is stated on the other ops
+            for op in (
+                "f21.jig-bond",
+                "f21.vent-screen",
+                "f22.antennas",
+                "f23.carb-bracket",
+                "f23.root-rib",
+                "f20.rudder-hang",
+            ):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                v = pg.evaluate(
+                    "document.getElementById('t-kin').hidden ? '' : document.getElementById('ro-kin').textContent"
+                )
+                assert not any(
+                    t in v
+                    for t in (
+                        "25.5",
+                        "Tank capacity",
+                        "FS 0 to 22",
+                        "station 150",
+                        "246 lb",
+                    )
+                ), (op, v)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_the_n26ms_ladder_mount_cowl_and_closure_target_are_references_in_no_sum_and_follow_their_ops(
+    rsite,
+):
+    import json as _j
+
+    led = _j.loads((rsite / "ledger.json").read_text())
+    rows = led["prototype_weights"]["rows"]
+    ladder = [rows[f"n26ms_empty_{i}"]["weight_lb"] for i in range(1, 9)]
+    assert ladder == [693.4, 698.3, 713.7, 761.9, 777.3, 815.4, 860.2, 883.0]
+    assert (
+        rows["dynafocal_mount"]["weight_lb"],
+        rows["cowl_glass"]["weight_lb"],
+        rows["cowl_graphite"]["weight_lb"],
+    ) == (5.19, 18.0, 12.0)
+    inc = led["cg"]["included"] + led["cg_lower_bound"]["included"]
+    assert not any(
+        k in inc
+        for k in (
+            *[f"n26ms_empty_{i}" for i in range(1, 9)],
+            "dynafocal_mount",
+            "cowl_glass",
+            "cowl_graphite",
+        )
+    )
+    g = _graph(rsite)
+    tgt = _m28(g)["weights"]["closure_target"]
+    assert (tgt["empty_lb"], tgt["empty_arm_in"], tgt["loaded_envelope_fs"]) == (
+        730,
+        111.7,
+        [97.0, 103.0],
+    )
+    lad = "693.4 / 698.3 / 713.7 / 761.9 / 777.3 / 815.4 / 860.2 / 883.0"
+    ref = ", reference, not in CG"
+    expect = {
+        "f21.plumbing": None,
+        "f22.panel-wiring": None,
+        "f22.battery-shelf": f"N26MS empty-weight ladder (CP27 page 4): {lad} lb{ref}",
+        "f22.antennas": f"N26MS empty-weight ladder (CP27 page 4): {lad} lb{ref}",
+        "f23.engine-install": f"Dynafocal mount (CP26 builder weight, N26MS): 5.19 lb{ref}",
+        "f23.carb-bracket": f"Dynafocal mount (CP26 builder weight, N26MS): 5.19 lb{ref}",
+        "f23.cowl-trim": f"Cowl (CP27 page 5): 18.0 lb in glass, 12.0 lb in graphite{ref}",
+        "f23.cowl-closeout": f"Cowl (CP27 page 5): 18.0 lb in glass, 12.0 lb in graphite{ref}",
+        "f23.root-rib": f"Closure target: OM sample empty airplane 730 lb at FS 111.7{ref}; N26MS ladder {lad} lb",
+        "f20.rudder-hang": f"Wing with winglets and rudder (CP26 builder weight, N26MS): 64.0 lb each{ref}",
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, w in expect.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                r = pg.evaluate("window.__lab.ref()")
+                assert (r["value"] if r else None) == w, (op, r)
+                shown = pg.evaluate(
+                    "!document.getElementById('t-ref').hidden && document.getElementById('ro-ref').textContent"
+                )
+                assert (shown or None) == w, (op, shown)
+                # the CG stays "not yet computed" through all three chapters
+                assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
+            pg.evaluate("window.__lab.select('f23.root-rib')")
+            _run(pg, 0.3)
+            sub = pg.evaluate("window.__lab.ref().sub")
+            assert (
+                "FS 97 to 103 is the loaded envelope, not the empty CG" in sub
+                and "CG not yet computed" in sub
+            ), sub
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_the_station_cut_reaches_the_nose_battery_and_the_engine_block(rsite):
+    """The battery shelf is at FS 7 to 15 and the block runs to FS 157: the section slider's range covers both on these chapters' ops."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f22.battery-shelf')")
+            _run(pg, 0.3)
+            lo = pg.evaluate("document.getElementById('section-bl').min")
+            hi = pg.evaluate("document.getElementById('section-bl').max")
+            assert float(lo) <= 7 and float(hi) >= 157, (lo, hi)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m28_tours_visit_every_chapter_21_to_23_op_in_order_and_end_on_the_last(rsite):
+    g = _graph(rsite)
+    for ch, n, last in (
+        (21, 12, "f21.plumbing"),
+        (22, 6, "f22.antennas"),
+        (23, 5, "f23.root-rib"),
+    ):
+        want = _chapter_ops(g, "roncz", ch)
+        assert len(want) == n and want[-1] == last
+        s, url = serve(rsite)
+        try:
+            with sync_playwright() as p:
+                b, pg, errors = _open_rec(p, url)
+                _to_fuselage(pg)
+                pg.evaluate(f"__lab.select('{want[0]}')")
+                pg.click("#tour")
+                assert pg.evaluate("__lab.touring()") is True
+                seen, _last = _tour_probe(pg, want, {}, after="never")
+                assert seen == want, seen
+                assert pg.evaluate("__lab.touring()") is False
+                assert pg.evaluate("__lab.selected()") == last
+                assert pg.evaluate("__lab.subject()") == "fuselage"
+                assert not errors, errors
+                b.close()
+        finally:
+            s.shutdown()
