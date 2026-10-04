@@ -137,7 +137,7 @@ def test_book_order_the_wing_waiters_follow_their_chapter(g):
     the winglet are walked right after the chapter they wait on."""
     order = topo_order(g)
     pos = {i: k for k, i in enumerate(order)}
-    ch = lambda n: [i for i in order if g.ops[i].chapter == n]  # noqa: E731
+    ch = lambda n: [i for i in order if g.ops[i].chapter == n]
     assert max(pos[i] for i in ch(18)) < pos["f19.jig"]
     assert max(pos[i] for i in ch(17)) < pos["f19.jig"]
     assert pos["f19.attach"] < pos["f16.aileron-linkage"] < pos["f20.cut-cores"]

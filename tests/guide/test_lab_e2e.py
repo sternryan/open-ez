@@ -182,7 +182,7 @@ def _bar_ops(g, variant):
         in byid[i]["variants"]
         + (["roncz", "gu"] if "both" in byid[i]["variants"] else [])
         and byid[i]["chapter"]
-        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18)
+        not in (0, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20)
         and not byid[i]["stub"]
     ]
 
@@ -2781,7 +2781,9 @@ _BOOK_BOND_ORDER = (
 )  # plans-1980:p40, then F28 (p41)
 
 
-def _fuse_ops(g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18)):
+def _fuse_ops(
+    g, chapters=(4, 5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17, 18, 19, 20)
+):
     byid = {o["id"]: o for o in g["ops"]}
     return [
         i
@@ -6678,3 +6680,647 @@ def test_m26_tour_visits_every_chapter_18_op_in_order_holds_the_lift_and_the_ope
             b.close()
     finally:
         s.shutdown()
+
+
+# ======================================================================================================================
+# Block 2 M2.7: chapters 19 and 20, the wings (on their own bench, then on the airplane) and the winglets with their rudders.
+# ======================================================================================================================
+_M27_TABLE_OPS = (
+    "f19.cut-cores",
+    "f19.core-cutouts",
+    "f19.bottom-cap",
+    "f19.bottom-skin",
+)
+
+
+def _m27_ops(g):
+    byid = {o["id"]: o for o in g["ops"]}
+    return [
+        i for i in g["order"] if byid[i]["chapter"] in (19, 20) and not byid[i]["stub"]
+    ], byid
+
+
+def _m27(g):
+    return g["layup"]["fuselage"]["extras"]["m27"]
+
+
+def _m27_expect(g, row, op):
+    """'table' | 'jig' | 'none': where a chapter 19 or 20 part is on `op`. The right wing's parts are on the bench from f19.jig to the controls
+    (flat on the table for the cores' cutting and the two bottom ops, in the jigs otherwise), on the airplane from f19.attach; the left wing waits
+    for the attach; the five jigs stand on the floor until the attach, the winglet's jig lines from f20.jig to the corner layups."""
+    order, _byid, first = _first_ops(g)
+    i = order.index(op)
+    if i < order.index(first[row["component"]]):
+        return "none"
+    w = row.get("show") or {}
+    if w.get("from") and i < order.index(w["from"]):
+        return "none"
+    attach = order.index("f19.attach")
+    if row["side"] == "left" and i < attach:
+        return "none"
+    if row["component"] == "wing.jigs":
+        return "table" if order.index("f19.jig") <= i < attach else "none"
+    if row["component"] == "winglet.jig":
+        return (
+            "jig"
+            if order.index("f20.jig") <= i <= order.index("f20.outside-layups")
+            else "none"
+        )
+    if order.index("f19.jig") <= i < attach:
+        return "table"
+    return "jig"
+
+
+def test_m27_every_chapter_19_and_20_op_shows_its_parts_in_build_order_striped_and_labelled_on_the_bench_then_the_airplane(
+    rsite,
+):
+    g = _graph(rsite)
+    ops, byid = _m27_ops(g)
+    rows = _m27(g)["parts"]
+    assert len(ops) == 27 and len(rows) == 2 * 32  # 32 parts a side
+    order = g["order"]
+    # the bar carries both chapters; chapters 17 and 18 come before them and the two chapter 16 ops that wait on the wing and the winglet follow
+    pos = {o: order.index(o) for o in order}
+    assert max(pos[o] for o in order if byid[o]["chapter"] in (17, 18)) < pos["f19.jig"]
+    assert pos["f19.attach"] < pos["f16.aileron-linkage"] < pos["f20.cut-cores"]
+    assert pos["f20.rudder-hang"] < pos["f16.rudder-cable-rig"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            assert set(ops) <= set(_chips(pg))
+            bar = [c for c in _chips(pg) if c in ops]
+            assert bar == ops  # in graph order
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                for name, row in rows.items():
+                    want = _m27_expect(g, row, op)
+                    assert pl[name] == want, (op, name, pl[name], want)
+            # the wing is on its bench with the airplane not drawn (the box, the spar, the canopy), and on the airplane with them from the attach
+            pg.evaluate("window.__lab.select('f19.ribs')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["spar_box"] == "none" and pl["canopy_plexi"] == "none", pl[
+                "spar_box"
+            ]
+            pg.evaluate("window.__lab.select('f19.attach')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["spar_box"] == "jig" and pl["canopy_plexi"] == "jig"
+            # nothing of either chapter before chapter 19's ops, nor in the chapter 16 ops that came before them
+            for op in ("f18.safety-catch", "f17.fixed-trim-tab", "f14.fit-fuselage"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                pl = pg.evaluate("window.__lab.placement()")
+                assert all(pl[n] == "none" for n in rows), (
+                    op,
+                    [n for n in rows if pl[n] != "none"],
+                )
+            # the chapter 16 ops that wait on them show both wings on the airplane
+            pg.evaluate("window.__lab.select('f16.aileron-linkage')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert (
+                pl["wing_cores_fc1_right"] == "jig"
+                and pl["wing_cores_fc1_left"] == "jig"
+            )
+            assert pl["winglet_cores_upper_core_right"] == "none"
+            # every part is a fitted shape unless it is a printed-size piece of hardware: striped and named so on screen
+            pg.evaluate("window.__lab.select('f20.rudder-hang')")
+            _run(pg, 1)
+            for name, row in rows.items():
+                rep = row["fidelity"] == "representational"
+                assert rep == ("(fitted shape" in row["label"]), name
+                node = f"{row['node']}.p1" if row.get("plies") else row["node"]
+                m = pg.evaluate(f"window.__lab.material('{node}')")
+                if m is None:  # a part not shown on this op (the jigs, the jig lines)
+                    continue
+                assert bool(m["hatch"]) == rep and m["fidelity"] == row["fidelity"], (
+                    name,
+                    m,
+                )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# what each op that adds something shows, as the part-name prefixes to leave out of the frame: the pixels that differ are that part on screen
+_M27_SUBJECT = {
+    "f19.jig": ["wing.jigs"],
+    "f19.cut-cores": ["wing.cores"],
+    "f19.core-cutouts": ["wing.cores"],
+    "f19.mount-cores": ["wing.cores"],
+    "f19.hardpoints": ["wing.hardpoints"],
+    "f19.shear-web": ["wing.shear_web"],
+    "f19.pads-plates": ["wing.hardpoints"],
+    "f19.le-cores": ["wing.cores.fc4", "wing.cores.fc5"],
+    "f19.bottom-cap": ["wing.spar_caps"],
+    "f19.bottom-skin": ["wing.skins"],
+    "f19.top-cap": ["wing.spar_caps"],
+    "f19.rudder-conduit": ["wing.conduit"],
+    "f19.top-skin": ["wing.skins"],
+    "f19.ribs": ["wing.ribs"],
+    "f19.aileron-cut": ["wing.aileron.aileron"],
+    "f19.aileron-build": ["wing.aileron_hinges"],
+    "f19.controls": ["wing.controls"],
+    "f19.attach": ["wing.attach"],
+    "f20.cut-cores": ["winglet.cores"],
+    "f20.skins": ["winglet.skins"],
+    "f20.trim": ["winglet.skins"],
+    "f20.jig": ["winglet.jig"],
+    "f20.inside-layups": ["winglet.layups"],
+    "f20.outside-layups": ["winglet.block_a", "winglet.layups"],
+    "f20.lower-fin": ["winglet.lower_fin"],
+    "f20.rudder-cut": ["winglet.rudder.rudder"],
+    "f20.rudder-hang": ["winglet.rudder_hinge", "winglet.rudder.belhorn"],
+}
+
+
+_M27_NOT_HIDEABLE = ("f20.jig", "f20.inside-layups")
+
+
+def test_m27_every_chapter_19_and_20_op_puts_its_subject_on_screen_not_hidden_inside_another_solid(
+    rsite,
+):
+    """Pixels decide: the frame with the op's subject and the same frame without it must differ, for the op's own parts and for the one thing
+    each op adds (the jigs, the cores, the plies, the conduit, the aileron's hinges, the bolts, the winglet's pieces, the rudder's hinge)."""
+    g = _graph(rsite)
+    ops, byid = _m27_ops(g)
+    assert set(_M27_SUBJECT) == set(ops)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            seen_all, seen_one = {}, {}
+            for op in ops:
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 6)
+                if op in _M27_NOT_HIDEABLE:
+                    continue
+                seen_all[op] = _pixels_of(pg, [f"{c}." for c in byid[op]["components"]])
+                seen_one[op] = _pixels_of(pg, _M27_SUBJECT[op])
+            print(seen_all, seen_one)
+            weak = {o: n for o, n in seen_all.items() if n < 100}
+            assert not weak, f"the op's own parts are not visible on screen: {weak}"
+            weak = {o: n for o, n in seen_one.items() if n < 100}
+            assert not weak, f"what the op adds is not visible on screen: {weak}"
+            # the two ops the hide test cannot judge: the jig's A, B and C are drawn as cyan lines (tested on their own), and layups 1 and 2
+            # (f20.inside-layups) are not drawn at all (the plans' corner layup 3 is the only one modelled): nothing of the layups shows there
+            pg.evaluate("window.__lab.select('f20.inside-layups')")
+            _run(pg, 0.3)
+            pl = pg.evaluate("window.__lab.placement()")
+            assert pl["winglet_layups_layup_3_right"] == "none"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("op", ["f19.aileron-build", "f20.jig", "f20.rudder-hang"])
+def test_m27_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsite, op):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 390, 844, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate(f"window.__lab.select('{op}')")
+            _run(pg, 7)
+            assert pg.evaluate("document.documentElement.scrollWidth") <= 390
+            assert pg.evaluate("document.documentElement.scrollHeight") <= 844
+            ctl = {
+                "f19.aileron-build": "aileron-defl",
+                "f20.rudder-hang": "rudder-defl",
+            }.get(op)
+            if ctl:  # the swing control is reachable and inside the viewport
+                r = pg.evaluate(
+                    f"(() => {{ const r = document.getElementById('{ctl}').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] }})()"
+                )
+                assert (
+                    r[0] >= 0 and r[2] <= 390 and r[3] <= 844 and r[2] - r[0] > 100
+                ), r
+            labs = pg.evaluate("window.__lab.labelsAll()")
+            assert sum(1 for x in labs if _legible(x)) <= 10
+            _bare(pg)
+            if op == "f20.jig":  # the A, B and C lines are drawn flat in cyan
+                assert _cyan_pixels(pg.screenshot()) >= 150
+            else:  # (the rudder's hinge and belhorn are hardware a few inches long)
+                assert _pixels_of(pg, _M27_SUBJECT[op], 390, 844) >= (
+                    80 if op == "f20.rudder-hang" else 150
+                )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _mid(bx):
+    return [(bx[0][i] + bx[1][i]) / 2 for i in range(3)]
+
+
+def _dist(a, b):
+    return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
+
+
+def test_m27_the_aileron_swings_up_to_its_20_deg_stop_on_its_own_op_and_the_readout_says_so(
+    rsite,
+):
+    from PIL import Image, ImageChops
+
+    g = _graph(rsite)
+    a = _m27(g)["aileron"]
+    assert a["max_up_deg"] == 20 and "representational" in a["note"]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f19.aileron-build')")
+            w = pg.evaluate("window.__lab.wing()")
+            assert (
+                w["aileronShown"] is True
+                and w["aileronDeg"] == 0
+                and w["aileronManual"] is False
+            ), w
+            assert pg.evaluate("window.__lab.kin().value") == "Neutral"
+            _run(pg, 0.1)
+            al = "wing.aileron.aileron.right"
+            closed = pg.evaluate(f"window.__lab.meshBox('{al}')")
+            pins0 = pg.evaluate(
+                "window.__lab.meshBox('wing.aileron_hinges.hinge_pins.right')"
+            )
+            leaf0 = pg.evaluate(
+                "window.__lab.meshBox('wing.aileron_hinges.hinge_leaves.right')"
+            )
+            last, texts = 0.0, set()
+            for _ in range(80):  # the op's own sweep, in sim time: monotone to the stop
+                _run(pg, 0.1)
+                d = pg.evaluate("window.__lab.wing()")["aileronDeg"]
+                assert d >= last - 1e-9, (last, d)
+                last = d
+                texts.add(pg.evaluate("window.__lab.kin().value"))
+            assert last == 20
+            assert "20 deg up: at the stop" in texts and any(
+                t.endswith("deg up") for t in texts
+            ), texts
+            opened = pg.evaluate(f"window.__lab.meshBox('{al}')")
+            assert (
+                max(abs(a - b) for a, b in zip(_flat(opened), _flat(closed))) > 0.05
+            ), (closed, opened)  # its box moved (metres)
+            # the wing-side hinge pins stay on the wing, the aileron-side leaves go with the aileron
+            assert _flat(
+                pg.evaluate(
+                    "window.__lab.meshBox('wing.aileron_hinges.hinge_pins.right')"
+                )
+            ) == pytest.approx(_flat(pins0))
+            assert _flat(
+                pg.evaluate(
+                    "window.__lab.meshBox('wing.aileron_hinges.hinge_leaves.right')"
+                )
+            ) != pytest.approx(_flat(leaf0), abs=1e-3)
+            # the left wing's aileron stays neutral
+            _bare(pg)
+            frames = {}
+            for d in (0, 20):
+                pg.evaluate(f"window.__lab.setAileron({d}); window.__lab.advance(0.05)")
+                frames[d] = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
+            diff = (
+                ImageChops.difference(frames[0], frames[20])
+                .convert("L")
+                .point(lambda v: 255 if v > 30 else 0)
+            )
+            assert diff.histogram()[255] > 1500, diff.histogram()[255]
+            # a person's slider takes over, is clamped to 0..20 and reads as an angle
+            pg.evaluate("window.__lab.setAileron(12)")
+            w = pg.evaluate("window.__lab.wing()")
+            assert (
+                w["aileronDeg"] == 12
+                and w["aileronManual"] is True
+                and w["aileronText"] == "12 deg up"
+            )
+            pg.evaluate("window.__lab.setAileron(90)")
+            assert pg.evaluate("window.__lab.wing()")["aileronDeg"] == 20
+            pg.evaluate("window.__lab.setAileron(-5)")
+            assert pg.evaluate("window.__lab.wing()")["aileronDeg"] == 0
+            # on the other ops it is neutral and the control is not offered
+            for op in ("f19.controls", "f19.aileron-cut"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                w = pg.evaluate("window.__lab.wing()")
+                assert w["aileronDeg"] == 0 and w["aileronShown"] is False, op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_the_rudder_swings_to_30_deg_outboard_on_its_own_op_and_reads_with_its_sign(
+    rsite,
+):
+    g = _graph(rsite)
+    r = _m27(g)["rudder"]
+    assert r["max_deg"] == 30 and r["positive"].startswith("trailing edge outboard")
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            pg.evaluate("window.__lab.select('f20.rudder-hang')")
+            w = pg.evaluate("window.__lab.wing()")
+            assert (
+                w["rudderShown"] is True
+                and w["rudderDeg"] == 0
+                and w["rudderManual"] is False
+            ), w
+            _run(pg, 0.1)
+            ru = "winglet.rudder.rudder.right"
+            closed = pg.evaluate(f"window.__lab.meshBox('{ru}')")
+            hinge0 = pg.evaluate(
+                "window.__lab.meshBox('winglet.rudder_hinge.rudder_hinge.right')"
+            )
+            horn0 = pg.evaluate("window.__lab.meshBox('winglet.rudder.belhorn.right')")
+            last, texts = 0.0, set()
+            for _ in range(80):
+                _run(pg, 0.1)
+                d = pg.evaluate("window.__lab.wing()")["rudderDeg"]
+                assert d >= last - 1e-9, (last, d)
+                last = d
+                texts.add(pg.evaluate("window.__lab.kin().value"))
+            assert last == 30
+            assert "30 deg, trailing edge outboard: at the limit" in texts, texts
+            out = pg.evaluate(f"window.__lab.meshBox('{ru}')")
+            assert max(abs(a - b) for a, b in zip(_flat(out), _flat(closed))) > 0.02
+            assert _flat(
+                pg.evaluate(
+                    "window.__lab.meshBox('winglet.rudder_hinge.rudder_hinge.right')"
+                )
+            ) == pytest.approx(_flat(hinge0))
+            assert _flat(
+                pg.evaluate("window.__lab.meshBox('winglet.rudder.belhorn.right')")
+            ) != pytest.approx(
+                _flat(horn0), abs=1e-3
+            )  # the belhorn turns with the rudder
+            # outboard (B.L. grows, model Z falls) for the positive swing, the other way for the negative one
+            pg.evaluate("window.__lab.setRudder(-30); window.__lab.advance(0.05)")
+            inb = pg.evaluate(f"window.__lab.meshBox('{ru}')")
+            assert _mid(out)[2] < _mid(closed)[2] < _mid(inb)[2], (
+                _mid(out),
+                _mid(closed),
+                _mid(inb),
+            )
+            w = pg.evaluate("window.__lab.wing()")
+            assert (
+                w["rudderDeg"] == -30
+                and w["rudderText"] == "30 deg, trailing edge inboard: at the limit"
+            )
+            pg.evaluate("window.__lab.setRudder(99)")
+            assert pg.evaluate("window.__lab.wing()")["rudderDeg"] == 30
+            pg.evaluate("window.__lab.setRudder(0)")
+            assert pg.evaluate("window.__lab.wing()")["rudderText"] == "Neutral"
+            for op in ("f20.rudder-cut", "f20.lower-fin"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                w = pg.evaluate("window.__lab.wing()")
+                assert w["rudderDeg"] == 0 and w["rudderShown"] is False, op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_the_winglet_jig_draws_a_b_and_c_from_the_reference_point_on_its_op_only(
+    rsite,
+):
+    g = _graph(rsite)
+    wl = _m27(g)["winglet"]
+    assert wl["abc_book_in"] == [102.15, 108.35, 118.35] and wl["wprp"] == [149.6, 55.5]
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _bare(pg)
+            pg.evaluate("window.__lab.select('f20.jig')")
+            _run(pg, 6)
+            assert pg.evaluate("window.__lab.wing()")["abc"] is True
+            on = _cyan_pixels(pg.screenshot())
+            assert on > 300, on
+            labs = {x["id"]: x for x in pg.evaluate("window.__lab.labelsAll()")}
+            assert labs["winglet.abc.a"]["text"] == "A 102.15 in"
+            assert labs["winglet.abc.b"]["text"] == "B 108.35 in"
+            assert labs["winglet.abc.c"]["text"] == "C 118.35 in"
+            assert (
+                labs["winglet.abc.wprp"]["text"] == "Reference point: BL 55.5, FS 149.6"
+            )
+            assert all(
+                _legible(labs[f"winglet.abc.{k}"]) for k in ("a", "b", "c", "wprp")
+            )
+            k = pg.evaluate("window.__lab.kin()")
+            assert (
+                k["value"]
+                == "A 102.15, B 108.35, C 118.35 in from the reference point (BL 55.5, FS 149.6)"
+            )
+            assert "lean (3.58 in) is derived, low confidence" in k["sub"]
+            for op in ("f20.trim", "f20.lower-fin", "f19.attach"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 4)
+                assert pg.evaluate("window.__lab.wing()")["abc"] is False
+                assert _cyan_pixels(pg.screenshot()) < 40, op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_the_three_conflicts_and_the_cp_corrected_web_are_text_on_their_ops_never_a_bare_number(
+    rsite,
+):
+    s, url = serve(rsite)
+    want = {
+        "f19.cut-cores": "Leading edge at BL 106.25: printed FS 134.95, FS 134.45 from the chord and the trailing edge",
+        "f19.aileron-cut": "Aileron inboard end: BL 54.3 on p171, BL 55.5 cut at the foam joint",
+        "f19.attach": "Spar bolt spacing: 28.85 in on the drawing, 28.83 in in the text",
+        "f19.shear-web": "BL 23 to 70: 6 plies, BL 70 to 120: 4 plies, BL 120 to 157: 2 plies (CP26 LPC 31; plans print 3)",
+    }
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, text in want.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                assert pg.evaluate("window.__lab.kin().value") == text, op
+                assert pg.evaluate("document.getElementById('t-kin').hidden") is False
+                assert (
+                    pg.evaluate("document.getElementById('ro-kin').textContent") == text
+                )
+                if op != "f19.shear-web":
+                    assert "unresolved" in pg.evaluate(
+                        "document.getElementById('ro-kin-sub').textContent"
+                    ), op
+            # none of them is stated on the other ops
+            for op in ("f19.ribs", "f19.top-skin", "f20.jig"):
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                v = pg.evaluate(
+                    "document.getElementById('t-kin').hidden ? '' : document.getElementById('ro-kin').textContent"
+                )
+                assert not any(
+                    t in v for t in ("134.95", "54.3", "28.85", "plans print 3")
+                ), op
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_the_cp26_weight_rows_are_references_in_no_sum_and_follow_their_ops(rsite):
+    import json as _j
+
+    led = _j.loads((rsite / "ledger.json").read_text())
+    rows = led["prototype_weights"]["rows"]
+    assert [
+        rows[k]["weight_lb"]
+        for k in (
+            "wing_ch19",
+            "wing_complete",
+            "aileron",
+            "upper_winglet",
+            "lower_winglet",
+        )
+    ] == [51.5, 64.0, 5.125, 6.0, 1.19]
+    inc = led["cg"]["included"] + led["cg_lower_bound"]["included"]
+    assert not any(
+        k in inc
+        for k in (
+            "wing_ch19",
+            "wing_complete",
+            "aileron",
+            "upper_winglet",
+            "lower_winglet",
+        )
+    )
+    tag = "(CP26 builder weight, N26MS)"
+    expect = {
+        "f19.jig": None,
+        "f19.aileron-cut": None,
+        "f19.aileron-build": f"Aileron {tag}: 5.1 lb, reference, not in CG",
+        "f19.controls": f"Aileron {tag}: 5.1 lb, reference, not in CG",
+        "f19.attach": f"Wing to the end of chapter 19 {tag}: 51.5 lb each; aileron 5.1 lb, reference, not in CG",
+        "f20.trim": None,
+        "f20.lower-fin": f"Lower winglet {tag}: 1.2 lb, reference, not in CG",
+        "f20.rudder-cut": f"Lower winglet {tag}: 1.2 lb, reference, not in CG",
+        "f20.rudder-hang": f"Wing with winglets and rudder {tag}: 64.0 lb each, reference, not in CG",
+        "f18.safety-catch": f"Canopy {tag}: 16.0 lb, reference, not in CG",
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            for op, w in expect.items():
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                r = pg.evaluate("window.__lab.ref()")
+                assert (r["value"] if r else None) == w, (op, r)
+                shown = pg.evaluate(
+                    "!document.getElementById('t-ref').hidden && document.getElementById('ro-ref').textContent"
+                )
+                assert (shown or None) == w, (op, shown)
+                assert pg.evaluate("window.__lab.cg()")["value"] == "not yet computed"
+            pg.evaluate("window.__lab.select('f20.rudder-hang')")
+            _run(pg, 0.3)
+            assert "upper winglet 6.0 lb" in pg.evaluate("window.__lab.ref().sub")
+            assert (
+                pg.evaluate(
+                    "(() => { const e = document.getElementById('ro-ref'); return e.scrollWidth <= e.clientWidth + 1 })()"
+                )
+                is True
+            )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_the_plies_lay_down_in_build_order_and_the_web_caps_and_skins_have_their_counts(
+    rsite,
+):
+    g = _graph(rsite)
+    nodes = {k: v for k, v in _m27(g)["nodes"].items() if v["side"] == "right"}
+    by = {}
+    for k, v in sorted(nodes.items(), key=lambda kv: kv[1]["op_order"]):
+        by.setdefault(v["op"], []).append(k)
+    assert {o: len(n) for o, n in by.items()} == {
+        "f19.shear-web": 6,
+        "f19.bottom-cap": 5,
+        "f19.top-cap": 7,
+        "f19.bottom-skin": 3,
+        "f19.top-skin": 3,
+        "f20.skins": 5,
+        "f20.outside-layups": 7,
+    }
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1")
+            _to_fuselage(pg)
+            _run(pg, 0.1)
+            for op in ("f19.shear-web", "f19.bottom-cap", "f19.top-cap"):
+                names = by[op]
+                pg.evaluate(f"window.__lab.select('{op}')")
+                _run(pg, 0.3)
+                assert pg.evaluate("window.__lab.lay()") == len(names), op
+                for n in (1, 3):
+                    pg.evaluate(f"window.__lab.setLay({n})")
+                    _run(pg, 4)
+                    st = pg.evaluate("window.__lab.stateAll()")
+                    laid = [k for k in names if st[k] in ("built", "current")]
+                    assert laid == names[:n], (op, n, laid)  # in lay order
+                    assert all(st[k] == "hidden" for k in names[n:])
+            # the next op leaves them all built
+            pg.evaluate("window.__lab.select('f19.pads-plates')")
+            _run(pg, 0.3)
+            st = pg.evaluate("window.__lab.stateAll()")
+            assert all(st[k] == "built" for k in by["f19.shear-web"])
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_m27_tours_visit_every_chapter_19_and_20_op_in_order_hold_the_swings_and_end_on_the_last(
+    rsite,
+):
+    g = _graph(rsite)
+    for ch, hold, probe, last_expect in (
+        (19, "f19.aileron-build", "__lab.wing().aileronDeg", 20),
+        (20, "f20.rudder-hang", "__lab.wing().rudderDeg", 30),
+    ):
+        want = _chapter_ops(g, "roncz", ch)
+        assert len(want) == (18 if ch == 19 else 9)
+        s, url = serve(rsite)
+        try:
+            with sync_playwright() as p:
+                b, pg, errors = _open_rec(p, url)
+                _to_fuselage(pg)
+                pg.evaluate(f"__lab.select('{want[0]}')")
+                pg.click("#tour")
+                assert pg.evaluate("__lab.touring()") is True
+                seen, last = _tour_probe(pg, want, {hold: probe}, after="never")
+                assert seen == want, seen
+                assert last[hold] == last_expect, (
+                    last
+                )  # the swing reached its stop before the tour left the op
+                assert pg.evaluate("__lab.touring()") is False
+                assert pg.evaluate("__lab.selected()") == want[-1]
+                assert pg.evaluate("__lab.subject()") == "fuselage"
+                assert not errors, errors
+                b.close()
+        finally:
+            s.shutdown()

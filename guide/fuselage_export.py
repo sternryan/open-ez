@@ -1148,8 +1148,6 @@ M27_LABELS = {
     "tip_cap": "Tip cap",
     "jig_lines": "Jig lines A, B and C",
     "layup_3": "Corner layup 3, UND plies",
-    "skin_out": "Winglet outside skin plies",
-    "skin_in": "Winglet inside skin plies",
     "block_a": "Block A",
     "lower_fin": "Lower fin",
     "rudder": "Rudder",
@@ -1320,11 +1318,6 @@ def m27_section() -> dict:
                 "drawing_in": G.wing_spar_join_bolt_spacing_in,
                 "text_in": G.wing_spar_join_bolt_spacing_text_in,
             },
-        },
-        "shear_web": {
-            "zones": [list(z) for z in G.wing_shear_web_zones],
-            "outboard_plies_printed": G.wing_shear_web_outboard_plies_printed,
-            "note": "CP26 LPC 31: the outboard zone is 2 plies, the plans print 3",
         },
         "shear_web": {
             "zones": [list(z) for z in G.wing_shear_web_zones],
