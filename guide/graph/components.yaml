@@ -143,6 +143,12 @@
 - {id: elec.antennas, label: "Nav and comm antenna foil strips (lengths book, positions fitted)", fidelity: unvalidated}
 # Engine (chapter 23). No engine, mount, prop or exhaust dimension is printed in any held source; the engine block is a striped fitted shape.
 - {id: engine.block, label: "Engine block (fitted shape; installation is in Section II, not held)", fidelity: unvalidated}
+- {id: engine.starter, label: "Starter at the prop end (fitted shape; published mass 17 lb)", fidelity: unvalidated}
+- {id: engine.alternator, label: "Alternator at the prop end (fitted shape; published mass 7 lb)", fidelity: unvalidated}
+- {id: engine.magnetos, label: "Two magnetos on the rear face (fitted shape)", fidelity: unvalidated}
+- {id: engine.carburettor, label: "Carburettor on the sump bottom (fitted shape)", fidelity: unvalidated}
+- {id: engine.fuel_pump, label: "Fuel pump (fitted shape)", fidelity: unvalidated}
+- {id: engine.mount_pads, label: "Four dynafocal mount pads (fitted shape)", fidelity: unvalidated}
 - {id: engine.bracket, label: "Throttle and mixture bracket (sizes book, shape fitted)", fidelity: unvalidated}
 - {id: engine.cowl, label: "Cowl outline (trim and reinforcement book, shape fitted)", fidelity: unvalidated}
 - {id: engine.rib, label: "Wing-root metal rib (sheet size book, outline fitted)", fidelity: unvalidated}

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import {
-  m28Where, partBase, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, fuelText, cutoutText, layup7Text, batteryText, starterText, engineText, layupText, m28Kin, m28Row,
+  m28Where, partBase, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, fuelText, cutoutText, layup7Text, batteryText, starterText, engineText, engineCgText, layupText, m28Kin, m28Row,
   CH21, CH22, CH23, KIT_PARTS, KIT_LIFT_IN, M28_GHOST_OPS, TANK_OPS, CUT_PARTS_OP, CUTOUTS_OP, JIG_BOND_OP, CLOSE_TANK_OP, BATTERY_OP, ROOT_RIB_OP, ENGINE_OP, type M28Data,
 } from '../src/logic/strake'
 import { M25_CHAPTERS, FUSE_PREFIXES } from '../src/logic/m25'
@@ -24,7 +24,7 @@ const rows = Object.entries(d.parts)
 const order = ['f17.fixed-trim-tab', 'f18.safety-catch', 'f19.attach', 'f16.aileron-linkage', 'f20.rudder-hang', 'f16.rudder-cable-rig', 'f16.brake-cables', ...CH21, ...CH22, ...CH23]
 const where = (part: string, op: string | null) => m28Where(d.parts[part], op, order)
 
-test('the python section has 20 strake parts a side, 15 electrical and 5 engine parts: every part row names an op of chapters 21 to 23', () => {
+test('the python section has 20 strake parts a side, 15 electrical and 11 engine parts: every part row names an op of chapters 21 to 23', () => {
   const all = new Set([...CH21, ...CH22, ...CH23])
   for (const [k, r] of rows) {
     assert.ok(all.has(r.show.from), `${k} shows from ${r.show.from}`)
@@ -33,7 +33,7 @@ test('the python section has 20 strake parts a side, 15 electrical and 5 engine 
   }
   assert.equal(rows.filter(([, r]) => r.component.startsWith('strake.')).length, 40)
   assert.equal(rows.filter(([, r]) => r.component.startsWith('elec.')).length, 15)
-  assert.equal(rows.filter(([, r]) => r.component.startsWith('engine.')).length, 5)
+  assert.equal(rows.filter(([, r]) => r.component.startsWith('engine.')).length, 11)
   assert.equal(partBase(d.parts.strake_ribs_rib_r23_right), 'rib_r23')
   assert.equal(partBase(d.parts.elec_battery_shelf_shelf), 'shelf')
   assert.equal(partBase(d.parts.engine_rib_rib_left), 'rib_left')
@@ -91,6 +91,13 @@ test('the electrical and engine parts stand from their own ops, striped (represe
   assert.equal(where('engine_rib_rib_right', ROOT_RIB_OP), 'jig')
   assert.ok(rows.every(([, r]) => r.fidelity === 'representational' || r.fidelity === 'derived'))
   assert.ok(d.engine.striped.includes('engine.block.block') && d.parts.engine_block_block.fidelity === 'representational')
+  for (const c of ['starter', 'alternator', 'magnetos', 'carburettor', 'fuel_pump', 'mount_pads']) {
+    const r = d.parts[`engine_${c}_${c}`]
+    assert.equal(r.fidelity, 'representational', c)
+    assert.ok(d.engine.striped.includes(`engine.${c}.${c}`) && r.label.includes('(fitted shape'), c)
+    assert.equal(where(`engine_${c}_${c}`, 'f22.antennas'), 'none', c)
+    assert.equal(where(`engine_${c}_${c}`, ENGINE_OP), 'jig', c)
+  }
   assert.ok(d.parts.engine_block_block.label.includes('Section II, not held') && d.parts.engine_block_block.label.includes('(fitted shape'))
   assert.ok(d.parts.elec_battery_battery.label.includes('station not printed'))
 })
@@ -133,11 +140,28 @@ test('the battery station is a range, the starter and alternator a bound, the en
   assert.equal(starterText(d).value, 'Starter, ring gear and alternator: station 150 or aft (CP27 page 4), not drawn')
   assert.ok(starterText(d).sub.startsWith('A bound, not a station'))
   assert.equal(engineText(d).value, 'Engine with accessories at most 246 lb, vibrating mass at most 286 lb; oil 8 lb at FS 140')
-  assert.ok(engineText(d).sub.startsWith('Fitted shape; installation in Section II, not held') && engineText(d).sub.includes('30 x 32 x 18 in, 2 deg down thrust'), engineText(d).sub)
+  assert.ok(engineText(d).sub.startsWith('Fitted shape; installation in Section II, not held') && engineText(d).sub.includes('O-235 component model (fitted shape) placed from the prop flange, 2 deg down thrust') && !engineText(d).sub.includes('30 x 32 x 18'), engineText(d).sub)
   assert.equal(m28Kin('f22.battery-shelf', d)!.value, batteryText(d).value)
   assert.equal(m28Kin('f22.firewall-terminals', d)!.value, starterText(d).value)
   assert.equal(m28Kin(ENGINE_OP, d)!.value, engineText(d).value)
   for (const op of ['f21.jig-bond', 'f21.vent-screen', 'f22.microswitches', 'f22.antennas', 'f23.carb-bracket', 'f23.root-rib', null]) assert.equal(m28Kin(op, d), null, String(op))
+})
+
+test('the f23 engine-op readout states the component-model CG from the exported table and answers only its own op', () => {
+  const t = engineCgText(d)
+  const u = d.engine.mass.cg_from_flange_in.toFixed(2)
+  assert.equal(t, `component model, CG ${u} in from the flange vs TCDS 14.75`)
+  assert.ok(Number(u) > 0 && Number(u) < 30 && d.engine.mass.tcds_cg_from_flange_in === 14.75)
+  assert.ok(m28Kin(ENGINE_OP, d)!.sub.includes(t), m28Kin(ENGINE_OP, d)!.sub)
+  // the number follows the export: change it and the text follows
+  const moved = { ...d, engine: { ...d.engine, mass: { ...d.engine.mass, cg_from_flange_in: 13.37 } } }
+  assert.ok(m28Kin(ENGINE_OP, moved)!.sub.includes('CG 13.37 in from the flange'))
+  // null test: no other op shows it, earlier ones in chapters 21 to 23 included
+  for (const op of [...CH21, ...CH22, ...CH23].filter((o) => o !== ENGINE_OP)) {
+    const k = m28Kin(op, d)
+    assert.ok(!k || !(k.value + k.sub).includes('component model'), op)
+  }
+  assert.equal(m28Kin('f19.top-skin', d), null)
 })
 
 test('the layup schedules come from the ops own materials: collapsed by cloth, with where each ply goes; an op with a conflict carries both', () => {

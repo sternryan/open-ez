@@ -35,6 +35,11 @@ an undimensioned image.
 - **CG limits.** Computed from the NP, graded against the LOADED envelope FS 97 to 103 (om-1980:p28).
   They do not wait on the ledger. The empty CG (111.7 in the OM sample) is outside that band by design
   and is never graded against it (ledger row 63).
+- **O-235 engine component CG.** The component model (`core/engine_o235_book.py`, layout frozen and hashed in
+  ledger row 70) reproduces the TCDS 243 lb by construction, but its CG sits 11.09 in forward of the prop flange against
+  TCDS 14.75 (+-0.5) and 0.56 in below the crank line against 1.13 (+-0.3): strict xfail, rows 70 and 71. Do not re-tune
+  the layout to pass; a re-tune needs a source, a new row and a new hash. Also strict xfail on the frozen layout: the
+  carburettor pokes through the cowl bottom and the throttle bracket hangs below it (row 71).
 
 ## Code
 
@@ -56,6 +61,14 @@ an undimensioned image.
   decision with the captain (row 68).
 - **VSPAERO leg.** Re-run 2026-10-04 on the M2.8 planform (delta +1.63 in, ledger rows 62 and 66). Re-run it again after
   any change to the analysis planform or the strakes; the report reads `not run` when the stored run is stale.
+
+- **O-235 engine module, what stays unsourced** (engine-module proposal section 8). Every engine dimension (length,
+  case, cylinder pitch, flange, mount pads), every core component mass (the residual is a modelling choice), the
+  firewall-to-pad standoff (Section IIL, not held), which starter and alternator the TCDS weight includes, the
+  hub-to-flange offset beyond the 3 in extension, the crank-line WL (`eng_book_block_wl`), the Lycoming left/right
+  convention (`FITTED_LYCOMING_LEFT_V_SIGN`), the handbook densities, and the Slick 4251/4250 weight (the registered
+  figure is the 4300 series). The CG sensitivity check discriminates thinly: one admissible fitted input moves it by
+  more than 0.5 in (row 70). A dependency-consistent sensitivity run is open. The O-200 variant is a later milestone.
 
 ## Completed
 

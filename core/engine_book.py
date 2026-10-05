@@ -20,6 +20,7 @@ from .fuselage_book import FusePart, G, z_of_wl
 
 _P156, _P157, _P158, _P171 = (f"plans-1980:p{n}" for n in (156, 157, 158, 171))
 _CP32 = "cp-text:p32"
+_CP26, _CP27, _TCDS = "cp-text:p26", "cp-text:p27", "tcds-e223:p7"
 
 # Fitted, not book. Each is a stand-in; none enters config, GEOMETRY_PROVENANCE or a ledger readout.
 FITTED_COWL_FWD = 125.4  # fitted, not book: the cowl's forward edge, just aft of the stainless-faced firewall (F.S. 125.28)
@@ -55,34 +56,38 @@ def _box(x0, x1, y0, y1, z0, z1) -> cq.Solid:
 
 
 # ---- the block ---------------------------------------------------------------------------------------------------------------------------
-def _block_frame() -> tuple[float, float, float, float, float, float]:
-    """(length, width, height, centre x, centre y, centre z) of the unrotated block."""
-    length, width, height = G.eng_book_block_in
-    cx = G.eng_book_block_fwd_fs + length / 2
-    return length, width, height, cx, G.eng_book_crank_bl, z_of_wl(G.eng_book_block_wl)
+# Ledger row 71: the block is now the O-235 component compound of core.engine_o235_book (crankcase, four cylinders, sump, accessory housing, crank stub
+# and flange disc), placed from the prop flange datum (eng_o235_flange_fs) and pitched about the flange point. The old 30 by 32 by 18 box and its
+# unsourced front station eng_book_block_fwd_fs are retired: the front face is derived below.
+def block() -> cq.Workplane:
+    """The engine block: crankcase + cylinders + sump + accessory housing + crank stub and flange disc, representational, placed from the flange."""
+    from . import engine_o235_book as o
+
+    shapes = []
+    for wp in (
+        o.crankcase(),
+        o.cylinders(),
+        o.sump(),
+        o.accessory_housing(),
+        o.crank_flange(),
+    ):
+        shapes.extend(wp.vals()[0].Solids())
+    return _solid(cq.Compound.makeCompound(shapes))
+
+
+def block_front_fs() -> float:
+    """F.S. of the block's front (anti-prop) face: the smallest x of the block compound. Derived from the flange; replaces eng_book_block_fwd_fs."""
+    return cq.Compound.makeCompound(block().vals()).BoundingBox().xmin
 
 
 def block_bottom_z(x: float) -> float:
-    """z of the block's bottom face at F.S. ``x`` on the centreline (the face is pitched with the crank: the aft end is higher by the down thrust)."""
-    length, _w, height, cx, _cy, cz = _block_frame()
+    """z of the engine's lowest underside (the carburettor bottom) at F.S. ``x`` on the centreline: a plane pitched with the crank, the aft end higher by the down thrust."""
+    from . import engine_o235_book as o
+
+    depth = -(o.FITTED_CARB_POS[2] - o.FITTED_CARB_SIZE[2] / 2)
+    fx, _fy, fz = o._datum()
     th = math.radians(DOWN_THRUST_DEG)
-    return cz - (height / 2) / math.cos(th) + (x - cx) * math.tan(th)
-
-
-def block() -> cq.Workplane:
-    """The engine block: O-235-sized, aft of the firewall on BL 0, crank pitched with the prop flange end up by ``eng_book_down_thrust_deg``."""
-    length, width, height, cx, cy, cz = _block_frame()
-    s = _box(
-        cx - length / 2,
-        cx + length / 2,
-        cy - width / 2,
-        cy + width / 2,
-        cz - height / 2,
-        cz + height / 2,
-    )
-    # a turn about +y by -th takes +x toward +z: the aft (prop flange) end rises
-    s = s.rotate(cq.Vector(cx, cy, cz), cq.Vector(cx, cy + 1.0, cz), -DOWN_THRUST_DEG)
-    return _solid(s)
+    return fz - depth / math.cos(th) + (x - fx) * math.tan(th)
 
 
 # ---- the bracket ---------------------------------------------------------------------------------------------------------------------------
@@ -91,7 +96,7 @@ def bracket() -> cq.Workplane:
     length, width, t = G.eng_book_bracket_plate_in
     oil_d, oil_from_carb, carb_d, carb_from_fwd = G.eng_book_bracket_holes_in
     ang_a, ang_b, ang_t = G.eng_book_bracket_angle_in
-    x0 = G.eng_book_block_fwd_fs + FITTED_BRACKET_X
+    x0 = block_front_fs() + FITTED_BRACKET_X
     zt = (
         block_bottom_z(x0 + length) - FITTED_BRACKET_GAP
     )  # the lowest the block comes over the plate is its forward end
@@ -175,6 +180,12 @@ def rib_left() -> cq.Workplane:
 # ---- assembly ----------------------------------------------------------------------------------------------------------------------------------
 COMPONENT_PARTS = {
     "engine.block": ("block",),
+    "engine.starter": ("starter",),
+    "engine.alternator": ("alternator",),
+    "engine.magnetos": ("magnetos",),
+    "engine.carburettor": ("carburettor",),
+    "engine.fuel_pump": ("fuel_pump",),
+    "engine.mount_pads": ("mount_pads",),
     "engine.bracket": ("bracket",),
     "engine.cowl": ("cowl",),
     "engine.rib": ("rib_right", "rib_left"),
@@ -183,14 +194,16 @@ COMPONENT_PARTS = {
 
 @lru_cache(maxsize=1)
 def build_engine() -> dict[str, FusePart]:
+    from . import engine_o235_book as o235
+
     rep = "representational"
     return {
         "block": FusePart(
             "block",
             block(),
             rep,
-            (_P156, _P171, _CP32),
-            "O-235-sized block (fitted shape; installation is in Section II, not held), aft of the firewall on BL 0 with the crank pitched 2 deg down thrust (CP32 p5); no engine, mount, prop or exhaust dimension is printed in any held source; oil FS 140 and the starter at station 150+ fall inside it; striped in the lab",
+            (_P156, _P171, _CP32, _TCDS),
+            "O-235 block compound (fitted shape; installation is in Section II, not held): crankcase, four cylinders sized from the TCDS bore, sump, accessory housing, crank stub and prop flange disc, placed from the prop flange face at F.S. 155.8 (cp-text:p28) on BL 0 with the crank pitched 2 deg down thrust (CP32 p5); nothing but the stub and disc lies aft of the flange; no engine, mount, prop or exhaust dimension is printed in any held source; striped in the lab",
         ),
         "bracket": FusePart(
             "bracket",
@@ -198,6 +211,48 @@ def build_engine() -> dict[str, FusePart]:
             rep,
             (_P156,),
             "throttle and mixture bracket: the 0.063 plate 6.5 by 2.5 in with the 2 in oil-drain hole and the 1.8 in carb hole (printed; the 1.8 is medium) and a 2 by 2 in upright angle under its aft end; where it sits on the engine is fitted",
+        ),
+        "starter": FusePart(
+            "starter",
+            o235.starter(),
+            rep,
+            (_CP27, _TCDS),
+            "starter at the prop end, station 150 and aft (CP27 p4), published mass 17 lb (cp-text:p49); fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
+        ),
+        "alternator": FusePart(
+            "alternator",
+            o235.alternator(),
+            rep,
+            (_CP27, _TCDS),
+            "belt alternator at the prop end, published mass 7 lb (cp-text:p49, cp-text:p26); fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
+        ),
+        "magnetos": FusePart(
+            "magnetos",
+            o235.magnetos(),
+            rep,
+            (_CP27, _TCDS),
+            "two magnetos on the anti-prop rear face, upper left and right (Slick, vendor-slick-4300); fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
+        ),
+        "carburettor": FusePart(
+            "carburettor",
+            o235.carburettor(),
+            rep,
+            (_CP27, _TCDS),
+            "carburettor on the sump bottom pad; fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
+        ),
+        "fuel_pump": FusePart(
+            "fuel_pump",
+            o235.fuel_pump(),
+            rep,
+            (_CP27, _TCDS),
+            "plunger fuel pump on the rear left pad (TCDS E-223 p4 NOTE 4); fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
+        ),
+        "mount_pads": FusePart(
+            "mount_pads",
+            o235.mount_pads(),
+            rep,
+            (_CP26, _TCDS),
+            "four dynafocal mount pads on the case rear face; not in the engine dry weight (the closure row owns the mount, cp-text:p26); fitted size and position (core.engine_o235_book FITTED_*, ledger rows 70 and 71), no dimensioned drawing is held",
         ),
         "cowl": FusePart(
             "cowl",

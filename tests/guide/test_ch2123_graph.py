@@ -58,6 +58,12 @@ COMPONENTS = {
     "engine.bracket",
     "engine.cowl",
     "engine.rib",
+    "engine.starter",
+    "engine.alternator",
+    "engine.magnetos",
+    "engine.carburettor",
+    "engine.fuel_pump",
+    "engine.mount_pads",
 }
 
 

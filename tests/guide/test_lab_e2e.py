@@ -7560,7 +7560,7 @@ def test_m28_every_chapter_21_to_23_op_shows_its_parts_in_build_order_striped_an
     g = _graph(rsite)
     ops, byid = _m28_ops(g)
     rows = _m28(g)["parts"]
-    assert len(rows) == 2 * 20 + 15 + 5
+    assert len(rows) == 2 * 20 + 15 + 11
     assert all(r["fidelity"] in ("representational", "derived") for r in rows.values())
     s, url = serve(rsite)
     try:
@@ -7818,7 +7818,11 @@ def test_m28_the_fuel_conflict_the_battery_range_the_starter_bound_and_the_engin
         "f21.fuselage-cutouts": ("Unresolved", "FS 90 in the manual", "FS 80.6"),
         "f22.battery-shelf": ("FS 11 for illustration only",),
         "f22.firewall-terminals": ("A bound, not a station",),
-        "f23.engine-install": ("Fitted shape; installation in Section II, not held",),
+        "f23.engine-install": (
+            "Fitted shape; installation in Section II, not held",
+            "component model, CG ",
+            "in from the flange vs TCDS 14.75",
+        ),
     }
     s, url = serve(rsite)
     try:

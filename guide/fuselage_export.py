@@ -1387,6 +1387,12 @@ M28_SHOW_FROM = {  # a part's first op (the lab shows it from here on)
     "nav_strip_left": "f22.antennas",
     "comm_strips": "f22.antennas",
     "block": "f23.engine-install",
+    "starter": "f23.engine-install",
+    "alternator": "f23.engine-install",
+    "magnetos": "f23.engine-install",
+    "carburettor": "f23.engine-install",
+    "fuel_pump": "f23.engine-install",
+    "mount_pads": "f23.engine-install",
     "bracket": "f23.carb-bracket",
     "cowl": "f23.cowl-trim",
     "rib_right": "f23.root-rib",
@@ -1429,6 +1435,12 @@ M28_LABELS = {
     "nav_strip_left": "Left nav antenna strip",
     "comm_strips": "Comm antenna strips (in the right winglet)",
     "block": "Engine block (installation in Section II, not held)",
+    "starter": "Starter (prop end, station 150 and aft)",
+    "alternator": "Alternator (prop end)",
+    "magnetos": "Magnetos (two, anti-prop face)",
+    "carburettor": "Carburettor (sump bottom)",
+    "fuel_pump": "Fuel pump",
+    "mount_pads": "Dynafocal mount pads (four)",
     "bracket": "Throttle and mixture bracket",
     "cowl": "Cowl outline",
     "rib_right": "Right wing-root metal rib",
@@ -1497,10 +1509,49 @@ def m28_components() -> dict:
     return out
 
 
+_ENGINE_STRIPED_COMPONENTS = (
+    "engine.block",
+    "engine.starter",
+    "engine.alternator",
+    "engine.magnetos",
+    "engine.carburettor",
+    "engine.fuel_pump",
+    "engine.mount_pads",
+)
+
+
+def _engine_mass_table() -> dict:
+    """The O-235 component mass table for the f23 readout; every number comes from core.engine_o235_book at export time."""
+    from core import engine_o235_book as o
+
+    m = o.engine_mass_properties()
+    return {
+        "total_lb": round(m.total_lb, 3),
+        "cg_fs": round(m.cg_fs, 3),
+        "cg_bl": round(m.cg_bl, 3),
+        "cg_wl": round(m.cg_wl, 3),
+        "cg_from_flange_in": round(o.cg_in_engine_frame(m)[0], 3),
+        "tcds_cg_from_flange_in": G.eng_o235_cg_from_flange_in,
+        "flange_fs": G.eng_o235_flange_fs,
+        "rows": [
+            {
+                "name": r.name,
+                "mass_lb": round(r.mass_lb, 3),
+                "band": list(r.band) if r.band else None,
+                "cg_xyz": [round(v, 3) for v in r.cg_xyz],
+                "status": r.status,
+                "cite": list(r.cite),
+            }
+            for r in m.rows
+        ],
+    }
+
+
 def m28_section() -> dict:
     """layup.json["fuselage"]["extras"]["m28"]: a row per part (node, component, side, fidelity, label, cite, extents, the op it shows from), the fuel capacity conflict
     with the tank envelope's own volume, the battery range, the engine inputs, and the weights that are reference only. Representational parts say "fitted shape"."""
     from core import electrical_book as eb
+    from core import engine_book as _ng
     from core import strake_book as sb
     from core.ledger import load_ledger
 
@@ -1582,10 +1633,17 @@ def m28_section() -> dict:
             "down_thrust_deg": G.eng_book_down_thrust_deg,
             "crank_bl": G.eng_book_crank_bl,
             "block_in": list(G.eng_book_block_in),
-            "block_fwd_fs": G.eng_book_block_fwd_fs,
+            "block_fwd_fs": round(_ng.block_front_fs(), 4),  # derived from the flange (ledger row 71), not the retired G.eng_book_block_fwd_fs
             "limits_lb": [G.eng_book_engine_max_lb, G.eng_book_vibrating_max_lb],
             "oil": {"lb": G.eng_book_oil_lb, "fs": G.eng_book_oil_fs},
-            "striped": ["engine.block.block"],
+            "striped": [
+                f"{cid}.{n}"
+                for cid, names in _ng.COMPONENT_PARTS.items()
+                for n in names
+                if built["engine"][n].fidelity == "representational"
+                and cid in _ENGINE_STRIPED_COMPONENTS
+            ],
+            "mass": _engine_mass_table(),
             "note": "installation is in Sections IIA, IIC and IIL, not held; no engine, mount, prop or exhaust station is printed",
         },
         "weights": {

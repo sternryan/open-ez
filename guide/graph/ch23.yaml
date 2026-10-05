@@ -8,7 +8,7 @@
   summary: This op stands for the engine installation that lives in Sections IIA, IIC and IIL, none of which the owner holds. Chapter 23 only fixes the limits, an O-200 or O-235 with accessories under 246 lb and a vibrating mass under 286 lb, and says the engine sits on BL 0 with 2 deg of down thrust. The lab shows an O-235-sized block aft of the firewall, striped as a fitted shape. Tape the throttle cables to the fuselage side and pot them in silicone. The exhaust drawings the page promises are not held either.
   variants: [both]
   requires: [f15.stainless-firewall, f16.firewall-bearing, f22.firewall-terminals]
-  components: [engine.block]
+  components: [engine.block, engine.starter, engine.alternator, engine.magnetos, engine.carburettor, engine.fuel_pump, engine.mount_pads]
   geometry_visible: true
   sources:
     - {doc: scan-1980, scan_pp: 156}

@@ -994,7 +994,26 @@ M28_ELEC = {
     "elec.lights",
     "elec.antennas",
 }
-M28_ENGINE = {"engine.block", "engine.bracket", "engine.cowl", "engine.rib"}
+M28_ENGINE = {
+    "engine.block",
+    "engine.bracket",
+    "engine.cowl",
+    "engine.rib",
+    "engine.starter",
+    "engine.alternator",
+    "engine.magnetos",
+    "engine.carburettor",
+    "engine.fuel_pump",
+    "engine.mount_pads",
+}
+M28_ENGINE_NEW = {
+    "engine.starter",
+    "engine.alternator",
+    "engine.magnetos",
+    "engine.carburettor",
+    "engine.fuel_pump",
+    "engine.mount_pads",
+}
 
 
 def test_m28_components_are_group_nodes_with_a_child_per_part_and_side(fuse_export):
@@ -1033,6 +1052,42 @@ def test_m28_components_are_group_nodes_with_a_child_per_part_and_side(fuse_expo
         if n["name"].startswith(("strake.", "elec.", "engine."))
         and n.get("extras", {}).get("workshop")
     ]
+
+
+def test_m28_new_engine_parts_are_striped_nodes_with_rows(fuse_export):
+    j = _glb_json(fuse_export)
+    idx = {n["name"]: i for i, n in enumerate(j["nodes"])}
+    parent = _parents(j)
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m28"]
+    for cid in M28_ENGINE_NEW:
+        kid = f"{cid}.{cid.split('.')[1]}"
+        assert parent[idx[kid]] == cid and "mesh" in j["nodes"][idx[kid]], kid
+        row = ex["parts"][kid.replace(".", "_")]
+        assert row["fidelity"] == "representational" and row["node"] == kid
+        assert "(fitted shape" in row["label"] and row["show"]["from"] == (
+            "f23.engine-install"
+        )
+        assert kid in ex["engine"]["striped"]
+
+
+def test_m28_engine_mass_table_is_exported_from_the_core_numbers(fuse_export):
+    from core import engine_o235_book as o
+
+    m = o.engine_mass_properties()
+    u = o.cg_in_engine_frame(m)[0]
+    ex = json.loads((fuse_export.parent / "layup.json").read_text())["fuselage"][
+        "extras"
+    ]["m28"]["engine"]["mass"]
+    assert ex["total_lb"] == pytest.approx(m.total_lb, abs=0.01)
+    assert ex["cg_fs"] == pytest.approx(m.cg_fs, abs=0.01)
+    assert ex["cg_from_flange_in"] == pytest.approx(u, abs=0.01)
+    assert ex["tcds_cg_from_flange_in"] == 14.75
+    assert [r["name"] for r in ex["rows"]] == [r.name for r in m.rows]
+    assert sum(r["mass_lb"] for r in ex["rows"]) == pytest.approx(ex["total_lb"], abs=0.02)
+    # a table that does not follow the kernel fails: the export holds no typed number
+    assert ex["cg_from_flange_in"] != 14.75
 
 
 def test_m28_nodes_sit_in_the_airframe_frame_in_inches(fuse_export):
@@ -1083,8 +1138,8 @@ def test_m28_layup_section_names_every_part_the_conflicts_and_the_reference_weig
         "extras"
     ]["m28"]
     parts = ex["parts"]
-    # 20 strake parts a side, 15 electrical parts, 5 engine parts
-    assert len(parts) == 20 * 2 + 15 + 5
+    # 20 strake parts a side, 15 electrical parts, 11 engine parts (5 old + the 6 O-235 component parts, ledger row 71)
+    assert len(parts) == 20 * 2 + 15 + 11
     assert {
         r["component"] for r in parts.values()
     } == M28_STRAKE | M28_ELEC | M28_ENGINE
@@ -1134,7 +1189,13 @@ def test_m28_layup_section_names_every_part_the_conflicts_and_the_reference_weig
     e = ex["engine"]
     assert e["down_thrust_deg"] == 2.0 and e["limits_lb"] == [246.0, 286.0]
     assert e["oil"] == {"lb": 8.0, "fs": 140.0} and e["striped"] == [
-        "engine.block.block"
+        "engine.block.block",
+        "engine.starter.starter",
+        "engine.alternator.alternator",
+        "engine.magnetos.magnetos",
+        "engine.carburettor.carburettor",
+        "engine.fuel_pump.fuel_pump",
+        "engine.mount_pads.mount_pads",
     ]
     assert "not held" in e["note"]
     w = ex["weights"]

@@ -56,13 +56,18 @@ export interface M28PartRow {
   fs_min: number; fs_max: number; bl_min: number; bl_max: number; show: { from: string }; op_index: number
   void?: boolean; pocket?: boolean; in_foam?: boolean; inset?: boolean
 }
+/** the O-235 component mass table (guide/fuselage_export.py _engine_mass_table, from core.engine_o235_book) */
+export interface EngineMassLite {
+  total_lb: number; cg_fs: number; cg_bl: number; cg_wl: number; cg_from_flange_in: number; tcds_cg_from_flange_in: number; flange_fs: number
+  rows: { name: string; mass_lb: number; band: number[] | null; cg_xyz: number[]; status: string; cite: string[] }[]
+}
 /** layup.json "fuselage"."extras"."m28" (guide/fuselage_export.py m28_section) */
 export interface M28Data {
   parts: Record<string, M28PartRow>
   fuel: { model_gal_per_side: number; plans_gal_per_tank: number; om_gal_per_tank: number; om_total_gal: number; envelope_gal_per_side: number; lb_per_gal: number; arm_fs: number; note: string }
   conflicts: { cutout_aft_top_depth: { mid_in: number; aft_end_in: number }; baggage_arm: { om_fs: number; plan_centroid_fs: number }; layup_7_numbering: string[] }
   battery: { fs_range: number[]; model_fs: number; status: string; added_lb: number; starter_fs_min: number; relay_fs: number }
-  engine: { down_thrust_deg: number; crank_bl: number; block_in: number[]; block_fwd_fs: number; limits_lb: number[]; oil: { lb: number; fs: number }; striped: string[]; note: string }
+  engine: { down_thrust_deg: number; crank_bl: number; block_in: number[]; block_fwd_fs: number; limits_lb: number[]; oil: { lb: number; fs: number }; striped: string[]; note: string; mass: EngineMassLite }
   weights: { rows: string[]; note: string; closure_target: { empty_lb: number; empty_arm_in: number; cite: string; loaded_envelope_fs: number[]; note: string }; cg: string }
 }
 export interface MaterialLite { cloth: string; plies: number; where: string }
@@ -153,8 +158,13 @@ export function engineText(d: M28Data): { value: string; sub: string } {
   const e = d.engine
   return {
     value: `Engine with accessories at most ${r2(e.limits_lb[0])} lb, vibrating mass at most ${r2(e.limits_lb[1])} lb; oil ${r2(e.oil.lb)} lb at FS ${r2(e.oil.fs)}`,
-    sub: `Fitted shape; installation in Section II, not held. The block is ${e.block_in.map(r2).join(' x ')} in, ${r2(e.down_thrust_deg)} deg down thrust`,
+    sub: `Fitted shape; installation in Section II, not held. O-235 component model (fitted shape) placed from the prop flange, ${r2(e.down_thrust_deg)} deg down thrust`,
   }
+}
+/** the component-model CG, read from the exported mass table (never typed): shown on the engine op only */
+export function engineCgText(d: M28Data): string {
+  const m = d.engine.mass
+  return `component model, CG ${m.cg_from_flange_in.toFixed(2)} in from the flange vs TCDS ${r2(m.tcds_cg_from_flange_in)}`
 }
 /** the plies an op lays, from its own schedule (graph "materials"): "5 plies: 3 BID + 2 UND" and where each goes */
 export function layupText(materials: MaterialLite[]): { value: string; sub: string } | null {
@@ -179,7 +189,7 @@ export function m28Kin(opId: string | null, d: M28Data, materials: MaterialLite[
       case PLUMBING_OP: return { label: 'Fuel capacity', ...fuelText(d) }
       case BATTERY_OP: return { label: 'Battery station', ...batteryText(d) }
       case TERMINALS_OP: return { label: 'Starter station', ...starterText(d) }
-      case ENGINE_OP: return { label: 'Engine limits', ...engineText(d) }
+      case ENGINE_OP: { const e = engineText(d); return { label: 'Engine limits', value: e.value, sub: `${e.sub}. ${engineCgText(d)}` } }
       default: return null
     }
   }

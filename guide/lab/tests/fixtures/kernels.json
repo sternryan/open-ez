@@ -3793,12 +3793,127 @@
      "cite": [
       "plans-1980:p156",
       "plans-1980:p171",
-      "cp-text:p32"
+      "cp-text:p32",
+      "tcds-e223:p7"
      ],
-     "fs_min": 126.695,
-     "fs_max": 157.305,
+     "fs_min": 134.0842,
+     "fs_max": 156.4382,
      "bl_min": -16.0,
      "bl_max": 16.0,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_starter_starter": {
+     "node": "engine.starter.starter",
+     "component": "engine.starter",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Starter (prop end, station 150 and aft) (fitted shape)",
+     "cite": [
+      "cp-text:p27",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 151.8731,
+     "fs_max": 155.5236,
+     "bl_min": 0.7188,
+     "bl_max": 5.0938,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_alternator_alternator": {
+     "node": "engine.alternator.alternator",
+     "component": "engine.alternator",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Alternator (prop end) (fitted shape)",
+     "cite": [
+      "cp-text:p27",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 152.1565,
+     "fs_max": 154.9021,
+     "bl_min": -4.6562,
+     "bl_max": -1.1562,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_magnetos_magnetos": {
+     "node": "engine.magnetos.magnetos",
+     "component": "engine.magnetos",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Magnetos (two, anti-prop face) (fitted shape)",
+     "cite": [
+      "cp-text:p27",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 129.7049,
+     "fs_max": 134.1993,
+     "bl_min": -4.6562,
+     "bl_max": 4.6562,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_carburettor_carburettor": {
+     "node": "engine.carburettor.carburettor",
+     "component": "engine.carburettor",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Carburettor (sump bottom) (fitted shape)",
+     "cite": [
+      "cp-text:p27",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 140.6554,
+     "fs_max": 145.1498,
+     "bl_min": -2.1875,
+     "bl_max": 2.1875,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_fuel_pump_fuel_pump": {
+     "node": "engine.fuel_pump.fuel_pump",
+     "component": "engine.fuel_pump",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Fuel pump (fitted shape)",
+     "cite": [
+      "cp-text:p27",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 132.0474,
+     "fs_max": 134.3405,
+     "bl_min": 1.375,
+     "bl_max": 4.4375,
+     "show": {
+      "from": "f23.engine-install"
+     },
+     "op_index": 214
+    },
+    "engine_mount_pads_mount_pads": {
+     "node": "engine.mount_pads.mount_pads",
+     "component": "engine.mount_pads",
+     "side": null,
+     "fidelity": "representational",
+     "label": "Dynafocal mount pads (four) (fitted shape)",
+     "cite": [
+      "cp-text:p26",
+      "tcds-e223:p7"
+     ],
+     "fs_min": 137.0518,
+     "fs_max": 139.1323,
+     "bl_min": -5.525,
+     "bl_max": 5.525,
      "show": {
       "from": "f23.engine-install"
      },
@@ -3813,8 +3928,8 @@
      "cite": [
       "plans-1980:p156"
      ],
-     "fs_min": 131.0,
-     "fs_max": 137.5,
+     "fs_min": 138.0842,
+     "fs_max": 144.5842,
      "bl_min": -1.25,
      "bl_max": 1.25,
      "show": {
@@ -3924,7 +4039,7 @@
      32.0,
      18.0
     ],
-    "block_fwd_fs": 127.0,
+    "block_fwd_fs": 134.0842,
     "limits_lb": [
      246.0,
      286.0
@@ -3934,8 +4049,204 @@
      "fs": 140.0
     },
     "striped": [
-     "engine.block.block"
+     "engine.block.block",
+     "engine.starter.starter",
+     "engine.alternator.alternator",
+     "engine.magnetos.magnetos",
+     "engine.carburettor.carburettor",
+     "engine.fuel_pump.fuel_pump",
+     "engine.mount_pads.mount_pads"
     ],
+    "mass": {
+     "total_lb": 243.0,
+     "cg_fs": 144.737,
+     "cg_bl": 0.131,
+     "cg_wl": 22.055,
+     "cg_from_flange_in": 11.089,
+     "tcds_cg_from_flange_in": 14.75,
+     "flange_fs": 155.8,
+     "rows": [
+      {
+       "name": "starter",
+       "mass_lb": 17.0,
+       "band": [
+        16.7,
+        17.2
+       ],
+       "cg_xyz": [
+        153.698,
+        2.906,
+        3.103
+       ],
+       "status": "derived",
+       "cite": [
+        "cp-text:p49"
+       ]
+      },
+      {
+       "name": "alternator",
+       "mass_lb": 7.0,
+       "band": [
+        4.25,
+        9.0
+       ],
+       "cg_xyz": [
+        153.529,
+        -2.906,
+        7.944
+       ],
+       "status": "derived",
+       "cite": [
+        "cp-text:p49",
+        "cp-text:p26"
+       ]
+      },
+      {
+       "name": "magnetos",
+       "mass_lb": 7.5,
+       "band": [
+        7.5,
+        12.5
+       ],
+       "cg_xyz": [
+        131.952,
+        0.0,
+        7.094
+       ],
+       "status": "derived",
+       "cite": [
+        "vendor-slick-4300:p1",
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "crankcase",
+       "mass_lb": 69.567,
+       "band": null,
+       "cg_xyz": [
+        144.76,
+        -0.0,
+        5.214
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "crank_stub",
+       "mass_lb": 2.209,
+       "band": null,
+       "cg_xyz": [
+        153.614,
+        -0.0,
+        5.524
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "flange_disc",
+       "mass_lb": 1.591,
+       "band": null,
+       "cg_xyz": [
+        156.073,
+        0.0,
+        5.61
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "cylinder_barrels",
+       "mass_lb": 84.689,
+       "band": null,
+       "cg_xyz": [
+        144.76,
+        0.0,
+        5.214
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "cylinder_heads",
+       "mass_lb": 21.962,
+       "band": null,
+       "cg_xyz": [
+        144.76,
+        0.0,
+        5.214
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "sump",
+       "mass_lb": 13.963,
+       "band": null,
+       "cg_xyz": [
+        142.774,
+        -0.0,
+        -1.64
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "accessory_housing",
+       "mass_lb": 13.468,
+       "band": null,
+       "cg_xyz": [
+        136.156,
+        0.0,
+        4.914
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "carburettor",
+       "mass_lb": 3.101,
+       "band": null,
+       "cg_xyz": [
+        142.903,
+        -0.0,
+        -5.326
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      },
+      {
+       "name": "fuel_pump",
+       "mass_lb": 0.95,
+       "band": null,
+       "cg_xyz": [
+        133.194,
+        2.906,
+        2.872
+       ],
+       "status": "representational",
+       "cite": [
+        "tcds-e223:p7"
+       ]
+      }
+     ]
+    },
     "note": "installation is in Sections IIA, IIC and IIL, not held; no engine, mount, prop or exhaust station is printed"
    },
    "weights": {
