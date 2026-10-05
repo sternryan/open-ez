@@ -57,7 +57,7 @@ an undimensioned image.
   (the engine is aft of FS 125); `engine_mass_kg` 113 (249.1 lb) disagrees with `engine_dry_weight_lb` 243 and
   both sit near the 246 lb book limit (plans-1980:p156). No engine arm is printed in any held source
   (Sections IIA, IIC and IIL are not held). Fix at ledger closure.
-- **VSPAERO leg.** Re-run 2026-10-04 on the M2.8 planform (delta +1.62 in, ledger row 62). Re-run it again after
+- **VSPAERO leg.** Re-run 2026-10-04 on the M2.8 planform (delta +1.63 in, ledger rows 62 and 66). Re-run it again after
   any change to the analysis planform or the strakes; the report reads `not run` when the stored run is stale.
 
 ## Completed

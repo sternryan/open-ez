@@ -59,7 +59,7 @@ are in [`docs/block1-report.md`](docs/block1-report.md). In short:
   Roncz canard's chord was found, so the planform uses the GU canard's span and area from the
   owner's manual and is flagged as a conflict.
 - **The two-method neutral point check fails.** The analytic method gives FS 110.79 and VSPAERO
-  gives FS 112.41, against a bound of 1.0 in. It is left failing on purpose rather than tuned. The
+  gives FS 112.42, against a bound of 1.0 in. It is left failing on purpose rather than tuned. The
   report's diagnosis is the analytic model of canard downwash on the swept wing.
 - **Empty weight and the CG limits fail** against the manual. The structural weight model is partial;
   the per-part ledger in Block 2 is meant to close the empty weight (target: the manual's sample, 730 lb

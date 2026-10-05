@@ -17,7 +17,10 @@ The report treats the run as current only if its ``geometry`` block matches
 
 Run with the interpreter that has the OpenVSP bindings (the project venv
 does not):
-    python3.13 scripts/vspaero_np.py
+    python3.13 scripts/vspaero_np.py [--out PATH]
+
+--out writes the JSON somewhere other than the committed baseline (a remote lane must not
+overwrite it). VSP_NCPU (default 4) sets the VSPAERO thread count.
 
 The config module is standard-library only, so it imports under that
 interpreter directly; nothing else from the project is imported here.
@@ -25,8 +28,10 @@ interpreter directly; nothing else from the project is imported here.
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
+import os
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -215,6 +220,7 @@ def _solve(
     vsp.SetIntAnalysisInput(a, "AlphaNpts", [ALPHA_NPTS])
     vsp.SetDoubleAnalysisInput(a, "MachStart", [0.0])
     vsp.SetIntAnalysisInput(a, "MachNpts", [1])
+    vsp.SetIntAnalysisInput(a, "NCPU", [int(os.environ.get("VSP_NCPU", "4"))])
     vsp.SetIntAnalysisInput(a, "Symmetry", [1])
     vsp.SetIntAnalysisInput(a, "RefFlag", [0])  # manual reference values below
     vsp.SetDoubleAnalysisInput(a, "Sref", [ref["Sref_sqin"]])
@@ -270,7 +276,16 @@ def _solve(
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="output JSON (default: OUT_PATH, the committed baseline)",
+    )
+    args = ap.parse_args(argv)
+    out_path = args.out if args.out is not None else OUT_PATH
     sys.path.insert(0, str(REPO))
     from config import config  # stdlib-only module
 
@@ -293,13 +308,18 @@ def main() -> int:
         "geometry": geometry_marker(geo),
         **result,
     }
-    OUT_PATH.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
     print(
         f"VSPAERO NP = FS {out['np_fs']:.2f} (dCMy/dCL {out['dCMy_dCL']:.5f}, r^2 {out['fit_r_squared']:.6f})"
     )
     for r in out["sweep"]:
         print(f"  alpha {r['alpha_deg']:6.2f}  CL {r['CL']:.5f}  CMy {r['CMy']:.5f}")
-    print(f"wrote {OUT_PATH.relative_to(REPO)}")
+    try:
+        shown = out_path.resolve().relative_to(REPO)
+    except ValueError:
+        shown = out_path.resolve()
+    print(f"wrote {shown}")
     return 0
 
 

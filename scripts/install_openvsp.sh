@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install_openvsp.sh
 # ==================
-# Install OpenVSP 3.48.2 Python bindings for macOS ARM64 (Apple Silicon).
+# Install OpenVSP 3.53.1 Python bindings for macOS ARM64 (Apple Silicon).
 #
 # IMPORTANT: OpenVSP is NOT available on pip or conda-forge.
 # It ships as a macOS application bundle with embedded Python bindings.
@@ -10,7 +10,7 @@
 #
 # Requirements:
 #   - macOS ARM64 (Apple Silicon)
-#   - Python 3.13 (OpenVSP 3.48.2 bundles Python 3.13 bindings)
+#   - Python 3.13 (OpenVSP 3.53.1 bundles Python 3.13 bindings)
 #     Install via: brew install python@3.13
 #   - curl and unzip (system tools, always present on macOS)
 #
@@ -25,10 +25,13 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-OPENVSP_VERSION="3.48.2"
+# Upstream deletes old builds (the 3.48.2 binaries were withdrawn), so a durable copy of every
+# fleet version lives on hearth at /tank/share/artifacts/openvsp/ (with SHA256SUMS).
+# 3.53.1 mac zip sha256: 7d625a5cbcec03cb33cb8ab63585ee6834640ebb85524e04538e022ae37e86f1
+OPENVSP_VERSION="3.53.1"
 OPENVSP_DOWNLOAD_URL="https://openvsp.org/download.php?file=zips/current/mac/OpenVSP-${OPENVSP_VERSION}-macos-14-ARM64-Python3.13.zip"
 INSTALL_DIR="${HOME}/.local/openvsp"
-OPENVSP_EXTRACT_DIR="${INSTALL_DIR}/OpenVSP-${OPENVSP_VERSION}-macos-14-ARM64-Python3.13"
+OPENVSP_EXTRACT_DIR="${INSTALL_DIR}/OpenVSP-${OPENVSP_VERSION}-MacOS"  # the zip unpacks to this name
 ZIP_PATH="${INSTALL_DIR}/openvsp-${OPENVSP_VERSION}-macos-arm64.zip"
 
 # ---------------------------------------------------------------------------

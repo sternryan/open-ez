@@ -3,6 +3,7 @@
 # Usage: bash scripts/remote_test.sh [pytest args]      e.g. -k lab, tests/guide
 #        Adds -m "not local_render" unless the args carry their own -m (local_render tests are judged on the laptop).
 # Env:   OPEN_EZ_TEST_HOST (required: ssh name of the node), OPEN_EZ_TEST_N (xdist workers, default 16),
+#        OPENEZ_REQUIRE_VSPAERO / VSP_RUNNER (forwarded to the remote pytest: the VSPAERO leg fails instead of skipping),
 #        OPEN_EZ_TEST_TIMEOUT (wall cap for the remote run in seconds, default 1500; needs `timeout` on PATH)
 # Remote layout: ~/open-ez-test (tree), ~/open-ez-test-venv (python 3.12 + deps + playwright chromium).
 # Tests build their own GLB (guide.export_glb) into tmp dirs, so output/ is not synced.
@@ -33,10 +34,15 @@ has_m=0
 for a in "${ARGS[@]+"${ARGS[@]}"}"; do case "$a" in -m|-m*) has_m=1 ;; esac; done
 [ "$has_m" = 1 ] || ARGS=(-m "not local_render" "${ARGS[@]+"${ARGS[@]}"}")
 # ssh joins its arguments into one remote command line, so quote every argument (a multi-word -m must stay one word).
-REMOTE_ARGS=$(printf '%q ' "$N" "${ARGS[@]}")
+# The REMOTE heredoc is quoted, so local env does not cross ssh: OPENEZ_REQUIRE_VSPAERO and VSP_RUNNER ride as positional args (after N).
+REMOTE_ARGS=$(printf '%q ' "$N" "${OPENEZ_REQUIRE_VSPAERO:-}" "${VSP_RUNNER:-}" "${ARGS[@]}")
 "${CAP[@]+"${CAP[@]}"}" ssh "${SSH_OPTS[@]}" "$HOST" "bash -s -- $REMOTE_ARGS" <<'REMOTE'
 set -uo pipefail
 N="$1"; shift
+export OPENEZ_REQUIRE_VSPAERO="$1"; shift
+export VSP_RUNNER="$1"; shift
+[ -n "$OPENEZ_REQUIRE_VSPAERO" ] || unset OPENEZ_REQUIRE_VSPAERO
+[ -n "$VSP_RUNNER" ] || unset VSP_RUNNER
 cd ~/open-ez-test
 V=~/open-ez-test-venv/bin
 sum() { cat requirements*.txt | sha256sum | cut -c1-16; }
