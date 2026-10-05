@@ -71,3 +71,10 @@ sources:
     copy: transcription
     page_basis: pdf
     note: a single web page, cite p1; read and noted, never stored in the repo. The SKU name is the plans' cloth name, so the weight needs no style-number equivalence.
+  tcds-e223:
+    title: FAA Type Certificate Data Sheet E-223, Lycoming O-235 series
+    edition: Revision 22, 31 Jan 2020 (FAA DRS); read 2026-10-04
+    obtain: FAA Dynamic Regulatory System, TCDS E-223 (public)
+    copy: transcription
+    page_basis: pdf
+    note: NOTE 8 (p7) gives dry weight and the dry CG from the propeller flange front face, including starter and generator. Read and noted, never stored in the repo.

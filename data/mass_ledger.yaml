@@ -147,3 +147,220 @@ prototype_weights:
     weight_lb: 183.0
     cite: "cp-text:p26 CP26 page 3 complete fuselage with center section and gear, no strakes, canard, canopy or engine mount"
     note: "reference only, for the later ledger-closure test; not used in any sum"
+
+# Block 2 2.n closure table (frozen before any sum; sha256 recorded in docs/geometry-correction-ledger.md row 65).
+# Every arm is PUBLISHED FS (config datum_offset_in is 0 since 2026-09-29; core to_published_datum is the identity, no shift left to apply).
+# weight status: book | builder | derived | allowance | unsourced | conflict. arm_status is the same word list for the arm alone.
+# Bands: book zero; builder = published finish delta else +-5 percent; derived = its derivation; allowance = stated range; unsourced = +-50 percent and +-10 in.
+# A placeholder weight under `unsourced` is not a measurement; it only gives the band a centre.
+closure:
+  rows:
+    - &fuselage
+      name: fuselage
+      label: "Fuselage with centre-section spar, gear struts and brake cylinders"
+      weight_lb: 183.0
+      weight_band_lb: [173.85, 192.15]
+      arm_fs: 68.1
+      arm_band_fs: [58.1, 78.1]
+      status: builder
+      arm_status: unsourced
+      cite: ["cp-text:p26 complete fuselage weight, no strakes or canopy"]
+      note: "N26MS ready-to-finish weight, band +-5 percent. Includes spar and gear struts, so no separate spar or strut row. Wheels and tyres are not named in it, see wheels_brakes. Arm: no page; centre is the model's lower-bound part centroid, band +-10 in."
+    - &wings
+      name: wings
+      label: "Both wings with winglets, rudders and ailerons"
+      weight_lb: 132.4
+      weight_band_lb: [128.0, 132.6]
+      arm_fs: 127.5
+      arm_band_fs: [117.4, 141.6]
+      status: derived
+      arm_status: derived
+      cite: ["cp-text:p26 wing ready to finish, 64 lb each", "cp-text:p27 finish adds about 2.2 lb per wing"]
+      note: "2 x 64 plus 2 x 2.2 derived finish delta; band is 2 x 64 up to the 2.3 delta. Arm: quarter chord of the config reference-trapezoid MAC (MAC LE 117.4, MAC 40.3), band from MAC LE to 0.6 MAC; winglets sit further aft and are not split out."
+    - &canard
+      name: canard
+      label: "Canard with fairing cover"
+      weight_lb: 18.5
+      weight_band_lb: [17.58, 19.43]
+      arm_fs: 21.96
+      arm_band_fs: [18.7, 31.72]
+      status: builder
+      arm_status: derived
+      cite: ["cp-text:p27 canard with fairing cover, 18.5 lb", "plans-1980:p171 canard LE at FS 18.7"]
+      note: "N26MS, band +-5 percent. Arm: LE FS 18.7 plus a quarter of the config chord 13.02; band spans the whole chord."
+    - &elevators
+      name: elevators
+      label: "Both elevators"
+      weight_lb: 6.5
+      weight_band_lb: [6.18, 6.83]
+      arm_fs: 29.77
+      arm_band_fs: [26.5, 31.72]
+      status: builder
+      arm_status: derived
+      cite: ["cp-text:p27 elevators 3.5 and 3.0 lb"]
+      note: "N26MS, separate from the canard row, band +-5 percent. Arm: 85 percent of config chord behind canard LE, band from 60 percent to the trailing edge."
+    - &canopy
+      name: canopy
+      label: "Canopy with hinges, filled and painted"
+      weight_lb: 17.0
+      weight_band_lb: [16.0, 17.0]
+      arm_fs: 79.3
+      arm_band_fs: [69.3, 89.3]
+      status: builder
+      arm_status: derived
+      cite: ["cp-text:p27 canopy with hinges, painted, 17 lb", "cp-text:p26 canopy before finish, 16 lb"]
+      note: "Band is the unfinished to painted pair. Arm: midpoint of the config front and rear cut stations (41.65, 117.0), mass spread unknown so band +-10 in."
+    - &strakes
+      name: strakes_with_tanks
+      label: "Strakes including fuel tank structure, no fuel"
+      weight_lb: 30.0
+      weight_band_lb: [15.0, 45.0]
+      arm_fs: 104.5
+      arm_band_fs: [94.5, 114.5]
+      status: unsourced
+      arm_status: derived
+      cite: []
+      note: "No held page weighs strakes or tanks; the 183 lb fuselage excludes strakes. Weight is a placeholder centre, band +-50 percent. Arm: the printed fuel station (om-1980:p26) used as the tank centre, band +-10 in."
+    - &engine
+      name: engine
+      label: "Engine, dry"
+      weight_lb: 243.0
+      weight_band_lb: [236.0, 247.0]
+      arm_fs: 141.05
+      arm_band_fs: [140.8, 141.3]
+      status: derived
+      arm_status: derived
+      cite: ["tcds-e223:p7 NOTE 8 O-235 C-series dry weight and CG from flange", "cp-text:p28 prop hub forward face FS 158.8 with 3 in extension", "plans-1980:p156 engine limit 246 lb with accessories"]
+      note: "Weight: O-235-C1C/H2C 243 lb (TCDS), band the C-series spread 236 to 247; the TCDS figure INCLUDES starter and generator (NOTE 8 header). The config's 113 kg (249.1 lb) matches no source. Arm by closure.engine_arm_method: flange 158.8 - 3.0 = 155.8, CG 14.75 forward of it = 141.05; band +-0.25 for the dash-number spread (14.51 for E/G/M/P). Revised after the Task 4 adversary: the 158.8 flange alternative and the +-0.5 allowance were dropped as unsupported."
+    - &engine_mount
+      name: engine_mount
+      label: "Dynafocal engine mount"
+      weight_lb: 5.19
+      weight_band_lb: [4.93, 5.45]
+      arm_fs: 130.0
+      arm_band_fs: [125.0, 140.0]
+      status: builder
+      arm_status: derived
+      cite: ["cp-text:p26 dynafocal mount, 5 lb 3 oz"]
+      note: "N26MS, not inside the 183 lb fuselage. Arm: firewall FS 125 plus an unprinted standoff, band 125 to 140."
+    - &cowl
+      name: cowl
+      label: "Cowl, both halves"
+      weight_lb: 15.0
+      weight_band_lb: [12.0, 18.0]
+      arm_fs: 140.0
+      arm_band_fs: [130.0, 150.0]
+      status: builder
+      arm_status: unsourced
+      cite: ["cp-text:p27 cowl 12 lb graphite, 18 lb glass"]
+      note: "Published range, centre of the two. Arm: no page; aft of firewall FS 125, band +-10 in."
+    - &prop
+      name: prop_spinner
+      label: "Propeller and spinner"
+      weight_lb: 20.0
+      weight_band_lb: [10.0, 30.0]
+      arm_fs: 161.0
+      arm_band_fs: [158.8, 166.0]
+      status: unsourced
+      arm_status: derived
+      cite: ["cp-text:p28 prop hub forward face FS 158.8"]
+      note: "No held page gives a propeller or spinner weight: placeholder, band +-50 percent. Arm: aft of the hub forward face FS 158.8 (CP28 p8); hub and spinner depth unprinted, band to FS 166, nominal 161."
+    - &battery
+      name: battery_25ah
+      label: "Larger battery over the small one"
+      weight_lb: 19.0
+      weight_band_lb: [0.0, 19.0]
+      arm_fs: 11.0
+      arm_band_fs: [0.0, 22.0]
+      status: derived
+      arm_status: derived
+      cite: ["cp-text:p27 ladder step 4, 25 Ah battery about 19 lb over small"]
+      note: "Ladder delta, N26MS. The small battery stays inside the step-1 configuration. Band down to 0 because the OM airplane may carry the small one. Arm: nose compartment, FS 0 to 22."
+    - &starter
+      name: starter_ring_alternator
+      label: "Starter, ring gear, alternator, relays and brackets"
+      weight_lb: 0.0
+      weight_band_lb: [0.0, 49.5]
+      arm_fs: 150.0
+      arm_band_fs: [150.0, 170.0]
+      status: derived
+      arm_status: derived
+      cite: ["cp-text:p27 ladder step 4 adds 68.5 lb including the battery"]
+      note: "Step 4 delta less the 19 lb battery is the upper bound. Nominal 0: the engine row's TCDS weight already includes a starter and generator, so a nominal here would double-count; the OM airplane is basic electrical. Arm: FS 150 and aft (CP27 p4), band 150 to 170."
+    - &instruments
+      name: instruments
+      label: "Instruments (allowance)"
+      weight_lb: 15.0
+      weight_band_lb: [10.0, 20.0]
+      arm_fs: 40.0
+      arm_band_fs: [35.0, 45.0]
+      status: allowance
+      arm_status: derived
+      cite: ["cp-text:p27 step 1 bundles VFR panel and gauges", "om-1980:p35 instrument panel front side FS 40"]
+      note: "No instrument weights printed; allowance 10 to 20 lb. Arm: panel station FS 40."
+    - &interior
+      name: interior
+      label: "Interior and seat hardware (allowance)"
+      weight_lb: 20.0
+      weight_band_lb: [10.0, 30.0]
+      arm_fs: 81.0
+      arm_band_fs: [71.0, 91.0]
+      status: allowance
+      arm_status: derived
+      cite: ["om-1980:p26 pilot arm 59, passenger arm 103"]
+      note: "No weights printed for cushions, belts or headrests; allowance 10 to 30 lb. Arm: midway between the two occupant arms, band +-10 in."
+    - &finish
+      name: finish_unweighed
+      label: "Finish on surfaces never weighed finished (allowance)"
+      weight_lb: 10.0
+      weight_band_lb: [6.0, 18.0]
+      arm_fs: 85.0
+      arm_band_fs: [75.0, 95.0]
+      status: allowance
+      arm_status: unsourced
+      cite: ["cp-text:p27 painted wing, canopy, aileron deltas 3 to 6 percent", "cp-text:p12 one builder's finish was 18 lb"]
+      note: "Fuselage, strakes and cowl have only unfinished weights. Allowance: 3 to 6 percent of them, capped by the 18 lb builder figure. Wing, canopy, aileron deltas are already in their rows. Arm: spread over surfaces, band +-10 in."
+    - &wheels
+      name: wheels_brakes
+      label: "Wheels, tyres and axles (unsourced)"
+      weight_lb: 20.2
+      weight_band_lb: [0.0, 30.3]
+      arm_fs: 110.5
+      arm_band_fs: [100.5, 120.5]
+      status: unsourced
+      arm_status: derived
+      cite: []
+      note: "Remainder of the retired 45 lb lump; no page weighs wheels. Brake cylinders are inside the 183 lb fuselage, wheels and tyres are not named there, so the band reaches 0 for overlap. Arm: main axle FS 110.5 (plans-1980:p171); the nose wheel share is not split out."
+  # N26MS step-1 configuration (cp-text:p27 ladder step 1): graphite cowl, small battery, no alternator, no starter.
+  # Compared with prototype_weights.rows.n26ms_empty_1 (693.4). The larger battery and starter rows are absent; the small battery has no weight page and is absent too.
+  method_check_rows:
+    - *fuselage
+    - *wings
+    - *canard
+    - *elevators
+    - *canopy
+    - *strakes
+    - *engine
+    - *engine_mount
+    - name: cowl_graphite
+      label: "Cowl in graphite (step-1 configuration)"
+      weight_lb: 12.0
+      weight_band_lb: [11.4, 12.6]
+      arm_fs: 140.0
+      arm_band_fs: [130.0, 150.0]
+      status: builder
+      arm_status: unsourced
+      cite: ["cp-text:p27 graphite cowl 12 lb"]
+      note: "Published weight, band +-5 percent. Arm as the cowl row."
+    - *prop
+    - *instruments
+    - *interior
+    - *finish
+    - *wheels
+  predicted_gap:
+    weight_lb: [17, 37]
+    cite: "cp-text:p27"
+    note: "Equipment between N26MS ladder steps 1 and 3 (CP27 p4); basic electrical sits between. Registered before any sum."
+  engine_arm_method:
+    status: "written 2026-10-04 by the captain after the public-source research (docs/harness/2n-engine-research.md) and before any closure sum was run; the Task 4 adversary (gpt-6-astra) then rejected the 158.8 flange alternative and the +-0.5 allowance as unsupported, and both were dropped. Disclosure: the adversary's reply printed a partial nominal row sum (no fuselage row, engine at the placeholder arm); no CG was seen before the arm was entered."
+    text: "Engine CG FS = propeller flange front face FS less 14.75 in (tcds-e223:p7 NOTE 8, O-235 C-series; Lycoming measures toward the crankcase, which on the pusher is forward). Flange FS from CP28 p8: prop hub forward face FS 158.8 including the recommended 3 in extension, read as flange = 158.8 - 3.0 = 155.8 (nominal) with 158.8 (extension not between) as the aft bound. Band +-0.25 in for the dash-number spread (14.51 for E/G/M/P). arm = 155.8 - 14.75 = 141.05; band [140.8, 141.3]. Cross-check: CP54 p6 about 15 in from the flange (same datum)."
