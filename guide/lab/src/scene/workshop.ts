@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { matte, surf } from '../core/materials'
+import { roomPlanes, type RoomPlane } from '../logic/roomCull'
 
 /**
  * Our own build shop, procedural and merged to one draw call per material. World units are metres, +Y up.
@@ -20,31 +21,57 @@ export interface Workshop {
   jigTopY: number
   /** world centres of the jig blocks along Z (representational, see below) */
   jigZ: number[]
+  /** the room's wall planes (inward normals), for the per-frame cull */
+  planes: RoomPlane[]
+  /** one group per plane key; everything fixed to that plane lives in it, so hiding the group hides the plane's props too */
+  planeGroups: Record<string, THREE.Group>
+  /** the cull's one switch. Eye inside the room (nothing hidden): the whole room is drawn from one merged mesh per material (the draw count of a room with no groups).
+   *  Some plane hidden: the plane groups (each visible unless hidden), the rest of the shop, and the ground apron are drawn instead. */
+  setHidden(hidden: ReadonlySet<string>): void
 }
 
 export class Batch {
-  private m = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[] }>()
+  private m = new Map<string, { key: string; plane: string; mat: THREE.Material; geos: THREE.BufferGeometry[] }>()
+  /** plane group that following adds belong to ('' = the shop group itself); merged per (plane, material) */
+  plane = ''
   constructor(private mats: Record<string, THREE.Material>) {}
   add(key: string, geo: THREE.BufferGeometry, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
     geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1)))
     const g = geo.index ? geo.toNonIndexed() : geo
     for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal' && n !== 'uv') g.deleteAttribute(n)
-    if (!this.m.has(key)) this.m.set(key, { mat: this.mats[key], geos: [] })
-    this.m.get(key)!.geos.push(g)
+    const id = `${this.plane}|${key}`
+    if (!this.m.has(id)) this.m.set(id, { key, plane: this.plane, mat: this.mats[key], geos: [] })
+    this.m.get(id)!.geos.push(g)
   }
   box(key: string, w: number, h: number, d: number, x: number, y: number, z: number, ry = 0) { this.add(key, new THREE.BoxGeometry(w, h, d), x, y, z, 0, ry, 0) }
   /** cylinder along an axis: 'x' | 'y' | 'z' */
   cyl(key: string, r: number, len: number, axis: 'x' | 'y' | 'z', x: number, y: number, z: number, seg = 16) {
     this.add(key, new THREE.CylinderGeometry(r, r, len, seg), x, y, z, axis === 'z' ? Math.PI / 2 : 0, 0, axis === 'x' ? Math.PI / 2 : 0)
   }
-  flush(group: THREE.Group, shadow: { cast: Set<string>; receive: Set<string> }) {
-    for (const [key, { mat, geos }] of this.m) {
-      const mesh = new THREE.Mesh(mergeGeometries(geos, false)!, mat)
-      mesh.name = `shop.${key}`
+  /** One merged mesh per material (`shop.<key>`) holding everything, as with no planes at all, and, only for materials that have plane-bound parts,
+   *  per-plane meshes in the plane groups plus a `.rest` mesh of the unbound parts. The cull shows either the first or the second set (see Workshop.setHidden). */
+  flush(group: THREE.Group, shadow: { cast: Set<string>; receive: Set<string> }, planeGroups: Record<string, THREE.Group> = {}) {
+    const mk = (key: string, geos: THREE.BufferGeometry[], name: string) => {
+      const mesh = new THREE.Mesh(mergeGeometries(geos, false)!, this.mats[key])
+      mesh.name = name
       mesh.castShadow = shadow.cast.has(key)
       mesh.receiveShadow = shadow.receive.has(key)
-      group.add(mesh)
+      return mesh
     }
+    const byKey = new Map<string, { plane: string; geos: THREE.BufferGeometry[] }[]>()
+    for (const { key, plane, geos } of this.m.values()) byKey.set(key, [...(byKey.get(key) ?? []), { plane, geos }])
+    const combined: THREE.Mesh[] = [], split: THREE.Mesh[] = []
+    for (const [key, parts] of byKey) {
+      const all = mk(key, parts.flatMap((p) => p.geos), `shop.${key}`)
+      group.add(all); combined.push(all)
+      if (!parts.some((p) => p.plane)) continue
+      for (const { plane, geos } of parts) {
+        const m = mk(key, geos, plane ? `shop.${key}` : `shop.${key}.rest`)
+        ;(plane ? planeGroups[plane] : group).add(m)
+        if (!plane) split.push(m)
+      }
+    }
+    return { combined, rest: split }
   }
 }
 
@@ -79,6 +106,7 @@ export function buildWorkshop(span: number, chord: number): Workshop {
   const M: Record<string, THREE.Material> = {
     floor: surf({ color: 0x77736c, metalness: 0, roughness: 0.62, detail: 1.3, colorVar: 0.2, roughVar: 0.5, name: 'concrete' }),
     seam: matte(0x35322e, 0.9),
+    apron: matte(0x4d4a45, 1), // the ground beyond the slab, for outside shots: close to the concrete, darker, matte
     wall: matte(0xb4b8bd, 0.92, { detail: 0.8, colorVar: 0.07 }),
     wainscot: matte(0x3f5866, 0.7, { detail: 1.5, colorVar: 0.05 }),
     ceiling: matte(0x6a6d72, 0.95),
@@ -103,6 +131,9 @@ export function buildWorkshop(span: number, chord: number): Workshop {
     lamp: glow(0xffb45a, 4),
   }
   const B = new Batch(M)
+  const planes = roomPlanes(R)
+  const planeGroups: Record<string, THREE.Group> = {}
+  for (const p of planes) { const g = new THREE.Group(); g.name = p.key; planeGroups[p.key] = g; group.add(g) }
 
   // ---- shell: floor with slab seams, walls, wainscot, ceiling, beams ----
   const W = R.x1 - R.x0, D = R.z1 - R.z0, cx = (R.x0 + R.x1) / 2, cz = (R.z0 + R.z1) / 2
@@ -110,14 +141,16 @@ export function buildWorkshop(span: number, chord: number): Workshop {
   for (let x = R.x0 + 1.25; x < R.x1; x += 2.5) B.box('seam', 0.012, 0.004, D, x, 0.001, cz)
   for (let z = R.z0 + 1.2; z < R.z1; z += 2.4) B.box('seam', W, 0.004, 0.012, cx, 0.001, z)
   // a wall slab plus a darker wainscot on its room side; (nx, nz) points into the room
-  const wall = (x: number, z: number, w: number, d: number, nx: number, nz: number) => {
+  const wall = (plane: string, x: number, z: number, w: number, d: number, nx: number, nz: number) => {
+    B.plane = plane
     B.box('wall', w, R.h, d, x, R.h / 2, z)
     B.box('wainscot', w + (nx ? 0.03 : 0), 1.05, d + (nz ? 0.03 : 0), x + nx * 0.015, 0.525, z + nz * 0.015)
   }
-  wall(R.x1 + 0.1, cz, 0.2, D, -1, 0) // back wall
-  wall(cx, R.z0 - 0.1, W, 0.2, 0, 1) // window wall
-  wall(cx, R.z1 + 0.1, W, 0.2, 0, -1)
-  wall(R.x0 - 0.1, cz, 0.2, D, 1, 0)
+  wall('room.back', R.x1 + 0.1, cz, 0.2, D, -1, 0) // back wall
+  wall('room.window', cx, R.z0 - 0.1, W, 0.2, 0, 1) // window wall
+  wall('room.side', cx, R.z1 + 0.1, W, 0.2, 0, -1)
+  wall('room.door', R.x0 - 0.1, cz, 0.2, D, 1, 0)
+  B.plane = 'room.ceiling'
   B.box('ceiling', W, 0.2, D, cx, R.h + 0.1, cz)
   for (let z = R.z0 + 0.8; z < R.z1; z += 1.6) B.box('beam', W, 0.28, 0.14, cx, R.h - 0.14, z)
 
@@ -128,6 +161,7 @@ export function buildWorkshop(span: number, chord: number): Workshop {
   }
 
   // ---- window on the -Z wall, daylight ----
+  B.plane = 'room.window'
   const Wn = WINDOW
   B.box('win', Wn.w, Wn.h, 0.02, Wn.x, Wn.y, Wn.z + 0.01)
   for (const mx of [-Wn.w / 4, Wn.w / 4, 0]) B.box('frame', 0.05, Wn.h + 0.08, 0.05, Wn.x + mx, Wn.y, Wn.z + 0.04)
@@ -135,6 +169,7 @@ export function buildWorkshop(span: number, chord: number): Workshop {
   B.box('frame', Wn.w + 0.24, 0.06, 0.2, Wn.x, Wn.y - Wn.h / 2 - 0.05, Wn.z + 0.1) // sill
 
   // ---- back wall: pegboard with tools, steel shelving with cloth rolls, LED accent ----
+  B.plane = 'room.back'
   const bx = R.x1 - 0.02
   B.box('peg', 0.03, 1.1, 2.6, bx, 1.8, 0.6)
   B.box('darksteel', 0.05, 0.04, 2.7, bx - 0.02, 2.37, 0.6) // pegboard rail
@@ -163,7 +198,8 @@ export function buildWorkshop(span: number, chord: number): Workshop {
   B.box('led', 0.02, 0.025, D - 0.4, R.x1 - 0.02, 1.07, cz) // teal accent along the wainscot cap
   B.box('lamp', 0.04, 0.04, 0.5, R.x1 - 0.05, 2.6, 1.9) // a warm work-light strip over the door side
 
-  // ---- fabric roll rack + rolling tool chest ----
+  // ---- fabric roll rack + rolling tool chest (free-standing: never culled) ----
+  B.plane = ''
   const rz = 3.1, rx = R.x1 - 0.35
   for (const dz of [-0.6, 0.6]) B.box('darksteel', 0.05, 1.3, 0.05, rx, 0.65, rz + dz)
   for (const y of [0.4, 0.85, 1.25]) B.box('darksteel', 0.05, 0.04, 1.3, rx, y, rz)
@@ -211,11 +247,24 @@ export function buildWorkshop(span: number, chord: number): Workshop {
     B.add('jig', g, 0, jigBase, z - bd / 2)
   }
 
-  B.flush(group, {
+  const { combined, rest } = B.flush(group, {
     cast: new Set(['steel', 'darksteel', 'jig', 'chest', 'bin', 'binb', 'cloth', 'carbon']),
     receive: new Set(['floor', 'wall', 'wainscot', 'steel', 'darksteel', 'jig', 'peg', 'chest', 'bin', 'binb']),
-  })
+  }, planeGroups)
   group.traverse((o) => { if ((o as THREE.Mesh).isMesh && o.name === 'shop.jig') { o.userData.representational = true } })
   group.userData.representational = true // jig stations are illustrative: the graph names none for chapter 30
-  return { group, jigTopY, jigZ }
+  // the ground beyond the slab: only drawn while some wall is culled (an outside eye sees ground, not the clear colour)
+  const apron = new THREE.Mesh(new THREE.BoxGeometry(400, 0.02, 400), M.apron)
+  apron.name = 'shop.apron'
+  apron.position.set(cx, -0.21, cz)
+  group.add(apron)
+  const setHidden = (hidden: ReadonlySet<string>) => {
+    const outside = hidden.size > 0
+    for (const m of combined) m.visible = !outside
+    for (const m of rest) m.visible = outside
+    apron.visible = outside
+    for (const p of planes) planeGroups[p.key].visible = outside && !hidden.has(p.key)
+  }
+  setHidden(new Set())
+  return { group, jigTopY, jigZ, planes, planeGroups, setHidden }
 }

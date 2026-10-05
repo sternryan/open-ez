@@ -7,7 +7,7 @@
  * the first part; with `side` it aims at the part's right (B.L. > 0) or left half (one axle, one leg). `marks` aims at the middle of the gear
  * positioning's dimension (the datum board to the axle line). `at` aims at a point of the airplane (F.S., B.L., W.L.: left is B.L. < 0), wherever the box stands for the op. `box` aims at the box itself in the jig (its chapter 4-6 parts, so the roll-over and the gear do not pull the aim). `bench` aims at the nose-gear box lying on the jig bench (chapter 13's first ops). `pan` (inches) moves the aim sideways, along the camera's right, so the subject stands that far left of the middle of the frame; `up` (inches) aims lower, so the subject stands higher (clear of the cards along the bottom).
  */
-export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | { wing: { bl: number; fs?: number; z?: number } } | 'box' | 'marks' | 'bench' | 'strake-table'; dist: number; el: number; az: number; pan?: number; up?: number }
+export interface FuseView { focus: { parts: string[]; fs?: number; side?: 'right' | 'left' } | { at: [number, number, number] } | { spar: number } | { canopy: 'bench-up' | 'bench-down' | 'mid' } | { wing: { bl: number; fs?: number; z?: number } } | 'box' | 'marks' | 'bench' | 'strake-table'; dist: number; el: number; az: number; pan?: number; up?: number; outside?: boolean }
 
 const SIDES = ['side_right', 'side_left']
 const one = (p: string, dist: number, el: number, az: number): FuseView => ({ focus: { parts: [p] }, dist, el, az })
@@ -274,15 +274,15 @@ export const M28_VIEWS: Record<string, FuseView> = {
  * the finish ops frame the whole airplane from the room side and a little above, so the white upper wing and canard and the grey fuselage read together.
  */
 const finAt = (fs: number, bl: number, wl: number, dist: number, el: number, az: number, o: Partial<FuseView> = {}): FuseView => ({ focus: at(fs, wl, bl), dist, el, az, ...o })
-const WHOLE = (o: Partial<FuseView> = {}): FuseView => finAt(60, 0, 16, 200, 25, 35, o)
+const WHOLE = (o: Partial<FuseView> = {}): FuseView => finAt(60, 0, 16, 800, 50, 0, { outside: true, up: 150, ...o })
 export const M29_VIEWS: Record<string, FuseView> = {
   // the eye stays inside the workshop (the rig clamps it to the room): low and aft of the tail for the cover under it, over the cockpit wall for the consoles, from the nose end and above for the seats
-  'f24.aft-cover': finAt(116, 0, 0, 125, -8, 230),
+  'f24.aft-cover': finAt(116, 0, 0, 55, -15, 270, { outside: true }),
   'f24.console-lc1': finAt(54, -9, 10, 60, 52, 185),
   'f24.consoles-left': finAt(56, -9, 11, 70, 55, 180),
   'f24.thigh-support': finAt(46, 0, 8, 60, 55, 200),
   'f24.canard-cover': finAt(25, 0, 14, 60, 50, 120),
-  'f24.gap-seal': finAt(116, -23, 14, 90, 55, 10),
+  'f24.gap-seal': finAt(116, -23, 14, 90, 40, 160),
   'f25.inspect-repair': WHOLE(),
   'f25.coarse-fill': WHOLE(),
   'f25.feather-fill': WHOLE(),

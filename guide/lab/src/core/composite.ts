@@ -391,6 +391,14 @@ export function setPlyLook(m: THREE.Material, look: PlyLook) {
   if (back) set(back)
 }
 
+/** Darken a material's colour by k (1 = as authored) without any transparency; the authored colour is kept to restore. */
+export function dimColor(m: THREE.Material, k: number) {
+  const c = (m as THREE.MeshStandardMaterial).color
+  if (!c) return
+  const base = (m.userData.baseColor ??= c.clone()) as THREE.Color
+  c.copy(base).multiplyScalar(k)
+}
+
 /** A matte non-composite part (no plies). Same ghost handling as the composites. */
 export function partMaterial(cut: CutState | null, opts: { color?: number; hatch?: boolean; hatchSoft?: number; name?: string; metalness?: number; roughness?: number } = {}): THREE.MeshStandardMaterial {
   const color = opts.color ?? 0xe6dfcf // the canard passes nothing: its old pale part colour

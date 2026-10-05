@@ -12,6 +12,7 @@ import { compositeMaterial, partMaterial, plyPlane, plySpan, setPlyLook, setWet,
 import { materialFor, type LayupNodeLite, type MaterialSpec } from './logic/materials'
 import { workshopEnvironment } from './scene/env'
 import { buildWorkshop, ROOM, TABLE_TOP_Y } from './scene/workshop'
+import { hiddenPlanes, blocks as roomBlocks, type RoomPlane, type Vec3 } from './logic/roomCull'
 import { orientation, type Pose } from './logic/pose'
 import { labShots, LAB_FOV, type LabShot } from './shots'
 import { CameraRig, easeInOut, type Shot } from './camera'
@@ -151,6 +152,12 @@ interface LabHook {
   setAileron(deg: number): void; setRudder(deg: number): void
   /** keep meshes whose name starts with any of these out of the scene (the ?hide= parameter, changeable at run time: the pixel checks diff a frame against the same frame without an op's parts) */
   hide(prefixes: string[]): void
+  /** the room's wall planes the camera has culled now (an eye outside a wall hides that wall and what hangs on it), and the visible planes the eye-to-target segment still crosses (always empty when the cull works) */
+  room(): { hidden: string[]; blocks: string[]; apron: boolean }
+  /** dolly along the current view direction to d metres from the orbit target (clamped to the controls' range), like a wheel or pinch to the limit */
+  zoomTo(d: number): void
+  /** the op ids on the op bar for the current subject */
+  opIds(): string[]
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
   installedCanard(): { shown: boolean; at: number[]; nodes: number; boxes: Record<string, number[][]> } | null
 }
@@ -177,7 +184,7 @@ const hook: LabHook = {
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null, ref: () => null,
-  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, canopy: () => null, setCanopyOpen: () => {}, wing: () => null, setAileron: () => {}, setRudder: () => {}, hide: () => {}, kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
+  stateAll: () => ({}), stick: () => null, setStick: () => {}, sparSlide: () => null, canopy: () => null, setCanopyOpen: () => {}, wing: () => null, setAileron: () => {}, setRudder: () => {}, hide: () => {}, room: () => ({ hidden: [], blocks: [], apron: false }), zoomTo: () => {}, opIds: () => [], kin: () => null, cove: () => null, elevators: () => null, noseGear: () => null, installedCanard: () => null,
 }
 /** the words of the gear positioning's marks: the book's 15 in from the datum board to the axle centre line, and the axle station */
 const MARK_TEXT = {
@@ -357,10 +364,13 @@ async function boot() {
     GLOW_VIEW_H.value = Math.round(H * dpr)
     // Portrait screens see far less width: pull every shot back, as airsup does.
     rig.scale = camera.aspect >= 1 ? Math.max(1, 1.6 / camera.aspect) : Math.min(3.2, (1.6 / camera.aspect) * 0.82)
+    rig.outsideScale = camera.aspect >= 1 ? null : 1.8 // a portrait phone stands further back for the whole airplane than the room's pull-back gives
     if (rig.lastUser < 0 && !rig.flying && currentShot) rig.set(currentShot) // the user has not touched the camera: keep the framing
   }
   let currentShot: string | null = null
   // keep every landing spot inside the room, whatever the portrait pull-back does
+  // an outside shot (the whole airplane) may be further than the 7.5 m the wheel allows; the range follows it and goes back for any other shot
+  rig.onShot = (s) => { controls.maxDistance = s.outside ? Math.max(7.5, new THREE.Vector3(...s.pos).sub(new THREE.Vector3(...s.target)).length() * (rig.outsideScale ?? rig.scale) * 1.05) : 7.5 }
   rig.clampPos = (v) => { v.x = THREE.MathUtils.clamp(v.x, ROOM.x0 + 0.4, ROOM.x1 - 0.5); v.z = THREE.MathUtils.clamp(v.z, ROOM.z0 + 0.5, ROOM.z1 - 0.4); v.y = THREE.MathUtils.clamp(v.y, 0.25, ROOM.h - 0.45) }
   window.addEventListener('resize', resize)
   resize()
@@ -392,8 +402,21 @@ async function boot() {
   let glLost = false // the WebGL context is gone (see the contextlost handler below)
   let awaitFrame = false // restored, and the overlay stays until a frame has actually been drawn
   const glLostEl = document.getElementById('gl-lost')
+  // ---- room cull: an eye outside a wall plane hides that plane's group (binary: no transparency, the SSAO pipeline would halo it) ----
+  // ?nocull=1 (test only) leaves every plane drawn, so a test can show the broken frame the cull removes.
+  const noCull = TEST && params.get('nocull') === '1'
+  let shopCull: { planes: RoomPlane[]; setHidden: (h: ReadonlySet<string>) => void } | null = null
+  let culledKey = ''
+  let culled = new Set<string>()
+  const applyCull = () => {
+    if (!shopCull) return
+    culled = noCull ? new Set() : hiddenPlanes(camera.position.toArray() as Vec3, shopCull.planes)
+    const key = [...culled].sort().join() // visibility is touched only when the hidden set changes
+    if (key !== culledKey) { culledKey = key; shopCull.setHidden(culled) }
+  }
   const render = () => {
     if (glLost) return
+    applyCull()
     pipeline.params.dofFocus = camera.position.distanceTo(controls.target)
     pipeline.params.dofAperture = TIERS[tier].dof ? 9 : 0
     renderer.info.reset()
@@ -582,6 +605,7 @@ async function boot() {
     const size = box.getSize(new THREE.Vector3())
     const shop = buildWorkshop(size.z, size.x)
     scene.add(shop.group)
+    shopCull = { planes: shop.planes, setHidden: shop.setHidden }
     // ---- the fuselage station (chapters 4-6): its own corner of the shop, out of every canard shot ----
     const bay = fuseData && fuseParts.length ? new FuselageBay(fuseParts, fuseData, graph) : null
     if (bay) scene.add(bay.group)
@@ -1761,6 +1785,18 @@ async function boot() {
     hook.wing = () => (bay && WING ? { aileronDeg: bay.aileronUpDeg, rudderDeg: bay.rudderOutDeg, aileronManual: aileronManual !== null, rudderManual: rudderManual !== null, aileronText: aileronText(bay.aileronUpDeg, WING.aileron.max_up_deg), rudderText: rudderText(bay.rudderOutDeg, WING.rudder.max_deg), aileronShown: !document.getElementById('aileron-ctl')!.hidden, rudderShown: !document.getElementById('rudder-ctl')!.hidden, abc: bay.abc.visible } : null)
     hook.setAileron = (d) => { aileronManual = d; if (bay && WING) { bay.setAileron(aileronNow()); pipeline.shadowDirty = true } updateKin() }
     hook.setRudder = (d) => { rudderManual = d; if (bay && WING) { bay.setRudder(rudderNow()); pipeline.shadowDirty = true } updateKin() }
+    hook.room = () => {
+      applyCull()
+      const eye = camera.position.toArray() as Vec3, tgt = controls.target.toArray() as Vec3
+      return { hidden: [...culled].sort(), blocks: shopCull ? roomBlocks(eye, tgt, shopCull.planes, culled) : [], apron: !!scene.getObjectByName('shop.apron')?.visible }
+    }
+    hook.zoomTo = (d) => {
+      const v = camera.position.clone().sub(controls.target)
+      camera.position.copy(controls.target).addScaledVector(v.normalize(), Math.min(Math.max(d, controls.minDistance), controls.maxDistance))
+      controls.update()
+      rig.lastUser = performance.now()
+    }
+    hook.opIds = () => subjectOps().map((o) => o.id)
     hook.hide = (list) => { hide.splice(0, hide.length, ...list); bayStale = true; refresh() }
     hook.sparSlide = () => (bay ? { inches: bay.sparSlideInches, distance: bay.slideDistance() } : null)
     hook.strakeTable = () => !!bay && bay.strakeTable.visible

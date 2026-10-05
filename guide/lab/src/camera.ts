@@ -9,6 +9,8 @@ export interface Shot {
   fov: number
   /** already framed for the screen: do not pull back further */
   noScale?: boolean
+  /** a whole-airplane shot: the eye may stand outside the room (the room cull hides the walls), so the room clamp is skipped */
+  outside?: boolean
 }
 
 export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
@@ -24,18 +26,23 @@ export class CameraRig {
   lastUser = -1e9
   /** Distance multiplier for tall screens: a portrait phone sees far less width, so shots pull back. */
   scale = 1
+  /** the pull-back for outside (whole-airplane) shots: the airplane's own width, not the room's, decides how far a phone must stand back */
+  outsideScale: number | null = null
   /** Named shots, filled at runtime once the model is placed. */
   shots: Record<string, Shot> = {}
   /** optional: applied to every scaled landing position */
   clampPos?: (v: THREE.Vector3) => void
+  /** called with the shot whenever the rig goes to one (the orbit range follows an outside shot) */
+  onShot?: (s: Shot) => void
 
   private scaled(s: Shot, out: THREE.Vector3) {
     out.set(...s.pos)
-    if (this.scale !== 1 && !s.noScale) {
+    const k = s.outside && this.outsideScale !== null ? this.outsideScale : this.scale
+    if (k !== 1 && !s.noScale) {
       const t = new THREE.Vector3(...s.target)
-      out.sub(t).multiplyScalar(this.scale).add(t)
+      out.sub(t).multiplyScalar(k).add(t)
     }
-    this.clampPos?.(out)
+    if (!s.outside) this.clampPos?.(out)
     return out
   }
 
@@ -59,6 +66,7 @@ export class CameraRig {
 
   set(shotIn: Shot | string) {
     const shot = this.resolve(shotIn)
+    this.onShot?.(shot)
     this.scaled(shot, this.camera.position)
     this.controls.target.set(...shot.target)
     this.camera.fov = shot.fov
@@ -70,6 +78,7 @@ export class CameraRig {
 
   fly(shot: Shot | string, dur = 1.8, lift = 0) {
     const s = this.resolve(shot)
+    this.onShot?.(s)
     this.from.pos.copy(this.camera.position)
     this.from.target.copy(this.controls.target)
     this.from.fov = this.camera.fov

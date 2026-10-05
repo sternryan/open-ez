@@ -33,6 +33,8 @@ export const COCKPIT_OPS = new Set([LC1_OP, CONSOLES_OP, THIGH_OP, CUSHIONS_OP, 
 /** the ops that work on something buried in the airplane (the gap seal's wedges sit between the strake's baffle and the wing skin): the rest is drawn faint, the op's own parts through it */
 export const M29_GHOST_OPS = new Set([GAP_SEAL_OP])
 export const m29GhostAt = (op: { id: string } | null): boolean => !!op && M29_GHOST_OPS.has(op.id)
+/** the gap seal's wedges are small and sit under the whole airplane, so its context is drawn OPAQUE but darkened (a colour multiplier, no transparency: layered ghosts plus stripes read as haze, visual pass 10-04); every other op keeps its look */
+export const m29ContextDim = (op: { id: string } | null): number => (op && op.id === GAP_SEAL_OP ? 0.38 : 1)
 export const cockpitOpenAt = (op: { id: string } | null): boolean => !!op && COCKPIT_OPS.has(op.id)
 /** the filler goes on from the coarse fill (its first op); the data's own "from" for the fill stage is the feather coat that sets its thickness */
 export const FILL_FROM_OP = COARSE_FILL_OP

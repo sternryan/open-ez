@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { CutState } from './core/cut'
-import { compositeMaterial, partMaterial, plyFrame, setPlyLook, COLORS, HATCH_COLOR } from './core/composite'
+import { compositeMaterial, partMaterial, plyFrame, setPlyLook, dimColor, COLORS, HATCH_COLOR } from './core/composite'
 import type { MaterialSpec } from './logic/materials'
 import { plyPhase, partPhase, type Phase } from './logic/anim'
 import type { BuildState, MeshInfo } from './logic/build'
@@ -19,7 +19,7 @@ import { stickAngleDeg, stickDir, type ControlsKin } from './logic/kin'
 import { canopyPlace, CUT_OP as CANOPY_CUT_OP, CHECK_OP as CANOPY_CHECK_OP, PAD_ROLES, type CanopyData, type CanopyPlace } from './logic/canopy'
 import { wingPlace, sideShown, workshopShown, onWingBench, wingGhostAt, wingXrayAt, WINGLET_JIG_OP, abcLabel, type WingData } from './logic/wing'
 import { m28Where, partBase, glassOpacity, KIT_PARTS, KIT_LIFT_IN, ANTENNAS_OP, strakeBenchAt, strakeTableShown, m28GhostAt, m28Exposed, GLASS_PARTS, type M28Data, type M28PartRow } from './logic/strake'
-import { M29_CHAPTERS, cockpitOpenAt, m29GhostAt, m29Where, finishStageAt, finishColour, finishRowFor, type M29Data, type M29PartRow, type FinishRow } from './logic/finish'
+import { M29_CHAPTERS, cockpitOpenAt, m29GhostAt, m29ContextDim, m29Where, finishStageAt, finishColour, finishRowFor, type M29Data, type M29PartRow, type FinishRow } from './logic/finish'
 import type { GraphLite } from './logic/graph'
 import type { Shot } from './camera'
 
@@ -808,14 +808,16 @@ export class FuselageBay {
       // what is buried in the faint box is drawn through it (x-ray), so the op's own parts read; otherwise as any part
       const wingFaint = wingGhost && m.m27 && !selOp!.components.includes(m.cid) && m.cid !== 'wing.jigs'
       const m28Faint = (m28Ghost || m29Ghost) && !m28Exposed(selOp, m.cid)
+      const m29Dim = m29Ghost && m28Faint && st !== 'ghost'
       const xray = (boxGhost && m.m25 && m.part !== 'spar_box' && BURIED_PART.test(m.part)) || (wingXray && m.m27 && selOp!.components.includes(m.cid)) || (m28Ghost && m.m28 && m28Exposed(selOp, m.cid)) || (m29Ghost && m.m29 && m28Exposed(selOp, m.cid))
       for (const mt of [m.jigMat, m.tableMat]) mt.depthTest = !xray
       this.applyFinish(m, sel)
       m.jig.renderOrder = m.table.renderOrder = xray ? 5 : 0
       const cast = st === 'built' || (st === 'current' && ph.unroll >= 1)
       m.jig.castShadow = m.table.castShadow = cast
-      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') || wingFaint || m28Faint }
+      const look = { unroll: ph.unroll, front: ph.front, cure: ph.cure, ghost: st === 'ghost' || (boxGhost && m.part === 'spar_box') || wingFaint || (m28Faint && !m29Dim) }
       setPlyLook(m.jigMat, look)
+      dimColor(m.jigMat, m29Dim ? m29ContextDim(selOp) : 1); dimColor(m.tableMat, m29Dim ? m29ContextDim(selOp) : 1)
       setPlyLook(m.tableMat, look)
       // a chapter 21-23 part drawn through the faint airplane joins the transparent pass (sorted by its render order, after the faint layers) and writes no depth, so the faint layers in front blend over it and none is drawn under it
       if (m.m28 || m.m29) for (const mt of [m.jigMat, m.tableMat]) { const t = xray || !!mt.userData.glass; if (mt.transparent !== t) { mt.transparent = t; mt.needsUpdate = true } if (xray) mt.depthWrite = false }
@@ -962,7 +964,7 @@ export class FuselageBay {
       }
       if (v.up) target.y -= v.up * INCH
       const pos = target.clone().add(new THREE.Vector3(off[0], off[1], off[2]).multiplyScalar(INCH))
-      out[id] = { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov }
+      out[id] = { pos: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z], fov, ...(v.outside ? { outside: true } : {}) }
     }
     return out
   }

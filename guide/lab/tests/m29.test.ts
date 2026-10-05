@@ -15,6 +15,7 @@ import { M25_CHAPTERS, FUSE_PREFIXES } from '../src/logic/m25'
 import { FUSE_CHAPTERS, FUSE_TOUR_CHAPTERS, M25_TOUR_CHAPTERS, cutRangeFor } from '../src/logic/fuselage'
 import { barOps } from '../src/logic/graph'
 import { fuseView, M29_VIEWS } from '../src/fuseShots'
+import { m29ContextDim } from '../src/logic/finish'
 import { fuselageTour, fuselageTourChapters, chapterCard, type Step, type TourGraph } from '../src/director'
 
 const fx = JSON.parse(readFileSync(fileURLToPath(new URL('./fixtures/kernels.json', import.meta.url)), 'utf8'))
@@ -223,3 +224,13 @@ for (const [ch, ops, last] of [[24, CH24, 'f24.gap-seal'], [25, CH25, 'f25.paint
     assert.equal((s.find((x) => 'act' in x && x.act === 'finish') as { op?: string }).op, last)
   })
 }
+
+test('visual pass nits (10-04): the gap seal draws its context opaque but darkened, for that op only; the aft cover and the f25 ops stand outside the room', () => {
+  for (const id of [...CH24, ...CH25, ...CH26, 'f19.shear-web']) if (id !== 'f24.gap-seal') assert.equal(m29ContextDim({ id }), 1, id)
+  assert.equal(m29ContextDim(null), 1)
+  const dim = m29ContextDim({ id: 'f24.gap-seal' })
+  assert.ok(dim > 0.2 && dim < 0.8, `darkened, not black: ${dim}`)
+  assert.equal(M29_VIEWS['f24.gap-seal'].outside, undefined) // the gap seal is inside the room, from the room side
+  assert.ok(M29_VIEWS['f24.gap-seal'].az >= 130 && M29_VIEWS['f24.gap-seal'].az <= 190)
+  for (const id of [...CH25, 'f24.aft-cover']) assert.equal(fuseView(id).outside, true, id)
+})
