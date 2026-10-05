@@ -115,7 +115,7 @@ prototype_weights:
     canopy: {weight_lb: 16.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; 17 lb with hinges, filled and painted (CP27 p1); reference only, no CG, not a ledger row"}
     # Block 2 M2.7: the wing, aileron and winglets, builder weights (Melvill N26MS) only, like the spar and canopy. No sourced CG, so they are in
     # no moment sum (fuselage_cg matches rows by fuselage part name and there is no wing part); the overall CG stays "not yet computed". The
-    # analysis wing_weight_lb 85.0 (both wings, unsourced) is not changed here; ledger closure must reconcile it with 2 x 64 = 128 lb (a conflict, flagged in config WEIGHT_PROVENANCE and TODOS).
+    # analysis wing_weight_lb now equals the closure wings row, 132.4 lb (2 x 64 + 2 x 2.2; ledger row 68).
     wing_ch19: {weight_lb: 51.5, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; one wing complete to the end of chapter 19 (51 lb 8 oz); reference only, no CG, not a ledger row"}
     wing_complete: {weight_lb: 64.0, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; one wing with both winglets and the rudder, ready to finish; reference only, no CG, not a ledger row"}
     aileron: {weight_lb: 5.125, cite: "cp-text:p26", note: "builder weight, Melvill N26MS, CP26 page 3; aileron with mass balance, hinges and torque tube (5 lb 2 oz); reference only, no CG, not a ledger row"}

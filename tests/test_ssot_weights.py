@@ -119,7 +119,12 @@ class TestWeightBalanceSSoT:
             items_by_name["Wheels and Brakes (unsourced)"].weight
             == gear["wheels_brakes_tyres_axles"].weight_lb
         )
-        assert items_by_name["Electrical"].weight == sw.electrical_weight_lb
+        assert items_by_name["Elevators"].weight == sw.elevator_weight_lb
+        assert items_by_name["Battery (25 Ah)"].weight == sw.battery_weight_lb
+        assert (
+            items_by_name["Starter, Ring Gear, Alternator"].weight
+            == sw.starter_weight_lb
+        )
         assert items_by_name["Instruments"].weight == sw.instruments_weight_lb
         assert items_by_name["Interior"].weight == sw.interior_weight_lb
 

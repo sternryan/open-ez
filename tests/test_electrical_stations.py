@@ -74,15 +74,17 @@ def test_nose_battery_delta_is_a_delta_not_a_weight():
     assert "not an absolute" in P["elec_book_battery_added_lb"]["note"]
 
 
-def test_the_single_electrical_row_is_flagged_not_moved():
+def test_the_single_electrical_row_is_split_into_the_closure_rows():
+    # Task 3 (ledger row 68): the 25 lb lump at FS 119.5 is now two rows, as the closure table has them.
     w = StructuralWeightParams()
-    assert (w.electrical_weight_lb, w.electrical_arm_in) == (25.0, 119.5)
+    assert not hasattr(w, "electrical_weight_lb") and not hasattr(w, "electrical_arm_in")
     lo, hi = G.elec_book_battery_fs_range
-    assert not (lo <= w.electrical_arm_in <= hi)  # the row is nowhere near the nose
-    assert w.electrical_arm_in < G.elec_book_starter_fs_min  # ...nor at the starter
-    for k in ("electrical_weight_lb", "electrical_arm_in"):
-        assert WEIGHT_PROVENANCE[k]["status"] == "conflict"
-    assert "nose" in WEIGHT_PROVENANCE["electrical_weight_lb"]["note"]
+    assert lo <= w.battery_arm_in <= hi  # the battery is in the nose
+    assert w.battery_weight_lb == G.elec_book_battery_added_lb == 19.0
+    assert w.starter_arm_in >= G.elec_book_starter_fs_min  # the starter and alternator are aft, FS 150 and aft
+    for k in ("battery_weight_lb", "battery_arm_in", "starter_weight_lb", "starter_arm_in"):
+        assert WEIGHT_PROVENANCE[k]["status"] == "derived"
+    assert "nose" in WEIGHT_PROVENANCE["battery_arm_in"]["note"]
 
 
 @pytest.mark.parametrize("name,w", LADDER.items())

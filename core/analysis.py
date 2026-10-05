@@ -170,6 +170,9 @@ class PhysicsEngine:
             "Canard", sw.canard_weight_lb, sw.canard_arm_in, "fixed"
         )
         self._weight_balance.add_item(
+            "Elevators", sw.elevator_weight_lb, sw.elevator_arm_in, "fixed"
+        )
+        self._weight_balance.add_item(
             "Fuselage", sw.fuselage_weight_lb, sw.fuselage_arm_in, "fixed"
         )
         # Landing gear: the ledger's decomposed rows (the 45 lb lump is retired); the unsourced
@@ -186,7 +189,13 @@ class PhysicsEngine:
                 gear_names[row.name], row.weight_lb, row.arm_in, "fixed"
             )
         self._weight_balance.add_item(
-            "Electrical", sw.electrical_weight_lb, sw.electrical_arm_in, "fixed"
+            "Battery (25 Ah)", sw.battery_weight_lb, sw.battery_arm_in, "fixed"
+        )
+        self._weight_balance.add_item(
+            "Starter, Ring Gear, Alternator",
+            sw.starter_weight_lb,
+            sw.starter_arm_in,
+            "fixed",
         )
         self._weight_balance.add_item(
             "Instruments", sw.instruments_weight_lb, sw.instruments_arm_in, "fixed"

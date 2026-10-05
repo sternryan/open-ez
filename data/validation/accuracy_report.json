@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated": "2026-10-04T09:27:06.566016+00:00",
+    "generated": "2026-10-05T10:39:30.413379+00:00",
     "vspaero_provenance": {
       "vsp_version": "OpenVSP 3.48.2",
       "run_timestamp": "2026-03-13T11:19:43.890146+00:00",
@@ -26,13 +26,13 @@
       "two_method_np": {
         "status": "fail",
         "analytic": 110.78799690337203,
-        "vlm": 112.4122,
-        "delta": 1.6242030966279657,
+        "vlm": 112.4218,
+        "delta": 1.6338030966279717,
         "bound_in": 1.0,
         "vlm_source": {
           "file": "data/validation/vspaero_np.json",
-          "vsp_version": "OpenVSP 3.48.2",
-          "timestamp": "2026-10-04T09:27:03.333736+00:00",
+          "vsp_version": "OpenVSP 3.53.1",
+          "timestamp": "2026-10-05T02:47:19.031984+00:00",
           "method": "VSPAERO vortex lattice (VLM), gross reference wing (BL 0 to tip) + canard, thin surfaces, Mach 0, Y-symmetry"
         }
       }
@@ -41,9 +41,9 @@
     "traceability": "All metric sources trace to reference_data.json (external published/measured) or vspaero_native. No sources from physics_baseline.json (self-referential). Verified by validate_sources() at generation time."
   },
   "summary": {
-    "total": 12,
+    "total": 13,
     "pass": 2,
-    "marginal": 0,
+    "marginal": 1,
     "fail": 3,
     "ungraded": 0,
     "not_graded": 7
@@ -136,16 +136,41 @@
     {
       "metric_id": "empty_weight_lb",
       "description": "Estimated empty weight (structural + propulsion components)",
-      "computed": 640.0,
+      "computed": 681.4,
       "reference": 750,
       "tolerance_abs": 35.0,
       "tolerance_pct": null,
-      "error_abs": 110.0,
-      "error_pct": 14.666667,
-      "grade": "FAIL",
+      "error_abs": 68.6,
+      "error_pct": 9.146667,
+      "grade": "MARGINAL",
       "source": "reference_data.json:aircraft_specs.empty_weight_lb",
       "units": "pounds",
       "convention_note": "Config structural weights are a partial model (wing, canard, fuselage, landing gear, electrical, instruments, interior + propulsion estimates). Missing: avionics, fairings, paint, wiring harness, miscellaneous hardware."
+    },
+    {
+      "metric_id": "empty_weight_closure",
+      "description": "Bottom-up closure of the OM sample empty airplane (730 lb at FS 111.7) over the frozen closure table",
+      "computed": 754.79,
+      "computed_cg_fs": 106.2641,
+      "reference": 730,
+      "reference_cg_fs": 111.7,
+      "weight_band_lb": [
+        645.54,
+        880.26
+      ],
+      "cg_band_fs": [
+        96.71,
+        122.01
+      ],
+      "tolerance_abs": null,
+      "tolerance_pct": null,
+      "error_abs": 24.79,
+      "error_pct": null,
+      "grade": "FAIL",
+      "verdict": "weight half-band 117.36 lb over the 20.0 lb cap",
+      "source": "reference_data.json:aircraft_specs.empty_weight_lb",
+      "units": "pounds",
+      "convention_note": "Verdict from core.closure.verdict against the frozen closure block (ledger row 65; the bands and the 20 lb and 1.46 in caps are never widened). The empty_weight_lb metric above is graded against the manual's approximate 750 lb normally equipped (om-1980:p4), a different configuration from the 730 lb sample (ledger row 63)."
     },
     {
       "metric_id": "canard_clmax",

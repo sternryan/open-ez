@@ -79,21 +79,16 @@ def test_oil_station_is_the_only_printed_engine_arm_and_is_aft_of_the_firewall()
     assert led["loads"]["oil"]["cite"].startswith("om-1980:p25")
 
 
-def test_engine_flags_are_flagged_and_values_are_unchanged():
+def test_engine_fields_are_the_closure_values():
+    # Task 3 (ledger row 68): was 8.0 'forward of the firewall' / 113 kg (249.1 lb) / 243 lb; now the closure engine row.
     cfg = PropulsionConfig()
-    assert (cfg.engine_cg_arm_in, cfg.engine_mass_kg, cfg.engine_dry_weight_lb) == (
-        8.0,
-        113.0,
-        243.0,
-    )
-    assert (
-        cfg.engine_cg_arm_in < G.fs_firewall
-    )  # 'forward of the firewall': the contradiction
-    assert cfg.engine_mass_kg * 2.20462 > G.eng_book_engine_max_lb  # 249.1 against 246
+    assert cfg.engine_dry_weight_lb == 243.0
+    assert cfg.engine_mass_kg * 2.20462 == pytest.approx(243.0, abs=0.01)
     assert cfg.engine_dry_weight_lb < G.eng_book_engine_max_lb
-    for k in ("engine_cg_arm_in", "engine_mass_kg"):
-        assert WEIGHT_PROVENANCE[k]["status"] == "conflict"
-    assert WEIGHT_PROVENANCE["engine_dry_weight_lb"]["status"] == "unsourced"
+    assert G.fs_firewall + cfg.engine_cg_arm_in == pytest.approx(141.05)  # AFT of the firewall, as every source says
+    assert cfg.engine_cg_arm_in > 0
+    for k in ("engine_cg_arm_in", "engine_mass_kg", "engine_dry_weight_lb"):
+        assert WEIGHT_PROVENANCE[k]["status"] == "derived"
 
 
 def test_prop_diameter_is_a_three_way_conflict():

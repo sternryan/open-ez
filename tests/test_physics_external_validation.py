@@ -105,9 +105,11 @@ class TestGrossWeightSanityCheck:
         partial_empty = (
             sw.wing_weight_lb
             + sw.canard_weight_lb
+            + sw.elevator_weight_lb
             + sw.fuselage_weight_lb
             + gear_cg()[0]
-            + sw.electrical_weight_lb
+            + sw.battery_weight_lb
+            + sw.starter_weight_lb
             + sw.instruments_weight_lb
             + sw.interior_weight_lb
         )
@@ -136,9 +138,11 @@ class TestGrossWeightSanityCheck:
         structural = (
             sw.wing_weight_lb
             + sw.canard_weight_lb
+            + sw.elevator_weight_lb
             + sw.fuselage_weight_lb
             + gear_cg()[0]
-            + sw.electrical_weight_lb
+            + sw.battery_weight_lb
+            + sw.starter_weight_lb
             + sw.instruments_weight_lb
             + sw.interior_weight_lb
         )

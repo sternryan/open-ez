@@ -490,9 +490,11 @@ def collect_metrics(
     computed_empty_weight = (
         sw.wing_weight_lb
         + sw.canard_weight_lb
+        + sw.elevator_weight_lb
         + sw.fuselage_weight_lb
         + gear_cg()[0]  # ledger gear rows, 45 lb total
-        + sw.electrical_weight_lb
+        + sw.battery_weight_lb
+        + sw.starter_weight_lb
         + sw.instruments_weight_lb
         + sw.interior_weight_lb
         # Engine/propulsion: O-235 standard weights
@@ -511,6 +513,45 @@ def collect_metrics(
                 "Config structural weights are a partial model (wing, canard, fuselage, "
                 "landing gear, electrical, instruments, interior + propulsion estimates). "
                 "Missing: avionics, fairings, paint, wiring harness, miscellaneous hardware."
+            ),
+        }
+    )
+
+    # --- Empty weight closure (Block 2 2.n, ledger rows 65 and 67) ---
+    # The OM sample empty airplane (730 lb at FS 111.7, om-1980:p25, p35) against the frozen closure table's bottom-up sum,
+    # graded by core.closure.verdict (bands and caps, never widened). The empty_weight_lb metric above is a DIFFERENT
+    # configuration (the manual's approximate 750 lb normally equipped, om-1980:p4, row 63).
+    from core.closure import closure_sum, verdict  # noqa: E402
+    from core.ledger import load_ledger  # noqa: E402
+
+    _ledger = load_ledger()
+    _rows = _ledger["closure"]["rows"]
+    _target = _ledger["empty"]
+    _sum = closure_sum(_rows)
+    _verdict = verdict(_rows, _target["weight_lb"], _target["arm_in"])
+    metrics.append(
+        {
+            "metric_id": "empty_weight_closure",
+            "description": "Bottom-up closure of the OM sample empty airplane (730 lb at FS 111.7) over the frozen closure table",
+            "computed": round(_sum.weight_lb, 4),
+            "computed_cg_fs": round(_sum.cg_fs, 4),
+            "reference": _target["weight_lb"],
+            "reference_cg_fs": _target["arm_in"],
+            "weight_band_lb": [round(x, 2) for x in _sum.weight_band],
+            "cg_band_fs": [round(x, 2) for x in _sum.cg_band],
+            "tolerance_abs": None,
+            "tolerance_pct": None,
+            "error_abs": round(_sum.weight_lb - _target["weight_lb"], 4),
+            "error_pct": None,
+            "grade": "PASS" if _verdict == "closes" else "FAIL",
+            "verdict": _verdict,
+            "source": "reference_data.json:aircraft_specs.empty_weight_lb",
+            "units": "pounds",
+            "convention_note": (
+                "Verdict from core.closure.verdict against the frozen closure block (ledger row 65; the bands and the "
+                "20 lb and 1.46 in caps are never widened). The empty_weight_lb metric above is graded against the "
+                "manual's approximate 750 lb normally equipped (om-1980:p4), a different configuration from the 730 lb "
+                "sample (ledger row 63)."
             ),
         }
     )

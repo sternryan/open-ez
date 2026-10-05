@@ -1145,6 +1145,9 @@ def test_m28_layup_section_names_every_part_the_conflicts_and_the_reference_weig
         "loaded_envelope_fs"
     ] == [97.0, 103.0]
     assert "not the empty CG" in c["note"] and w["cg"] == "not yet computed"
+    # the readout shows the frozen closure table's sum and verdict beside the target (ledger row 68)
+    assert c["ledger_lb"] == 754.79 and c["ledger_cg_fs"] == 106.26
+    assert "over the 20.0 lb cap" in c["verdict"]
 
 
 def test_m28_adds_no_ledger_sum_the_cg_stays_not_yet_computed(fuse_export):
@@ -1294,6 +1297,7 @@ def test_m29_layup_section_names_every_part_the_finish_the_conflicts_and_the_ref
         and "101.06" in t["samples"]
     )
     assert "not the empty CG" in t["note"] and w["cg"] == "not yet computed"
+    assert t["ledger_lb"] == 754.79 and "cap" in t["verdict"]
 
 
 def test_m29_adds_no_ledger_sum_the_finish_rows_are_references(fuse_export):

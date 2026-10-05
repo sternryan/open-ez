@@ -1436,6 +1436,21 @@ M28_LABELS = {
 }
 
 
+def _closure_readout(led: dict) -> dict:
+    """The frozen closure table's nominal sum and verdict, shown beside the 730 lb at FS 111.7 target (ledger row 65).
+
+    Reference readout only: the sum is never used by the model; the verdict string is core.closure.verdict verbatim."""
+    from core.closure import closure_sum, verdict
+
+    rows = led["closure"]["rows"]
+    t = closure_sum(rows)
+    return {
+        "ledger_lb": round(t.weight_lb, 2),
+        "ledger_cg_fs": round(t.cg_fs, 2),
+        "verdict": verdict(rows, led["empty"]["weight_lb"], led["empty"]["arm_in"]),
+    }
+
+
 @lru_cache(maxsize=1)
 def _m28_built() -> dict:
     """{"strake": {side: {part: FusePart}}, "elec": {part: FusePart}, "engine": {part: FusePart}} (core.strake_book, electrical_book, engine_book)."""
@@ -1580,6 +1595,7 @@ def m28_section() -> dict:
                 "empty_lb": led["empty"]["weight_lb"],
                 "empty_arm_in": led["empty"]["arm_in"],
                 "cite": led["empty"]["cite"],
+                **_closure_readout(led),
                 "loaded_envelope_fs": [
                     led["envelope"]["fwd_fs"],
                     led["envelope"]["aft_fs"],
@@ -1731,6 +1747,7 @@ def m29_section() -> dict:
             "closure_target": {
                 "empty_lb": led["empty"]["weight_lb"],
                 "empty_arm_in": led["empty"]["arm_in"],
+                **_closure_readout(led),
                 "samples": "both OM sample loadings reproduced exactly: the light pilot 103.96, outside the 103 aft limit as the manual says; the heavy pilot 101.06, inside",
                 "loaded_envelope_fs": [led["envelope"]["fwd_fs"], led["envelope"]["aft_fs"]],
                 "sample_loadings": [

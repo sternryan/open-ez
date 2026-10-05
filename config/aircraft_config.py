@@ -3524,51 +3524,121 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
 }
 
 
-# Provenance flags for the analysis weight, arm and engine fields that are not geometry (M2.8; values unchanged).
-# Same shape and statuses as GEOMETRY_PROVENANCE; tests/test_m28_weight_flags.py reads it. Fixing the values is
-# ledger closure (milestone 2.n), not M2.8.
+# Provenance for the analysis weight, arm and engine fields that are not geometry (M2.8 flags; Block 2 2.n Task 3 fold-in).
+# Same shape and statuses as GEOMETRY_PROVENANCE; tests/test_m28_weight_flags.py reads it. A field is FOLDED to the frozen
+# closure table (data/mass_ledger.yaml `closure:`, ledger row 65) only where the closure row is not `unsourced` and the scope
+# is one-to-one; tests/test_closure_fold_in.py pins that. Folded entries say which closure row and carry its cites.
+# NOT folded: fuselage_weight_lb (120 lb lump; the closure fuselage is 183 lb including spar and gear struts, which have their
+# own rows in core/ledger.py) and tank_volume_gal (not a closure quantity).
+_CLOSURE = "data/mass_ledger.yaml closure row"
 WEIGHT_PROVENANCE: dict[str, dict] = {
     "wing_weight_lb": _p(
-        "conflict",
-        "cp-text:p26 64 lb per wing with winglets and rudder",
-        "low",
-        "85.0 lb for both wings is unsourced. CP26 p3 gives 64 lb per wing complete with winglets and rudder (60 lb painted without rudder and aileron, CP27 p1), so 2 x 64 = 128 lb, but that is one builder's airplane (N26MS). Both values are kept; ledger closure decides",
+        "derived",
+        "cp-text:p26 wing ready to finish, 64 lb each; cp-text:p27 finish adds about 2.2 lb per wing",
+        "medium",
+        f"132.4 lb, both wings with winglets, rudders and ailerons ({_CLOSURE} wings: 2 x 64 + 2 x 2.2, band 128.0 to 132.6). N26MS builder weights, one builder's airplane; the finish delta is the painted wing, CP27 p1 (60 lb, no rudder or aileron). Was 85.0 lb, unsourced. The arm 127.5 is the quarter chord of the reference-trapezoid MAC (closure wings arm band 117.4 to 141.6)",
+    ),
+    "wing_arm_in": _p(
+        "derived",
+        "closure row wings; config reference-trapezoid MAC (calculate_mac)",
+        "medium",
+        f"127.5 FS, quarter chord of the reference MAC ({_CLOSURE} wings arm_band 117.4 to 141.6). Was 94.5, converted-unsourced. Winglets sit further aft and are not split out",
+    ),
+    "canard_weight_lb": _p(
+        "derived",
+        "cp-text:p27 canard with fairing cover, 18.5 lb",
+        "medium",
+        f"18.5 lb, N26MS builder weight, band +-5 percent ({_CLOSURE} canard). Was 25.0, which was the canard and both elevators (18.5 + 6.5); the elevators are now their own field pair",
+    ),
+    "elevator_weight_lb": _p(
+        "derived",
+        "cp-text:p27 elevators 3.5 and 3.0 lb",
+        "medium",
+        f"6.5 lb, both elevators, N26MS builder weights ({_CLOSURE} elevators). New field pair, split from the old 25 lb canard lump; the sum is unchanged",
+    ),
+    "elevator_arm_in": _p(
+        "derived",
+        "plans-1980:p171 canard LE at FS 18.7; closure row elevators",
+        "medium",
+        f"FS 29.77 = canard LE + 85 percent of the config canard chord ({_CLOSURE} elevators arm_band 26.5 to 31.72)",
     ),
     "engine_cg_arm_in": _p(
-        "conflict",
-        "plans-1980:p171 firewall FS 125; om-1980:p25 oil FS 140",
-        "high",
-        "8.0 in, commented 'forward of firewall', contradicts every held source: the engine is aft of the firewall (FS 125), oil is at FS 140 (om-1980:p25) and the starter and alternator are at station 150+ (cp-text:p27). No engine arm is printed in any held source. The value is unchanged; ledger closure replaces it",
+        "derived",
+        "tcds-e223:p7 NOTE 8 CG 14.75 in from the flange; cp-text:p28 prop hub forward face FS 158.8 with 3 in extension",
+        "medium",
+        f"16.05 in AFT of the firewall (FS 125), so published FS 141.05 ({_CLOSURE} engine; engine_arm_method: flange 158.8 - 3.0 = 155.8, CG 14.75 forward of it, band +-0.25). Was 8.0 commented 'forward of firewall', which contradicted every source; core/systems.py also hardcoded firewall + 8.0 and ignored the field, it now reads the field",
     ),
     "engine_mass_kg": _p(
-        "conflict",
-        "plans-1980:p156 engine with accessories at most 246 lb",
+        "derived",
+        "tcds-e223:p7 NOTE 8 O-235-C1C/H2C dry weight 243 lb; plans-1980:p156 limit 246 lb",
         "medium",
-        "113 kg is 249.1 lb (commented '250 lb dry'), over the 246 lb book limit and 6 lb over engine_dry_weight_lb 243. The two fields disagree; the value is unchanged and ledger closure picks one",
+        f"110.22 kg = 243 lb ({_CLOSURE} engine). Was 113.0 kg = 249.1 lb, which matched no source and disagreed with engine_dry_weight_lb. The field is read by no analysis code; set equal so the two cannot disagree",
     ),
     "engine_dry_weight_lb": _p(
-        "unsourced",
-        "plans-1980:p156 limit 246 lb is a limit, not a weight",
-        "low",
-        "243 lb matches no page. The book prints only the limits: engine with accessories at most 246 lb and vibrating mass at most 286 lb (plans-1980:p156). Disagrees with engine_mass_kg (249.1 lb)",
-    ),
-    "electrical_weight_lb": _p(
-        "conflict",
-        "cp-text:p27 CP27 page 4",
+        "derived",
+        "tcds-e223:p7 NOTE 8 O-235-C1C/H2C 243 lb; plans-1980:p156 limit 246 lb",
         "medium",
-        "25 lb as one row at FS 119.5 is the wrong shape. The 25 Ah battery sits in the nose (plans-1980:p149, p155; about +19 lb over the small battery) and the starter, ring gear and alternator are at station 150+ (cp-text:p27); the plans print 'electric start adds over 25 lb' (plans-1980:p149). Unsourced as a row; the ledger closure splits it",
+        f"243 lb, unchanged ({_CLOSURE} engine, band 236 to 247). The TCDS figure INCLUDES starter and generator (NOTE 8 heading), so the closure starter row is nominal 0. 243 is the H2C (dynafocal) figure; the C-series is conical-mount, the CG is identical",
+    ),
+    "engine_displacement_ci": _p(
+        "book",
+        "tcds-e223:p1 and lyc-om-o235 Section 1: bore 4.375 x stroke 3.875, displacement 233.3 cu in",
+        "high",
+        "233.3 cu in. Was 235.0, the model-name number; the TCDS and the operator's manual print 233 (docs/harness/2n-engine-inventory.md section 3). Read only by core/systems.py DISPLACEMENT_CI",
+    ),
+    "battery_weight_lb": _p(
+        "derived",
+        "cp-text:p27 ladder step 4, 25 Ah battery about 19 lb over small",
+        "medium",
+        f"19 lb ladder delta ({_CLOSURE} battery_25ah, band 0 to 19). Replaces the first half of the old 25 lb electrical lump. The OM airplane is basic electrical and may carry the small battery",
+    ),
+    "battery_arm_in": _p(
+        "derived",
+        "plans-1980:p149 and p155 nose battery; closure row battery_25ah",
+        "low",
+        f"FS 11.0, nose compartment ({_CLOSURE} battery_25ah arm_band 0 to 22). Was electrical_arm_in 119.5, which sat nowhere near the battery",
+    ),
+    "starter_weight_lb": _p(
+        "derived",
+        "cp-text:p27 ladder step 4 adds 68.5 lb including the battery",
+        "low",
+        f"0 lb nominal, band 0 to 49.5 ({_CLOSURE} starter_ring_alternator). The engine row's TCDS weight already includes a starter and generator, so a nominal here would double-count; the OM airplane is basic electrical",
+    ),
+    "starter_arm_in": _p(
+        "derived",
+        "cp-text:p27 starter and alternator at station 150+",
+        "low",
+        f"FS 150.0, lower bound ({_CLOSURE} starter_ring_alternator arm_band 150 to 170)",
+    ),
+    "instruments_weight_lb": _p(
+        "derived",
+        "cp-text:p27 step 1 bundles VFR panel and gauges",
+        "low",
+        f"15 lb, an allowance of 10 to 20 lb ({_CLOSURE} instruments); no instrument weights are printed. Value unchanged",
+    ),
+    "instruments_arm_in": _p(
+        "derived",
+        "om-1980:p35 instrument panel front side FS 40",
+        "medium",
+        f"FS 40.0, the panel station ({_CLOSURE} instruments arm_band 35 to 45). Was 29.5, converted-unsourced",
+    ),
+    "interior_weight_lb": _p(
+        "derived",
+        "om-1980:p26 pilot arm 59, passenger arm 103",
+        "low",
+        f"20 lb, an allowance of 10 to 30 lb ({_CLOSURE} interior); no weights printed for cushions, belts or headrests. Value unchanged",
+    ),
+    "interior_arm_in": _p(
+        "derived",
+        "om-1980:p26 pilot arm 59, passenger arm 103",
+        "low",
+        f"FS 81.0, midway between the two occupant arms ({_CLOSURE} interior arm_band 71 to 91). Was 49.5, converted-unsourced",
     ),
     "tank_volume_gal": _p(
         "conflict",
         "plans-1980:p141 25.5 gal per tank; om-1980:p8 28 gal per tank and 52 total",
         "high",
         "26 gal per side is half the OM 52 gal total and matches neither the plans (25.5) nor the OM per-tank figure (28). Both source values are in fuel_book_capacity_plans_gal and fuel_book_capacity_om_gal; the model keeps 26 and says so (M2.8)",
-    ),
-    "electrical_arm_in": _p(
-        "conflict",
-        "cp-text:p27 CP27 page 4",
-        "medium",
-        "119.5 in is converted-unsourced and sits where neither the battery (nose, about FS 0 to 22, A6 only) nor the starter and alternator (FS 150+) are. Unchanged; ledger closure replaces it",
     ),
 }
 
@@ -3823,14 +3893,14 @@ class PropulsionConfig:
     propulsion_type: PropulsionType = PropulsionType.LYCOMING_O235
 
     # === IC ENGINE DEFAULTS (O-235) ===
-    engine_mass_kg: float = 113.0  # 250 lb dry
-    engine_cg_arm_in: float = 8.0  # Forward of firewall
+    engine_mass_kg: float = 243.0 / 2.20462  # 243 lb dry (tcds-e223:p7), same as engine_dry_weight_lb
+    engine_cg_arm_in: float = 16.05  # inches AFT of the firewall (FS 125): published FS 141.05 (closure engine)
     fuel_capacity_gal: float = 52.0  # Total fuel (26 gal per strake)
     fuel_consumption_gph: float = 6.5  # Cruise consumption
 
     # === IC ENGINE SPECS (Lycoming O-235-L2C) ===
     engine_dry_weight_lb: float = 243.0  # Dry weight with accessories
-    engine_displacement_ci: float = 235.0
+    engine_displacement_ci: float = 233.3  # tcds-e223:p1 (the model name says 235)
     engine_rated_hp: float = 115.0
     engine_rated_rpm: int = 2700
     engine_prop_diameter_in: float = 60.0
@@ -3900,32 +3970,34 @@ class FlightConditionParams:
 class StructuralWeightParams:
     """Measured structural component weights (from builder records)."""
 
-    wing_weight_lb: float = 85.0
-    wing_arm_in: float = (
-        94.5  # unsourced (internal 140.0 shifted by -45.5); Block 2 replaces
-    )
-    canard_weight_lb: float = 25.0
+    # Block 2 2.n Task 3: values below are the frozen closure rows (data/mass_ledger.yaml `closure:`, ledger row 65)
+    # where the scope matches one-to-one; see WEIGHT_PROVENANCE and tests/test_closure_fold_in.py.
+    wing_weight_lb: float = 132.4  # closure wings: 2 x 64 + 2 x 2.2 (cp-text:p26, p27)
+    wing_arm_in: float = 127.5  # quarter chord of the reference MAC (closure wings)
+    canard_weight_lb: float = 18.5  # closure canard (cp-text:p27); the elevators are split out below
     canard_arm_in: float = field(
         default_factory=lambda: GeometricParams().fs_canard_le
         + 0.25 * GeometricParams().canard_chord
     )  # canard structural weight at the canard (quarter chord), Block 1
-    fuselage_weight_lb: float = 120.0
+    elevator_weight_lb: float = 6.5  # closure elevators, 3.5 + 3.0 (cp-text:p27)
+    elevator_arm_in: float = field(
+        default_factory=lambda: GeometricParams().fs_canard_le
+        + 0.85 * GeometricParams().canard_chord
+    )  # 85 percent of the canard chord behind the canard LE (closure elevators)
+    fuselage_weight_lb: float = 120.0  # NOT folded: the closure fuselage is 183 lb with spar and gear (different scope)
     fuselage_arm_in: float = (
         54.5  # unsourced (internal 100.0 shifted by -45.5); Block 2 replaces
     )
     # landing gear: no free constants; decomposed rows in data/mass_ledger.yaml `gear:` (core.ledger.gear_rows)
-    electrical_weight_lb: float = 25.0
-    electrical_arm_in: float = (
-        119.5  # unsourced (internal 165.0 shifted by -45.5); Block 2 replaces
-    )
-    instruments_weight_lb: float = 15.0
-    instruments_arm_in: float = (
-        29.5  # unsourced (internal 75.0 shifted by -45.5); Block 2 replaces
-    )
-    interior_weight_lb: float = 20.0
-    interior_arm_in: float = (
-        49.5  # unsourced (internal 95.0 shifted by -45.5); Block 2 replaces
-    )
+    # electrical: the old 25 lb lump at FS 119.5 is split into the two closure rows
+    battery_weight_lb: float = 19.0  # 25 Ah battery over the small one (closure battery_25ah, cp-text:p27)
+    battery_arm_in: float = 11.0  # nose compartment, FS 0 to 22
+    starter_weight_lb: float = 0.0  # nominal 0: the TCDS engine weight includes starter and generator
+    starter_arm_in: float = 150.0  # station 150 and aft (cp-text:p27)
+    instruments_weight_lb: float = 15.0  # allowance 10 to 20 (closure instruments)
+    instruments_arm_in: float = 40.0  # panel station, om-1980:p35
+    interior_weight_lb: float = 20.0  # allowance 10 to 30 (closure interior)
+    interior_arm_in: float = 81.0  # midway between pilot 59 and passenger 103
     fuel_density_lb_per_gal: float = 6.01  # 100LL avgas
     fuel_arm_in: float = 104.5  # book: om-1980:p26 fuel station 104.5
 

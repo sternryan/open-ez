@@ -25,38 +25,54 @@ def _field_value(name):
     raise AssertionError(name)
 
 
-def test_flagged_fields_exist_and_keep_their_values():
+def test_flagged_fields_exist_and_hold_the_values_ledger_row_68_recorded():
+    # Task 3 moved the folded fields to the closure rows (row 68); the values below are the new ones.
     values = {
-        "wing_weight_lb": 85.0,
-        "engine_cg_arm_in": 8.0,
-        "engine_mass_kg": 113.0,
+        "wing_weight_lb": 132.4,
+        "wing_arm_in": 127.5,
+        "canard_weight_lb": 18.5,
+        "elevator_weight_lb": 6.5,
+        "engine_cg_arm_in": 16.05,
+        "engine_mass_kg": 243.0 / 2.20462,
         "engine_dry_weight_lb": 243.0,
-        "electrical_weight_lb": 25.0,
-        "electrical_arm_in": 119.5,
+        "engine_displacement_ci": 233.3,
+        "battery_weight_lb": 19.0,
+        "battery_arm_in": 11.0,
+        "starter_weight_lb": 0.0,
+        "starter_arm_in": 150.0,
+        "instruments_weight_lb": 15.0,
+        "instruments_arm_in": 40.0,
+        "interior_weight_lb": 20.0,
+        "interior_arm_in": 81.0,
         "tank_volume_gal": 26.0,
+        "elevator_arm_in": G.fs_canard_le + 0.85 * G.canard_chord,
     }
     assert set(values) == set(WEIGHT_PROVENANCE)
     for name, v in values.items():
-        assert _field_value(name) == v, name
+        assert _field_value(name) == pytest.approx(v), name
 
 
-def test_entries_are_well_formed_and_never_book():
+def test_entries_are_well_formed_and_only_closure_rows_are_sourced():
     for name, e in WEIGHT_PROVENANCE.items():
         assert set(e) == {"status", "source", "confidence", "note"}, name
         assert e["status"] in PROVENANCE_STATUSES, name
-        assert e["status"] in {"conflict", "unsourced"}, name  # flags, not sources
+        # folded fields are `derived` (closure rows) or `book` (displacement); only tank_volume_gal is still a flag
+        assert e["status"] in {"derived", "book", "conflict", "unsourced"}, name
+        if e["status"] == "derived":
+            assert "closure row" in e["note"] or "closure" in e["source"], name
 
 
-def test_wing_weight_names_both_values():
+def test_wing_weight_names_the_closure_derivation():
     n = WEIGHT_PROVENANCE["wing_weight_lb"]["note"]
-    assert "85.0" in n and "64 lb" in n and "128" in n and "CP26" in n
+    assert "132.4" in n and "64" in n and "85.0" in n and "wings" in n
 
 
-def test_engine_flags_say_what_contradicts():
-    assert "aft of the firewall" in WEIGHT_PROVENANCE["engine_cg_arm_in"]["note"]
+def test_engine_notes_say_what_changed():
+    assert "AFT of the firewall" in WEIGHT_PROVENANCE["engine_cg_arm_in"]["note"]
     assert "249.1" in WEIGHT_PROVENANCE["engine_mass_kg"]["note"]
     assert "243" in WEIGHT_PROVENANCE["engine_dry_weight_lb"]["note"]
-    assert "station 150+" in WEIGHT_PROVENANCE["electrical_weight_lb"]["note"]
+    assert "233.3" in WEIGHT_PROVENANCE["engine_displacement_ci"]["note"]
+    assert "starter" in WEIGHT_PROVENANCE["starter_weight_lb"]["note"]
     assert 113.0 * 2.20462 == pytest.approx(249.1, abs=0.05)
 
 

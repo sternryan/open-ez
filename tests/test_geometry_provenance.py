@@ -159,12 +159,10 @@ def test_book_stations_block1():
 
 
 def test_weight_arms_shift_uniformly():
+    # Task 3 (ledger row 68): wing, electrical, instruments and interior arms moved to the closure rows
+    # (tests/test_closure_fold_in.py); only the fuselage lump is still the shifted converted-unsourced value.
     old = {
-        "wing_arm_in": 140.0,
         "fuselage_arm_in": 100.0,
-        "electrical_arm_in": 165.0,
-        "instruments_arm_in": 75.0,
-        "interior_arm_in": 95.0,
     }
     w = StructuralWeightParams()
     for name, o in old.items():

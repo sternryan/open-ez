@@ -47,16 +47,13 @@ an undimensioned image.
 - **Analysis wing and winglet fields (M2.8 update).** `wing_span` 314.0, `wing_root_bl` 23.0 and the
   `winglet_*` analysis fields now carry the book values (ledger rows 60 to 62); `wing_washout` 1.0 still
   matches no page (the book twist is in `wing_book_washout_deg`) and moving it changes the NP.
-- **Wing weight (conflict).** `wing_weight_lb` 85.0 (both wings, unsourced) against 2 x 64 lb = 128 lb
-  (CP26 p3, one builder's airplane, with winglets and rudder). Both are named in `WEIGHT_PROVENANCE`; decide at
-  ledger closure (2.n).
-- **Electrical row shape.** The single 25 lb row at FS 119.5 is wrong: the 25 Ah battery is in the nose
-  (about FS 0 to 22, A6 only, about +19 lb over the small battery) and the starter, ring gear and alternator
-  are at station 150+ (CP27 p4). Split it at ledger closure.
-- **Engine arm and mass flags.** `engine_cg_arm_in` 8.0 ('forward of firewall') contradicts every source
-  (the engine is aft of FS 125); `engine_mass_kg` 113 (249.1 lb) disagrees with `engine_dry_weight_lb` 243 and
-  both sit near the 246 lb book limit (plans-1980:p156). No engine arm is printed in any held source
-  (Sections IIA, IIC and IIL are not held). Fix at ledger closure.
+- **Wing weight, electrical, engine arm (resolved at ledger closure, row 68).** `wing_weight_lb` 132.4 at FS 127.5, canard
+  18.5 plus elevators 6.5, electrical split into a nose battery (19 lb at FS 11) and starter (0 lb nominal at FS 150),
+  `engine_cg_arm_in` 16.05 aft of the firewall (published FS 141.05) and `engine_displacement_ci` 233.3 now equal the frozen
+  closure rows (ledger row 65). Still open: `fuselage_weight_lb` 120 (the closure fuselage is 183 lb with spar and gear),
+  the hardcoded propulsion installation weights in `core/systems.py` (mount, exhaust, baffles, cowl, prop), and the
+  flutter estimate, which fell to 203 KTAS (240 required) with the 132.4 lb wing mass: two tests are strict xfail,
+  decision with the captain (row 68).
 - **VSPAERO leg.** Re-run 2026-10-04 on the M2.8 planform (delta +1.63 in, ledger rows 62 and 66). Re-run it again after
   any change to the analysis planform or the strakes; the report reads `not run` when the stored run is stale.
 

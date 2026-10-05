@@ -119,6 +119,7 @@ class LycomingO235(Propulsion):
         self.RATED_HP = prop.engine_rated_hp
         self.RATED_RPM = prop.engine_rated_rpm
         self.DRY_WEIGHT_LB = prop.engine_dry_weight_lb
+        self.CG_AFT_OF_FIREWALL_IN = prop.engine_cg_arm_in
         self.FUEL_GPH_CRUISE = prop.fuel_consumption_gph
         self.PROP_DIAMETER_IN = prop.engine_prop_diameter_in
 
@@ -130,7 +131,7 @@ class LycomingO235(Propulsion):
             WeightItem(
                 name="engine_dry",
                 weight=self.DRY_WEIGHT_LB,
-                arm=fs_firewall + 8.0,  # Engine CG forward of firewall
+                arm=fs_firewall + self.CG_AFT_OF_FIREWALL_IN,  # CG aft of the firewall (FS 141.05, closure engine)
                 category="propulsion",
             ),
             WeightItem(
