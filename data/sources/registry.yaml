@@ -78,3 +78,17 @@ sources:
     copy: transcription
     page_basis: pdf
     note: NOTE 8 (p7) gives dry weight and the dry CG from the propeller flange front face, including starter and generator. Read and noted, never stored in the repo.
+  lyc-om-o235:
+    title: Lycoming Operator's Manual 60297-9, O-235 and O-290 series
+    edition: 5th edition; public PDF on the maker's site (lycoming.com, file/2025-02, 60297-9)
+    obtain: https://www.lycoming.com/sites/default/files/file/2025-02/60297-9%20-%20O-235%20and%20O-290%20Series.pdf
+    copy: transcription
+    page_basis: printed
+    note: Section 1 construction text, p2-6 average engine weights, Figures 7-1 to 7-3 pad labels with no dimensions. Read and noted, never stored in the repo.
+  vendor-slick-4300:
+    title: Slick 4300 series magneto, vendor catalogue page (08-43720)
+    edition: web page; maker's weight claim of 3.75 lb each, read 2026-10-05
+    obtain: https://www.aircraftspruce.com/catalog/pnpages/08-43720.php
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; vendor relay of the maker's claim, never stored in the repo.

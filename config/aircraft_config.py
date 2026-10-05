@@ -900,6 +900,14 @@ class GeometricParams:
     )  # unsourced: no page: O-235-sized block, length (along the crank), width and height
     eng_book_block_fwd_fs: float = 127.0  # unsourced: no page: front of the engine block, aft of the firewall (F.S. 125) and the mount
     eng_book_block_wl: float = 23.0  # unsourced: no page: WL of the block centre
+
+    # === O-235 ENGINE MODULE (whole-engine values; see docs/superpowers/plans/2026-10-05-engine-o235-module.md) ===
+    eng_o235_flange_fs: float = 155.8  # derived: cp-text:p28: prop hub forward face FS 158.8 less the 3 in extension
+    eng_o235_cg_from_flange_in: float = 14.75  # book: tcds-e223:p7: dry CG from the prop flange front face, toward the crankcase
+    eng_o235_cg_below_cl_in: float = 1.13  # book: tcds-e223:p7: dry CG below the shaft centreline
+    eng_o235_cg_left_in: float = 0.20  # book: tcds-e223:p7: dry CG left of the shaft centreline
+    eng_o235_bore_in: float = 4.375  # book: tcds-e223:p1: cylinder bore
+    eng_o235_stroke_in: float = 3.875  # book: tcds-e223:p1: piston stroke
     eng_book_prop_dia_in: float = 60.0  # conflict: plans-1980:p171: back cover 'max dia 60' (the inch mark is smudged)
     eng_book_cowl_trim_in: float = 9.0  # book: plans-1980:p157: trim about 9 in off each outboard end of the VariEze cowl
     eng_book_cowl_reinf_in: Tuple[int, float] = (
@@ -3213,6 +3221,42 @@ GEOMETRY_PROVENANCE: dict[str, dict] = {
         "",
         "low",
         "WL of the block centre; the book prints no prop or crank height (the fuselage top is about WL 32.8 at the firewall, p171, medium)",
+    ),
+    "eng_o235_flange_fs": _p(
+        "derived",
+        "cp-text:p28",
+        "medium",
+        "hub forward face FS 158.8 less the 3 in extension, the same arithmetic as the closure engine row; hub-to-flange offset beyond the extension unconfirmed",
+    ),
+    "eng_o235_cg_from_flange_in": _p(
+        "book",
+        "tcds-e223:p7",
+        "high",
+        "NOTE 8 dry CG from the flange front face, toward the crankcase (14.51 for E/G/M/P)",
+    ),
+    "eng_o235_cg_below_cl_in": _p(
+        "book",
+        "tcds-e223:p7",
+        "high",
+        "NOTE 8 dry CG below the shaft centreline (1.17 for E/G/M/P)",
+    ),
+    "eng_o235_cg_left_in": _p(
+        "book",
+        "tcds-e223:p7",
+        "high",
+        "NOTE 8 dry CG left of the shaft centreline (0.15 for E/G/M/P)",
+    ),
+    "eng_o235_bore_in": _p(
+        "book",
+        "tcds-e223:p1",
+        "high",
+        "cylinder bore, model data",
+    ),
+    "eng_o235_stroke_in": _p(
+        "book",
+        "tcds-e223:p1",
+        "high",
+        "piston stroke, model data",
     ),
     "eng_book_prop_dia_in": _p(
         "conflict",
