@@ -1756,7 +1756,7 @@ git commit -m "feat(guide): render key and render_cutaway.sh (lease check, atomi
 
 - [ ] **Step 1: Export**
 
-Run: `cd ~/open-ez && .venv/bin/python -m guide.export_glb`
+Run: `cd <repo> && .venv/bin/python -m guide.export_glb`
 Expected: `wrote output/guide/longez.glb (+ layup.json, shots.json) nodes=…`.
 
 - [ ] **Step 2: Deploy the Blender scripts to the GPU host**
@@ -1782,7 +1782,7 @@ Expected: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`.
 
 - [ ] **Step 4: Render the BL 5 hero only**
 
-Run: `cd ~/open-ez && guide/render_cutaway.sh --only hero-bl5`
+Run: `cd <repo> && guide/render_cutaway.sh --only hero-bl5`
 Expected: `renders: ~/.cache/long-ez/renders/<key>`.
 - On failure, read `ssh <gpu-host> cat <job root>/blender/layup-<key16>/out/log.txt`. A `check_axes`
   error means the glTF axis conversion does not cancel. In that case, fix the axis mapping in
@@ -2551,8 +2551,8 @@ source ~/.config/long-ez/env && bash scripts/deploy_guide.sh
 - [ ] **Step 1: Full suites, run from two directories**
 
 ```bash
-cd ~/open-ez && .venv/bin/python -m pytest -q -p no:cacheprovider && node --test guide/viewer/tests/*.test.mjs && .venv/bin/python -m guide.check
-cd /tmp && ~/open-ez/.venv/bin/python -m pytest -q ~/open-ez/tests/guide -p no:cacheprovider --rootdir ~/open-ez
+cd <repo> && .venv/bin/python -m pytest -q -p no:cacheprovider && node --test guide/viewer/tests/*.test.mjs && .venv/bin/python -m guide.check
+cd /tmp && <repo>/.venv/bin/python -m pytest -q <repo>/tests/guide -p no:cacheprovider --rootdir <repo>
 cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests -q
 ```
 
@@ -2570,7 +2570,7 @@ Record in the task notes:
 
 - [ ] **Step 3: Grader**
 
-Run `~/.claude/bin/grade-diff.sh` (house rule 2) on the M2 range of both repos. Push in the same turn
+Run `<grader script>` (house rule 2) on the M2 range of both repos. Push in the same turn
 as the grade (memory `infra_grade_diff_mute_is_stop_hook_reaper`). Do not push open-ez (public)
 without Ryan's per-instance OK; say so.
 

@@ -13,7 +13,7 @@ Done-means commands, final captain run at HEAD `6f050ff`:
 - `.venv/bin/python -m pytest -q -p no:cacheprovider`: `1 failed, 406 passed, 2 skipped`. The one failure is the pre-existing `scripts/assembly_test.py::test_full_assembly` (abstract `manufacturing_plan`), the same as in session 1.
 - `node --test guide/viewer/tests/*.test.mjs`: 16 pass, 0 fail.
 - `.venv/bin/python -m guide.check` (env sourced): `OK`, exit 0 (202 texts, recall 5/5).
-- `tests/guide` from `/tmp` with `--rootdir ~/open-ez`: 163 passed.
+- `tests/guide` from `/tmp` with `--rootdir <repo>`: 163 passed.
 
 ## Deviations from the plan
 
@@ -52,7 +52,7 @@ Done-means commands, final captain run at HEAD `6f050ff`:
 
 ## Process notes
 
-- **Commit gate vs thread cwd.** This thread's Bash cwd resets to the memory dir, so `session-intelligence` keys the green marker on that dir. A commit written `cd ~/open-ez && git commit` makes `verify-before-commit` look up open-ez's key, and it blocks. Task 8 committed normally, because the cwd was still open-ez then. For Task 9 I ran the tests again from the thread cwd with absolute paths and `--rootdir`, then committed with `git -C` (the same workaround session 1 used). The gate did its job: the run was real and green.
+- **Commit gate vs thread cwd.** This thread's Bash cwd resets to the memory dir, so `session-intelligence` keys the green marker on that dir. A commit written `cd <repo> && git commit` makes `verify-before-commit` look up open-ez's key, and it blocks. Task 8 committed normally, because the cwd was still open-ez then. For Task 9 I ran the tests again from the thread cwd with absolute paths and `--rootdir`, then committed with `git -C` (the same workaround session 1 used). The gate did its job: the run was real and green.
 - **Another lane committed during this session.** `33d11d4` ("render_cutaway reports lease holder, hold time and ETA; --wait queues via gpu-runner") landed between `e31f6ab` and `6f050ff`. It touches only `guide/render_cutaway.sh` and `tests/guide/test_render_cutaway.py`. I did not author or review it. The done-means run above is at HEAD `6f050ff`, which includes it.
 - **Tracked outputs rewritten by the suite.** Test runs rewrite `output/test_mfg/dxf/*` and `data/validation/openvsp_validation.json`. They were restored with `git checkout` before every commit and never committed.
 

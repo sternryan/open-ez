@@ -673,7 +673,7 @@ def test_two_method_disagreement_fails():
   the glb or layup changed (expect a new render key), then deploy with
   `source ~/.config/long-ez/env && bash scripts/deploy_guide.sh` and verify it in a browser.
 - [ ] **Step 2:** `git fetch`, confirm behind 0, then run
-  `TMPDIR=/tmp ~/.claude/bin/grade-diff.sh -s <session> -r origin/main..HEAD ~/open-ez` unsandboxed.
+  `TMPDIR=/tmp <grader script> -s <session> -r origin/main..HEAD <repo>` unsandboxed.
   Expect `VERDICT: PASS`.
 - [ ] **Step 3:** Leak scan of the added lines (the pattern from the M1 plan), a green unpiped test
   run, and `git push origin main` in the same turn.

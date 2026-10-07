@@ -13,7 +13,7 @@ Done-means commands, final captain run on the tree that became `645acc2`:
 - `.venv/bin/python -m pytest -q -p no:cacheprovider`: `1 failed, 420 passed, 2 skipped`. The one failure is the pre-existing `scripts/assembly_test.py::test_full_assembly` (`TypeError: Can't instan…`, abstract `manufacturing_plan`).
 - `node --test guide/viewer/tests/*.test.mjs`: 16 pass, 0 fail.
 - `.venv/bin/python -m guide.check` (env sourced): `OK` (202 texts, recall 5/5).
-- `tests/guide` from `/tmp` with `--rootdir ~/open-ez`: `177 passed`.
+- `tests/guide` from `/tmp` with `--rootdir <repo>`: `177 passed`.
 
 ## What shipped
 

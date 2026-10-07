@@ -36,6 +36,6 @@ Both items are committed, and these pass when re-run by you:
   `scripts/assembly_test.py::test_full_assembly`)
 - node tests
 - `guide.check` (with `~/.config/long-ez/env` sourced)
-- `tests/guide` run from `/tmp` with `--rootdir ~/open-ez`
+- `tests/guide` run from `/tmp` with `--rootdir <repo>`
 
 Your final message to the lead is the report's content.

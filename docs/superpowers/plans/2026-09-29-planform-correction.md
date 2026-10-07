@@ -509,7 +509,7 @@ plus any snapshot file the triage marked (a).
 ### Task 8: Grade, leak scan, push (lead)
 
 - [ ] **Step 1:** `git fetch origin`; confirm "behind 0".
-- [ ] **Step 2:** `TMPDIR=/tmp ~/.claude/bin/grade-diff.sh -s <session> -r origin/main..HEAD ~/open-ez`,
+- [ ] **Step 2:** `TMPDIR=/tmp <grader script> -s <session> -r origin/main..HEAD <repo>`,
   unsandboxed. Expect `VERDICT: PASS`.
 - [ ] **Step 3:** Leak scan: run the pre-push leak check from the M1 plan
   (`docs/superpowers/plans/2026-09-28-build-guide-m1.md`, the `git diff origin/main | grep -nE …` line),

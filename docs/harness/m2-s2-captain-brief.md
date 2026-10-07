@@ -46,6 +46,6 @@ Tasks 8 and 9 are committed, and these pass when re-run by you:
 - `node --test guide/viewer/tests/*.test.mjs`
 - `.venv/bin/python -m guide.check` (with `~/.config/long-ez/env` sourced)
 
-Also `tests/guide` passes when run from `/tmp` with `--rootdir ~/open-ez`.
+Also `tests/guide` passes when run from `/tmp` with `--rootdir <repo>`.
 
 Your final message to the lead is the report's content.

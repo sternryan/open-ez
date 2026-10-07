@@ -46,7 +46,7 @@
 - [ ] **Step 1: Create the venv and install**
 
 ```bash
-cd ~/open-ez
+cd <repo>
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -r requirements.txt -r requirements-dev.txt -r requirements-guide-dev.txt
 .venv/bin/python -m playwright install chromium
@@ -1857,7 +1857,7 @@ echo "deployed and verified: $got ops at $LONGEZ_SITE_URL"
 Run: `source ~/.config/long-ez/env && bash scripts/deploy_guide.sh`
 Expected: `deployed and verified: 19 ops at <url>` (17 ops + 2 stubs).
 
-- [ ] **Step 6: Retire the scratch doc repo.** The host site previously served docs from `~/long-ez-guide` (a local-only scratch repo from the design session). After Step 5 serves `docs/` from this build, `rm -rf ~/long-ez-guide`.
+- [ ] **Step 6: Retire the scratch doc repo.** The host site previously served docs from `<scratch docs dir>` (a local-only scratch repo from the design session). After Step 5 serves `docs/` from this build, `rm -rf <scratch docs dir>`.
 - [ ] **Step 7: Commit**: `git add guide/build_site.py scripts/deploy_guide.sh tests/guide/test_build_site.py && git commit -m "feat(guide): site build and verified private-network deploy"`
 
 ---
@@ -1875,6 +1875,6 @@ git ls-files | grep -iE '\.(jpg|jpeg|png|pdf|tif)$' | grep -v '^data/' || echo "
 
 Expected: `clean` and `no images tracked`.
 
-- [ ] **Step 3: Fresh-context grader** (house rule 2): run `~/.claude/bin/grade-diff.sh` from the repo root. The grader tries to prove the spec DoD items 1–5 false. Push in the **same turn** as a PASS (the grader's files are reaped at turn end).
+- [ ] **Step 3: Fresh-context grader** (house rule 2): run `<grader script>` from the repo root. The grader tries to prove the spec DoD items 1–5 false. Push in the **same turn** as a PASS (the grader's files are reaped at turn end).
 - [ ] **Step 4: Push**: `git push origin main` (public push authorized by the owner 2026-09-28 for guide code + own-words content under the overlap gate; scans never).
 - [ ] **Step 5: Owner acceptance.** The owner opens the site on the iPad over the private-network and walks through the Roncz path. Done when they can explain the sequence, the applicable corrections and the spatial fit (spec §1). Log the outcome to lane-log.

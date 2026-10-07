@@ -2,9 +2,9 @@
 status: draft — not ratified. Ryan approves scope before any CadQuery work starts.
 approver: unassigned
 inputs:
-  - ~/docs/research/2026-09-05-quick-build-ultralights-and-small-engines.md (§2 Part A/B, §3, §4, §5)
-  - ~/open-ez/CLAUDE.md (SSOT config pattern, AircraftComponent base class, ComplianceTracker)
-  - ~/sea-ez (sibling Part 103 project; shared tube/gusset fabrication skills)
+  - <private research notes>/2026-09-05-quick-build-ultralights-and-small-engines.md (§2 Part A/B, §3, §4, §5)
+  - <repo>/CLAUDE.md (SSOT config pattern, AircraftComponent base class, ComplianceTracker)
+  - <sibling project> (sibling Part 103 project; shared tube/gusset fabrication skills)
 ---
 
 # Affordaplane plans-as-code kickoff
