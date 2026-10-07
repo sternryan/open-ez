@@ -15,9 +15,13 @@ Each number carries a label in `GEOMETRY_PROVENANCE`:
 
 - **book** or **derived**: it comes from a page of a registered source, or is calculated from such
   values. The citation looks like `om-1980:p28` (a document id and a page).
+- **cp-corrected**: the plans were later corrected in the Canard Pusher newsletter, and the value
+  follows the correction (with its citation). The printed plans page is not the final word there.
 - **conflict**: two sources disagree and both are kept.
-- **unsourced** or **converted-unsourced**: no page has been found. The number stays visible and is
-  marked, not hidden and not trusted.
+- **unsourced**: no page has been found.
+- **converted-unsourced**: a number that was shifted from one station frame to another and never checked
+  against a page.
+  Both stay visible and marked, not hidden and not trusted.
 
 The registered documents are listed in `data/sources/registry.yaml`. A citation to an unregistered
 document is rejected by the code.
@@ -33,7 +37,10 @@ and cites the plans by page; it does not copy them.
 
 - **Neutral point**, the balance point of the airplane's lift, computed two ways: a hand-derived
   formula, and a vortex-lattice simulation (OpenVSP/VSPAERO). If the two disagree by more than a set
-  limit, the check fails.
+  limit, the check fails. The center of gravity must sit ahead of the neutral point: then a nose
+  bump naturally returns to level (stable). Behind it, the disturbance grows (unstable).
+- **VSPAERO** is free, NASA-origin software (the solver in OpenVSP). It computes the neutral point
+  from a 3D model of the wings and canard, which makes it an independent cross-check on the hand formula.
 - **Static margin**, how far the centre of gravity sits ahead of the neutral point.
 - **Centre of gravity and weight**, from a part-by-part ledger (`data/mass_ledger.yaml`) that is
   meant to add up to the sample empty airplane in the owner's manual.
@@ -41,7 +48,8 @@ and cites the plans by page; it does not copy them.
 ## 5. Failing on purpose
 
 When the model disagrees with the book, the test is kept failing and marked as an expected failure
-(strict `xfail`), and the disagreement is logged in `docs/geometry-correction-ledger.md`. The
+(strict `xfail`: a test expected to fail, which turns the suite red if it ever passes, so a change that
+silently closes a gap is noticed and the ledger updated), and the disagreement is logged in `docs/geometry-correction-ledger.md`. The
 alternative is adjusting a fitted number until the test passes, which is how the code this project
 started from ended up with numbers that matched by construction. A failing check here is a to-do
 item with an address.

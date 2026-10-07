@@ -47,7 +47,8 @@ flowchart LR
 ```
 
 Every dimension and weight lives in one file, and each carries a label: taken from a book page,
-calculated from such values, or flagged as in conflict or unsourced. The 3D parts and the physics
+calculated from such values, corrected by a later Canard Pusher newsletter (`cp-corrected`), or
+flagged as in conflict, unsourced, or converted between station frames without a check. The 3D parts and the physics
 checks are both built from that file, so they cannot quietly disagree about the airplane. The
 rehearsal replays the book's construction chapters on the 3D model. The checks work out where the
 airplane balances, in two independent ways that must agree. More in [`docs/how-it-works.md`](docs/how-it-works.md).
@@ -60,8 +61,8 @@ airplane balances, in two independent ways that must agree. More in [`docs/how-i
   the gap is logged in [`docs/geometry-correction-ledger.md`](docs/geometry-correction-ledger.md); we
   do not tune the model until it passes. Why: a green check you tuned yourself proves nothing, and
   the visible gap tells you what to go and find out.
-- **Two ways to get the same answer.** The balance point is computed by a formula and by a flow
-  simulation, and they must agree. Why: one method can hide its own mistakes.
+- **Two ways to get the same answer.** The balance point is computed by a hand formula and by
+  VSPAERO, a free NASA-origin solver that works it out from a 3D model of the wings, and the two must agree. Why: one method can hide its own mistakes.
 - **Same airplane, new process.** Keep the outer shape, weights and balance range; change how it is
   made. Why: proven aerodynamics and handling carry over, and the thing to prove shrinks to "the new
   structure is at least as strong and does not change how it flies".
@@ -95,13 +96,13 @@ on a machine and no part has been built from these files.
 
 - **Long-EZ:** a two-seat canard homebuilt airplane designed by Burt Rutan.
 - **Canard:** the small forward wing. On this airplane it carries part of the lift and does the pitch control.
-- **Neutral point (NP):** the balance point for pitch stability. The center of gravity must stay ahead of it.
+- **Neutral point (NP):** the balance point for pitch stability. With the center of gravity ahead of it, the nose returns after a disturbance (stable); behind it, the disturbance grows.
 - **Static margin:** how far ahead of the neutral point the center of gravity sits. More margin, more stable.
 - **CG (center of gravity):** where the airplane balances. It has a safe range.
-- **FS (fuselage station):** a distance, in inches, measured along the airplane from a reference point.
+- **FS (fuselage station):** a distance, in inches, measured along the airplane from the plans' reference datum.
 - **Provenance:** the label on a number saying where it came from, or that it has no source.
-- **Strict xfail:** a test marked "expected to fail" that turns the suite red if it ever starts passing. Used to keep known gaps visible.
-- **VSPAERO:** free flow-simulation software (part of OpenVSP) used as the second method for the balance point.
+- **Strict xfail:** a test expected to fail. If it ever starts passing the suite turns red too, so a change that silently "fixes" a gap gets noticed and the ledger gets updated.
+- **VSPAERO:** free NASA-origin software (OpenVSP's solver). It computes the balance point from a 3D model of the wings, as an independent cross-check on the hand formula.
 - **Mass ledger:** a part-by-part list of weights and positions that should add up to the manual's sample empty airplane.
 
 ## Go deeper

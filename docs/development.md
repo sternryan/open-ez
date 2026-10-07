@@ -78,19 +78,38 @@ python3.13 scripts/vspaero_np.py     # writes data/validation/vspaero_np.json
 The report treats the VSPAERO result as current only if its recorded geometry matches the live
 configuration.
 
-## Optional remote tooling
+## Optional remote tooling and environment variables
 
-Three scripts need a remote GPU host or a private web host. They read their settings from environment
-variables and stop with a message naming the missing one. Nothing site-specific is stored in the repo.
+Some scripts need a remote host (a GPU box, a private web host, or a test node). They read their
+settings from environment variables and stop with a message naming the missing one. Nothing
+site-specific is stored in the repo. You can keep the values in a local env file outside the
+repository and load it with `set -a; . /path/to/your.env; set +a`.
 
-| script | what it does | variables |
+| variable | needed by | what it is |
 |---|---|---|
-| `guide/render_cutaway.sh` | Blender cutaway renders on a remote GPU host | `OPENEZ_RENDER_HOST` and the `OPENEZ_*` variables listed at the top of the script |
-| `scripts/publish_public.sh` | builds the public site and force-pushes it to `gh-pages` only | `OPENEZ_BLENDER_SCRIPTS` |
-| `scripts/deploy_guide.sh` | publishes the full guide, with private scans, to a private host | `LONGEZ_DEPLOY_HOST`, `LONGEZ_SITE_URL`, `LONGEZ_DEPLOY_ROOT`, `LONGEZ_PRIVATE_DIR`, `OPENEZ_BLENDER_SCRIPTS` |
+| `OPENEZ_RENDER_HOST` | `guide/render_cutaway.sh` | ssh name of the remote GPU host that runs Blender |
+| `OPENEZ_BLENDER_SCRIPTS` | `guide/render_cutaway.sh`, `scripts/publish_public.sh`, `scripts/deploy_guide.sh` | local directory holding the Blender job scripts |
+| `OPENEZ_GPU_RUNNER` | `guide/render_cutaway.sh` | local command that dispatches the GPU job |
+| `OPENEZ_LEASE_CHECK_CMD` | `guide/render_cutaway.sh` | command run on the host; non-zero exit means the GPU is in use |
+| `OPENEZ_RENDER_DEPLOYED_DIR` | `guide/render_cutaway.sh` | directory on the host where the Blender scripts are installed |
+| `OPENEZ_RENDER_JOB_ROOT` | `guide/render_cutaway.sh` | directory on the host where job folders are created |
+| `LONGEZ_RENDER_CACHE` | render, publish and deploy scripts (optional) | local render cache; default `~/.cache/long-ez/renders` |
+| `LONGEZ_EXPORT_DIR`, `LONGEZ_POLL_S` | `guide/render_cutaway.sh` (optional) | export folder and poll interval overrides |
+| `LONGEZ_DEPLOY_HOST` | `scripts/deploy_guide.sh` | ssh name of the private web host |
+| `LONGEZ_SITE_URL` | `scripts/deploy_guide.sh` | URL the deployed site is served from |
+| `LONGEZ_DEPLOY_ROOT` | `scripts/deploy_guide.sh` | directory on the web host that holds `site/` |
+| `LONGEZ_PRIVATE_DIR` | `scripts/deploy_guide.sh` | directory on the web host that holds private page scans |
+| `OPEN_EZ_TEST_HOST` | `scripts/remote_test.sh` | ssh name of a remote node to run the test suite on |
+| `OPEN_EZ_TEST_N`, `OPEN_EZ_TEST_TIMEOUT` | `scripts/remote_test.sh` (optional) | parallel workers, and a wall-clock cap in seconds |
+| `OPEN_EZ_TEST_HOSTS` | `scripts/remote_test_all.sh` | two ssh names, `"<linux-host> <mac-host>"` |
+| `OPEN_EZ_TEST_N_LINUX`, `OPEN_EZ_TEST_N_MAC` | `scripts/remote_test_all.sh` (optional) | parallel workers per node |
+| `VSP_RUNNER` | `tests/test_vspaero_leg.py`, `scripts/remote_test.sh` (optional) | script that runs the VSPAERO job on a remote runner; without it the test uses local OpenVSP or skips |
+| `VSP_JOB_ROOT` | `tests/test_vspaero_leg.py` (optional) | job directory used with `VSP_RUNNER`; default `/tmp/vsp-jobs` |
+| `OPENEZ_REQUIRE_VSPAERO` | `tests/test_vspaero_leg.py` (optional) | set to `1` to fail, not skip, when OpenVSP is absent |
+| `LONGEZ_SOURCE_CACHE`, `LONGEZ_COBELU_DIR`, `LONGEZ_CP_SECTIONS` | `scripts/fetch_sources.py` | where your own copies of the source documents live and are cached |
+| `LONGEZ_SCAN_PAGES`, `LONGEZ_SCAN_TEXT_DIR` | `scripts/vision_bakeoff.py`, `guide/sources.py` (optional) | your own plans page images and text, kept outside the repo |
 
-Tests for the VSPAERO leg can use a remote runner by setting `VSP_RUNNER`; without it they use a local
-OpenVSP install or skip.
+`scripts/publish_public.sh` force-pushes the built site to the `gh-pages` branch only; it never touches `main`.
 
 ## About `main.py`
 

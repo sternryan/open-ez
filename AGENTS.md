@@ -17,7 +17,7 @@ This is a PUBLIC repository. See "Public-repo hygiene" below before adding anyth
 
 - **Python 3.11+** (the local venv runs 3.12; CI runs 3.11)
 - **CadQuery** (OpenCASCADE B-Rep kernel) for geometry
-- **OpenVSP 3.48.2 / VSPAERO** for the vortex-lattice leg of the two-method NP check. Its Python
+- **OpenVSP 3.53.1 / VSPAERO** for the vortex-lattice leg of the two-method NP check. Its Python
   bindings are not on pip; `scripts/install_openvsp.sh` installs them for a separate python3.13.
 - **NumPy/SciPy**, **ezdxf**, **PyYAML**
 - **Guide:** a static site built by `guide/build_site.py`; viewer in `guide/viewer/` (three.js,
