@@ -4,6 +4,13 @@ Near-term open items. The long view (blocks 1 to 7 and what each must prove) is 
 `docs/superpowers/specs/2026-09-29-roadmap-same-airplane-new-process-design.md`. Block 2 work is
 planned in `docs/superpowers/specs/2026-09-30-block2-rehearsal-design.md`.
 
+## When Block 4 (process lane) starts
+
+- **Retire the forge exports.** `data/forge-3dprinting-context.md`, `data/forge-aviation-context.md`,
+  `data/forge-bridges.md` and `data/forge_context.py` are personal knowledge-base exports kept as
+  context, not sourced references. Fold anything still useful into the process-lane docs with real
+  citations, then delete them (and the pointer in `data/knowledge_base_sources.md`).
+
 ## Sources to find (Block 1 "still flagged")
 
 Each clears a flag in `docs/block1-report.md` part 3. Book or registered source only; never measure

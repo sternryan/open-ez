@@ -1,3 +1,8 @@
+> **To be refactored away at Block 4 (process lane).** A personal knowledge-base export kept as
+> working context, not a sourced reference. When Block 4 starts, fold what is still useful into
+> the process-lane docs with real citations, then delete this file and `data/forge_context.py`.
+> Tracked in `TODOS.md`.
+
 # Forge Knowledge Export: 3dprinting
 
 _Domain: 3dprinting | Pages matched by keyword_
