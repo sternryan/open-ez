@@ -21,7 +21,7 @@ REPO = Path(__file__).resolve().parents[1]
 COMMITTED = REPO / "data" / "validation" / "vspaero_np.json"
 REQUIRED = os.environ.get("OPENEZ_REQUIRE_VSPAERO") == "1"
 RUNNER = os.environ.get("VSP_RUNNER")
-JOB_ROOT = Path(os.environ.get("VSP_JOB_ROOT", "/tmp/vsp-jobs"))
+JOB_ROOT = Path(os.environ.get("VSP_JOB_ROOT", "/srv/cpu-jobs/vsp"))
 
 try:
     import openvsp  # noqa: F401

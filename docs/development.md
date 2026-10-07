@@ -104,7 +104,7 @@ repository and load it with `set -a; . /path/to/your.env; set +a`.
 | `OPEN_EZ_TEST_HOSTS` | `scripts/remote_test_all.sh` | two ssh names, `"<linux-host> <mac-host>"` |
 | `OPEN_EZ_TEST_N_LINUX`, `OPEN_EZ_TEST_N_MAC` | `scripts/remote_test_all.sh` (optional) | parallel workers per node |
 | `VSP_RUNNER` | `tests/test_vspaero_leg.py`, `scripts/remote_test.sh` (optional) | script that runs the VSPAERO job on a remote runner; without it the test uses local OpenVSP or skips |
-| `VSP_JOB_ROOT` | `tests/test_vspaero_leg.py` (optional) | job directory used with `VSP_RUNNER`; default `/tmp/vsp-jobs` |
+| `VSP_JOB_ROOT` | `tests/test_vspaero_leg.py` (optional) | job directory used with `VSP_RUNNER`; default `/srv/cpu-jobs/vsp` |
 | `OPENEZ_REQUIRE_VSPAERO` | `tests/test_vspaero_leg.py` (optional) | set to `1` to fail, not skip, when OpenVSP is absent |
 | `LONGEZ_SOURCE_CACHE`, `LONGEZ_COBELU_DIR`, `LONGEZ_CP_SECTIONS` | `scripts/fetch_sources.py` | where your own copies of the source documents live and are cached |
 | `LONGEZ_SCAN_PAGES`, `LONGEZ_SCAN_TEXT_DIR` | `scripts/vision_bakeoff.py`, `guide/sources.py` (optional) | your own plans page images and text, kept outside the repo |
