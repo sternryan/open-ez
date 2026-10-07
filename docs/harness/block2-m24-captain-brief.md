@@ -28,8 +28,8 @@ Write a Review Focus list in your log before Task 1 and pin each item with a tes
 ## Lanes (token budget is the constraint; follow this, log deviations with the reason)
 
 - **Crew default is Sonnet.** Opus is not used by you; the lead runs one Opus visual review.
-- **Op YAML drafts go to the local-model first.** `$LONGEZ_SMITHY_URL` (in the env file) is an
-  OpenAI-compatible endpoint; model `local-model lane` (Gemma, 24k context: keep each request under
+- **Op YAML drafts go to the local-model first.** The local-model endpoint URL (in the env file) is an
+  OpenAI-compatible endpoint; model `local-model` (Gemma, 24k context: keep each request under
   ~20k tokens, so draft one chapter or ~8 ops per call). Feed it the op table and materials rows
   from the research, the existing `guide/graph/ch09.yaml` as the shape example, and the rule
   "own words, ten words or fewer per paraphrase". Then run `guide.check` and have one Sonnet crew

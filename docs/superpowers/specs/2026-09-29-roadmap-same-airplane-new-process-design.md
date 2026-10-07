@@ -14,7 +14,7 @@ shape, weights and CG envelope, but uses a new process and modern systems:
 **Owner rulings (2026-09-29):** the Roncz canard, and a Rotax engine. The Rotax model is chosen
 by a fit-and-CG trade (Block 6), not up front.
 
-**Service assumptions (owner, 2026-09-29):** based at KOAK; design for outdoor tie-down (a hangar is
+**Service assumptions (owner, 2026-09-29):** based at the owner's home field; design for outdoor tie-down (a hangar is
 hoped for, not assumed); the airplane travels, so hot ramps elsewhere are in the envelope; paint is
 chosen for thermal performance.
 
