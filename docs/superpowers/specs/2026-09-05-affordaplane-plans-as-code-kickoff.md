@@ -1,3 +1,5 @@
+> **Historical.** An unratified draft kickoff for a different (small ultralight) project, superseded by the [roadmap](2026-09-29-roadmap-same-airplane-new-process-design.md). Kept for the record; not current state.
+
 ---
 status: draft — not ratified. Ryan approves scope before any CadQuery work starts.
 approver: unassigned

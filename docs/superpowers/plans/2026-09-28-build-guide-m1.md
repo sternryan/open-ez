@@ -1,3 +1,5 @@
+> **Historical.** The implementation plan for the first (canard-only) build rehearsal, superseded by the [Block 2 rehearsal design](../specs/2026-09-30-block2-rehearsal-design.md). Kept for the record; not current state.
+
 # Long-EZ Build Guide M1 "Build Rehearsal" Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

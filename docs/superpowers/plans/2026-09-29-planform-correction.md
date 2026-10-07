@@ -1,3 +1,5 @@
+> **Historical.** The plan for the September 2026 planform correction, whose results are recorded in the [Block 1 report](../../block1-report.md). Kept for the record; not current state.
+
 # open-ez Planform Correction Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

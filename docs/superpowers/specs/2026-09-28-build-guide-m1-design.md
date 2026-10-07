@@ -1,3 +1,5 @@
+> **Historical.** The design for the first (canard-only) build rehearsal, superseded by the [Block 2 rehearsal design](2026-09-30-block2-rehearsal-design.md). Kept for the record; not current state.
+
 # Long-EZ Interactive Build Guide — M1 "Build Rehearsal" (canard slice)
 
 Status: APPROVED 2026-09-28 (rev 2: public/private split)
