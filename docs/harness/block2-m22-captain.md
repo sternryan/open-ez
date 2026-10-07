@@ -190,7 +190,7 @@ p43 6-5, p44 6-6.
   typecheck clean; viewer 50/50; guide.check OK.
 
 ## Fix: Blender cutaway contract (e44ec07)
-- Break: the M2.2 site glb carries the fuselage (it spans both sides of B.L. 0), so the anvil Blender
+- Break: the M2.2 site glb carries the fuselage (it spans both sides of B.L. 0), so the GPU host Blender
   job's contract refused it ("scene Y extent -12.30..70.80"). Task 5 had narrowed the export test's
   B.L. range check to canard meshes, which hid exactly this.
 - Fix (captain, inline): `guide.export_glb` also writes the cutaway's inputs, canard only, into

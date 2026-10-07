@@ -24,7 +24,7 @@ Suite grew from 1080 to 1146 passing tests over the three commits.
 - A/B/C closure (p136): A residual -0.066 in, B -0.248 in (both inside the spec's closure), C only with the derived inward lean 3.58 in (upright C is 2+ in out).
 - The ledger rows are in no sum (`fuselage_cg` matches by fuselage part name; test added).
 
-## Task 2: smithy draft outcome (for the lane log)
+## Task 2: local-model draft outcome (for the lane log)
 
 27 ops drafted; all kept their ids, requires, components and pages from the op plan. Light edits (wording only): f19.mount-cores,
 f19.hardpoints, f19.pads-plates, f19.le-cores, f19.bottom-skin, f19.top-skin, f20.cut-cores, f20.trim = 8. Substantive fixes: 19.
@@ -47,7 +47,7 @@ op YAML on this evidence (the drafts were a usable skeleton, not usable text).
   hinge axes and stops, the three conflicts, the A/B/C closure, the lean and the tip chord as data. `wing.jigs` and `winglet.jig` are flagged workshop.
 - Small edits outside the brief: `guide/lab/src/logic/graph.ts` NON_CANARD (19, 20), `guide/lab/src/logic/m25.ts` FUSE_PREFIXES (wing., winglet.), `guide/viewer/js/app.js` skip list.
   Crew B may want to revisit the lab ones.
-- `/conduct` on local-anvil was not used: the kernels are small and were written and tested directly.
+- `/conduct` on local-model lane was not used: the kernels are small and were written and tested directly.
 
 ## Values and shapes I could not place (all fitted, tagged, and named in part notes)
 

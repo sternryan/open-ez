@@ -111,7 +111,7 @@ def test_real_export_nests_plies_and_keeps_inches(
 
 
 # The Blender cutaway's inputs are canard-only (render_cutaway.sh; its contract checks the WHOLE scene spans
-# B.L. 0..semi-span). The M2.2 site glb gained the fuselage and broke that contract on anvil; the node set
+# B.L. 0..semi-span). The M2.2 site glb gained the fuselage and broke that contract on the render host; the node set
 # below is the pre-M2.2 export's (f41ac44), so the cutaway input cannot pick up anything else again.
 PRE_M22_CANARD_NODES = {
     "longez",

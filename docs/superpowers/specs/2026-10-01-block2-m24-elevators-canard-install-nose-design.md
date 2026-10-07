@@ -79,7 +79,7 @@ firewall.
 - Graph: ch30.yaml gains the `r30.elev-*`, `r30.canard-tips` and ch12-gap ops, with the stub
   `r30.elevators` replaced by `r30.elev-cs11` (or kept as an alias that requires it); new
   `ch13.yaml` with the `f13.*` ops. Owner's words; `guide.check` overlap gate. Op YAML is drafted
-  by the smithy `local-anvil` lane from the research notes and reviewed once by a Sonnet crew.
+  by the local-model `local-model lane` lane from the research notes and reviewed once by a Sonnet crew.
 - Geometry:
   - `core/elevators_book.py`: tube, hinge points, lead weights, travel limits; section
     representational.
@@ -91,7 +91,7 @@ firewall.
     elevator travel limits (Roncz, cobelu), each with provenance. `fs_nose` −45.5
     (converted-unsourced) is reconciled against the book tip: record the move in the ledger.
   - Code with one-file, test-expressible behaviour goes through `/conduct` (tests written first,
-    local-anvil writes the bodies). Lab layout and visual work stays with a Claude implementer.
+    local-model lane writes the bodies). Lab layout and visual work stays with a Claude implementer.
 - Ledger and physics: new rows as in §2; any physics test that moves gets a ledger row and no
   loosened tolerance. Two nose arms mean the readout CG, if ever computed, shows a band.
 - Lab: canard joins the fuselage; elevator hang and travel animation; nose-gear retraction on sim

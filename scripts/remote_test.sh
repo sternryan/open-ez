@@ -16,7 +16,7 @@ T0=$(date +%s)
 # A stalled node must fail loudly within about a minute, not hang the run: bounded connect, keepalives that give up.
 SSH_OPTS=(-o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4)
 # Keepalives catch a dead link, not a remote run that is alive but stuck: cap the whole remote run too (OPEN_EZ_TEST_TIMEOUT, s).
-# 2700 s since 2026-10-05: the full lab e2e on the hammer mac lane outgrew 1500 s (~1640 s measured).
+# 2700 s since 2026-10-05: the full lab e2e on a remote Mac outgrew 1500 s (~1640 s measured).
 CAP=()
 command -v timeout >/dev/null && CAP=(timeout "${OPEN_EZ_TEST_TIMEOUT:-2700}")
 

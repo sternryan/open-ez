@@ -1,6 +1,6 @@
 # M2 session 3: captain report (Task 11 + checklist nit)
 
-Both items are **done**. The captain re-verified them, and they are committed in one commit, `645acc2`. Nothing was pushed or deployed. Nothing touched anvil, hearth or any remote host. No commit carries a trailer.
+Both items are **done**. The captain re-verified them, and they are committed in one commit, `645acc2`. Nothing was pushed or deployed. Nothing touched the GPU host, the home server or any remote host. No commit carries a trailer.
 
 ## Status
 
@@ -73,7 +73,7 @@ Done-means commands, final captain run on the tree that became `645acc2`:
 - **The resumed implementer ran in the background.** Round-1 fixes went through `SendMessage` to the existing implementer, which resumed it in the background, and its completion notice went to the lead. From then on every crew agent was a fresh foreground `Agent` call.
 - **The commit gate blocked again.** It is the same cwd-key issue as sessions 1 and 2. I ran the viewer e2e green from the thread cwd with absolute paths and `--rootdir`, then committed with `git -C`.
 - **Tracked outputs** (`output/test_mfg/dxf/*`, `data/validation/openvsp_validation.json`) were rewritten by the suite and restored with `git checkout` before the commit. They were never committed.
-- **Public-repo hygiene.** I grepped the diff, this log and this report for absolute home paths, tailnet hostnames, 100.x IPs and the banned phrase, and found none.
+- **Public-repo hygiene.** I grepped the diff, this log and this report for absolute home paths, private-network hostnames, 100.x IPs and the banned phrase, and found none.
 
 ## Notes for Task 12
 

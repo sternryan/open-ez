@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A tailnet-served interactive canard build rehearsal (ch 10/30/12): a validated step graph, plans-change links scored against the prior owner's annotations, a selectable 3D canard, and a source pane.
+**Goal:** A private-network-served interactive canard build rehearsal (ch 10/30/12): a validated step graph, plans-change links scored against the prior owner's annotations, a selectable 3D canard, and a source pane.
 
-**Architecture:** A new `guide/` package inside open-ez (public) holds the schema, parsers, gates, exporter, and a static three.js viewer. Authored content is YAML in `guide/graph/`, in our own words. Private assets (scan page images, OCR text) never enter git. They are built into a cache dir, rsynced to the tailnet host, and symlinked into the served site.
+**Architecture:** A new `guide/` package inside open-ez (public) holds the schema, parsers, gates, exporter, and a static three.js viewer. Authored content is YAML in `guide/graph/`, in our own words. Private assets (scan page images, OCR text) never enter git. They are built into a cache dir, rsynced to the private-network host, and symlinked into the served site.
 
 **Tech Stack:** Python 3.12 (uv venv), CadQuery ≥2.4, PyYAML, PyMuPDF, tesseract, markdown; three.js (vendored ES modules); node:test for viewer logic; Playwright (Python) for e2e.
 
@@ -12,21 +12,21 @@
 
 ## Global Constraints
 
-- open-ez is a **PUBLIC** repo. Never commit: scan images, OCR text, verbatim plans or Canard Pusher text, tailnet hostnames/IPs, personal filesystem paths. Deploy targets come from env vars (`LONGEZ_DEPLOY_HOST`, `LONGEZ_SITE_URL`), with no defaults in code.
+- open-ez is a **PUBLIC** repo. Never commit: scan images, OCR text, verbatim plans or Canard Pusher text, private-network hostnames/IPs, personal filesystem paths. Deploy targets come from env vars (`LONGEZ_DEPLOY_HOST`, `LONGEZ_SITE_URL`), with no defaults in code.
 - Never claim the plans are public domain anywhere in the repo.
 - `python -m guide.check` (full mode, sources present) must pass before any commit touching `guide/graph/`.
 - Materials/plies/dimensions in content come only from sources. Never invented.
 - Default variant in the viewer is `roncz` (AGENTS.md safety mandate).
 - No runtime CDN: three.js is vendored; its version is enumerated at vendoring time (`npm view three version`) and recorded with the date in `guide/viewer/vendor/three/VERSION`.
 - Commit messages: conventional prefix; **no `Claude-Session:` trailer** (owner's house rule 10).
-- Private asset layout on the host: `/tank/share/long-ez/private/scan-1980/pages/NNN.jpg` (NNN = zero-padded scan page).
+- Private asset layout on the host: `<host private dir>/private/scan-1980/pages/NNN.jpg` (NNN = zero-padded scan page).
 - Local caches (outside repo): `~/.cache/long-ez/scan-1980/{pages,text}`, `~/.cache/long-ez/cobelu` (a git clone of cobelu/Long-EZ).
 - All local paths and the deploy target live in `~/.config/long-ez/env` (never committed). Source env vars for the overlap gate: `LONGEZ_CP_SECTIONS` (path to `CPs_1_to_82_Sections.txt`), `LONGEZ_COBELU_DIR`, `LONGEZ_SCAN_TEXT_DIR`. Full-mode check exits **2** if any is missing.
 - Log each implementation wave to `~/.claude/state/lane-log.tsv`.
 
 ## Review Focus
 
-1. **Viewer opened off-tailnet / no private assets** (`scanBase: null`): the source pane shows the cobelu figure link or "scan not available", never a broken image. Pinned in Task 11.
+1. **Viewer opened off-private-network / no private assets** (`scanBase: null`): the source pane shows the cobelu figure link or "scan not available", never a broken image. Pinned in Task 11.
 2. **localStorage throws** (private browsing): checklist ticks still work in memory; no crash. Pinned in Task 11.
 3. **Model file missing/404**: ops, sources and checklists still render with a "3D unavailable" notice. Pinned in Task 11.
 4. **CP entry with no page** (`LPC #7, MEO, Back cover of plans.`) or a multi-line description: parsed, not dropped. Pinned in Task 2.
@@ -1240,8 +1240,8 @@ if __name__ == "__main__":
 
 ```bash
 .venv/bin/python -m guide.scan_ingest "$LONGEZ_SCAN_PDF"     # owner's scan path, set in the shell, never committed
-ssh "$LONGEZ_DEPLOY_HOST" 'mkdir -p /tank/share/long-ez/private/scan-1980/pages'
-rsync -a ~/.cache/long-ez/scan-1980/pages/ "$LONGEZ_DEPLOY_HOST":/tank/share/long-ez/private/scan-1980/pages/
+ssh "$LONGEZ_DEPLOY_HOST" 'mkdir -p <host private dir>/private/scan-1980/pages'
+rsync -a ~/.cache/long-ez/scan-1980/pages/ "$LONGEZ_DEPLOY_HOST":<host private dir>/private/scan-1980/pages/
 git clone --depth 1 https://github.com/cobelu/Long-EZ ~/.cache/long-ez/cobelu
 ```
 
@@ -1288,7 +1288,7 @@ Because `requires` is AND-only, `c12.alignment-pins` lists `c06.fuselage-assembl
 
 - [ ] **Step 1: Confirm the page map for slice pages.** Open `~/.cache/long-ez/scan-1980/page_map.proposed.yaml` and view each scan page 50–75 and 171 image. Write only **confirmed** `scan_pp: "chapter-page"` entries into `guide/graph/pages.yaml`, plus `171: back-cover`.
 - [ ] **Step 2: Transcribe annotations** on scan pp 50–75 and 171 (session vision on the page images). For each handwritten note write `{scan_pp, cp, lpc, class, text: <≤15-word factual gist>, confirmed: false}` into `annotations.yaml`. **The owner reviews each entry** against the page image and flips it to `confirmed: true`. Nothing is confirmed by the agent alone.
-- [ ] **Step 3: Draft op text via the smithy lane.** For each non-stub op, send the smithy local-heavy lane (fabric scheduler, model `local-heavy`) the relevant cobelu section plus scan OCR text. Instruction: "Write a 1–3 sentence summary and 2–5 checklist items IN YOUR OWN WORDS; do not copy any phrase of 5+ words; do not invent dimensions or ply counts. Copy numbers only if they appear in the source." Log the wave (`lane=smithy-local`).
+- [ ] **Step 3: Draft op text via the local-model lane.** For each non-stub op, send the local-model local-model lane lane (fabric scheduler, model `local-model lane`) the relevant cobelu section plus scan OCR text. Instruction: "Write a 1–3 sentence summary and 2–5 checklist items IN YOUR OWN WORDS; do not copy any phrase of 5+ words; do not invent dimensions or ply counts. Copy numbers only if they appear in the source." Log the wave (`lane=local-model-local`).
 - [ ] **Step 4: Session edit.** Fix accuracy against the scan page, add `sources` (`scan-1980` scan_pp for ch 10/12; `cobelu` with `heading` and `figure: I/images/<ch>/<file>.png` for ch 30), `materials` only where a source states them, and `changes` for every confirmed annotation (`status: verified` only after reading the matching CP entry in `CPs_1_to_82_Sections.txt`, otherwise `unresolved`).
 - [ ] **Step 5: Run the full gate**
 
@@ -1829,18 +1829,18 @@ if __name__ == "__main__":
 ```
 
 ```bash
-# scripts/deploy_guide.sh — build, gate, and publish the guide to the tailnet host.
+# scripts/deploy_guide.sh — build, gate, and publish the guide to the private-network host.
 #!/usr/bin/env bash
 set -euo pipefail
-: "${LONGEZ_DEPLOY_HOST:?set LONGEZ_DEPLOY_HOST (ssh target of the tailnet host)}"
-: "${LONGEZ_SITE_URL:?set LONGEZ_SITE_URL (tailnet https URL of the site)}"
+: "${LONGEZ_DEPLOY_HOST:?set LONGEZ_DEPLOY_HOST (ssh target of the private-network host)}"
+: "${LONGEZ_SITE_URL:?set LONGEZ_SITE_URL (private-network https URL of the site)}"
 cd "$(dirname "$0")/.."
 PY=.venv/bin/python
 $PY -m guide.check                       # full mode; exits non-zero on any gate failure
 $PY -m guide.export_glb --out output/guide/longez.glb
 $PY -m guide.build_site --out site --models output/guide/longez.glb --scan-base private/scan-1980/pages/
-rsync -a --delete --exclude private/ site/ "$LONGEZ_DEPLOY_HOST":/opt/long-ez-guide/site/
-ssh "$LONGEZ_DEPLOY_HOST" 'ln -sfn /tank/share/long-ez/private /opt/long-ez-guide/site/private'
+rsync -a --delete --exclude private/ site/ "$LONGEZ_DEPLOY_HOST":<site root>/site/
+ssh "$LONGEZ_DEPLOY_HOST" 'ln -sfn <host private dir>/private <site root>/site/private'
 want=$(python3 -c 'import json;print(len(json.load(open("site/graph.json"))["ops"]))')
 body=$(curl -fsS "$LONGEZ_SITE_URL/graph.json")
 got=$(python3 -c 'import json,sys;print(len(json.loads(sys.stdin.read())["ops"]))' <<<"$body")
@@ -1849,7 +1849,7 @@ curl -fsS -o /dev/null "$LONGEZ_SITE_URL/private/scan-1980/pages/058.jpg" || { e
 echo "deployed and verified: $got ops at $LONGEZ_SITE_URL"
 ```
 
-`--scan-base` is relative (`private/scan-1980/pages/`), so the same build works under any host. The host already runs the static service (`long-ez-guide.service`, 127.0.0.1:7485 behind `tailscale serve`, set up 2026-09-28). The rsync `--delete` excludes `private/`, so the symlink survives.
+`--scan-base` is relative (`private/scan-1980/pages/`), so the same build works under any host. The host already runs the static service (`long-ez-guide.service`, 127.0.0.1:7485 behind `a private reverse proxy`, set up 2026-09-28). The rsync `--delete` excludes `private/`, so the symlink survives.
 
 - [ ] **Step 4: Run tests**: `.venv/bin/python -m pytest tests/guide/test_build_site.py tests/guide/test_viewer_e2e.py -q` → all pass
 - [ ] **Step 5: Deploy for real**
@@ -1858,7 +1858,7 @@ Run: `source ~/.config/long-ez/env && bash scripts/deploy_guide.sh`
 Expected: `deployed and verified: 19 ops at <url>` (17 ops + 2 stubs).
 
 - [ ] **Step 6: Retire the scratch doc repo.** The host site previously served docs from `~/long-ez-guide` (a local-only scratch repo from the design session). After Step 5 serves `docs/` from this build, `rm -rf ~/long-ez-guide`.
-- [ ] **Step 7: Commit**: `git add guide/build_site.py scripts/deploy_guide.sh tests/guide/test_build_site.py && git commit -m "feat(guide): site build and verified tailnet deploy"`
+- [ ] **Step 7: Commit**: `git add guide/build_site.py scripts/deploy_guide.sh tests/guide/test_build_site.py && git commit -m "feat(guide): site build and verified private-network deploy"`
 
 ---
 
@@ -1877,4 +1877,4 @@ Expected: `clean` and `no images tracked`.
 
 - [ ] **Step 3: Fresh-context grader** (house rule 2): run `~/.claude/bin/grade-diff.sh` from the repo root. The grader tries to prove the spec DoD items 1–5 false. Push in the **same turn** as a PASS (the grader's files are reaped at turn end).
 - [ ] **Step 4: Push**: `git push origin main` (public push authorized by the owner 2026-09-28 for guide code + own-words content under the overlap gate; scans never).
-- [ ] **Step 5: Owner acceptance.** The owner opens the site on the iPad over the tailnet and walks through the Roncz path. Done when they can explain the sequence, the applicable corrections and the spatial fit (spec §1). Log the outcome to lane-log.
+- [ ] **Step 5: Owner acceptance.** The owner opens the site on the iPad over the private-network and walks through the Roncz path. Done when they can explain the sequence, the applicable corrections and the spatial fit (spec §1). Log the outcome to lane-log.

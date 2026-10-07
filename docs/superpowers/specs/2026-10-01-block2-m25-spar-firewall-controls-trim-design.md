@@ -74,7 +74,7 @@ in place, and the mass ledger gains its heaviest sourced structural row (the spa
 ## 5. How it is built
 
 - Graph: `ch14.yaml` to `ch17.yaml`, owner's words, `guide.check`. Op YAML is drafted by a Sonnet
-  crew directly: the M2.4 smithy drafts (7 of 7) all needed hand fixes, so the local lane is
+  crew directly: the M2.4 local-model drafts (7 of 7) all needed hand fixes, so the local lane is
   skipped for this task shape until the model or the prompt preparation changes (log it).
 - Geometry: `core/spar_book.py` (planform, depth, caps as plies, hard points, LWA plates),
   firewall face plies in `core/fuselage_book.py`, `core/controls_book.py` (pivot planes, torque

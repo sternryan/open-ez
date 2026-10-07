@@ -1,11 +1,11 @@
 # Local-vision bake-off (2026-10-01)
 
-**Verdict: local-vision does not take first-pass plans research. Research stays on Claude, and
+**Verdict: local-vision lane does not take first-pass plans research. Research stays on Claude, and
 the captain keeps re-reading every model-bound value on the page image.**
 
 ## What ran
 
-- Lane: smithy `local-vision`, Qwen3-VL-8B-Instruct-4bit on the Mac node (mlx_vlm), temperature 0,
+- Lane: local-model `local-vision lane`, Qwen3-VL-8B-Instruct-4bit on the Mac node (mlx_vlm), temperature 0,
   one request at a time (the node is RAM-bound; swap rose from 7.7 to 8.1 GB over the run).
 - Truth: 38 questions, 68 values, from the M2.2 and M2.3 research as corrected by the captain
   reports (`scripts/vision_bakeoff_truth.yaml`).
@@ -46,9 +46,9 @@ saves nothing and seeds wrong numbers.
 |---|---|
 | Research | Sonnet, page images; captain re-reads every model-bound value |
 | Spec | session |
-| Op YAML drafts | local-anvil (text from the research notes), `guide.check`, one Sonnet review |
-| Geometry | `/conduct` (local-anvil writes bodies) |
+| Op YAML drafts | local-model lane (text from the research notes), `guide.check`, one Sonnet review |
+| Geometry | `/conduct` (local-model lane writes bodies) |
 | Captain | Sonnet; one Opus visual review per milestone |
 
-Re-test local-vision when the model or the page resolution changes (a 300 dpi crop around the
+Re-test local-vision lane when the model or the page resolution changes (a 300 dpi crop around the
 asked-for view is the obvious next try).

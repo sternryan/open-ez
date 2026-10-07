@@ -25,8 +25,8 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-# Upstream deletes old builds (the 3.48.2 binaries were withdrawn), so a durable copy of every
-# fleet version lives on hearth at /tank/share/artifacts/openvsp/ (with SHA256SUMS).
+# Upstream deletes old builds (the 3.48.2 binaries were withdrawn), so keep your own durable copy of any
+# version you rely on (with checksums).
 # 3.53.1 mac zip sha256: 7d625a5cbcec03cb33cb8ab63585ee6834640ebb85524e04538e022ae37e86f1
 OPENVSP_VERSION="3.53.1"
 OPENVSP_DOWNLOAD_URL="https://openvsp.org/download.php?file=zips/current/mac/OpenVSP-${OPENVSP_VERSION}-macos-14-ARM64-Python3.13.zip"

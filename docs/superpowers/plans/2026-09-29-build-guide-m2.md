@@ -9,15 +9,15 @@ viewer.
 **Architecture:**
 - CadQuery (open-ez) builds a real solid core plus one solid per ply from the step graph, and exports
   a glb with ply nodes nested under their components, plus `layup.json` and `shots.json`.
-- `guide/render_cutaway.sh` stages those on anvil and runs `layup_cutaway.py` through
-  `fabric-gpu run blender.sh`, then pulls the PNGs and `manifest.json` into a cache directory named
+- `guide/render_cutaway.sh` stages those on the GPU host and runs `layup_cutaway.py` through
+  `gpu-runner run blender.sh`, then pulls the PNGs and `manifest.json` into a cache directory named
   by a render key.
 - `build_site --renders` verifies the renders against the current inputs and wires them into the
   viewer.
 
 **Tech Stack:**
 - Python 3.10+, CadQuery, numpy, pytest, Playwright
-- Blender 5.2.2 (bpy) on anvil via Nomad/`fabric-gpu`
+- Blender 5.2.2 (bpy) on the GPU host via the job scheduler/`gpu-runner`
 - vanilla JS + three.js, node `--test`
 
 **Spec:** `docs/superpowers/specs/2026-09-29-build-guide-m2-layup-cutaway-design.md` (rev 3).
@@ -26,24 +26,24 @@ Read it before any task.
 ## Global Constraints
 
 - **CadQuery is the geometry SSOT; Blender output is derived.** No Blender wrapper, lease client or
-  second GPU path: scripts go in `compute-fabric-dev/deploy/anvil/jobs/blender/` and run through
-  `fabric-gpu`.
+  second GPU path: scripts go in `the render-tooling repo/deploy/<gpu-host>/jobs/blender/` and run through
+  `gpu-runner`.
 - **The step graph is the ply SSOT.** Nothing is drawn that `guide/graph/ch30.yaml` does not hold.
   Guesses carry `position_verified: false`.
 - **Never claim the plans are out of copyright anywhere in the repo.** Label and legend text must pass
   `.venv/bin/python -m guide.check` (full mode).
 - **`blender.sh` takes a bare script name** matching `^[a-z0-9_]+$`: `layup_cutaway`, never
-  `layup_cutaway.py`. Flags go after positionals: `fabric-gpu run blender.sh layup_cutaway <job_dir>
+  `layup_cutaway.py`. Flags go after positionals: `gpu-runner run blender.sh layup_cutaway <job_dir>
   --no-wait --expect-s N`.
-- **Never run Blender on anvil outside `fabric-gpu`**; it OOMs against vLLM's VRAM.
+- **Never run Blender on the GPU host outside `gpu-runner`**; it OOMs against vLLM's VRAM.
 - **`BLENDER_REQUIRE_GPU=1` stays the default**; a CPU fallback is a failure.
 - **Visual ply thickness is exaggerated** (PLY_T 0.10 in, PLY_GAP 0.03 in), and every view says
   "not to scale".
 - **Renders are never committed.** They live in `~/.cache/long-ez/renders/<key>/`.
 - **Anything scheduled is out of bounds:** render_cutaway and deploy are run by hand.
 - **Node tests:** `node --test guide/viewer/tests/*.test.mjs` (Node 22 needs the file glob, not a dir).
-- **Python tests:** `.venv/bin/python -m pytest …` from the open-ez root. compute-fabric-dev tests:
-  `cd ~/compute-fabric-dev && python3 -m pytest deploy/anvil/tests -q`.
+- **Python tests:** `.venv/bin/python -m pytest …` from the open-ez root. the render-tooling repo tests:
+  `cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests -q`.
 - **Commit messages** end with no session trailer of any kind. **Do not push** open-ez: it is public,
   and a push needs Ryan's per-instance OK.
 - **The pre-commit hook may reject red-first commits.** Commit only when the task's tests are green.
@@ -92,13 +92,13 @@ The five most likely ways this breaks for a person using it that no spec line co
 | `guide/layup_geometry.py` (new) | CadQuery ply solids + section-ready foam |
 | `guide/export_glb.py` (modify) | Nested ply nodes; writes `layup.json` + `shots.json` |
 | `guide/render_key.py` (new) | File shas, render key, render-dir check |
-| `guide/render_cutaway.sh` (new) | Stage → fabric-gpu → pull → check → atomic rename |
+| `guide/render_cutaway.sh` (new) | Stage → gpu-runner → pull → check → atomic rename |
 | `guide/build_site.py` (modify) | `plies` in graph.json; optional strict `--renders` |
 | `guide/viewer/js/cutaway.js` (new) | Pure view logic (toggle memory, pane mode, ply rows) |
 | `guide/viewer/js/app.js`, `index.html`, `css/app.css` (modify) | Toggle, glance view, states, ply dock, isolate |
 | `scripts/deploy_guide.sh` (modify) | Always passes `--renders`; verifies a hero PNG |
 | `guide/graph/ch30.yaml`, `components.yaml` (modify) | 108 in web span; fidelity uplift |
-| `compute-fabric-dev/deploy/anvil/jobs/blender/fabric_blender.py` (new) | GPU guard, scene reset, cut helpers (bpy) |
+| `the render-tooling repo/deploy/<gpu-host>/jobs/blender/fabric_blender.py` (new) | GPU guard, scene reset, cut helpers (bpy) |
 | `…/blender/layup_contract.py` (new) | Inputs/visibility/colour/manifest logic (no bpy) |
 | `…/blender/layup_cutaway.py` (new) | The render job (bpy) |
 | `…/blender/smoke.py` (modify) | Uses `fabric_blender` |
@@ -915,15 +915,15 @@ git commit -m "feat(guide): export ply nodes under their components, plus layup.
 
 ---
 
-### Task 5: Blender job: shared helper, contract, cutaway script (compute-fabric-dev)
+### Task 5: Blender job: shared helper, contract, cutaway script (the render-tooling repo)
 
-Work in `~/compute-fabric-dev`. Check `git status` first, and never commit another lane's files.
+Work in `<render-tooling repo>`. Check `git status` first, and never commit another lane's files.
 
 **Files:**
-- Create: `deploy/anvil/jobs/blender/fabric_blender.py`, `deploy/anvil/jobs/blender/layup_contract.py`,
-  `deploy/anvil/jobs/blender/layup_cutaway.py`
-- Modify: `deploy/anvil/jobs/blender/smoke.py`
-- Test: `deploy/anvil/tests/test_layup_contract.py`
+- Create: `deploy/<gpu-host>/jobs/blender/fabric_blender.py`, `deploy/<gpu-host>/jobs/blender/layup_contract.py`,
+  `deploy/<gpu-host>/jobs/blender/layup_cutaway.py`
+- Modify: `deploy/<gpu-host>/jobs/blender/smoke.py`
+- Test: `deploy/<gpu-host>/tests/test_layup_contract.py`
 
 **Interfaces:**
 - Consumes: the job dir `in/` with `longez.glb`, `layup.json` (Task 2 `layup_json` shape) and
@@ -936,7 +936,7 @@ Work in `~/compute-fabric-dev`. Check `git status` first, and never commit anoth
 - [ ] **Step 1: Write the failing contract tests**
 
 ```python
-# deploy/anvil/tests/test_layup_contract.py
+# deploy/<gpu-host>/tests/test_layup_contract.py
 """layup_contract: pure logic of the cutaway job (runs on a Mac, no bpy)."""
 import json
 import re
@@ -1033,13 +1033,13 @@ def test_script_names_pass_blender_sh_regex():
 
 - [ ] **Step 2: Run to confirm failure**
 
-Run: `cd ~/compute-fabric-dev && python3 -m pytest deploy/anvil/tests/test_layup_contract.py -q`
+Run: `cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests/test_layup_contract.py -q`
 Expected: ImportError (`layup_contract`).
 
 - [ ] **Step 3: Write `layup_contract.py`**
 
 ```python
-# deploy/anvil/jobs/blender/layup_contract.py — pure logic of the layup cutaway job (no bpy).
+# deploy/<gpu-host>/jobs/blender/layup_contract.py — pure logic of the layup cutaway job (no bpy).
 """Inputs, visibility, colours and the manifest for layup_cutaway.py; unit-tested on a laptop."""
 from __future__ import annotations
 
@@ -1124,7 +1124,7 @@ def manifest(inp: Path, script_dir: Path, shot_files: dict[str, Path]) -> dict:
 - [ ] **Step 4: Write `fabric_blender.py` (moves the GPU guard out of smoke.py)**
 
 ```python
-# deploy/anvil/jobs/blender/fabric_blender.py — shared bpy helpers for fabric Blender jobs.
+# deploy/<gpu-host>/jobs/blender/fabric_blender.py — shared bpy helpers for fabric Blender jobs.
 """GPU guard, scene reset and section-cut helpers. Payload scripts import this; the GPU guard lives
 ONLY here (a copy would drift and one script could fall back to CPU unnoticed)."""
 import os
@@ -1202,7 +1202,7 @@ from fabric_blender import gpu_setup, section_cut  # noqa: E402
 - [ ] **Step 6: Write `layup_cutaway.py`**
 
 ```python
-# deploy/anvil/jobs/blender/layup_cutaway.py — Long-EZ layup cutaway renders (open-ez guide M2).
+# deploy/<gpu-host>/jobs/blender/layup_cutaway.py — Long-EZ layup cutaway renders (open-ez guide M2).
 """Render every shot in in/shots.json from in/longez.glb, coloured per in/layup.json.
 
     for shot: reset → import glb → map meshes to layup nodes → colour/hide/accent
@@ -1352,19 +1352,19 @@ main()
 
 - [ ] **Step 7: Run both suites**
 
-Run: `cd ~/compute-fabric-dev && python3 -m pytest deploy/anvil/tests -q`. Expected: all PASS,
+Run: `cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests -q`. Expected: all PASS,
 including the existing `test_blender_payload.py`.
-Run: `python3 -c "import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]" deploy/anvil/jobs/blender/*.py`
-(in compute-fabric-dev). Expected: no output. It only checks that the bpy scripts parse; bpy itself
-runs on anvil only.
+Run: `python3 -c "import ast,sys; [ast.parse(open(f).read()) for f in sys.argv[1:]]" deploy/<gpu-host>/jobs/blender/*.py`
+(in the render-tooling repo). Expected: no output. It only checks that the bpy scripts parse; bpy itself
+runs on the GPU host only.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-cd ~/compute-fabric-dev
-git add deploy/anvil/jobs/blender/fabric_blender.py deploy/anvil/jobs/blender/layup_contract.py \
-        deploy/anvil/jobs/blender/layup_cutaway.py deploy/anvil/jobs/blender/smoke.py \
-        deploy/anvil/tests/test_layup_contract.py
+cd <render-tooling repo>
+git add deploy/<gpu-host>/jobs/blender/fabric_blender.py deploy/<gpu-host>/jobs/blender/layup_contract.py \
+        deploy/<gpu-host>/jobs/blender/layup_cutaway.py deploy/<gpu-host>/jobs/blender/smoke.py \
+        deploy/<gpu-host>/tests/test_layup_contract.py
 git commit -m "feat(blender): layup cutaway job; GPU guard moved into shared fabric_blender"
 ```
 
@@ -1378,7 +1378,7 @@ git commit -m "feat(blender): layup cutaway job; GPU guard moved into shared fab
 
 **Interfaces:**
 - Consumes: `output/guide/{longez.glb,layup.json,shots.json}`; the Blender scripts at
-  `$COMPUTE_FABRIC_DIR/deploy/anvil/jobs/blender/`; the Task 5 manifest shape.
+  `$OPENEZ_BLENDER_SCRIPTS/deploy/<gpu-host>/jobs/blender/`; the Task 5 manifest shape.
 - Produces:
   - `render_key.file_shas(export_dir: Path, scripts_dir: Path | None) -> dict[str, str]`
   - `render_key.key_of(shas: dict[str, str]) -> str`
@@ -1387,7 +1387,7 @@ git commit -m "feat(blender): layup cutaway job; GPU guard moved into shared fab
     `--check RENDERS` exits 1 and prints the problems if there are any.
   - Script: `guide/render_cutaway.sh [--only SHOT_ID] [--dry-run]`. Exit codes: 0 ok, 2 usage or
     missing inputs, 3 lease busy, 4 deployed-script mismatch, 5 render check failed, any other code is
-    fabric-gpu's.
+    gpu-runner's.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1465,7 +1465,7 @@ def test_check_missing_manifest(tmp_path):
 
 ```python
 # tests/guide/test_render_cutaway.py
-"""render_cutaway.sh with stub ssh/rsync/fabric-gpu on PATH: every branch, no GPU, no anvil."""
+"""render_cutaway.sh with stub ssh/rsync/gpu-runner on PATH: every branch, no GPU, no the GPU host."""
 import json
 import os
 import re
@@ -1482,7 +1482,7 @@ SH = Path("guide/render_cutaway.sh").resolve()
 STUB_SSH = r'''#!/bin/bash
 host="$1"; shift; cmd="$*"; echo "ssh $cmd" >> "$STUB_LOG"
 case "$cmd" in
-  flux-lock-status) if [ "${STUB_LEASE:-0}" = 3 ]; then echo "LEASED — held by w9-battery"; exit 3; fi; echo "FREE"; exit 0;;
+  lease-status) if [ "${STUB_LEASE:-0}" = 3 ]; then echo "LEASED — held by w9-battery"; exit 3; fi; echo "FREE"; exit 0;;
   sha256sum*) f="${cmd##*/}"; if [ -n "${STUB_SHA_BAD:-}" ]; then echo "0000  x"; else shasum -a 256 "$STUB_SCRIPTS/$f"; fi;;
   "test -f"*) exit 0;;
   *) exit 0;;
@@ -1505,12 +1505,12 @@ def exe(p: Path, body: str) -> None:
 @pytest.fixture
 def env(tmp_path):
     bin_ = tmp_path / "bin"; bin_.mkdir()
-    exe(bin_ / "ssh", STUB_SSH); exe(bin_ / "rsync", STUB_RSYNC); exe(bin_ / "fabric-gpu", STUB_GPU)
-    cf = tmp_path / "cf"; scripts = make_scripts(cf / "deploy/anvil/jobs/blender")
+    exe(bin_ / "ssh", STUB_SSH); exe(bin_ / "rsync", STUB_RSYNC); exe(bin_ / "gpu-runner", STUB_GPU)
+    cf = tmp_path / "cf"; scripts = make_scripts(cf / "deploy/<gpu-host>/jobs/blender")
     export = make_export(tmp_path / "export")
-    out = make_renders(tmp_path / "anvil_out", export, scripts)
-    e = dict(os.environ, PATH=f"{bin_}:{os.environ['PATH']}", COMPUTE_FABRIC_DIR=str(cf),
-             FABRIC_GPU=str(bin_ / "fabric-gpu"), LONGEZ_EXPORT_DIR=str(export),
+    out = make_renders(tmp_path / "render_out", export, scripts)
+    e = dict(os.environ, PATH=f"{bin_}:{os.environ['PATH']}", OPENEZ_BLENDER_SCRIPTS=str(cf),
+             FABRIC_GPU=str(bin_ / "gpu-runner"), LONGEZ_EXPORT_DIR=str(export),
              LONGEZ_RENDER_CACHE=str(tmp_path / "cache"), LONGEZ_POLL_S="0",
              PY=str(Path(".venv/bin/python").resolve()),
              STUB_LOG=str(tmp_path / "log"), STUB_SCRIPTS=str(scripts), STUB_OUT=str(out),
@@ -1661,7 +1661,7 @@ if __name__ == "__main__":
 
 ```bash
 #!/usr/bin/env bash
-# Render the layup cutaway on anvil's GPU through fabric-gpu. HITL only; never put this on a timer.
+# Render the layup cutaway on the GPU host's GPU through gpu-runner. HITL only; never put this on a timer.
 # usage: guide/render_cutaway.sh [--only SHOT_ID] [--dry-run]
 # exit: 0 ok · 2 usage/missing inputs · 3 GPU lease busy · 4 deployed scripts differ · 5 render check failed
 set -euo pipefail
@@ -1675,14 +1675,14 @@ while [ $# -gt 0 ]; do
 done
 cd "$(dirname "$0")/.."
 PY=${PY:-.venv/bin/python}
-ANVIL=${LONGEZ_ANVIL:-anvil}
-CF=${COMPUTE_FABRIC_DIR:-$HOME/compute-fabric-dev}
-FABRIC_GPU=${FABRIC_GPU:-$CF/bin/fabric-gpu}
-SCRIPTS=$CF/deploy/anvil/jobs/blender
+ANVIL=${LONGEZ_ANVIL:-the GPU host}
+CF=${OPENEZ_BLENDER_SCRIPTS:-<render-tooling repo>}
+FABRIC_GPU=${FABRIC_GPU:-$CF/bin/gpu-runner}
+SCRIPTS=$CF/deploy/<gpu-host>/jobs/blender
 EXPORT=${LONGEZ_EXPORT_DIR:-output/guide}
 CACHE=${LONGEZ_RENDER_CACHE:-$HOME/.cache/long-ez/renders}
 POLL_S=${LONGEZ_POLL_S:-10}
-DEPLOYED=/opt/fabric/jobs/blender
+DEPLOYED=<deployed scripts dir>/blender
 
 for f in longez.glb layup.json shots.json; do
   [ -f "$EXPORT/$f" ] || { echo "missing $EXPORT/$f; run: $PY -m guide.export_glb" >&2; exit 2; }
@@ -1705,18 +1705,18 @@ KEY=$($PY -m guide.render_key --export "$STAGE" --scripts "$SCRIPTS")
 for s in layup_cutaway.py fabric_blender.py layup_contract.py; do
   want=$(shasum -a 256 "$SCRIPTS/$s" | cut -d' ' -f1)
   got=$(ssh "$ANVIL" "sha256sum $DEPLOYED/$s" | cut -d' ' -f1)
-  [ "$want" = "$got" ] || { echo "deployed $s differs from $SCRIPTS/$s; redeploy to anvil first" >&2; exit 4; }
+  [ "$want" = "$got" ] || { echo "deployed $s differs from $SCRIPTS/$s; redeploy to the GPU host first" >&2; exit 4; }
 done
-if ! status=$(ssh "$ANVIL" flux-lock-status); then echo "GPU lease busy: $status" >&2; exit 3; fi
+if ! status=$(ssh "$ANVIL" lease-status); then echo "GPU lease busy: $status" >&2; exit 3; fi
 
-JOB=/srv/gpu-jobs/blender/layup-${KEY:0:16}
+JOB=<job root>/blender/layup-${KEY:0:16}
 if [ -n "$DRY" ]; then echo "dry run: would render key $KEY into $JOB"; exit 0; fi
 N=$($PY -c 'import json,sys; print(len(json.load(open(sys.argv[1]))))' "$STAGE/shots.json")
 EXPECT=$((60 + 45 * N))
 ssh "$ANVIL" "rm -rf $JOB && mkdir -p $JOB/in"
 rsync -a "$STAGE/" "$ANVIL:$JOB/in/"
 set +e; "$FABRIC_GPU" run blender.sh layup_cutaway "$JOB" --no-wait --expect-s "$EXPECT"; rc=$?; set -e
-[ "$rc" = 0 ] || { echo "fabric-gpu run failed rc=$rc (payload log: ssh $ANVIL cat $JOB/out/log.txt)" >&2; exit "$rc"; }
+[ "$rc" = 0 ] || { echo "gpu-runner run failed rc=$rc (payload log: ssh $ANVIL cat $JOB/out/log.txt)" >&2; exit "$rc"; }
 
 waited=0
 until ssh "$ANVIL" "test -f $JOB/out/manifest.json"; do
@@ -1759,22 +1759,22 @@ git commit -m "feat(guide): render key and render_cutaway.sh (lease check, atomi
 Run: `cd ~/open-ez && .venv/bin/python -m guide.export_glb`
 Expected: `wrote output/guide/longez.glb (+ layup.json, shots.json) nodes=…`.
 
-- [ ] **Step 2: Deploy the Blender scripts to anvil**
+- [ ] **Step 2: Deploy the Blender scripts to the GPU host**
 
-This is the same install the M1 payload used (compute-fabric-dev plan 2026-09-28, deploy step):
+This is the same install the M1 payload used (the render-tooling repo plan 2026-09-28, deploy step):
 
 ```bash
-cd ~/compute-fabric-dev/deploy/anvil/jobs/blender
-scp fabric_blender.py layup_contract.py layup_cutaway.py smoke.py anvil:/tmp/
-ssh anvil 'sudo install -o root -g root -m 644 /tmp/fabric_blender.py /tmp/layup_contract.py \
-  /tmp/layup_cutaway.py /tmp/smoke.py /opt/fabric/jobs/blender/ && ls -l /opt/fabric/jobs/blender/'
+cd <render-tooling repo>/deploy/<gpu-host>/jobs/blender
+scp fabric_blender.py layup_contract.py layup_cutaway.py smoke.py <gpu-host>:/tmp/
+ssh <gpu-host> 'sudo install -o root -g root -m 644 /tmp/fabric_blender.py /tmp/layup_contract.py \
+  /tmp/layup_cutaway.py /tmp/smoke.py <deployed scripts dir>/blender/ && ls -l <deployed scripts dir>/blender/'
 ```
 
 - [ ] **Step 3: Re-prove the refactored smoke**
 
 ```bash
-ssh anvil 'rm -rf /srv/gpu-jobs/blender/smoke-m2 && mkdir -p /srv/gpu-jobs/blender/smoke-m2/in'
-~/compute-fabric-dev/bin/fabric-gpu run blender.sh smoke /srv/gpu-jobs/blender/smoke-m2 --no-wait --expect-s 300
+ssh <gpu-host> 'rm -rf <job root>/blender/smoke-m2 && mkdir -p <job root>/blender/smoke-m2/in'
+<render-tooling repo>/bin/gpu-runner run blender.sh smoke <job root>/blender/smoke-m2 --no-wait --expect-s 300
 ```
 
 Expected: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`.
@@ -1784,21 +1784,21 @@ Expected: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`.
 
 Run: `cd ~/open-ez && guide/render_cutaway.sh --only hero-bl5`
 Expected: `renders: ~/.cache/long-ez/renders/<key>`.
-- On failure, read `ssh anvil cat /srv/gpu-jobs/blender/layup-<key16>/out/log.txt`. A `check_axes`
+- On failure, read `ssh <gpu-host> cat <job root>/blender/layup-<key16>/out/log.txt`. A `check_axes`
   error means the glTF axis conversion does not cancel. In that case, fix the axis mapping in
   `render_shot` by rotating the imported root −90° about X. Do not weaken the check.
 
 - [ ] **Step 5: Confirm vLLM came back**
 
-Run: `curl -s http://hearth:8085/v1/models | head -c 300`, or the fabric identity probe the M1
-payload plan used. Expected: anvil's model is listed. Record the output.
+Run: `curl -s http://the local-model gateway/v1/models | head -c 300`, or the fabric identity probe the M1
+payload plan used. Expected: the GPU host's model is listed. Record the output.
 
 - [ ] **Step 6: Put the hero in front of Ryan**
 
 ```bash
 source ~/.config/long-ez/env
-ssh "$LONGEZ_DEPLOY_HOST" 'mkdir -p /opt/long-ez-guide/site/mockups/m2'
-scp ~/.cache/long-ez/renders/<key>/hero-bl5.png "$LONGEZ_DEPLOY_HOST":/opt/long-ez-guide/site/mockups/m2/
+ssh "$LONGEZ_DEPLOY_HOST" 'mkdir -p <site root>/site/mockups/m2'
+scp ~/.cache/long-ez/renders/<key>/hero-bl5.png "$LONGEZ_DEPLOY_HOST":<site root>/site/mockups/m2/
 curl -fsS -o /dev/null -w '%{http_code}\n' "$LONGEZ_SITE_URL/mockups/m2/hero-bl5.png"
 ```
 
@@ -2150,7 +2150,7 @@ Before `<script type="module" …>` add:
 - [ ] **Step 5: Add styles** (append to `guide/viewer/css/app.css`)
 
 ```css
-/* M2 cutaway. Cloth hexes match compute-fabric-dev jobs/blender/layup_contract.py HEX. */
+/* M2 cutaway. Cloth hexes match the render-tooling repo jobs/blender/layup_contract.py HEX. */
 :root{--und:#d9962b;--und2:#a8681a;--bid:#3a9e98;--bid2:#1f7a75;--foam:#dcdcd6}
 button{min-height:44px}
 #viewtoggle{position:absolute;top:8px;left:8px;z-index:2;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
@@ -2379,8 +2379,8 @@ In `scripts/deploy_guide.sh`, replace the `export_glb` and `build_site` lines wi
 
 ```bash
 $PY -m guide.export_glb --out output/guide/longez.glb
-CF=${COMPUTE_FABRIC_DIR:-$HOME/compute-fabric-dev}
-KEY=$($PY -m guide.render_key --export output/guide --scripts "$CF/deploy/anvil/jobs/blender")
+CF=${OPENEZ_BLENDER_SCRIPTS:-<render-tooling repo>}
+KEY=$($PY -m guide.render_key --export output/guide --scripts "$CF/deploy/<gpu-host>/jobs/blender")
 RENDERS="${LONGEZ_RENDER_CACHE:-$HOME/.cache/long-ez/renders}/$KEY"
 [ -f "$RENDERS/manifest.json" ] || { echo "no renders for key $KEY; run guide/render_cutaway.sh first" >&2; exit 1; }
 $PY -m guide.build_site --out site --models output/guide/longez.glb --scan-base "$SCAN_BASE" --renders "$RENDERS"
@@ -2553,7 +2553,7 @@ source ~/.config/long-ez/env && bash scripts/deploy_guide.sh
 ```bash
 cd ~/open-ez && .venv/bin/python -m pytest -q -p no:cacheprovider && node --test guide/viewer/tests/*.test.mjs && .venv/bin/python -m guide.check
 cd /tmp && ~/open-ez/.venv/bin/python -m pytest -q ~/open-ez/tests/guide -p no:cacheprovider --rootdir ~/open-ez
-cd ~/compute-fabric-dev && python3 -m pytest deploy/anvil/tests -q
+cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests -q
 ```
 
 Expected: all green. If the second command errors on relative `guide/graph` paths, that is a real
@@ -2563,7 +2563,7 @@ and re-run.
 - [ ] **Step 2: Live proof is recorded**
 
 Record in the task notes:
-- the `render_cutaway.sh` output, showing `CYCLES_DEVICE=OPTIX` in `ssh anvil cat …/out/log.txt`
+- the `render_cutaway.sh` output, showing `CYCLES_DEVICE=OPTIX` in `ssh <gpu-host> cat …/out/log.txt`
 - `GPU_JOB_RESULT rc=0 restore=restored`
 - the vLLM probe output after the run
 - the deploy script's `deployed and verified` line
@@ -2584,5 +2584,5 @@ shear-web ply. M2 is done only on his yes.
 
 - Update memory `project_longez_build_guide` with the live state and anything that bit.
 - Append a lane-log row per wave to `~/.claude/state/lane-log.tsv`.
-- Remove the throwaway mockups: `ssh "$LONGEZ_DEPLOY_HOST" rm -rf /opt/long-ez-guide/site/mockups`.
+- Remove the throwaway mockups: `ssh "$LONGEZ_DEPLOY_HOST" rm -rf <site root>/site/mockups`.
   The next deploy's `rsync --delete` also removes them.

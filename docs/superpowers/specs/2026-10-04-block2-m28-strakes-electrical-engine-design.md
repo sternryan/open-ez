@@ -79,8 +79,8 @@ complete as the plans draw it, and the ledger holds every sourced builder weight
   Fixing the values is ledger closure.
 - Chapter 23 ops cover only what the chapter prints. One op, `f23.engine-install`, stands for the absent
   Section II installation; its text says so, and its engine solid is striped representational.
-- The op YAML is written by a Claude (Sonnet) crew from the research, not by the smithy lane: in M2.7, 19 of
-  27 smithy drafts needed substantive fixes. Recorded in the lane log.
+- The op YAML is written by a Claude (Sonnet) crew from the research, not by the local-model lane: in M2.7, 19 of
+  27 local-model drafts needed substantive fixes. Recorded in the lane log.
 
 ## 4. What the owner sees
 

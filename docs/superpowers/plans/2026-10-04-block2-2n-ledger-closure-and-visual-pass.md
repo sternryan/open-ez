@@ -19,7 +19,7 @@
 - All arms in the closure table are PUBLISHED FS. The config's internal datum is shifted 45.5 in. Convert at the boundary only, in one named helper.
 - Ledger arithmetic is a deterministic script. No LLM computes or checks a sum.
 - Stage named files; never `git add -A`. Crews stage, the captain sends the split, the lead commits (`infra_captains_share_session_cwd_gate`).
-- No push without the lead's go, via the push gate. Renders and deploys take the anvil GPU lease: heads-up to the lead first.
+- No push without the lead's go, via the push gate. Renders and deploys take the remote GPU lease: heads-up to the lead first.
 - Do not touch the two-method NP. It stays a strict xfail (ledger row 62, +1.62 in). The closure does not change the analysis planform, so VSPAERO is not re-run. The stale-marker guard is the check.
 - Linux vs Mac float ties are fixed, not marked.
 - Never write a Claude-Session trailer.
@@ -502,14 +502,14 @@ With the cull live, the carried nit "room clamp cuts wing tips" (f19.attach and 
 |---|---|---|---|
 | A1 closure table sourcing | subagent / sonnet + captain page re-read | ~16 rows | page reading; Sonnet misreads digits, so the captain re-reads every bound value |
 | A1 engine CG hunt | subagent / sonnet, 45 min cap | 1 | research only; no frontier |
-| A2 sums, bands, caps | script (core/closure.py) written by a sonnet crew | 1 module | arithmetic is deterministic; the smithy lane fails arithmetic (09-10) |
+| A2 sums, bands, caps | script (core/closure.py) written by a sonnet crew | 1 module | arithmetic is deterministic; the local-model lane fails arithmetic (09-10) |
 | A3 config and report fold-in | subagent / sonnet, only after A2's verdict is recorded | ~8 files | mechanical, test-pinned; sourced rows only |
 | A4 tolerance and arm-method adversary | codex / gpt-6-astra (`-m` always), inside Task 1 Step 5 | 1 call | independent method on the one judgment call, before the arm value exists |
 | B5-B7 lab, cull and nits | subagent / sonnet (one crew, serial: shared main.ts; runs IN PARALLEL with Part A in its own worktree) | 3 tasks + 7d | TS + e2e, pattern-following |
 | B8 visual review | captain / opus | 1 | taste ≥ 7 gate |
 | Test fan-out | script (remote_test_all via run-job) | 2-3 runs | deterministic |
 | VSPAERO | not run (planform unchanged) | 0 | Ryan's laptop has OpenVSP 3.48.2 (checked 10-04) if a fold-in ever moves the planform |
-| smithy op-YAML | skipped | 0 | no new ops; M2.7 19/27 drafts needed fixes |
+| local-model op-YAML | skipped | 0 | no new ops; M2.7 19/27 drafts needed fixes |
 
 ### Order and worktrees
 

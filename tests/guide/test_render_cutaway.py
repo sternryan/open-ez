@@ -1,4 +1,4 @@
-"""render_cutaway.sh with stub ssh/rsync/fabric-gpu on PATH: every branch, no GPU, no anvil."""
+"""render_cutaway.sh with stub ssh/rsync/gpu-runner on PATH: every branch, no GPU, no remote host."""
 
 import os
 import re
@@ -16,8 +16,8 @@ SH = ROOT / "guide" / "render_cutaway.sh"
 STUB_SSH = r"""#!/bin/bash
 host="$1"; shift; cmd="$*"; echo "ssh $cmd" >> "$STUB_LOG"
 case "$cmd" in
-  flux-lock-status) if [ "${STUB_LEASE:-0}" = 3 ]; then
-      printf 'HELD  — a flux job holds the anvil GPU lock:\n  holder| pid=42\n  holder| runner=w9-battery\n  holder| started=2026-09-29T18:11:58+00:00\n'
+  lease-status) if [ "${STUB_LEASE:-0}" = 3 ]; then
+      printf 'HELD  — a job holds the GPU lock:\n  holder| pid=42\n  holder| runner=w9-battery\n  holder| started=2026-09-29T18:11:58+00:00\n'
       [ -n "${STUB_ETA:-}" ] && printf '  holder| eta=%s\n' "$STUB_ETA"; exit 3; fi; echo "FREE"; exit 0;;
   sha256sum*) f="${cmd##*/}"; if [ -n "${STUB_SHA_BAD:-}" ]; then echo "0000  x"; else shasum -a 256 "$STUB_SCRIPTS/$f"; fi;;
   "test -f"*) exit 0;;
@@ -45,16 +45,20 @@ def env(tmp_path):
     bin_.mkdir()
     exe(bin_ / "ssh", STUB_SSH)
     exe(bin_ / "rsync", STUB_RSYNC)
-    exe(bin_ / "fabric-gpu", STUB_GPU)
+    exe(bin_ / "gpu-runner", STUB_GPU)
     cf = tmp_path / "cf"
-    scripts = make_scripts(cf / "deploy/anvil/jobs/blender")
+    scripts = make_scripts(cf / "blender-scripts")
     export = make_export(tmp_path / "export")
-    out = make_renders(tmp_path / "anvil_out", export, scripts)
+    out = make_renders(tmp_path / "render_out", export, scripts)
     e = dict(
         os.environ,
         PATH=f"{bin_}:{os.environ['PATH']}",
-        COMPUTE_FABRIC_DIR=str(cf),
-        FABRIC_GPU=str(bin_ / "fabric-gpu"),
+        OPENEZ_RENDER_HOST="render-host",
+        OPENEZ_BLENDER_SCRIPTS=str(scripts),
+        OPENEZ_GPU_RUNNER=str(bin_ / "gpu-runner"),
+        OPENEZ_LEASE_CHECK_CMD="lease-status",
+        OPENEZ_RENDER_DEPLOYED_DIR="/deployed/blender",
+        OPENEZ_RENDER_JOB_ROOT="/jobs/blender",
         LONGEZ_EXPORT_DIR=str(export),
         LONGEZ_RENDER_CACHE=str(tmp_path / "cache"),
         LONGEZ_POLL_S="0",
@@ -88,7 +92,7 @@ def test_lease_busy_reports_stamped_eta(env):
     assert r.returncode == 3 and "ETA: 2026-09-29T19:30:00Z" in r.stderr
 
 
-def test_wait_queues_through_fabric_gpu(env):
+def test_wait_queues_through_gpu_runner(env):
     e, t, *_ = env
     r = run(e, "--wait=600", STUB_LEASE="3")
     assert r.returncode == 0, r.stderr

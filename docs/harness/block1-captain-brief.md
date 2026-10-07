@@ -35,7 +35,7 @@ Read both in full. The owner approved both on 2026-09-29.
 - Stage named files only. No commit trailers.
 - Never loosen a tolerance; failing physics bounds become strict xfails citing a numbered ledger row
   (continue the existing numbering).
-- Public repo: no home paths, tailnet names or IPs, no copied plans text, never the copyright
+- Public repo: no home paths, private-network names or IPs, no copied plans text, never the copyright
   phrase. Never print env values.
 - Stop and report instead of guessing when a task's evidence fits no rule.
 

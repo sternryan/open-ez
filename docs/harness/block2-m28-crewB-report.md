@@ -41,7 +41,7 @@ table, both strakes on the airplane, the shaded tank, the nose battery and the r
 The full two-node fan-out is the captain's. Not run by me: the remaining e2e tests (canard chapters, viewer e2e).
 Pixel gates (1180x820): each op's own parts and what it adds differ from the frame without them by 316 (vent screen, the weakest) to 356,000 pixels; every op is at least 100.
 Kernels fixture: `tests/guide/test_lab_kernels_fixture.py` now dumps `fe.m28_section()` under `extras.m28`; regenerated with the documented command; there are no new numeric kernels (nothing in chapters 21 to 23 is computed in both languages).
-Ruff (pinned v0.5.4 via pre-commit) and ruff-format clean on the touched Python. Leak scan on `git diff main` (no tailnet addresses, hostnames or home paths): empty.
+Ruff (pinned v0.5.4 via pre-commit) and ruff-format clean on the touched Python. Leak scan on `git diff main` (no private-network addresses, hostnames or home paths): empty.
 
 ## Moved assertions
 

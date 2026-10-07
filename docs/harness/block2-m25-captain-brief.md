@@ -23,7 +23,7 @@ each gated and committed:
 
 ## Lanes
 
-- Op YAML: a Sonnet crew drafts directly (the smithy drafts all needed hand fixes in M2.4; log the
+- Op YAML: a Sonnet crew drafts directly (the local-model drafts all needed hand fixes in M2.4; log the
   skip with that reason).
 - `/conduct` for one-file kernels fully expressed by tests (planform maths, cap taper schedule,
   pushrod kinematics). It worked in M2.4; keep using it.

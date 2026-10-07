@@ -1,7 +1,7 @@
 """VSPAERO NP leg: runs where OpenVSP exists, FAILS (not skips) where it is required but absent.
 
 Where it runs:
-- VSP_RUNNER set and executable (anvil: /opt/fabric/jobs/vsp.sh): through the cpu-job payload,
+- VSP_RUNNER set and executable (a remote job runner script): through the cpu-job payload,
   so the lane venv never needs the bindings.
 - else an interpreter that imports openvsp (the laptop under python3.13): in-process subprocess.
 - OPENEZ_REQUIRE_VSPAERO=1 turns "neither available" into a failure instead of a skip.
@@ -20,8 +20,8 @@ import pytest
 REPO = Path(__file__).resolve().parents[1]
 COMMITTED = REPO / "data" / "validation" / "vspaero_np.json"
 REQUIRED = os.environ.get("OPENEZ_REQUIRE_VSPAERO") == "1"
-RUNNER = os.environ.get("VSP_RUNNER")  # /opt/fabric/jobs/vsp.sh on anvil
-JOB_ROOT = Path(os.environ.get("VSP_JOB_ROOT", "/srv/cpu-jobs/vsp"))
+RUNNER = os.environ.get("VSP_RUNNER")
+JOB_ROOT = Path(os.environ.get("VSP_JOB_ROOT", "/tmp/vsp-jobs"))
 
 try:
     import openvsp  # noqa: F401

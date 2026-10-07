@@ -84,7 +84,7 @@ weight.
 ## 5. How it is built
 
 - Graph: `guide/graph/ch18.yaml`. A Sonnet crew drafts the ops in the owner's words from
-  research section 4, and they must pass `guide.check`. The smithy op-YAML lane is skipped
+  research section 4, and they must pass `guide.check`. The local-model op-YAML lane is skipped
   for the same reason as in M2.5.
 - Config and provenance: the canopy stations (rear cut, pad stations, SC-1, door size, checks A
   and B) go into `config/aircraft_config.py`, each with a `GEOMETRY_PROVENANCE` entry and a
@@ -97,7 +97,7 @@ weight.
     door and catch on the left.
   - Front and rear covers are representational.
   - The open pose (a hinge axis on the right longeron) is computed in a small kernel. If it is
-    eligible, it is built with `/conduct` on local-anvil; otherwise a crew does it.
+    eligible, it is built with `/conduct` on local-model lane; otherwise a crew does it.
 - Lab: a Sonnet crew, using the M2.5 pattern: per-op shots, pixel e2e checks for each op,
   the open/close animation, and the ch18 tour.
 

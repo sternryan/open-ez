@@ -34,9 +34,9 @@ or opus) and log it.
 
 ## HARD CONSTRAINTS
 
-- **No push** of any repo. **No writes to anvil, hearth or any remote host.** No `fabric-gpu run`,
+- **No push** of any repo. **No writes to the GPU host, the home server or any remote host.** No `gpu-runner run`,
   no `ssh … sudo`, no deploy. Task 7 onward is the lead's.
-- **compute-fabric-dev (Task 5):** run `git status` first. Commit ONLY the Task 5 files. Never
+- **the render-tooling repo (Task 5):** run `git status` first. Commit ONLY the Task 5 files. Never
   stage, stash, reset or commit another lane's changes. If the tree has unrelated dirt, leave it and
   note it in the log.
 - **Never `git add -A` / `git add .`.** Stage named files only.
@@ -60,7 +60,7 @@ or opus) and log it.
   - per task: status, commit sha(s), verify command and result tail;
   - every deviation from the plan and why;
   - every escalation (what the cheaper tier missed);
-  - anything the lead must know before Task 7 (the live anvil run).
+  - anything the lead must know before Task 7 (the live the GPU host run).
 
 Commit the log and report at the end (message `docs: M2 session 1 captain log and report`).
 
@@ -70,6 +70,6 @@ Tasks 1–6 are committed in both repos, and these pass when re-run by you:
 - `.venv/bin/python -m pytest -q -p no:cacheprovider` (whole open-ez suite)
 - `node --test guide/viewer/tests/*.test.mjs`
 - `.venv/bin/python -m guide.check`
-- `cd ~/compute-fabric-dev && python3 -m pytest deploy/anvil/tests -q`
+- `cd <render-tooling repo> && python3 -m pytest deploy/<gpu-host>/tests -q`
 
 Your final message to the lead is the report's content, not its path.

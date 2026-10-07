@@ -28,7 +28,7 @@ evidence table.
   ledger row.
 - **Scan hygiene:** no scan content in the repo; quote at most a few words of plans text. Never claim
   the plans are out of copyright.
-- **open-ez is PUBLIC:** no tailnet hostnames, no tailnet IPs, no home-directory paths in any committed file.
+- **open-ez is PUBLIC:** no private-network hostnames, no private-network IPs, no home-directory paths in any committed file.
 - **Commit hygiene:**
   - Commit messages carry no trailers of any kind.
   - Stage named files only.

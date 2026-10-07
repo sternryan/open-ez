@@ -51,7 +51,7 @@ licensed TERF to publish the plans in 1996. Until a rights-holder says otherwise
   **in our own words**; page references; plans-change *facts* (number, class, page, corrected value);
   links to cobelu's already-hosted figure images (linked, never re-hosted).
 - **Private, never in git:** scan images of the owner's set, OCR text, verbatim plans or CP text.
-  These live on the tailnet host under a private asset directory and are served only over the tailnet.
+  These live on the private-network host under a private asset directory and are served only over the private-network.
 - **Enforced, not trusted:** an n-gram overlap gate (`python -m guide.check`) fails any authored
   text that shares an 8-word run with the plans or CP sources. It must run in full mode before any
   content commit.
@@ -73,9 +73,9 @@ live in browser localStorage.
 | Stage | Lane |
 |---|---|
 | Render scan pages, OCR text, footer page map | script (PyMuPDF + tesseract), output private |
-| Transcribe margin annotations on slice pages (~20 pp) | session vision + owner confirmation (small; the full 171-pp pass goes to the smithy `local-vision` lane later) |
+| Transcribe margin annotations on slice pages (~20 pp) | session vision + owner confirmation (small; the full 171-pp pass goes to the local-model `local-vision lane` lane later) |
 | Parse CP plans-change entries + cobelu markers | script |
-| Draft operation text from sources | smithy `local-heavy`; session edits; overlap gate |
+| Draft operation text from sources | local-model `local-model lane`; session edits; overlap gate |
 | Linker recall gate | script: every confirmed annotation on ch 10/12 pages must be recovered |
 
 ## 7. Geometry (minimal in M1)
@@ -89,7 +89,7 @@ M1 has one real part (`canard.core`); everything else is honestly badged `no-geo
 Static three.js site, vendored (no CDN at runtime). Layout: operation list · 3D · source pane
 (private scan page when available, else the cobelu figure link) · checklist. Variant toggle (default
 Roncz, per the repo's safety mandate). Bidirectional part↔operation selection. Works at phone
-width. Served from the tailnet host behind `tailscale serve` (tailnet-only). The private scan
+width. Served from the private-network host behind a private reverse proxy (private-network-only). The private scan
 directory is symlinked in at deploy time, never built into the site.
 
 ## 9. Known accuracy issues surfaced (logged, not fixed in M1)
@@ -106,7 +106,7 @@ directory is symlinked in at deploy time, never built into the site.
    on slice pages linked.
 3. Linker recall 100% on confirmed ch 10/12 annotations.
 4. Part↔operation selection works both ways; GU shows `no-geometry` cleanly.
-5. The tailnet URL loads on the owner's iPad, verified by loading it.
+5. The private-network URL loads on the owner's iPad, verified by loading it.
 6. A fresh-context grader tries to prove 1–5 false before anything is called done.
 7. Acceptance per §1.
 

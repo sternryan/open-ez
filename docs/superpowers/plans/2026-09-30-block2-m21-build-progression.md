@@ -37,7 +37,7 @@
   for it.
 - **Copyright:** operation text stays in the owner's words and passes `guide.check`. No plans text
   goes in new data files.
-- **Public repo:** no home paths, no tailnet names or IPs, and never the copyright phrase.
+- **Public repo:** no home paths, no private-network names or IPs, and never the copyright phrase.
 - **Commits:** crew never commit. The captain commits after a green, unpiped run in open-ez, in the
   same turn. Restore `output/test_mfg/dxf/*` and `data/validation/openvsp_validation.json` before each
   commit. No trailers, and stage named files only.

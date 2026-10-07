@@ -1,10 +1,10 @@
-# Guide Showcase, inspection, export and compute-fabric integration
+# Guide Showcase, inspection, export and render-tooling integration
 
 Status: proposed, engineering-reviewed 2026-10-02 (`DONE_WITH_CONCERNS`).
 Parent: `docs/superpowers/specs/2026-09-29-roadmap-same-airplane-new-process-design.md`.
 Near-term dependency:
 `docs/superpowers/specs/2026-10-01-block2-m25-spar-firewall-controls-trim-design.md`.
-Management counterpart: compute-fabric-dev, "Open-EZ workload profiles and attended model
+Management counterpart: the render-tooling repo, "Open-EZ workload profiles and attended model
 evaluation" (2026-10-02). The management repository owns implementation and release of the
 compute interface described here.
 

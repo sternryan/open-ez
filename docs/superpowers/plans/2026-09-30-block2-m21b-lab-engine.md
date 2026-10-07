@@ -27,7 +27,7 @@ compiled build), Playwright e2e, ffmpeg for the film.
 - **No plans text** in any data or UI copy. Readout copy is our own words and passes `guide.check`.
 - **No invented numbers.** The readout shows only counts and sourced values; anything else says
   "not yet computed".
-- **Public repo.** No home paths or tailnet names, never the banned copyright phrase.
+- **Public repo.** No home paths or private-network names, never the banned copyright phrase.
 - **Commits.** Crew never commit. The captain commits after a green, unpiped run in a separate
   prior tool call. The full suite is `.venv/bin/python -m pytest -q -p no:cacheprovider`, which is
   clean with 0 failed; add lab e2e tests to it. Node tests: `node --test guide/viewer/tests/*.test.mjs`

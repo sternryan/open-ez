@@ -99,9 +99,9 @@ Per task:
 
 | Step | Lane | Detail |
 |---|---|---|
-| Op YAML drafts (T2) | smithy local-anvil | 7 calls, all attempt 1, no 503. Quality low: every draft needed hand fixes (truncation, wrong materials, junk rows, one unparseable). Used as a base only. |
-| Elevator kernel (T3) | smithy-conduct, job 4bccf406, branch m24-kin | 1 task, local_pass first attempt. Captain fixed one defect (pin lengths hard-coded). |
-| Nose-gear kernel (T4) | smithy-conduct, job dc839c40, branch m24-nosekin | Run 1 escalated after 4 attempts: my own test constant was wrong (8.8145 vs 8.81297); the worker's first attempt was right. Re-run: local_pass. Captain then added the clearance-based retracted angle. |
+| Op YAML drafts (T2) | local-model local-model lane | 7 calls, all attempt 1, no 503. Quality low: every draft needed hand fixes (truncation, wrong materials, junk rows, one unparseable). Used as a base only. |
+| Elevator kernel (T3) | local-model conductor, job 4bccf406, branch m24-kin | 1 task, local_pass first attempt. Captain fixed one defect (pin lengths hard-coded). |
+| Nose-gear kernel (T4) | local-model conductor, job dc839c40, branch m24-nosekin | Run 1 escalated after 4 attempts: my own test constant was wrong (8.8145 vs 8.81297); the worker's first attempt was right. Re-run: local_pass. Captain then added the clearance-based retracted angle. |
 | T1, T2 integration, T3 solids, T4 solids, T6 | sonnet subagents | one wave each; reasons in the log. |
 | T2 review | sonnet subagent | page-image review of ch13 and ch12 ops: 5 fixes. |
 | T5 lab | sonnet subagent x2 | First pass ~97 min, fix pass ~34 min after the captain's screenshots (wrong authored shots, 13-15 labels, vacuous `or True` asserts, crank text). The brief said sonnet only; M2.3 used opus for this task. |

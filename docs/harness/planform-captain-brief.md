@@ -27,8 +27,8 @@ completion notices go to the lead, and you sit idle.
 
 ## Hard constraints
 
-- **No push, no deploy, no remote writes.** No `fabric-gpu`, no `ssh`. Tasks 7–8 are the lead's.
-- open-ez is **PUBLIC**: no tailnet hostnames or IPs, no home-directory paths, never the phrase
+- **No push, no deploy, no remote writes.** No `gpu-runner`, no `ssh`. Tasks 7–8 are the lead's.
+- open-ez is **PUBLIC**: no private-network hostnames or IPs, no home-directory paths, never the phrase
   claiming the plans are out of copyright. The Task 1 ledger quotes at most ~10 words paraphrased.
   Never print values from `~/.config/long-ez/env`.
 - **Never loosen a physics tolerance.** A failing physics bound becomes a strict xfail citing a

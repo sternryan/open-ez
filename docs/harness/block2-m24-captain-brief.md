@@ -28,8 +28,8 @@ Write a Review Focus list in your log before Task 1 and pin each item with a tes
 ## Lanes (token budget is the constraint; follow this, log deviations with the reason)
 
 - **Crew default is Sonnet.** Opus is not used by you; the lead runs one Opus visual review.
-- **Op YAML drafts go to the smithy first.** `$LONGEZ_SMITHY_URL` (in the env file) is an
-  OpenAI-compatible endpoint; model `local-anvil` (Gemma, 24k context: keep each request under
+- **Op YAML drafts go to the local-model first.** `$LONGEZ_SMITHY_URL` (in the env file) is an
+  OpenAI-compatible endpoint; model `local-model lane` (Gemma, 24k context: keep each request under
   ~20k tokens, so draft one chapter or ~8 ops per call). Feed it the op table and materials rows
   from the research, the existing `guide/graph/ch09.yaml` as the shape example, and the rule
   "own words, ten words or fewer per paraphrase". Then run `guide.check` and have one Sonnet crew
@@ -38,7 +38,7 @@ Write a Review Focus list in your log before Task 1 and pin each item with a tes
 - **Geometry through `/conduct` where eligible.** Read `~/.claude/skills/conduct/SKILL.md`. For any
   one-file module whose behaviour is fully expressed by tests (e.g. `core/elevators_book.py`,
   the nose-gear point maths, ledger rows), you write the tests and `plan.json`, and
-  `smithy-conduct` has local-anvil write the bodies; you review the diff. Lab/visual work and
+  `local-model conductor` has local-model lane write the bodies; you review the diff. Lab/visual work and
   multi-file changes stay with a Sonnet crew.
 - Have crews write long reports to a file and read the file.
 

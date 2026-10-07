@@ -65,7 +65,7 @@ against CP27 p1 painted) are references:
 - The chapter 25 colour rule appears in the lab as a white upper wing and canard. The rest of the finish is primer
   grey, a representational colour.
 - The cushions and consoles are representational outlines, apart from LC1's printed stations.
-- The op YAML is written by a Claude crew. The smithy lane is skipped, as in M2.8.
+- The op YAML is written by a Claude crew. The local-model lane is skipped, as in M2.8.
 
 ## 4. What the owner sees
 

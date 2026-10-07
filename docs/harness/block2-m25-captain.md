@@ -59,5 +59,5 @@ p88, p90, p100, p101, p106.
 
 ## Lane log (call, lane, reason)
 
-- Smithy op-YAML lane skipped for ch14-17 (spec section 5 ruling): in M2.4 all 7 drafts needed hand fixes; a Sonnet crew
+- local-model op-YAML lane skipped for ch14-17 (spec section 5 ruling): in M2.4 all 7 drafts needed hand fixes; a Sonnet crew
   drafts the YAML directly.

@@ -1,4 +1,4 @@
-"""Score the smithy local-vision lane on reading plans dimensions (Block 2 bake-off).
+"""Score the local-vision model lane on reading plans dimensions (Block 2 bake-off).
 
 Usage: python scripts/vision_bakeoff.py <endpoint> <out.json>
 Pages come from $LONGEZ_SCAN_PAGES (default ~/.cache/long-ez/scan-1980/pages). Requests run

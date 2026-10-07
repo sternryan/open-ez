@@ -9,7 +9,7 @@ All six tasks are **done** and re-verified by the captain. Nothing was pushed.
   - All 9 xfails are strict and cite ledger rows 7, 8, 11–14, 16, 18 and 20.
 - `node --test guide/viewer/tests/*.test.mjs`: 16 pass, 0 fail.
 - `source <env> && .venv/bin/python -m guide.check`: `RECALL: 5/5 … OK`.
-- Leak scan of the lines added since 5eb2113 (home paths, tailnet names/IPs, the copyright phrase): clean.
+- Leak scan of the lines added since 5eb2113 (home paths, private-network names/IPs, the copyright phrase): clean.
 
 ## Per task
 

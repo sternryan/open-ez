@@ -139,7 +139,7 @@ wing, aileron and winglet builder weights as reference rows.
   and winglet book values, each with a `GEOMETRY_PROVENANCE` entry; the provenance notes in section 3;
   the ledger reference rows in `data/mass_ledger.yaml` `prototype_weights`.
 - **Graph** `guide/graph/ch19.yaml` (about 18 ops) and `ch20.yaml` (about 9 ops), components, pages,
-  stubs replaced. The smithy local-anvil lane drafts the op YAML first (requests under 20k tokens, one
+  stubs replaced. The local-model local-model lane lane drafts the op YAML first (requests under 20k tokens, one
   chapter half per request); a Sonnet crew fixes and finishes it; it must pass `guide.check`. If the
   drafts again need wholesale rewrites, the log says so and the lane stays skipped for op YAML.
 - **Geometry** `core/wing_book.py` and `core/winglet_book.py`: planform from the p126 stations with the
@@ -147,7 +147,7 @@ wing, aileron and winglet builder weights as reference rows.
   FC1-FC5 split at the shear web and rib stations; shear web and caps as plies; the aileron and rudder
   as separate solids on their hinge lines; the winglet placed from the A, B, C jig and the 4.5 offset.
   Small kernels fully expressed by tests (planform stations, the A/B/C closure, the aileron and rudder
-  hinge poses) go through `/conduct` on local-anvil.
+  hinge poses) go through `/conduct` on local-model lane.
 - **Lab**: a Sonnet crew, using the M2.5/M2.6 pattern: per-op shots, pixel e2e checks per op, the ply
   lay-downs, aileron and rudder travel, the ch19/ch20 tour. The wing bench is its own scene framing;
   the attach op returns to the fuselage scene.

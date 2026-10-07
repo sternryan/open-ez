@@ -36,7 +36,7 @@ canard planform dimensions (§9, TODOS.md).
 
 - **CadQuery is the geometry SSOT; Blender output is derived** (throughline capabilities.md,
   "Headless 3D render"). No Blender wrapper, lease client, or second GPU path: add a script to
-  `jobs/blender/` and dispatch via `fabric-gpu`.
+  `jobs/blender/` and dispatch via `gpu-runner`.
 - **The step graph is the ply SSOT.** Nothing is drawn that the graph does not hold. Where the
   geometry has to guess, the node says so (`position_verified: false`) and the legend states it.
 - M1 §4 public/private boundary is unchanged. Renders derive from open-ez geometry and our own ply
@@ -122,13 +122,13 @@ row is neither included nor excluded, so a new row forces a decision.
 and `canard.spar_cap_top` move from `no-geometry` to `unvalidated`. Ply counts come from ch 30;
 geometry stays unvalidated (§9).
 
-## 5. Render job (anvil)
+## 5. Render job (the GPU host)
 
 ```
- open-ez (laptop)                                   anvil (fabric-gpu, single-flight lease)
+ open-ez (laptop)                                   the GPU host (gpu-runner, single-flight lease)
  ─────────────────                                  ───────────────────────────────────────
  export_glb ─► longez.glb ─┐
- layup.py  ─► layup.json ──┼─► render_cutaway.sh ─► /srv/gpu-jobs/blender/layup-<key>/in
+ layup.py  ─► layup.json ──┼─► render_cutaway.sh ─► <job root>/blender/layup-<key>/in
            └► shots.json ──┘   (lease check,        blender.sh layup_cutaway <job_dir>
                                 key = sha256 of all   └─ layup_cutaway.py + fabric_blender.py
                                 inputs + scripts)          └─ out.tmp/ ─► out/ (manifest LAST)
@@ -137,12 +137,12 @@ geometry stays unvalidated (§9).
 ```
 
 - **Scripts:**
-  - `compute-fabric-dev/deploy/anvil/jobs/blender/layup_cutaway.py`.
+  - `the render-tooling repo/deploy/<gpu-host>/jobs/blender/layup_cutaway.py`.
   - A new shared helper, `jobs/blender/fabric_blender.py`, holds `gpu_setup()` (the OPTIX/CUDA
     selection and the `BLENDER_REQUIRE_GPU` refusal) and `solidify_and_cut()`.
   - `smoke.py` is refactored to import it too, so the existing payload test is its regression test.
   - Blender's `--python` does not put the script dir on `sys.path`, so each script inserts it.
-  - Both are deployed by hand to `/opt/fabric/jobs/`.
+  - Both are deployed by hand to `<deployed scripts dir>/`.
 - **`in/`:** `longez.glb`, `layup.json`, `shots.json`.
 - **Per shot:**
   1. Import the glb.
@@ -155,27 +155,27 @@ geometry stays unvalidated (§9).
   6. Op frames: earlier ops at full colour, the highlighted op accented, later ops hidden.
 - **Output, atomic:**
   - Blender writes to `out.tmp/`: one PNG per shot at 1600×1200, and `log.txt` with the payload
-    stdout (Nomad alloc logs are GC'd within seconds while anvil's disk is >80%).
+    stdout (the job scheduler alloc logs are GC'd within seconds while the GPU host's disk is >80%).
   - `manifest.json` is written **last**, carrying shot → file + sha256 and the render key.
   - `out.tmp/` is renamed to `out/` only on success.
 - GPU required (`BLENDER_REQUIRE_GPU=1`); a CPU fallback fails the job.
 
 **Render key:** sha256 over `longez.glb`, `layup.json`, `shots.json`, `layup_cutaway.py` and
 `fabric_blender.py`. Any input or renderer change invalidates old renders.
-- `render_cutaway.sh` asserts that the local script bytes match `/opt/fabric/jobs` before it
+- `render_cutaway.sh` asserts that the local script bytes match `<deployed scripts dir>` before it
   dispatches.
 - `build_site` recomputes the data part of the key and checks the script hashes recorded in the
   manifest.
 
 **Dispatch:** `guide/render_cutaway.sh` (open-ez). HITL only, never on a timer.
 
-1. `ssh anvil flux-lock-status`. If another job holds the lease, print the holder and exit non-zero.
+1. `ssh <gpu-host> lease-status`. If another job holds the lease, print the holder and exit non-zero.
    No retry loop.
-2. Stage inputs to `/srv/gpu-jobs/blender/layup-<key>/in`.
-3. `fabric-gpu run blender.sh layup_cutaway <job_dir> --expect-s N`.
+2. Stage inputs to `<job root>/blender/layup-<key>/in`.
+3. `gpu-runner run blender.sh layup_cutaway <job_dir> --expect-s N`.
    - The script name is **bare**: blender.sh refuses anything outside `^[a-z0-9_]+$`.
    - Flags go after the positionals.
-4. On success, pull `out/` to `~/.cache/long-ez/renders/<key>/`. A fabric-gpu failure exits non-zero.
+4. On success, pull `out/` to `~/.cache/long-ez/renders/<key>/`. A gpu-runner failure exits non-zero.
 
 Renders are **not committed**. The site build copies them in, and `scripts/deploy_guide.sh` ships them.
 
@@ -188,7 +188,7 @@ Renders are **not committed**. The site build copies them in, and `scripts/deplo
   - `deploy_guide.sh` always passes `--renders`.
 ### 6.1 Layout (approved mockup B, "viewport swap")
 
-The approved mockup is served tailnet-only at
+The approved mockup is served private-network-only at
 $LONGEZ_SITE_URL/mockups/m2/b.html (it is throwaway and wiped by the next deploy).
 The saved copy is `~/.gstack/projects/sternryan-open-ez/designs/m2-layout-20260929/b.html`.
 
@@ -281,11 +281,11 @@ scrollable container). Close is a visible 44 px button, and Esc also closes it.
 - `build_site` (**CRITICAL regression**): without `--renders` the output matches M1. With `--renders`:
   panels are emitted when complete, and the build fails on a missing shot, a missing manifest, or a key
   mismatch.
-- `render_cutaway.sh`, driven with stub `ssh`/`fabric-gpu`/`rsync` on PATH:
+- `render_cutaway.sh`, driven with stub `ssh`/`gpu-runner`/`rsync` on PATH:
   - lease held → exit ≠ 0 with the holder in stderr
   - lease free → bare `layup_cutaway` passed (matches blender.sh's regex), job dir keyed on the render
     key, `out/` pulled to the cache
-  - fabric-gpu rc ≠ 0 → exit ≠ 0
+  - gpu-runner rc ≠ 0 → exit ≠ 0
   - local/deployed script mismatch → exit ≠ 0
 
 **Viewer (node `--test` on `*.test.mjs`, plus the browser e2e, per §6):**
@@ -298,7 +298,7 @@ scrollable container). Close is a visible 44 px button, and Esc also closes it.
 - A site built without `--renders` shows no toggle and no glance item.
 - Checked at 1180×820 and 820×1180.
 
-**compute-fabric-dev:** extend `deploy/anvil/tests/test_blender_payload.py`:
+**the render-tooling repo:** extend `deploy/<gpu-host>/tests/test_blender_payload.py`:
 - The shot/manifest contract, checked without a GPU.
 - The manifest is written last, and `out/` appears only on success.
 - smoke.py still passes through `fabric_blender.py`.
@@ -308,7 +308,7 @@ scrollable container). Close is a visible 44 px button, and Esc also closes it.
 **Three sessions, walking skeleton first.**
 
 - **Session 1:** Task 0 (core fix), layup geometry and export, `fabric_blender.py` + `layup_cutaway.py`,
-  and **one hero (BL 5) end to end**: CadQuery → anvil → PNG.
+  and **one hero (BL 5) end to end**: CadQuery → the GPU host → PNG.
   **Gate:** Ryan judges it on the iPad against §1. If it fails, the hero becomes a flat SVG drawn
   from the same CadQuery slice (no GPU), and Blender keeps the per-op 3D frames.
 - **Session 2:** BL 40 hero, per-op frames, `build_site --renders` strict mode, deploy.
@@ -319,10 +319,10 @@ both hero stations deployed.
 
 **Definition of done:**
 1. All suites green, run with the documented commands from two directories.
-2. One live `fabric-gpu` run on anvil: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`,
+2. One live `gpu-runner` run on <gpu-host>: `CYCLES_DEVICE=OPTIX`, `GPU_JOB_RESULT rc=0 restore=restored`,
    vLLM identity probe passing afterwards.
 3. Deployed; the Cutaway panels, Layup section and ply list load at $LONGEZ_SITE_URL
-   over the tailnet.
+   over the private-network.
 4. Ryan passes the §1 acceptance test on the iPad.
 
 ## 9. Known accuracy issue (logged, not fixed in M2)
@@ -341,7 +341,7 @@ dimensioned drawing**, and says so. Aero and dimension fixes stay out of scope, 
 - `guide/viewer/js/app.js`: the parent walk to a component (`userData.name`) and the `#parts` button
   list, extended into the ply list.
 - `jobs/blender/smoke.py`: the GPU guard and solidify/MANIFOLD cut, extracted into `fabric_blender.py`.
-- `blender.sh` + `fabric-gpu`: used as-is, with no new GPU path.
+- `blender.sh` + `gpu-runner`: used as-is, with no new GPU path.
 - `python -m guide.check`: gates the content edit and the legend text.
 
 ### NOT in scope
@@ -374,13 +374,13 @@ No critical gaps remain: every failure mode has a test and fails loud.
 |---|---|---|
 | Task 0 core fix | `core/` | — |
 | layup geometry + scope + export | `guide/` | Task 0 |
-| Blender helper + script + payload tests | `compute-fabric-dev/deploy/anvil/jobs/` | — (contract from §5) |
+| Blender helper + script + payload tests | `the render-tooling repo/deploy/<gpu-host>/jobs/` | — (contract from §5) |
 | dispatch script + stub tests | `guide/`, `tests/guide/` | layup export |
 | build_site `--renders` | `guide/`, `tests/guide/` | layup export |
 | viewer ply list | `guide/viewer/` | layup export |
 
 - **Lane A:** Task 0 → layup → dispatch → build_site. These run in sequence because they share `guide/`.
-- **Lane B:** the Blender helper and script, in compute-fabric-dev, independent of Lane A.
+- **Lane B:** the Blender helper and script, in the render-tooling repo, independent of Lane A.
 - Launch A and B in parallel. The viewer ply list (Session 3) follows the layup export.
 - Conflict flag: A's dispatch and build_site both touch `guide/`, so keep them sequential.
 
@@ -389,7 +389,7 @@ No critical gaps remain: every failure mode has a test and fails loud.
 - [ ] **T0 (P1, human ~4h / CC ~30min)** — core — Rotate station wires into XZ at placement; volume and thickness regression tests. Surfaced by: outside voice OV1. Files: `core/structures.py`, `tests/`. Verify: `pytest` + G-code/DXF suites.
 - [ ] **T1 (P1, human ~1d / CC ~45min)** — layup — `guide/layup.py`: `where` parser, `LAYUP_SCOPE`, per-ply numeric-offset lofts, section-ready foam, `shots.json`. Surfaced by: issues 1, 2, 4, 7, 8; OV2, OV3, OV5. Files: `guide/layup.py`, `guide/graph/ch30.yaml`, `guide/graph/components.yaml`, `tests/guide/test_layup.py`. Verify: `pytest tests/guide` + `python -m guide.check`.
 - [ ] **T2 (P1, human ~2h / CC ~15min)** — export — nest ply nodes under their components; write `layup.json` + `shots.json`. Surfaced by: D1, issue 8. Files: `guide/export_glb.py`, `tests/guide/test_export_glb.py`.
-- [ ] **T3 (P1, human ~1d / CC ~45min)** — blender — `fabric_blender.py` helper, `smoke.py` refactor, `layup_cutaway.py`, atomic output, per-ply shading. Surfaced by: issue 6; OV4, OV6. Files: `compute-fabric-dev/deploy/anvil/jobs/blender/*`, `deploy/anvil/tests/test_blender_payload.py`.
+- [ ] **T3 (P1, human ~1d / CC ~45min)** — blender — `fabric_blender.py` helper, `smoke.py` refactor, `layup_cutaway.py`, atomic output, per-ply shading. Surfaced by: issue 6; OV4, OV6. Files: `the render-tooling repo/deploy/<gpu-host>/jobs/blender/*`, `deploy/<gpu-host>/tests/test_blender_payload.py`.
 - [ ] **T4 (P1, human ~3h / CC ~20min)** — dispatch — `render_cutaway.sh` with the render key, lease check, bare script name, and PATH-stub tests. Surfaced by: issues 5, 9; OV6. Files: `guide/render_cutaway.sh`, `tests/guide/test_render_cutaway.py`.
 - [ ] **T5 (P1, human ~3h / CC ~20min)** — site — optional strict `--renders`, the §6.1 toggle, pinned glance item + legend, §6.2 states, §6.3 tokens and alt text; deploy passes `--renders`. Surfaced by: issue 3; design review. Files: `guide/build_site.py`, `guide/viewer/*`, `scripts/deploy_guide.sh`, `tests/guide/test_build_site.py`.
 - [ ] **T6 (P2, human ~4h / CC ~30min)** — viewer — ply list with isolate, plus the e2e test. Surfaced by: OV7. Files: `guide/viewer/js/app.js`, `tests/guide/test_viewer_e2e.py`.
@@ -401,7 +401,7 @@ No critical gaps remain: every failure mode has a test and fails loud.
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
 | Codex Review | `/codex review` | Independent 2nd opinion | 1 | issues_found | 8 outside-voice findings, all accepted (OV1 flat core verified independently) |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | clean | 9 issues + 8 outside-voice, 0 critical gaps, all resolved |
-| Design Review | `/plan-design-review` | UI/UX gaps | 1 | clean | score: 3/10 → 8/10, 7 decisions; mockup B approved (HTML, tailnet) |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | clean | score: 3/10 → 8/10, 7 decisions; mockup B approved (HTML, private-network) |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
 - **CROSS-MODEL:** Codex surfaced what the Claude pass missed: the degenerate core, foam overlap, ply band merging, render-key coverage, and viewer occlusion. One tension with D1 (viewer plies unreachable) was resolved by adding a ply list, which keeps the D1 choice.

@@ -257,7 +257,7 @@ Start: main at a71c9a4, clean. airsup-lab read from a scratchpad clone at e21864
   private sources it checks (CP file, cobelu, scan_text) are absent.
 - Captures `t8a-*`, `t8b-*`, `t8c-root-*`: `/` is the lab with the canard clear of the cards at iPad
   size; `/classic/` is the old viewer with its model loaded.
-- Leak grep over guide/lab, build_site and the lab tests (home paths, /private/tmp, tailnet IPs, the
+- Leak grep over guide/lab, build_site and the lab tests (home paths, /private/tmp, private-network IPs, the
   banned phrase, airsup brand/fonts): clean.
 
 ## Follow-up after Task 8: test lanes, WebKit (61ab071)
@@ -305,7 +305,7 @@ Done at the lead's direction, after the Task 8 commit.
 - Capture `ctx-lost-ipad.png` (GPU path, 1180×820): a calm card in the lab's card style over the dark
   canvas, controls and op bar still visible around it.
 - **Remote lanes down.** `remote_test_all.sh` hung with no output until the tool killed it at 30 min;
-  both test nodes then timed out on ssh port 22 (the laptop's tailnet still lists them). Gate run
+  both test nodes then timed out on ssh port 22 (the laptop's private-network still lists them). Gate run
   locally instead, all unpiped, foreground:
   - lab e2e WebKit: `64 passed, 64 deselected, 6 warnings in 77.71s`
   - lab e2e Chromium: `64 passed, 64 deselected, 6 warnings in 235.77s`

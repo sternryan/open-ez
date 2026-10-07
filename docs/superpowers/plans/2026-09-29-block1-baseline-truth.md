@@ -28,7 +28,7 @@ the evidence table and §3 the design.
   content into the repo. Never claim the plans are out of copyright.
 - **Private material stays private.** Local source copies live under `LONGEZ_SOURCE_CACHE` (new env
   var in `~/.config/long-ez/env`, default `~/.cache/long-ez/sources`). No committed file contains a
-  home path, tailnet hostname or tailnet IP. Never print env values.
+  home path, private-network hostname or private-network IP. Never print env values.
 - **Never loosen a physics tolerance.** A failing physics bound becomes
   `@pytest.mark.xfail(strict=True, reason="book geometry: see docs/geometry-correction-ledger.md row <n>; …")`
   with a numbered ledger row. Continue the ledger's existing numbering.

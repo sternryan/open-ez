@@ -1,6 +1,6 @@
 # M2 session 2: captain report (Tasks 8–9)
 
-Both tasks are **done**: each was re-verified by the captain and committed. Nothing was pushed and nothing touched anvil, hearth or any remote host. No commit carries a trailer. All crew ran in the foreground on sonnet; there were no escalations to opus.
+Both tasks are **done**: each was re-verified by the captain and committed. Nothing was pushed and nothing touched the GPU host, the home server or any remote host. No commit carries a trailer. All crew ran in the foreground on sonnet; there were no escalations to opus.
 
 ## Per task
 
@@ -53,7 +53,7 @@ Done-means commands, final captain run at HEAD `6f050ff`:
 ## Process notes
 
 - **Commit gate vs thread cwd.** This thread's Bash cwd resets to the memory dir, so `session-intelligence` keys the green marker on that dir. A commit written `cd ~/open-ez && git commit` makes `verify-before-commit` look up open-ez's key, and it blocks. Task 8 committed normally, because the cwd was still open-ez then. For Task 9 I ran the tests again from the thread cwd with absolute paths and `--rootdir`, then committed with `git -C` (the same workaround session 1 used). The gate did its job: the run was real and green.
-- **Another lane committed during this session.** `33d11d4` ("render_cutaway reports lease holder, hold time and ETA; --wait queues via fabric-gpu") landed between `e31f6ab` and `6f050ff`. It touches only `guide/render_cutaway.sh` and `tests/guide/test_render_cutaway.py`. I did not author or review it. The done-means run above is at HEAD `6f050ff`, which includes it.
+- **Another lane committed during this session.** `33d11d4` ("render_cutaway reports lease holder, hold time and ETA; --wait queues via gpu-runner") landed between `e31f6ab` and `6f050ff`. It touches only `guide/render_cutaway.sh` and `tests/guide/test_render_cutaway.py`. I did not author or review it. The done-means run above is at HEAD `6f050ff`, which includes it.
 - **Tracked outputs rewritten by the suite.** Test runs rewrite `output/test_mfg/dxf/*` and `data/validation/openvsp_validation.json`. They were restored with `git checkout` before every commit and never committed.
 
 ## What the lead must know for Task 10
