@@ -1,0 +1,289 @@
+# Transcription of the simplified flutter prevention criteria in FAA (CAA) Engineering Report 45.
+# Every leaf carries cite: faa-report-45:p<printed page>. Printed page = pdf page - 1.
+# Chart values are read by eye/pixel from 300 dpi renders: chart-read true, with an uncertainty.
+# Short paraphrase only; no report text is reproduced here.
+source_sha256: 1c93d5550a00031e10f410bfb7f49cd421bcb120e5de489f64f5aff107a8fbd3
+source_id: faa-report-45
+transcribed_by: crew
+reread:
+  status: partial
+  done: "captain, 2026-10-07: wing criterion (p4) and Fig 2 (p10)"
+  pending: "Figs 3 and 4 (p11, p12) and the tab frequency constant (p8); the elevator and rudder criteria are blocked on fuselage frequencies"
+
+applicability:
+  criteria_status:
+    value: preliminary; not a required procedure for the regulations
+    cite: faa-report-45:p3
+  wing_scope:
+    value: conventional airplanes without large mass concentrations on the wings
+    cite: faa-report-45:p2
+  empennage_basis:
+    value: derived from one representative (conservative) empennage mass moment of inertia about the bending axes; may not apply to larger aircraft than personal planes
+    cite: faa-report-45:p2
+
+wing:
+  form:
+    value: F <= limit_numerator / Vd^2
+    cite: faa-report-45:p4
+  limit_numerator:
+    value: 200
+    cite: faa-report-45:p4
+  F_definition:
+    value: F = integral of theta_i * c_i^2 ds
+    cite: faa-report-45:p4
+  Vd_basis:
+    value: IAS
+    cite: faa-report-45:p4
+  Vd_unit:
+    value: mph
+    inference: true
+    unit_source: p6 and Fig 2 axis
+    note: p4 gives no unit for the wing Vd; mph is stated for the elevator Vd on p6 and on the Fig 2 axis (p10).
+    cite: faa-report-45:p6
+  theta:
+    value: cumulative twist relative to the airplane centreline per unit torque applied outboard of the aileron end
+    unit: rad/(ft-lb)
+    cite: faa-report-45:p4
+  c:
+    value: local wing chord
+    unit: ft
+    cite: faa-report-45:p4
+  ds:
+    value: span increment
+    unit: ft
+    cite: faa-report-45:p4
+  integration_range:
+    value: aileron span only
+    cite: faa-report-45:p4
+  table_method:
+    value: aileron span in four elements, twist at element midpoints, F is the sum of theta*c^2*dS
+    cite: faa-report-45:p5
+
+aileron:
+  limit_source:
+    value: K/I must not exceed the Fig 2 value for the design dive speed
+    cite: faa-report-45:p5
+  reference_axes:
+    value: K/I referred to wing fundamental bending node line and aileron hinge line; if the node line is unknown, use the axis parallel to the fuselage centreline at the wing-fuselage junction
+    cite: faa-report-45:p5
+  K:
+    value: product of inertia
+    cite: faa-report-45:p6
+  I:
+    value: aileron mass moment of inertia about its hinge line
+    cite: faa-report-45:p6
+  fig2_shape:
+    value: straight line
+    cite: faa-report-45:p10
+    fig: 2
+  fig2_axes:
+    value: x = Vd design dive speed (mph), 0 to 300; y = K/I, 0 to about 4.8 (dimensionless as printed)
+    cite: faa-report-45:p10
+    fig: 2
+  fig2_intercept_at_Vd0:
+    value: 4.80
+    x_unit: mph
+    y_uncertainty: 0.04
+    captain_reread: "2026-10-07: crew read 4.73 +-0.03; captain pixel calibration on the 300 dpi render (K/I 4.0 and 0 gridlines, 0.4-unit spacing about 150.5 px) puts the left frame, where the line starts, at 4.81; the line meets the Vd = 0 frame at about 4.79. Recorded 4.80 +-0.04 and the points below re-derived on the straight line through it and the 300 mph zero. The crew value is superseded, not averaged."
+    chart-read: true
+    cite: faa-report-45:p10
+    fig: 2
+  fig2_zero_crossing_Vd:
+    value: 301
+    unit: mph
+    uncertainty: 3
+    chart-read: true
+    note: line meets the right edge (Vd 300) at K/I of about 0.015
+    cite: faa-report-45:p10
+    fig: 2
+  fig2_points:
+    - {x: 0  , y: 4.8  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 50 , y: 4.0  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 100, y: 3.2  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 150, y: 2.4  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 200, y: 1.6  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 250, y: 0.8  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+    - {x: 300, y: 0.0  , x_uncertainty: 2, y_uncertainty: 0.04, chart-read: true, fig: 2, cite: "faa-report-45:p10"}
+  free_play:
+    value: 2.5
+    unit: percent of aileron chord aft of the hinge line, at the measuring station
+    condition: other aileron clamped to the wing; total play at the aileron edge
+    cite: faa-report-45:p6
+  balance_weight_attachment:
+    distribution:
+      value: spread along the span so each spanwise element has about uniform static unbalance
+      cite: faa-report-45:p8
+    single_external_weight_frequency:
+      value: at least 50 percent above the highest frequency of the fixed surface it may couple with (for the aileron weight, the wing fundamental torsion frequency)
+      cite: faa-report-45:p9
+    support_limit_load:
+      value: 24 g normal to the surface plane, 12 g in the other perpendicular directions
+      cite: faa-report-45:p9
+  K_over_I_reduction_note:
+    value: ballast should mainly reduce K, not raise I
+    cite: faa-report-45:p9
+
+elevator:
+  waiver:
+    value: perpendicular-axis criterion need not apply if antisymmetric elevator frequency exceeds 1.5 times the fuselage torsional frequency
+    factor: 1.5
+    cite: faa-report-45:p6
+  parallel_axis:
+    gamma:
+      value: gamma = b * S_beta / I
+      cite: faa-report-45:p6
+    Vf:
+      value: Vf = Vd / (b * f_h)
+      cite: faa-report-45:p6
+    variables:
+      S_beta: {value: elevator static balance about hinge line, unit: ft-lb, cite: "faa-report-45:p6"}
+      I: {value: elevator mass moment of inertia about hinge line, unit: lb-ft^2, cite: "faa-report-45:p6"}
+      b: {value: semichord of horizontal tail at midspan, unit: ft, cite: "faa-report-45:p6"}
+      Vd: {value: design dive speed, unit: mph, cite: "faa-report-45:p6"}
+      f_h: {value: fuselage vertical bending frequency, unit: cpm, cite: "faa-report-45:p6"}
+    limit_source:
+      value: gamma must not exceed the Fig 3 elevator curve at the computed Vf
+      cite: faa-report-45:p6
+  perpendicular_axis:
+    lambda:
+      value: lambda = b * K / (S * I)
+      cite: faa-report-45:p7
+    Vf:
+      value: Vf = Vd / (b * f_alpha)
+      cite: faa-report-45:p7
+    variables:
+      S: {value: semispan of horizontal tail, unit: ft, cite: "faa-report-45:p7"}
+      b: {value: semichord of horizontal tail at midspan, unit: ft, cite: "faa-report-45:p7"}
+      K: {value: elevator product of inertia referred to stabilizer centre line and elevator hinge line, unit: lb-ft^2, cite: "faa-report-45:p7"}
+      I: {value: elevator mass moment of inertia about elevator hinge, unit: lb-ft^2, cite: "faa-report-45:p7"}
+      f_alpha: {value: fuselage torsional frequency, unit: cpm, cite: "faa-report-45:p7"}
+    limit_source:
+      value: lambda must not exceed the Fig 4 curve at the computed Vf
+      cite: faa-report-45:p7
+
+rudder:
+  limit_source:
+    value: gamma from Fig 3 rudder curve and lambda from Fig 4 must not be exceeded; same formulas as the elevator
+    cite: faa-report-45:p7
+  gamma:
+    value: gamma = b * S_beta / I
+    cite: faa-report-45:p7
+  lambda:
+    value: lambda = b * K / (S * I)
+    cite: faa-report-45:p7
+  variables:
+    S: {value: distance from fuselage torsion axis to fin tip, unit: ft, cite: "faa-report-45:p7"}
+    b: {value: semichord of vertical tail at 70 percent span, unit: ft, cite: "faa-report-45:p7"}
+    K: {value: rudder product of inertia referred to fuselage torsion axis and rudder hinge line, unit: lb-ft^2, cite: "faa-report-45:p7"}
+    f_alpha: {value: fuselage torsional frequency, unit: cpm, cite: "faa-report-45:p7"}
+    f_h: {value: fuselage side bending frequency, unit: cpm, cite: "faa-report-45:p7"}
+    S_beta: {value: rudder static balance about hinge line, unit: lb-ft, cite: "faa-report-45:p7"}
+    I: {value: rudder mass moment of inertia about hinge line, unit: lb-ft^2, cite: "faa-report-45:p7"}
+  Vf_parallel:
+    value: Vf = Vd / (b * f_h), with f_h the fuselage side bending frequency
+    inference: true
+    note: p7 does not restate Vf for the rudder; it says Figs 3 and 4 apply with the rudder variable definitions
+    cite: faa-report-45:p7
+  Vf_perpendicular:
+    value: Vf = Vd / (b * f_alpha)
+    inference: true
+    cite: faa-report-45:p7
+
+tabs:
+  reversible:
+    value: 100 percent static mass balance about the tab hinge line
+    cite: faa-report-45:p7
+  irreversible_criteria:
+    no_deflection:
+      value: no appreciable tab deflection from a moment applied to the tab, for any control surface and tab position, with the surface held and pilot tab controls restrained
+      cite: faa-report-45:p7
+    free_play:
+      value: 2.5
+      unit: percent of tab chord aft of the hinge line, at the measuring station (total play at tab trailing edge, less than)
+      cite: faa-report-45:p8
+    frequency:
+      rule:
+        value: tab natural frequency at or above the lower of (a) and (b)
+        cite: faa-report-45:p8
+      a_form:
+        value: f_t = const * (Vd / c') * (St / Sc) cpm
+        const_printed: 63
+        const_handwritten_overstrike: 48
+        note: a handwritten figure appears above the printed constant on the scan; captain to confirm which is intended
+        cite: faa-report-45:p8
+      b_cap_low_speed:
+        value: 2000
+        unit: cpm for Vd below 200 mph
+        cite: faa-report-45:p8
+      b_high_speed:
+        value: 10 times Vd in mph (cpm), for Vd above 200 mph
+        cite: faa-report-45:p8
+      variables:
+        f_t: {value: lowest tab natural frequency as installed (hinge rotation or tab torsion, whichever is lower), unit: cpm, cite: "faa-report-45:p8"}
+        c_prime: {value: chord of the movable control surface aft of the hinge at tab midspan, unit: ft, cite: "faa-report-45:p8"}
+        St: {value: tab span, unit: ft, cite: "faa-report-45:p8"}
+        Sc: {value: span of the movable surface carrying the tab (both elevator sides, each aileron, rudder), unit: ft, cite: "faa-report-45:p8"}
+
+fig3:
+  axes:
+    value: x = Vf = Vd/(b f_h), 0.08 to 0.26; y = gamma = b S_beta / I, 0 to 1.2
+    cite: faa-report-45:p11
+    fig: 3
+  elevator_curve:
+    label: ELEVATOR
+    points:
+      - {x: 0.1035, y: 0.91,  x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1135, y: 0.77,  x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1235, y: 0.649, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1335, y: 0.538, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1435, y: 0.439, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1535, y: 0.352, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1635, y: 0.275, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1735, y: 0.208, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1835, y: 0.155, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.2035, y: 0.068, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+  rudder_curve:
+    label: RUDDER
+    points:
+      - {x: 0.1235, y: 0.807, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1335, y: 0.675, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1435, y: 0.563, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1535, y: 0.467, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1635, y: 0.387, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1735, y: 0.321, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.1835, y: 0.265, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.2035, y: 0.174, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.2235, y: 0.100, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+      - {x: 0.2435, y: 0.037, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 3, cite: "faa-report-45:p11"}
+
+fig4:
+  axes:
+    value: x = Vf = Vd/(b f_alpha), 0.12 to 0.48; y = lambda = bK/(S I), 0 to 2.4
+    cite: faa-report-45:p12
+    fig: 4
+  curve:
+    label: single curve, elevator and rudder
+    points:
+      - {x: 0.145, y: 1.359, x_uncertainty: 0.001, y_uncertainty: 0.05,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.155, y: 1.036, x_uncertainty: 0.001, y_uncertainty: 0.03,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.165, y: 0.900, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.175, y: 0.802, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.185, y: 0.722, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.195, y: 0.659, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.205, y: 0.603, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.215, y: 0.556, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.245, y: 0.435, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.255, y: 0.402, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.265, y: 0.373, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.275, y: 0.346, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.285, y: 0.321, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.295, y: 0.298, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.305, y: 0.278, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.315, y: 0.258, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.325, y: 0.240, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.355, y: 0.196, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.375, y: 0.168, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.395, y: 0.144, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.415, y: 0.121, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.435, y: 0.103, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.455, y: 0.087, x_uncertainty: 0.001, y_uncertainty: 0.015, chart-read: true, fig: 4, cite: "faa-report-45:p12"}

@@ -92,3 +92,96 @@ sources:
     copy: transcription
     page_basis: pdf
     note: a single web page, cite p1; vendor relay of the maker's claim, never stored in the repo.
+  faa-report-45:
+    title: "FAA (CAA) Airframe and Equipment Engineering Report No. 45, Simplified Flutter Prevention Criteria for Personal Type Aircraft"
+    edition: R. Rosenbaum, 1955
+    obtain: NTIS NTRL accession ADA955270 (DTIC copy), 27 pdf pages
+    copy: scan
+    page_basis: printed
+    note: printed page = pdf page - 1 for pp. 1-10; Figure 2 is printed p10 / pdf p11. Never stored in the repo.
+  faa-ac23-629-1b:
+    title: "FAA Advisory Circular 23.629-1B, Means of Compliance with 14 CFR Part 23, section 23.629, Flutter"
+    edition: 2004-09-28
+    obtain: FAA regulatory and guidance library (faa.gov)
+    copy: document
+    page_basis: pdf
+  cfr14-23-629-2011:
+    title: 14 CFR 23.629, Flutter
+    edition: 2011 edition, GPO govinfo
+    obtain: govinfo.gov Code of Federal Regulations, title 14
+    copy: document
+    page_basis: pdf
+  cfr14-23-1505-2011:
+    title: 14 CFR 23.1505, Airspeed limitations
+    edition: 2011 edition, GPO govinfo
+    obtain: govinfo.gov Code of Federal Regulations, title 14
+    copy: document
+    page_basis: pdf
+  ncamp-8552-as4:
+    title: "NCAMP Test Report CAM-RP-2010-002 Rev A, Hexcel 8552 AS4 unidirectional prepreg material qualification"
+    edition: NIAR Wichita State University, 2011-05-06, 278 pp
+    obtain: NCAMP public material database (niar.wichita.edu)
+    copy: document
+    page_basis: printed
+    note: tables 2-1 (p30) and 2-2 (p31) carry the summary properties; layup percentages are 0/+-45/90.
+  ncamp-7781-mtm45:
+    title: "NCAMP Test Report NCP-RP-2009-009 Rev A, ACG MTM45-1 / 7781 E-glass fabric"
+    edition: 2018-09-24, 77 pp
+    obtain: NCAMP public material database (niar.wichita.edu)
+    copy: document
+    page_basis: printed
+    note: tables 3-3 (p34) and 3-4 (p35) carry the summary properties.
+  agate-wp33-114:
+    title: "AGATE-WP3.3-033051-114, BGF 7781 glass / MGS 418 wet layup material properties"
+    edition: NIAR, August 2001
+    obtain: https://agate.niar.wichita.edu/Materials/WP3.3-033051-114.pdf
+    copy: document
+    page_basis: printed
+    note: resin is MGS 418, not L285; lamina summary table on printed p25.
+  agate-wp33-115:
+    title: "AGATE-WP3.3-033051-115, Lancair 3K plain-weave carbon / MGS 418 wet layup material properties"
+    edition: NIAR, August 2001
+    obtain: https://agate.niar.wichita.edu/Materials/WP3.3-033051-115.pdf
+    copy: document
+    page_basis: printed
+    note: resin is MGS 418, not L285; lamina summary table on printed p24.
+  kaw-ocw-ch4-laminate:
+    title: A. Kaw, Mechanics of Composites open course, Chapter 4 laminate example slides
+    edition: University of South Florida open courseware
+    obtain: https://kaw.eng.usf.edu/compositesOCW/ppts/chapter4_revised/Chapter4_3_Part04_examplelaminate.pdf
+    copy: document
+    page_basis: pdf
+    note: page = slide number. Follows Kaw, Mechanics of Composite Materials 2nd ed.; book pages not checked.
+  kaw-ocw-ch2-tsaiwu:
+    title: A. Kaw, Mechanics of Composites open course, Chapter 2 Tsai-Wu failure theory slides
+    edition: University of South Florida open courseware
+    obtain: https://kaw.eng.usf.edu/compositesOCW/ppts/ (Chapter2_8_6_tsaiwu_failure_theory.pdf)
+    copy: document
+    page_basis: pdf
+    note: page = slide number. Follows Kaw, Mechanics of Composite Materials 2nd ed.; book pages not checked.
+  msstate-a610-ex1:
+    title: Mississippi State University, Structural Analysis II, section A6.10 Example 1 (two-cell torsion)
+    edition: course web page
+    obtain: http://ae.msstate.edu/tupas/exp/A6.10_ex1.html
+    copy: document
+    page_basis: pdf
+    note: single web page, cite p1.
+  nasa-tn-d3125:
+    title: NASA TN D-3125, Rheinfurth and Swift, A new approach to the explanation of the flutter mechanism
+    edition: NASA technical note
+    obtain: NASA NTRS 19660006195
+    copy: document
+    page_basis: printed
+  mgs-l285-tds:
+    title: MGS/Hexion L285 laminating resin technical data sheet
+    edition: vendor sheet (mgs285tech.pdf)
+    obtain: Aircraft Spruce catalogue document mgs285tech.pdf
+    copy: document
+    page_basis: pdf
+  hexforce-7715-pds:
+    title: HexForce 7715 fabric product data sheet
+    edition: vendor sheet (01-00641.pdf)
+    obtain: Aircraft Spruce catalogue document 01-00641.pdf
+    copy: document
+    page_basis: pdf
+    note: dry fabric data only; no cured lamina properties.

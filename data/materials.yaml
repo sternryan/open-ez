@@ -1,0 +1,462 @@
+# Material property sets. Units convention for this whole file: psi for moduli and strengths,
+# inches for t_ply, lb/ft2 for areal_mass, nu12 dimensionless. Every property is either
+# {value, units, cite: <id>:p<page>} or {value (may be null), units, flag: unsourced, note}.
+# use: validation = measured values for checking the engine; design-proxy = a stand-in for the
+# book material, not the same resin; book = the plans' material; legacy = old unsourced defaults.
+materials:
+  as4_8552:
+    use: validation
+    description: Hexcel 8552 AS4 unidirectional prepreg, room-temperature dry, measured means (NCAMP Table
+      2-1)
+    properties:
+      E1:
+        value: 19090000.0
+        units: psi
+        cite: ncamp-8552-as4:p30
+        note: tension; normalised 18.46 Msi; compression 16.76 Msi
+      E2:
+        value: 1340000.0
+        units: psi
+        cite: ncamp-8552-as4:p30
+        note: tension; compression 1.43 Msi
+      G12:
+        value: 700000.0
+        units: psi
+        cite: ncamp-8552-as4:p30
+      nu12:
+        value: 0.302
+        units: '1'
+        cite: ncamp-8552-as4:p30
+      F1t:
+        value: 299220
+        units: psi
+        cite: ncamp-8552-as4:p30
+        note: from longitudinal tension; normalised 289.47 ksi
+      F1c:
+        value: 215290
+        units: psi
+        cite: ncamp-8552-as4:p30
+        note: derived from cross-ply by back-out factor; normalised 202.70 ksi
+      F2t:
+        value: 9270
+        units: psi
+        cite: ncamp-8552-as4:p30
+      F2c:
+        value: 38850
+        units: psi
+        cite: ncamp-8552-as4:p30
+      F6:
+        value: 8000
+        units: psi
+        cite: ncamp-8552-as4:p30
+        note: 0.2% offset; value at 5% strain is 13.28 ksi
+      t_ply:
+        value: 0.0074
+        units: in
+        cite: ncamp-8552-as4:p30
+        note: cured ply thickness, normalising value
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: areal mass not read
+  mtm45_7781:
+    use: validation
+    description: ACG MTM45-1 / 7781 E-glass fabric prepreg, room-temperature dry, measured means (NCAMP
+      Table 3-3)
+    properties:
+      E1:
+        value: 3640000.0
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+        note: tension; compression 3.56 Msi
+      E2:
+        value: 3390000.0
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+        note: tension; compression 3.39 Msi
+      G12:
+        value: 540000.0
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+      nu12:
+        value: 0.123
+        units: '1'
+        cite: ncamp-7781-mtm45:p34
+        note: measured in compression
+      F1t:
+        value: 68320
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+      F1c:
+        value: 82760
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+      F2t:
+        value: 61580
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+      F2c:
+        value: 68960
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+      F6:
+        value: 9800
+        units: psi
+        cite: ncamp-7781-mtm45:p34
+        note: at 5% strain
+      t_ply:
+        value: 0.01
+        units: in
+        cite: ncamp-7781-mtm45:p34
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: areal mass not read
+  bgf7781_mgs418_wet:
+    use: design-proxy
+    description: BGF 7781 glass cloth, MGS 418 resin, wet layup, RTD mean (AGATE report 114); resin is
+      not L285
+    properties:
+      E1:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      E2:
+        value: 2390000.0
+        units: psi
+        cite: agate-wp33-114:p25
+        note: tension; compression 3.16 Msi
+      G12:
+        value: 440000.0
+        units: psi
+        cite: agate-wp33-114:p25
+      nu12:
+        value: null
+        units: '1'
+        flag: unsourced
+        note: 1-axis not read; nu21 = 0.118 is cited at agate-wp33-114:p25
+      F1t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      F1c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      F2t:
+        value: 48990.0
+        units: psi
+        cite: agate-wp33-114:p25
+      F2c:
+        value: 51770.0
+        units: psi
+        cite: agate-wp33-114:p25
+      F6:
+        value: 15450.0
+        units: psi
+        cite: agate-wp33-114:p25
+      t_ply:
+        value: 0.0108
+        units: in
+        cite: agate-wp33-114:p25
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+  carbon3k_mgs418_wet:
+    use: design-proxy
+    description: Lancair 3K plain-weave carbon, MGS 418 resin, wet layup, RTD mean (AGATE report 115);
+      resin is not L285
+    properties:
+      E1:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      E2:
+        value: 6850000.0
+        units: psi
+        cite: agate-wp33-115:p24
+        note: tension; compression 6.36 Msi
+      G12:
+        value: 340000.0
+        units: psi
+        cite: agate-wp33-115:p24
+      nu12:
+        value: null
+        units: '1'
+        flag: unsourced
+        note: 1-axis not read; nu21 = 0.074 is cited at agate-wp33-115:p24
+      F1t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      F1c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+      F2t:
+        value: 61980.0
+        units: psi
+        cite: agate-wp33-115:p24
+      F2c:
+        value: 63200.0
+        units: psi
+        cite: agate-wp33-115:p24
+      F6:
+        value: 15370.0
+        units: psi
+        cite: agate-wp33-115:p24
+      t_ply:
+        value: 0.0104
+        units: in
+        cite: agate-wp33-115:p24
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: 1-axis value not yet read, or areal mass not read
+  bid_7725_wet:
+    use: book
+    description: book bidirectional glass 7725 wet layup
+    properties:
+      E1:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      E2:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      G12:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      nu12:
+        value: null
+        units: '1'
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F1t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F1c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F2t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F2c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F6:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      t_ply:
+        value: null
+        units: in
+        flag: unsourced
+        note: no cured lamina data found, S2
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: no cured lamina data found, S2
+  und_7715_wet:
+    use: book
+    description: book unidirectional glass 7715 wet layup
+    properties:
+      E1:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      E2:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      G12:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      nu12:
+        value: null
+        units: '1'
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F1t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F1c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F2t:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F2c:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      F6:
+        value: null
+        units: psi
+        flag: unsourced
+        note: no cured lamina data found, S2
+      t_ply:
+        value: null
+        units: in
+        flag: unsourced
+        note: no cured lamina data found, S2
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: no cured lamina data found, S2
+  legacy_uni_glass:
+    use: legacy
+    description: values formerly hard-coded for the uni glass default in the simulation adapter
+    properties:
+      E1:
+        value: 5500000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      E2:
+        value: 1200000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      G12:
+        value: 600000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      nu12:
+        value: 0.28
+        units: '1'
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F1t:
+        value: 150000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F1c:
+        value: 100000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F2t:
+        value: 5000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F2c:
+        value: 20000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F6:
+        value: 10000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      t_ply:
+        value: null
+        units: in
+        flag: unsourced
+        note: not in the legacy table
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: legacy table gave density 0.072 (unit unstated, unsourced); not converted
+  legacy_bid_glass:
+    use: legacy
+    description: values formerly hard-coded for the bid glass default in the simulation adapter
+    properties:
+      E1:
+        value: 2600000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      E2:
+        value: 2600000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      G12:
+        value: 500000.0
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      nu12:
+        value: 0.13
+        units: '1'
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F1t:
+        value: 40000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F1c:
+        value: 35000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F2t:
+        value: 40000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F2c:
+        value: 35000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      F6:
+        value: 12000
+        units: psi
+        flag: unsourced
+        note: legacy value from the simulation adapter, no source
+      t_ply:
+        value: null
+        units: in
+        flag: unsourced
+        note: not in the legacy table
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: legacy table gave density 0.065 (unit unstated, unsourced); not converted

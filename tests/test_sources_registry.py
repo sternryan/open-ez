@@ -5,6 +5,7 @@ import pytest
 from core.sources import check_citation, load_registry, parse_citation
 
 REQUIRED = {"title", "edition", "obtain", "copy", "page_basis"}
+COPY_KINDS = {"scan", "transcription", "ocr", "owner", "document"}
 
 
 def test_registry_entries_are_well_formed():
@@ -12,7 +13,9 @@ def test_registry_entries_are_well_formed():
     assert {"om-1980", "plans-1980", "cp-text", "cobelu", "owner-check"} <= set(reg)
     for sid, e in reg.items():
         assert set(e) >= REQUIRED, sid
-        assert e["copy"] in {"scan", "transcription", "ocr", "owner"}, sid
+        # "document" = a publisher's original PDF or web page, which is none of scan,
+        # transcription, OCR or owner copy.
+        assert e["copy"] in COPY_KINDS, sid
         assert e["page_basis"] in {"printed", "pdf", "issue"}, sid
 
 
