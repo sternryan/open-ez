@@ -8,8 +8,13 @@ pytest.importorskip(
     reason="M3.1 kernel body pending (plan T4, after the remote-runner gate)",
 )
 
-from core.kernels.lamina import Ply
-from core.kernels.laminate import abd, midplane_response, strain_at
+from core.kernels.lamina import (
+    Ply,
+    reduced_stiffness,
+    stress_to_material,
+    transformed_stiffness,
+)
+from core.kernels.laminate import abd, midplane_response, ply_stresses, strain_at
 
 from tests.kernels._vectors import load, printed_close
 
@@ -43,6 +48,33 @@ def test_strain_at_top_of_ply_two_matches_printed():
     )
     s = L["strain_top_of_ply2"]
     assert printed_close(strain_at(eps0, kappa, s["z"]), s["eps"])
+
+
+def _expected_material_stress(angle, eps):
+    Q = reduced_stiffness(G["E1"], G["E2"], G["G12"], G["nu12"])
+    return stress_to_material(transformed_stiffness(Q, angle) @ np.asarray(eps), angle)
+
+
+def test_ply_stresses_top_of_ply_two_follow_the_printed_strain():
+    # Consistency with the printed strain, not a printed stress: the strain is printed to 4 figures,
+    # so the comparison allows 0.2 percent of the largest component.
+    out = ply_stresses(plies(L["angles_deg"]), np.array(L["N"]), np.array(L["M"]))
+    assert len(out) == 3
+    top2, bottom2 = out[1]
+    s = L["strain_top_of_ply2"]
+    want = _expected_material_stress(L["angles_deg"][1], s["eps"])
+    assert np.allclose(top2, want, rtol=0, atol=2e-3 * np.abs(want).max())
+    assert not np.allclose(bottom2, top2, rtol=1e-3)  # bending: the two faces differ
+
+
+def test_ply_stresses_bottom_of_ply_three_is_the_bottom_face():
+    pl = plies(L["angles_deg"])
+    N, M = np.array(L["N"]), np.array(L["M"])
+    eps0, kappa = midplane_response(pl, N, M)
+    h = L["t_ply"] * 3
+    want = _expected_material_stress(L["angles_deg"][2], strain_at(eps0, kappa, h / 2))
+    _, bottom3 = ply_stresses(pl, N, M)[2]
+    assert np.allclose(bottom3, want, rtol=1e-9, atol=1e-9 * np.abs(want).max())
 
 
 # Broken inputs: each must make the comparison FAIL (the tests pass by asserting the mismatch).

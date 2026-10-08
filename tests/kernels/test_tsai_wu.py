@@ -8,6 +8,7 @@ pytest.importorskip(
     reason="M3.1 kernel body pending (plan T4, after the remote-runner gate)",
 )
 
+from core.kernels.lamina import stress_to_material
 from core.kernels.tsai_wu import tsai_wu_strength_ratio
 
 from tests.kernels._vectors import load
@@ -23,8 +24,18 @@ def ratio(sigma, **over):
     )
 
 
+def local_stress():
+    """The material-axis stress per unit S from the printed global stress, not the printed local one.
+
+    The printed local stress is rounded to 4 figures; fed in directly it gives 21.8252, which misses the
+    printed 21.82 by 0.0002 beyond half a unit. The exact chain from the printed inputs gives 21.8248,
+    which meets it (ledger row 78; the vector and the bound are unchanged).
+    """
+    return stress_to_material(np.array(T["global_stress_per_S"]), T["theta_deg"])
+
+
 def test_strength_ratio_matches_printed():
-    assert abs(ratio(T["local_stress_per_S"]) - T["S_max_MPa"]) <= 0.005
+    assert abs(ratio(local_stress()) - T["S_max_MPa"]) <= 0.005
 
 
 def test_ratio_scales_inversely_with_load():
@@ -34,7 +45,7 @@ def test_ratio_scales_inversely_with_load():
 
 
 def test_broken_swapped_transverse_strengths_is_caught():
-    bad = ratio(T["local_stress_per_S"], F2t=S["F2c"], F2c=S["F2t"])
+    bad = ratio(local_stress(), F2t=S["F2c"], F2c=S["F2t"])
     assert abs(bad - T["S_max_MPa"]) > 0.005
 
 
