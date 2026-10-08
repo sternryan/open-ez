@@ -1,0 +1,115 @@
+{
+  "cases": [
+    {
+      "cite": "ncamp-8552-as4:p40",
+      "cv_pct": 4.17,
+      "fibre_failure_psi": 115708.27076066947,
+      "fpf_psi": {
+        "-0.5": 49767.733820497146,
+        "0.0": 51221.2487800144
+      },
+      "laminate": "25/50/25",
+      "measured_over_fibre": 0.778596027818459,
+      "measured_over_fpf": {
+        "-0.5": 1.8102090066012988,
+        "0.0": 1.7588403669523864
+      },
+      "measured_psi": 90090,
+      "mode": "UNT"
+    },
+    {
+      "cite": "ncamp-8552-as4:p43",
+      "cv_pct": 5.89,
+      "fibre_failure_psi": 85162.80229014096,
+      "fpf_psi": {
+        "-0.5": 67700.87109439257,
+        "0.0": 65472.03960702417
+      },
+      "laminate": "25/50/25",
+      "measured_over_fibre": 0.9895165228699349,
+      "measured_over_fpf": {
+        "-0.5": 1.2447402616504855,
+        "0.0": 1.287114324004641
+      },
+      "measured_psi": 84270,
+      "mode": "UNC"
+    },
+    {
+      "cite": "ncamp-8552-as4:p41",
+      "cv_pct": 1.57,
+      "fibre_failure_psi": 75632.71261933492,
+      "fpf_psi": {
+        "-0.5": 31127.258516913254,
+        "0.0": 31505.994202936123
+      },
+      "laminate": "10/80/10",
+      "measured_over_fibre": 0.8480457434182137,
+      "measured_over_fpf": {
+        "-0.5": 2.0605733706085614,
+        "0.0": 2.035803078831984
+      },
+      "measured_psi": 64140,
+      "mode": "UNT"
+    },
+    {
+      "cite": "ncamp-8552-as4:p44",
+      "cv_pct": 4.58,
+      "fibre_failure_psi": 57041.19582246567,
+      "fpf_psi": {
+        "-0.5": 36184.133910195116,
+        "0.0": 35798.44333252158
+      },
+      "laminate": "10/80/10",
+      "measured_over_fibre": 1.1463644661924524,
+      "measured_over_fpf": {
+        "-0.5": 1.80714564461569,
+        "0.0": 1.8266157383607675
+      },
+      "measured_psi": 65390,
+      "mode": "UNC"
+    },
+    {
+      "cite": "ncamp-8552-as4:p42",
+      "cv_pct": 3.11,
+      "fibre_failure_psi": 177211.19553125094,
+      "fpf_psi": {
+        "-0.5": 74831.8087255387,
+        "0.0": 76510.76633517964
+      },
+      "laminate": "50/40/10",
+      "measured_over_fibre": 0.8738725537952294,
+      "measured_over_fpf": {
+        "-0.5": 2.069440825197496,
+        "0.0": 2.0240288709380683
+      },
+      "measured_psi": 154860,
+      "mode": "UNT"
+    },
+    {
+      "cite": "ncamp-8552-as4:p45",
+      "cv_pct": 4.54,
+      "fibre_failure_psi": 128801.89818951885,
+      "fpf_psi": {
+        "-0.5": 91939.617308395,
+        "0.0": 90068.48874129649
+      },
+      "laminate": "50/40/10",
+      "measured_over_fibre": 1.045326209415726,
+      "measured_over_fpf": {
+        "-0.5": 1.464439421673621,
+        "0.0": 1.4948624305968556
+      },
+      "measured_psi": 134640,
+      "mode": "UNC"
+    }
+  ],
+  "condition": "RTD as measured",
+  "f12_note": "f12* = -0.5 and 0 bracket the unsourced interaction term",
+  "f12_star": [
+    -0.5,
+    0.0
+  ],
+  "fibre_note": "linear CLT to the first fibre-direction strength, matrix damage ignored",
+  "gate": "none: reported beside first-ply and fibre failure, not gated (spec section 5)",
+  "material": "as4_8552"
+}

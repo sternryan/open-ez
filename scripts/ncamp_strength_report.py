@@ -1,3 +1,8 @@
+"""Block 3 T5: NCAMP AS4/8552 measured laminate strengths beside first-ply and fibre failure.
+
+Reported, never gated (spec section 5). Usage: python scripts/ncamp_strength_report.py [out.json]
+"""
+
 import json
 import sys
 from pathlib import Path
@@ -5,15 +10,19 @@ from pathlib import Path
 import numpy as np
 import yaml
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from core.kernels.lamina import Ply
 from core.kernels.laminate import ply_stresses
 from core.kernels.tsai_wu import tsai_wu_strength_ratio
 from core.materials import get_material
 
-ROOT = Path(__file__).resolve().parents[1]
 
-
-def laminate_plies(stack: list[float], symmetric: bool, lamina: dict, t_ply: float) -> list[Ply]:
+def laminate_plies(
+    stack: list[float], symmetric: bool, lamina: dict, t_ply: float
+) -> list[Ply]:
     """Create a list of Ply objects for a given stack."""
     angles = stack + stack[::-1] if symmetric else stack
     return [
@@ -92,10 +101,11 @@ def build_report() -> dict:
         name = lam_cfg["name"]
         stack = lam_cfg["stack"]
         symmetric = lam_cfg["symmetric"]
-        t_ply = v_data["t_ply"]
+        t_ply = float(v_data["t_ply"])  # YAML 1.1 reads 19.09e6 as a string
 
         for mode in ("UNT", "UNC"):
-            lamina = v_data["tension"] if mode == "UNT" else v_data["compression"]
+            raw = v_data["tension"] if mode == "UNT" else v_data["compression"]
+            lamina = {k: float(raw[k]) for k in ("E1", "E2", "G12", "nu12")}
             plies = laminate_plies(stack, symmetric, lamina, t_ply)
             r = case_result(plies, S, mode)
 

@@ -1,0 +1,41 @@
+{
+  "F": null,
+  "applicability": {
+    "d1": "unconfirmed",
+    "d2": "unconfirmed",
+    "d3": "unconfirmed"
+  },
+  "criterion": "faa-report-45:p4 wing, F <= 200 / Vd^2",
+  "inputs_sha256": "b976edbf8f3b6e5d7e9a5408fee381f3e39f2082bd3f94b8f24ea087069c7971",
+  "limit_numerator": 200.0,
+  "missing_inputs": [
+    "aileron_1.GJ_lbin2",
+    "aileron_2.GJ_lbin2",
+    "aileron_3.GJ_lbin2",
+    "aileron_4.GJ_lbin2",
+    "airfoil_contour",
+    "bid_7725_wet.E1",
+    "bid_7725_wet.E2",
+    "bid_7725_wet.G12",
+    "bid_7725_wet.nu12",
+    "bid_7725_wet.t_ply",
+    "centre_section.GJ_lbin2",
+    "centre_section_spar_GJ",
+    "inboard_wing.GJ_lbin2",
+    "le_fs_bl106_25",
+    "skin_und_angle",
+    "und_7715_wet.E1",
+    "und_7715_wet.E2",
+    "und_7715_wet.G12",
+    "und_7715_wet.nu12",
+    "und_7715_wet.t_ply",
+    "wing_root_attach_rotation"
+  ],
+  "reasons": [
+    "inputs_unsourced"
+  ],
+  "state": "blocked",
+  "vd_max": null,
+  "vd_max_eas": null,
+  "vd_max_kt": null
+}
