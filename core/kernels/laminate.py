@@ -1,4 +1,5 @@
 import numpy as np
+
 from core.kernels.lamina import (
     Ply,
     reduced_stiffness,
@@ -23,7 +24,9 @@ def abd(plies: list[Ply]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     D = np.zeros((3, 3))
 
     for i, p in enumerate(plies):
-        Q_bar = transformed_stiffness(reduced_stiffness(p.E1, p.E2, p.G12, p.nu12), p.theta_deg)
+        Q_bar = transformed_stiffness(
+            reduced_stiffness(p.E1, p.E2, p.G12, p.nu12), p.theta_deg
+        )
         z_prev, z_curr = z_k[i], z_k[i + 1]
         A += Q_bar * (z_curr - z_prev)
         B += 0.5 * Q_bar * (z_curr**2 - z_prev**2)
@@ -42,7 +45,9 @@ def laminate_constants(A: np.ndarray, h: float) -> dict:
     return {"Ex": float(Ex), "Ey": float(Ey), "Gxy": float(Gxy), "nuxy": float(nuxy)}
 
 
-def midplane_response(plies: list[Ply], N: np.ndarray, M: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def midplane_response(
+    plies: list[Ply], N: np.ndarray, M: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     """Solve for midplane strain and curvature."""
     A, B, D = abd(plies)
     ABD = np.block([[A, B], [B, D]])
@@ -56,7 +61,9 @@ def strain_at(eps0: np.ndarray, kappa: np.ndarray, z: float) -> np.ndarray:
     return eps0 + z * kappa
 
 
-def ply_stresses(plies: list[Ply], N: np.ndarray, M: np.ndarray) -> list[tuple[np.ndarray, np.ndarray]]:
+def ply_stresses(
+    plies: list[Ply], N: np.ndarray, M: np.ndarray
+) -> list[tuple[np.ndarray, np.ndarray]]:
     """Calculate material-axis stresses at the top and bottom of each ply."""
     eps0, kappa = midplane_response(plies, N, M)
     h = sum(p.t for p in plies)
@@ -67,8 +74,14 @@ def ply_stresses(plies: list[Ply], N: np.ndarray, M: np.ndarray) -> list[tuple[n
 
     results = []
     for i, p in enumerate(plies):
-        Q_bar = transformed_stiffness(reduced_stiffness(p.E1, p.E2, p.G12, p.nu12), p.theta_deg)
-        top_stress = stress_to_material(Q_bar @ strain_at(eps0, kappa, z_k[i]), p.theta_deg)
-        bottom_stress = stress_to_material(Q_bar @ strain_at(eps0, kappa, z_k[i + 1]), p.theta_deg)
+        Q_bar = transformed_stiffness(
+            reduced_stiffness(p.E1, p.E2, p.G12, p.nu12), p.theta_deg
+        )
+        top_stress = stress_to_material(
+            Q_bar @ strain_at(eps0, kappa, z_k[i]), p.theta_deg
+        )
+        bottom_stress = stress_to_material(
+            Q_bar @ strain_at(eps0, kappa, z_k[i + 1]), p.theta_deg
+        )
         results.append((top_stress, bottom_stress))
     return results

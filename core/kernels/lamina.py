@@ -1,5 +1,5 @@
-import dataclasses
 from dataclasses import dataclass
+
 import numpy as np
 
 
@@ -38,9 +38,7 @@ def transformed_stiffness(Q: np.ndarray, theta_deg: float) -> np.ndarray:
     Qb26 = (Q11 - Q12 - 2 * Q66) * c * s**3 - (Q22 - Q12 - 2 * Q66) * c**3 * s
     Qb66 = (Q11 + Q22 - 2 * Q12 - 2 * Q66) * s**2 * c**2 + Q66 * (s**4 + c**4)
 
-    return np.array(
-        [[Qb11, Qb12, Qb16], [Qb12, Qb22, Qb26], [Qb16, Qb26, Qb66]]
-    )
+    return np.array([[Qb11, Qb12, Qb16], [Qb12, Qb22, Qb26], [Qb16, Qb26, Qb66]])
 
 
 def stress_to_material(sigma_xy: np.ndarray, theta_deg: float) -> np.ndarray:
@@ -49,6 +47,10 @@ def stress_to_material(sigma_xy: np.ndarray, theta_deg: float) -> np.ndarray:
     c = np.cos(theta)
     s = np.sin(theta)
     T = np.array(
-        [[c**2, s**2, 2 * s * c], [s**2, c**2, -2 * s * c], [-s * c, s * c, c**2 - s**2]]
+        [
+            [c**2, s**2, 2 * s * c],
+            [s**2, c**2, -2 * s * c],
+            [-s * c, s * c, c**2 - s**2],
+        ]
     )
     return T @ np.asarray(sigma_xy, dtype=float)

@@ -1,6 +1,9 @@
-import numpy as np
 from dataclasses import dataclass
+
+import numpy as np
+
 from core.kernels.thinwall_sc import shear_centre_x
+
 
 @dataclass(frozen=True)
 class Wall:
@@ -14,10 +17,12 @@ class Wall:
     rho: float
     length: float | None = None
 
+
 @dataclass(frozen=True)
 class Cell:
     wall_ids: tuple[int, ...]
     area: float
+
 
 def multicell_torsion(walls: list[Wall], cells: list[Cell]) -> tuple[float, np.ndarray]:
     """Calculate GJ and shear flows per unit torque for a multicell thin-wall section."""
@@ -33,7 +38,11 @@ def multicell_torsion(walls: list[Wall], cells: list[Cell]) -> tuple[float, np.n
     for i, cell in enumerate(cells):
         for w_id in cell.wall_ids:
             w = walls[w_id]
-            L = w.length if w.length is not None else np.sqrt((w.x1 - w.x0)**2 + (w.z1 - w.z0)**2)
+            L = (
+                w.length
+                if w.length is not None
+                else np.sqrt((w.x1 - w.x0) ** 2 + (w.z1 - w.z0) ** 2)
+            )
             delta_w = L / w.Gt
             K[i, i] += delta_w / (2 * cell.area)
             for j in wall_to_cells[w_id]:
@@ -64,12 +73,17 @@ def multicell_torsion(walls: list[Wall], cells: list[Cell]) -> tuple[float, np.n
 
     return float(GJ), np.array(flows)
 
+
 def section_ei(walls: list[Wall], caps: list[tuple[float, float, float]]) -> float:
     """Calculate the bending stiffness EI about the horizontal axis."""
     sum_EA_z = 0.0
     sum_EA = 0.0
     for w in walls:
-        L = w.length if w.length is not None else np.sqrt((w.x1 - w.x0)**2 + (w.z1 - w.z0)**2)
+        L = (
+            w.length
+            if w.length is not None
+            else np.sqrt((w.x1 - w.x0) ** 2 + (w.z1 - w.z0) ** 2)
+        )
         EA = w.Et * L
         zmid = (w.z0 + w.z1) / 2
         sum_EA_z += EA * zmid
@@ -81,15 +95,22 @@ def section_ei(walls: list[Wall], caps: list[tuple[float, float, float]]) -> flo
     zc = sum_EA_z / sum_EA
     EI = 0.0
     for w in walls:
-        L = w.length if w.length is not None else np.sqrt((w.x1 - w.x0)**2 + (w.z1 - w.z0)**2)
+        L = (
+            w.length
+            if w.length is not None
+            else np.sqrt((w.x1 - w.x0) ** 2 + (w.z1 - w.z0) ** 2)
+        )
         zmid = (w.z0 + w.z1) / 2
-        EI += w.Et * L * ((zmid - zc)**2 + (w.z1 - w.z0)**2 / 12)
+        EI += w.Et * L * ((zmid - zc) ** 2 + (w.z1 - w.z0) ** 2 / 12)
     for x, z, EA in caps:
-        EI += EA * (z - zc)**2
+        EI += EA * (z - zc) ** 2
 
     return float(EI)
 
-def mass_props(walls: list[Wall], extras: list[tuple[float, float, float]]) -> tuple[float, float, float]:
+
+def mass_props(
+    walls: list[Wall], extras: list[tuple[float, float, float]]
+) -> tuple[float, float, float]:
     """Calculate mass, centroid, and polar inertia for the section."""
     m_total = 0.0
     xc_sum = 0.0
@@ -97,7 +118,11 @@ def mass_props(walls: list[Wall], extras: list[tuple[float, float, float]]) -> t
     wall_data = []
 
     for w in walls:
-        L = w.length if w.length is not None else np.sqrt((w.x1 - w.x0)**2 + (w.z1 - w.z0)**2)
+        L = (
+            w.length
+            if w.length is not None
+            else np.sqrt((w.x1 - w.x0) ** 2 + (w.z1 - w.z0) ** 2)
+        )
         mw = w.rho * L
         xmid = (w.x0 + w.x1) / 2
         zmid = (w.z0 + w.z1) / 2
@@ -116,10 +141,18 @@ def mass_props(walls: list[Wall], extras: list[tuple[float, float, float]]) -> t
 
     inertia = 0.0
     for mw, xmid, zmid, L in wall_data:
-        inertia += mw * ((xmid - xc)**2 + (zmid - zc)**2 + L**2 / 12)
+        inertia += mw * ((xmid - xc) ** 2 + (zmid - zc) ** 2 + L**2 / 12)
     for x, z, m in extras:
-        inertia += m * ((x - xc)**2 + (z - zc)**2)
+        inertia += m * ((x - xc) ** 2 + (z - zc) ** 2)
 
     return float(m_total), float(xc), float(inertia)
 
-__all__ = ("Wall", "Cell", "multicell_torsion", "section_ei", "mass_props", "shear_centre_x")
+
+__all__ = (
+    "Cell",
+    "Wall",
+    "mass_props",
+    "multicell_torsion",
+    "section_ei",
+    "shear_centre_x",
+)
