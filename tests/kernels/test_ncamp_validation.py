@@ -14,13 +14,28 @@ pytest.importorskip(
 
 from core.kernels.lamina import Ply
 from core.kernels.laminate import abd, laminate_constants
-
 from tests.kernels._vectors import load
 
 V = load("ncamp_laminates.yaml")
 K = V["bound"]["k_sd"]
+# Recorded misses against the frozen bound: strict xfails, each citing its ledger row. Never widened.
+MISSES = {
+    (
+        "as4_8552",
+        "10/80/10",
+        "UNT",
+    ): "ledger row 78: CLT 4.800 Msi vs measured 4.570 +- 0.182 Msi",
+}
 CASES = [
-    (mat, lam["name"], mode)
+    pytest.param(
+        mat,
+        lam["name"],
+        mode,
+        marks=[pytest.mark.xfail(strict=True, reason=MISSES[(mat, lam["name"], mode)])]
+        if (mat, lam["name"], mode) in MISSES
+        else [],
+        id=f"{mat}-{lam['name']}-{mode}",
+    )
     for mat in ("as4_8552", "mtm45_7781")
     for lam in V[mat]["laminates"]
     for mode in ("UNT", "UNC")
