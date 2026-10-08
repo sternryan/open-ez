@@ -166,6 +166,13 @@ sources:
     copy: document
     page_basis: pdf
     note: single web page, cite p1.
+  caia-2023-ia100:
+    title: "Liberatto, Vianello and Mendez, Aplicacion del criterio simplificado de prevencion de flutter a la estructura y superficies de control de la aeronave IA-100 B/C (paper 7102)"
+    edition: 7th Argentine Congress of Aeronautical Engineering (CAIA), 2023, 11 pages
+    obtain: conference proceedings site of the Universidad Nacional de La Plata engineering faculty (caia.ing.unlp.edu.ar), paper 7102
+    copy: document
+    page_basis: pdf
+    note: secondary application of FAA Report 45 to the IA-100; the wing station table is p3 (Tabla 2), the aileron table p4 (Tabla 3). Never stored in the repo.
   nasa-tn-d3125:
     title: NASA TN D-3125, Rheinfurth and Swift, A new approach to the explanation of the flutter mechanism
     edition: NASA technical note

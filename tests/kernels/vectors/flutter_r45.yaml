@@ -1,0 +1,43 @@
+# Vectors for the Report 45 criterion kernel (Block 3, M3.3, plan T10). Captain-written 2026-10-08.
+# Bounds frozen in ledger row 79 BEFORE core/kernels/flutter_r45.py exists.
+#   published: printed values from a registered secondary source (the primary Report 45 prints no
+#              worked example; block3 source notes, S1).
+#   hand:      closed-form cases the captain derived; they check arithmetic and conventions only.
+
+ia100_wing:
+  kind: published
+  cite: "caia-2023-ia100:p3 (Tabla 1 and Tabla 2)"
+  units: {theta: rad/(lb ft), chord: ft, ds: ft, F: rad ft2/lb, v_d: mph}
+  v_d_mph: 287                     # printed "250 (287) kts (mph)"; basis not printed in the paper
+  v_d_kt: 250
+  ds_ft: 0.781                     # every strip (Tabla 1)
+  theta: [4.077e-6, 4.439e-6, 5.236e-6, 5.928e-6, 7.111e-6, 7.987e-6, 9.064e-6, 9.842e-6, 1.071e-5]
+  chord_ft: [4.333, 4.227, 4.120, 4.014, 3.907, 3.801, 3.695, 3.588, 3.482]
+  dF_printed: [5.980e-5, 6.196e-5, 6.945e-5, 7.461e-5, 8.482e-5, 9.015e-5, 9.666e-5, 9.899e-5, 1.014e-4]
+  F_printed: 7.379e-4
+  limit_printed: 2.428e-3          # F-hat at V_D, p3
+  bound:
+    F_rel: 1.0e-3                  # printed inputs are 4 figures; captain choice, unsourced (row 79)
+    limit_half_unit: 0.0005e-3     # half a unit in the printed 4th figure
+  broken:
+    gj_divisor: 4                  # spec 4.5: the smallest power of two above the case's margin 3.29
+
+ia100_aileron:
+  kind: published
+  cite: "caia-2023-ia100:p4 (Tabla 3 and text)"
+  K_lbft2: 43.32
+  I_lbft2: 2.37
+  KI_printed: 18.3
+  KI_limit_printed: 0.2            # the paper's Fig 2 reading at 287 mph, printed to one figure
+  consistency_abs: 0.05            # our Fig 2 transcription must agree with that reading to 0.05 (row 79)
+
+hand_uniform_wing:
+  kind: hand
+  cite: "captain derivation 2026-10-08: uniform GJ, theta(y) = y / GJ, so the midpoint rule is exact"
+  units: {GJ: lb ft2, length: ft}
+  GJ: 2.0e+5
+  ds: [2.0, 2.0, 2.0, 2.0, 2.0]    # five strips from the centreline out to 10 ft
+  theta_mid: [5.0e-6, 1.5e-5, 2.5e-5, 3.5e-5, 4.5e-5]   # (2k + 1) / GJ
+  chord: 3.0
+  aileron_strips: [3, 4]           # zero-based: the strips from 6 to 10 ft
+  F: 1.44e-3                       # 9 x 2 x (3.5e-5 + 4.5e-5) = 9 (10^2 - 6^2) / (2 GJ)
