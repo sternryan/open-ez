@@ -118,3 +118,45 @@ with a new row; the bound is never widened.
   the vector file).
 - **Ruff.** Run `.venv/bin/ruff check --fix` and `ruff format` on new tests before committing; the crews'
   files needed fixes.
+
+## Done by captain #4 (2026-10-08, kernels, T12 and the Report 45 kernel)
+
+- **T4, M3.1 kernels:** `core/kernels/lamina.py`, `laminate.py` (adds `ply_stresses`, top and bottom
+  face per ply) and `tsai_wu.py`, written by the local-model lane, each checked by a fresh grader.
+  - The textbook vectors pass. The Tsai-Wu printed match now starts from the printed global stress:
+    the printed local stress is rounded and missed by 0.0002 (row 78; vector and bound unchanged).
+- **T5:** NCAMP moduli against the frozen row-73 bound: five of six AS4 cases pass; [10/80/10]
+  tension misses (CLT 4.800 against 4.570 +- 0.182 Msi) and is a strict xfail citing row 78.
+  - 7781 glass sits inside the bound, but it compares normalised means with measured CVs, so it is
+    not counted: **M3.1 stays open on glass** and the gates keep `glass_unvalidated`.
+  - Measured NCAMP strengths beside FPF (not a gate) are **not done**: never transcribed, PDFs not held.
+- **T7, M3.2 kernels:** `core/kernels/thinwall.py` (local lane, after one re-brief) and
+  `thinwall_sc.py` (captain, after the local lane missed twice). The grader found the shear centre
+  ignored Ixz; fixed, with asymmetric and rigid-shift tests. The Stere case passes the row-75 bounds.
+- **T12:** `scripts/equivalence_report.py` (Sonnet crew) and `data/validation/equivalence_canard.json`.
+  Every gate is blocked today. The grader found geometry flags missing from the strength gate, NaN
+  capacities passing, and fabric angle pairs expanded as UND; all fixed.
+- **T10, kernel only:** `core/kernels/flutter_r45.py` (local lane), tests and vectors frozen in
+  row 79 against the registered IA-100 paper (`caia-2023-ia100`). Grader hardening applied.
+
+Pushed: 2428e7f (kernels and T12) and the commit that adds this section (T10 kernel).
+
+## Next, added by captain #4
+
+1. **T10 book run is blocked:** the twist per unit torque needs the wing laminate (T13, not typed)
+   and the BID and UND shear moduli (unsourced). `data/validation/flutter_inputs_book.yaml`,
+   `scripts/flutter_screen.py` and `tests/test_flutter_screen.py` are not written. The elevator
+   criteria also need fuselage frequencies. Figs 3 and 4 and the p8 tab constant are still not re-read.
+2. **Glass:** transcribe the 7781 measured (not normalised) laminate means (ncamp-7781-mtm45 p51, p53),
+   captain re-read, then decide whether M3.1 closes on glass (a new row).
+3. **T5 strengths:** transcribe the AS4 measured UNT and UNC strengths (p40 to p45) and report them
+   beside FPF and a fibre-failure estimate, labelled not a gate.
+4. **T8:** point `fea_adapter` at the kernels (Sonnet crew; a row for every moved number).
+
+## Traps found by captain #4
+
+- **Conduct commit messages carry a lane prefix and a job trailer.** Rewrite them before pushing
+  (the repo is public); `git filter-branch --msg-filter` over the branch range works.
+- **Kernel test modules skip rather than fail before a body exists** (`importorskip`), so a conduct
+  verify must import the module first, or a missing body reads green.
+- **The purity guard rejects a data path even in a docstring.** Cite pages, not repo paths, in kernels.
