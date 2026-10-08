@@ -459,7 +459,7 @@ reviewer item 2).
 That is worth it only if Block 5's part proof tests need the same frame. That decision is Ryan's.
 
 **Testing labs.** None of the candidates below was contacted. Contacting any of them is outward
-and is Ryan's call.
+and is the owner's call.
 
 - **Primary candidate: a university materials characterization facility** with a published external
   rate of about $124/hr for an Instron 34TM-50. Open questions:
