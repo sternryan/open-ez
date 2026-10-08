@@ -1,0 +1,73 @@
+# Book main-wing inputs for the Report 45 wing criterion (Block 3 M3.3, plan T10; spec section 4.5).
+# Assembled by captain #5 on 2026-10-08 from data/laminates/wing_book.yaml (captain re-read) and
+# data/materials.yaml. Every input is cited or flagged; a flagged input blocks the screen, and
+# scripts/flutter_screen.py then lists it instead of computing V_D,max. Nothing here is tuned to a
+# result: the screen cannot produce a number until every flag below is cleared.
+#
+# Units: in, lb, psi. Report 45 works in ft and lb; the script converts.
+# Strips run from the centreline outward (Report 45 p4: twist is cumulative from the centreline under
+# a unit torque applied outboard of the aileron end). The aileron span is split into the four equal
+# elements of the Report 45 table method (p5).
+part: wing
+side: right (left is the mirror)
+
+inputs:
+  # ---- lamina properties the torsion box needs (data/materials.yaml) ----
+  bid_7725_wet.E1: {value: null, unit: psi, flag: unsourced, note: "book BID lamina; data/materials.yaml flag"}
+  bid_7725_wet.E2: {value: null, unit: psi, flag: unsourced, note: "book BID lamina; data/materials.yaml flag"}
+  bid_7725_wet.G12: {value: null, unit: psi, flag: unsourced, note: "book BID lamina; data/materials.yaml flag"}
+  bid_7725_wet.nu12: {value: null, unit: "1", flag: unsourced, note: "book BID lamina; data/materials.yaml flag"}
+  bid_7725_wet.t_ply: {value: null, unit: in, flag: unsourced, note: "not printed in ch19 (wing_book bid_ply_thickness)"}
+  und_7715_wet.E1: {value: null, unit: psi, flag: unsourced, note: "book UND lamina; data/materials.yaml flag"}
+  und_7715_wet.E2: {value: null, unit: psi, flag: unsourced, note: "book UND lamina; data/materials.yaml flag"}
+  und_7715_wet.G12: {value: null, unit: psi, flag: unsourced, note: "book UND lamina; data/materials.yaml flag"}
+  und_7715_wet.nu12: {value: null, unit: "1", flag: unsourced, note: "book UND lamina; data/materials.yaml flag"}
+  und_7715_wet.t_ply: {value: null, unit: in, flag: unsourced, note: "skin and web UND cloth thickness not printed (wing_book shear_web_ply_thickness)"}
+  # ---- laminate schedule (data/laminates/wing_book.yaml) ----
+  skin_bottom_und_count: {value: 2, unit: plies, cite: "cobelu:p34 ch19", note: "Section A-A"}
+  skin_top_und_count: {value: 3, unit: plies, cite: "cobelu:p34 ch19", note: "Section A-A; third ply forward of the hinge line only (p24)"}
+  skin_und_angle: {value: null, unit: deg, flag: unsourced, note: "38 in UND laid diagonally, selvage across the corners (Fig 19-28); no angle printed"}
+  shear_web_ply_count_by_bl: {value: {"23-70": 6, "70-120": 4, "120-157": 2}, unit: plies, cite: "cobelu:p14 ch19", note: "UND crossed at 45"}
+  # ---- cell geometry ----
+  airfoil_contour: {value: null, unit: chord fraction, flag: unsourced, note: "printed only as 'modified Eppler 1230' (p32); data/airfoils/eppler_1230_mod.dat has no registered source"}
+  web_front_fs_by_bl: {value: {"55.5": 130.5, "106.25": 147.35, "157": 164.2}, unit: in, cite: "cobelu:p32 ch19"}
+  le_fs_bl55_5: {value: 112.9, unit: in, cite: "cobelu:p32 ch19"}
+  le_fs_bl106_25: {value: null, unit: in, flag: conflict, note: "134.45 (captain) against 134.95 (config read); wing_book le_fs_bl106_25"}
+  chord_by_bl: {value: {"55.5": 42.7, "106.25": 31.35, "157": 20.0}, unit: in, cite: "cobelu:p32 ch19", note: "LE and TE straight from BL 55.5 to 157 (p32 note), so chord is linear in BL there"}
+  # ---- inboard of the wing root ----
+  centre_section_spar_GJ: {value: null, unit: lb-in2, flag: unsourced, note: "the BL 0 to 23 centre-section spar (ch14) is not typed; its torsional stiffness sets the root of the cumulative twist"}
+  wing_root_attach_rotation: {value: null, unit: rad/(in-lb), flag: unsourced, note: "attach-fitting flexibility at BL 23; not printed"}
+
+strips:
+  # chord: mid-strip chord. Aileron strips: linear in BL between the printed BL 55.5 and 106.25
+  # chords (p32), so derived; inboard strips carry no chord because F sums over the aileron only.
+  # GJ: derived from the inputs above through the M3.2 thin-wall kernel; null while any is flagged.
+  - {id: centre_section, bl_from: 0.0, bl_to: 23.0, aileron: false, chord_in: null,
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [centre_section_spar_GJ]}}
+  - {id: inboard_wing, bl_from: 23.0, bl_to: 55.5, aileron: false, chord_in: null,
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [bid_7725_wet.G12, und_7715_wet.G12, und_7715_wet.t_ply, bid_7725_wet.t_ply, skin_und_angle, airfoil_contour, wing_root_attach_rotation]}}
+  - {id: aileron_1, bl_from: 55.5, bl_to: 71.15, aileron: true, chord_in: {value: 40.950, cite: "cobelu:p32 ch19", note: "derived: linear chord at BL 63.325"},
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [bid_7725_wet.G12, und_7715_wet.G12, und_7715_wet.t_ply, skin_und_angle, airfoil_contour]}}
+  - {id: aileron_2, bl_from: 71.15, bl_to: 86.8, aileron: true, chord_in: {value: 37.450, cite: "cobelu:p32 ch19", note: "derived: linear chord at BL 78.975"},
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [bid_7725_wet.G12, und_7715_wet.G12, und_7715_wet.t_ply, skin_und_angle, airfoil_contour]}}
+  - {id: aileron_3, bl_from: 86.8, bl_to: 102.45, aileron: true, chord_in: {value: 33.950, cite: "cobelu:p32 ch19", note: "derived: linear chord at BL 94.625"},
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [bid_7725_wet.G12, und_7715_wet.G12, und_7715_wet.t_ply, skin_und_angle, airfoil_contour]}}
+  - {id: aileron_4, bl_from: 102.45, bl_to: 118.1, aileron: true, chord_in: {value: 30.450, cite: "cobelu:p32 ch19", note: "derived: linear chord at BL 110.275"},
+     GJ_lbin2: {value: null, flag: unsourced, derived_from: [bid_7725_wet.G12, und_7715_wet.G12, und_7715_wet.t_ply, skin_und_angle, airfoil_contour, le_fs_bl106_25]}}
+
+aileron_span_cite: "cobelu:p27 ch19 (inboard end on the BL 55.5 joint); cobelu:p32 ch19 (outboard end BL 118.1)"
+
+control_surfaces:
+  # Report 45 balance criteria; none can be evaluated today.
+  aileron:
+    K_over_I: {value: null, flag: unsourced, note: "aileron mass, CG and product of inertia not printed; balance is by procedure, max 0.3 lb lead (p30)"}
+  elevator:
+    fuselage_vertical_bending_cpm: {value: null, flag: unsourced, note: "f_h; no fuselage frequency source"}
+    fuselage_torsion_cpm: {value: null, flag: unsourced, note: "f_alpha; no fuselage frequency source"}
+    mass_properties: {value: null, flag: unsourced, note: "elevator S_beta, I and K not printed; balance weights are a procedure"}
+
+prediction: >
+  Registered before the screen runs (spec section 4.5 item 3): the screen will report blocked, with
+  V_D,max null, because the book BID and UND lamina moduli and ply thicknesses, the skin ply angle,
+  the airfoil contour, the centre-section spar and the root-attach flexibility are all unsourced. No
+  numeric V_D,max is predicted or computed.

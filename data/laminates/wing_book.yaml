@@ -1,0 +1,983 @@
+# Wing and aileron laminate schedule as printed in the book chapter 19 (Wings and Ailerons).
+# Every ply group carries exactly one of: cite (a registry page) or flag.
+# angle_status / extent_status say whether the angle and the BL extent were printed
+# (printed) or are open (unsourced | conflict); an open one is null here, never guessed.
+reread: done      # captain re-read 2026-10-08 (see reread_log)
+part: wing
+chapter: 19
+variant: book
+frame: "spanwise axis = BL (right wing, positive; left wing is the mirror); angle 0 = spanwise. Book angles are 'at 45 degrees' on the wing, taken as relative to the spanwise axis; crossed pairs are written [45, -45]. An angle pair on UND with count 2 is one ply at each angle; an angle pair on BID is the cloth's two fibre directions in one ply. Ply extents given as 'N in from the tip' are converted with tip BL 157 (see geometry wing_tip_bl); spar cap extents are the printed start offset from BL 23 plus the printed cut length."
+units: in
+sources: >
+  cobelu transcription, chapter 19 (per-chapter pdf pages, cite form `cobelu:p<n> ch19`).
+  Cloth ids are defined in data/materials.yaml. The book's UND tape for caps is stood in by
+  und_7715_wet; BID by bid_7725_wet. Aileron skins are the wing skins cut free (no separate
+  skin plies). Plan-view numbers are read from Figure 19-49 (pdf p32).
+
+plies:
+- id: liner_depress_bid
+  region: pad
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 2
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 1
+  op: f19.hardpoints
+  cite: cobelu:p11 ch19
+  flag: null
+  note: 'Layup 1: BID liner in the inboard access depressions.'
+- id: sw_und_full
+  region: shear_web
+  material: und_7715_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 2
+  bl_from: 23
+  bl_to: 157
+  extent_status: printed
+  stack_order: 2
+  op: f19.shear-web
+  cite: cobelu:p12 ch19
+  flag: null
+  note: Plies 1 and 2, crossed, full span, wrap cap faces.
+- id: sw_und_p34
+  region: shear_web
+  material: und_7715_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 2
+  bl_from: 23
+  bl_to: 120
+  extent_status: printed
+  stack_order: 3
+  op: f19.shear-web
+  cite: cobelu:p14 ch19
+  flag: null
+  note: Plies 3 and 4 crossed, BL 23 to BL 120.
+- id: sw_und_p56
+  region: shear_web
+  material: und_7715_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 2
+  bl_from: 23
+  bl_to: 70
+  extent_status: printed
+  stack_order: 4
+  op: f19.shear-web
+  cite: cobelu:p14 ch19
+  flag: null
+  note: Plies 5 and 6 crossed, BL 23 to BL 70.
+- id: pad_bid_4x4
+  region: pad
+  material: bid_7725_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 5
+  op: f19.pads-plates
+  cite: cobelu:p14 ch19
+  flag: null
+  note: 'Layup 3: 4 x 4 in pad over metal block.'
+- id: pad_bid_4x6
+  region: pad
+  material: bid_7725_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 6
+  op: f19.pads-plates
+  cite: cobelu:p14 ch19
+  flag: null
+  note: 'Layup 3: 4 x 6 in pad, second attach location.'
+- id: cap_bottom_1
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 23
+  bl_to: 159
+  extent_status: printed
+  stack_order: 1
+  op: f19.bottom-cap
+  cite: cobelu:p17 ch19
+  flag: null
+  note: Drawn BL 23 to BL 159; tip is BL 157.
+- id: cap_bottom_2
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 2
+  op: f19.bottom-cap
+  cite: null
+  flag: unsourced
+  note: Cut 135 in along spar, 5 in past root.
+- id: cap_bottom_3
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.bottom-cap
+  cite: null
+  flag: unsourced
+  note: Cut 84 in along spar, 12 in past root.
+- id: cap_bottom_4
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 4
+  op: f19.bottom-cap
+  cite: null
+  flag: unsourced
+  note: Cut 52 in along spar, 19 in past root.
+- id: cap_bottom_5
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 5
+  op: f19.bottom-cap
+  cite: null
+  flag: unsourced
+  note: Cut 19.5 in along spar, 26 in past root.
+- id: cap_bottom_thin_add1
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 25
+  bl_to: 130
+  extent_status: printed
+  stack_order: 6
+  op: f19.bottom-cap
+  cite: cobelu:p17 ch19
+  flag: null
+  note: Conditional extra ply if tape cures thin.
+- id: cap_bottom_thin_add2
+  region: spar_cap_bottom
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 40
+  bl_to: 90
+  extent_status: printed
+  stack_order: 7
+  op: f19.bottom-cap
+  cite: cobelu:p17 ch19
+  flag: null
+  note: Conditional extra ply if tape cures thin.
+- id: skin_bottom_1
+  region: skin_bottom
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 1
+  op: f19.bottom-skin
+  cite: cobelu:p18 ch19
+  flag: null
+  note: 38 in UND laid diagonal, selvage across corners; angle not printed.
+- id: skin_bottom_2
+  region: skin_bottom
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 2
+  op: f19.bottom-skin
+  cite: cobelu:p18 ch19
+  flag: null
+  note: 38 in UND laid diagonal, selvage across corners; angle not printed.
+- id: skin_bottom_tip_bid
+  region: skin_bottom
+  material: bid_7725_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.bottom-skin
+  cite: cobelu:p19 ch19
+  flag: null
+  note: 1 BID at 45, 30 in run plus 3 in at tip.
+- id: cap_top_1
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 23
+  bl_to: 159
+  extent_status: printed
+  stack_order: 1
+  op: f19.top-cap
+  cite: cobelu:p21 ch19
+  flag: null
+  note: Drawn BL 23 to BL 159; tip is BL 157.
+- id: cap_top_2
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 23
+  bl_to: 159
+  extent_status: printed
+  stack_order: 2
+  op: f19.top-cap
+  cite: cobelu:p21 ch19
+  flag: null
+  note: Drawn BL 23 to BL 159; tip is BL 157.
+- id: cap_top_3
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.top-cap
+  cite: null
+  flag: unsourced
+  note: Cut 119 in along spar, 0 in past root.
+- id: cap_top_4
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 4
+  op: f19.top-cap
+  cite: null
+  flag: unsourced
+  note: Cut 90 in along spar, 6 in past root.
+- id: cap_top_5
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 5
+  op: f19.top-cap
+  cite: null
+  flag: unsourced
+  note: Cut 61 in along spar, 12 in past root.
+- id: cap_top_6
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 6
+  op: f19.top-cap
+  cite: null
+  flag: unsourced
+  note: Cut 39 in along spar, 18 in past root.
+- id: cap_top_7
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 7
+  op: f19.top-cap
+  cite: null
+  flag: unsourced
+  note: Cut 20 in along spar, 24 in past root.
+- id: cap_top_thin_add1
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 23
+  bl_to: 140
+  extent_status: printed
+  stack_order: 8
+  op: f19.top-cap
+  cite: cobelu:p20 ch19
+  flag: null
+  note: Conditional extra ply if tape cures thin.
+- id: cap_top_thin_add2
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 33
+  bl_to: 92
+  extent_status: printed
+  stack_order: 9
+  op: f19.top-cap
+  cite: cobelu:p20 ch19
+  flag: null
+  note: Conditional extra ply if tape cures thin.
+- id: cap_top_thin_add3
+  region: spar_cap_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: 40
+  bl_to: 78
+  extent_status: printed
+  stack_order: 10
+  op: f19.top-cap
+  cite: cobelu:p20 ch19
+  flag: null
+  note: Conditional extra ply if tape cures thin.
+- id: skin_top_und_pair
+  region: skin_top
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 2
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 1
+  op: f19.top-skin
+  cite: cobelu:p21 ch19
+  flag: null
+  note: Two UND plies as bottom skin; no angle printed.
+- id: skin_top_und_3rd
+  region: skin_top
+  material: und_7715_wet
+  angle_deg: 0
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 2
+  op: f19.top-skin
+  cite: cobelu:p24 ch19
+  flag: null
+  note: Third UND ply forward of hinge line; angle from arrow.
+- id: skin_top_bid_reinf
+  region: skin_top
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.top-skin
+  cite: cobelu:p24 ch19
+  flag: null
+  note: BID reinforcement after third ply; angle and extent not printed.
+- id: pad_top_hardpoint_und
+  region: pad
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 4
+  op: f19.top-skin
+  cite: cobelu:p24 ch19
+  flag: null
+  note: 'Layup 4: 3 in wide, 14, 10, 6 long.'
+- id: pad_attach_und
+  region: pad
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 2
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 1
+  op: f19.ribs
+  cite: cobelu:p25 ch19
+  flag: null
+  note: 'Layup 5: 3 in wide, 30 long, laps skins.'
+- id: pad_rib_hollow_bid
+  region: pad
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 2
+  op: f19.ribs
+  cite: cobelu:p25 ch19
+  flag: null
+  note: 'Layup 6: BID in rib hollow.'
+- id: pad_root_rib
+  region: pad
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.ribs
+  cite: cobelu:p26 ch19
+  flag: null
+  note: 'Layup 7: root rib; cloth not printed, BID assumed.'
+- id: pad_lwa6_und
+  region: pad
+  material: und_7715_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 4
+  op: f19.ribs
+  cite: cobelu:p26 ch19
+  flag: null
+  note: 'Layup 8: 2.5 in wide strips lapping the LWA6 block.'
+- id: pad_lwa7_cover
+  region: pad
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 5
+  op: f19.ribs
+  cite: cobelu:p26 ch19
+  flag: null
+  note: One BID over LWA7, extending 1 in all around.
+- id: te_spar_bid
+  region: other
+  material: bid_7725_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 3
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 1
+  op: f19.aileron-cut
+  cite: cobelu:p28 ch19
+  flag: null
+  note: 'Layup 9: wing trailing-edge spar at 45; aileron region.'
+- id: te_spar_hinge_extra
+  region: other
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 2
+  op: f19.aileron-cut
+  cite: cobelu:p28 ch19
+  flag: null
+  note: One extra BID at each hinge location.
+- id: aileron_le_bid
+  region: other
+  material: bid_7725_wet
+  angle_deg:
+  - 45
+  - -45
+  angle_status: printed
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 3
+  op: f19.aileron-build
+  cite: cobelu:p28 ch19
+  flag: null
+  note: 'Layup 10: aileron leading edge, laps 1 in.'
+- id: aileron_end_ribs
+  region: other
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 2
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 4
+  op: f19.aileron-build
+  cite: cobelu:p29 ch19
+  flag: null
+  note: 'Layup 11: aileron end ribs after removing 0.4 in foam.'
+- id: phenolic_cover_bid
+  region: other
+  material: bid_7725_wet
+  angle_deg: null
+  angle_status: unsourced
+  count: 1
+  bl_from: null
+  bl_to: null
+  extent_status: unsourced
+  stack_order: 5
+  op: f19.controls
+  cite: cobelu:p30 ch19
+  flag: null
+  note: One BID over the phenolic block, laps 1 in around.
+geometry:
+  wing_tip_bl:
+    value: 157
+    unit: in
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Outboard zone runs to BL 157; Figure 19-49 agrees.
+  wing_root_bl:
+    value: 23
+    unit: in
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Inboard core starts at BL 23.
+  cap_figure_axis_end_bl:
+    value: null
+    unit: in
+    cite: null
+    flag: conflict
+    note: Cap figures end BL 159; text and plan 157.
+  cap_ply_overshoot:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: Cap cut lengths run along the swept spar; BL ends not printed.
+  inboard_core_bl_range:
+    value:
+    - 23
+    - 55.5
+    unit: in
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Inboard portion aft of the centre-section spar.
+  center_core_bl_range:
+    value:
+    - 55.5
+    - 106.25
+    unit: in
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Centre portion between the two foam joints.
+  outboard_core_bl_range:
+    value:
+    - 106.25
+    - 157
+    unit: in
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Outboard portion to the tip.
+  jig_line_length:
+    value: 125.6
+    unit: in
+    cite: cobelu:p3 ch19
+    flag: null
+    note: Straight line the five jigs are set along.
+  jig_waterlines:
+    value:
+      top: 24.4
+      bottom: 10.4
+      reference: 17.4
+    unit: in
+    cite: cobelu:p1 ch19
+    flag: null
+    note: Jig top, bottom and split waterlines.
+  jig_station_bls:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: Five jig spanwise positions not given in the text.
+  chord_bl55_5:
+    value: 42.7
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: 'Figure 19-49 label: chord 42.7 at BL 55.5.'
+  chord_bl106_25:
+    value: 31.35
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: 'Figure 19-49 label: chord 31.35 at BL 106.25.'
+  chord_bl157:
+    value: 20.0
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: 'Figure 19-49 label: chord 20.0 at tip BL 157.'
+  chord_bl23:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: No chord labelled at BL 23; engine cowline kink inboard.
+  thickness_ratio_by_bl:
+    value:
+      bl55_5: 0.162
+      bl106_25: 0.157
+      bl157: 0.15
+    unit: chord fraction
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Printed as 16.2, 15.7 and 15.0 percent thick.
+  twist_by_bl:
+    value:
+      bl55_5: 0.6
+      bl106_25: -0.46
+      bl157: -2.7
+    unit: deg
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Washin positive at BL 55.5; washout negative elsewhere.
+  airfoil:
+    value: modified Eppler 1230
+    unit: null
+    cite: cobelu:p32 ch19
+    flag: null
+    note: All airfoils are the modified Eppler 1230.
+  le_fs_by_bl:
+    value:
+      bl55_5: 112.9
+      bl157: 156
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Leading-edge station at BL 55.5 and the tip.
+  le_fs_bl106_25:
+    value: null
+    unit: in
+    cite: null
+    flag: conflict
+    note: Captain reads 134.45 (glyph matches the 4 in 134), which closes TE 165.8 less chord 31.35; config carries the same label read as 134.95 (wing_book_le_fs_bl_106_25_printed). Pair kept, not resolved
+      here.
+  te_fs_by_bl:
+    value:
+      bl55_5: 155.6
+      bl106_25: 165.8
+      bl157: 176
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: TE stations; BL 106.25 TE less chord gives 134.45.
+  le_sweep_deg:
+    value: 22.98
+    unit: deg
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Leading edge angle label on the plan view.
+  te_sweep_deg:
+    value:
+      inboard: 12.49
+      outboard: 11.36
+    unit: deg
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Trailing edge angles; inboard of BL 55.5 and outboard.
+  shear_web_sweep_deg:
+    value: 18.42
+    unit: deg
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Shear web angle label on the plan view.
+  web_front_fs_by_bl:
+    value:
+      bl55_5: 130.5
+      bl106_25: 147.35
+      bl157: 164.2
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Station of the shear web forward face.
+  web_chordwise_xc:
+    value: null
+    unit: chord fraction
+    cite: null
+    flag: unsourced
+    note: Only station numbers printed; no chord fraction stated.
+  cap_width_in:
+    value: 3.0
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Spar cap labelled 3.0; tape is 3 in wide.
+  cap_ply_thickness_in:
+    value:
+    - 0.035
+    - 0.038
+    unit: in
+    cite: cobelu:p16 ch19
+    flag: null
+    note: Plans assume this per tape ply; thin tape lays 0.025.
+  cap_five_ply_check_in:
+    value: 0.18
+    unit: in
+    cite: cobelu:p16 ch19
+    flag: null
+    note: A good 5-ply test layup cures this thick.
+  cap_depth_in:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: Trough depth is on template pages not in this chapter.
+  cap_end_joggle_note:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: Trough step depth at cap ends not dimensioned.
+  shear_web_ply_count_by_bl:
+    value:
+      23-70: 6
+      70-120: 4
+      120-157: 2
+    unit: plies
+    cite: cobelu:p14 ch19
+    flag: null
+    note: Text zones; 39 and 91 in from tip along spar.
+  shear_web_ply_thickness:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: UND cloth ply thickness is not printed.
+  skin_ply_count:
+    value:
+      bottom: 2
+      top: 3
+    unit: plies
+    cite: cobelu:p34 ch19
+    flag: null
+    note: 'Section A-A labels: bottom 2 UND, top 3 UND.'
+  bid_ply_thickness:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: BID ply thickness not printed in this chapter.
+  core_foam_type:
+    value: styrofoam
+    unit: null
+    cite: cobelu:p4 ch19
+    flag: null
+    note: Core blocks are 7 x 14 in section.
+  core_foam_density:
+    value: null
+    unit: lb/ft3
+    cite: null
+    flag: unsourced
+    note: Foam density not printed in this chapter.
+  aileron_inboard_bl:
+    value: 55.5
+    unit: in
+    cite: cobelu:p27 ch19
+    flag: null
+    note: Aileron root cut sits on the BL 55.5 foam joint.
+  aileron_outboard_bl:
+    value: 118.1
+    unit: in
+    cite: cobelu:p32 ch19
+    flag: null
+    note: Plan view marks outboard aileron end at 118.1.
+  aileron_chord_top_at_bl55_5:
+    value: 5.9
+    unit: in
+    cite: cobelu:p27 ch19
+    flag: null
+    note: Top skin hinge-line cut, measured along the foam joint.
+  aileron_chord_bottom_at_bl55_5:
+    value: 7.6
+    unit: in
+    cite: cobelu:p27 ch19
+    flag: null
+    note: Bottom skin cut, along BL 55.5 foam joint.
+  aileron_chord_top_at_bl106_25:
+    value: 4.35
+    unit: in
+    cite: cobelu:p27 ch19
+    flag: null
+    note: Top skin cut, along BL 106.25 foam joint.
+  aileron_chord_bottom_at_bl106_25:
+    value: 5.65
+    unit: in
+    cite: cobelu:p27 ch19
+    flag: null
+    note: Bottom skin cut, along BL 106.25 foam joint.
+  aileron_chord_at_tip_bl118_1:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: Cut distance at BL 118.1 not dimensioned.
+  hinge_count:
+    value: 3
+    unit: null
+    cite: cobelu:p29 ch19
+    flag: null
+    note: 'Three hinges; seven #12 screws through the wing.'
+  hinge_line_location:
+    value: null
+    unit: null
+    cite: null
+    flag: unsourced
+    note: Hinge line is the skin cut; no chord fraction printed.
+  hinge_notch_dims:
+    value:
+    - 8
+    - 26
+    - 51
+    - 6
+    unit: in
+    cite: cobelu:p28 ch19
+    flag: null
+    note: 'Along TE from BL 55.5 joint: notches 0-8, 26-32, 51-57; 0.2 deep.'
+  aileron_nose_rod_dia:
+    value: 0.375
+    unit: in
+    cite: cobelu:p28 ch19
+    flag: null
+    note: Steel rod bonded on aileron nose, full span.
+  aileron_balance_max_added_lb:
+    value: 0.3
+    unit: lb
+    cite: cobelu:p30 ch19
+    flag: null
+    note: Maximum lead behind the steel bar.
+  aileron_mass:
+    value: null
+    unit: lb
+    cite: null
+    flag: unsourced
+    note: Aileron weight and CG not printed.
+  aileron_rod_mass_per_length:
+    value: null
+    unit: lb/in
+    cite: null
+    flag: unsourced
+    note: Steel rod density not printed here.
+  aileron_travel_up_deg:
+    value: 20
+    unit: deg
+    cite: cobelu:p30 ch19
+    flag: null
+    note: Stop bolt limits up aileron to 20 degrees.
+  aileron_gap_hinge_in:
+    value:
+    - 0.08
+    - 0.2
+    unit: in
+    cite: cobelu:p37 ch19
+    flag: null
+    note: Section K-K gap between aileron and wing.
+  torque_tube_hole_dia:
+    value: 1.6
+    unit: in
+    cite: cobelu:p30 ch19
+    flag: null
+    note: Glass rib hole area at torque tube.
+  attach_bolt_spacing:
+    value: 28.83
+    unit: in
+    cite: cobelu:p41 ch19
+    flag: null
+    note: Distance between wing attach bolts.
+  incidence_per_washer_deg:
+    value: 0.4
+    unit: deg
+    cite: cobelu:p41 ch19
+    flag: null
+    note: One thin washer shifts incidence this much.
+  und_cloth_width_in:
+    value: 38
+    unit: in
+    cite: cobelu:p19 ch19
+    flag: null
+    note: UND skin cloth width on Figure 19-28.
+reread_log:
+  date: '2026-10-08'
+  by: captain
+  pages: cobelu ch19 pdf p13, p14, p17 (Fig 19-26), p19 (Fig 19-28), p21 (Fig 19-30), p24 (Fig 19-34), p27 (Fig 19-39), p28 (Fig 19-40), p32 (Fig 19-49), p34 (Fig 19-51)
+  changes:
+  - 'BL 106.25 leading edge: crew read 134.95; the captain reads the glyph as 134.45, which closes the printed TE 165.8 less chord 31.35. Config already carries 134.95 printed vs 134.45 derived as a conflict
+    pair, so it is flagged conflict here too'
+  - 'shear web plies 3-4 and 5-6: inboard of BL 120 and BL 70 (p14 text); the 39 and 91 in tip offsets run along the swept spar, not along BL'
+  - 'spar caps: cut lengths run along the swept spar, so the crew''s BL ends (offset plus length added to BL 23) were wrong; only plies drawn to both labelled ends (bottom 1, top 1 and 2: BL 23 to BL 159)
+    keep an extent, the rest are unsourced with the cut length in the note'
+  - 'bottom tip BID: the 30 in run is not a BL distance; extent unsourced'
+  - hinge notch dimensions are along the TE from the BL 55.5 joint
+  unchanged: cap cut lengths and offsets, skin ply counts (bottom 2, top 3 UND), aileron cut distances 5.9, 7.6, 4.35, 5.65, chords 42.7, 31.35, 20.0, thicknesses, twists, web stations and sweep angles
+    matched their pages

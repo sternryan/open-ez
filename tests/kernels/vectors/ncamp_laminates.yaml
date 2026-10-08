@@ -19,11 +19,13 @@ as4_8552:
 mtm45_7781:
   # Woven E-glass fabric prepreg: lamina 1 = warp, 2 = fill. Stacking not printed in the statistics report;
   # the 25/50/25 fractions are used (order does not move an in-plane modulus).
+  # Laminate means are the as-measured RTD columns (row 80; row 73 had the normalised ones beside measured CVs).
+  # The lamina moduli on p34 are the as-measured values (unbracketed; normalised ones are in brackets).
   lamina_cite: "ncamp-7781-mtm45:p34"
   t_ply: 0.0100
   tension:     {E1: 3.64e6, E2: 3.39e6, G12: 0.54e6, nu12: 0.123, nu12_flag: "only a compression Poisson ratio is printed"}
   compression: {E1: 3.56e6, E2: 3.39e6, G12: 0.54e6, nu12: 0.123}
   laminates:
     - {name: "25/50/25", stack: [0, 45, -45, 90], symmetric: true, layup_cite: "ncamp-7781-mtm45:p35",
-       UNT: {mean: 2.86e6, cv_pct: 7.19, cite: "ncamp-7781-mtm45:p51", mean_flag: "summary value is normalised; CV is the measured one"},
-       UNC: {mean: 3.07e6, cv_pct: 8.53, cite: "ncamp-7781-mtm45:p53", mean_flag: "summary value is normalised; CV is the measured one"}}
+       UNT: {mean: 2.92e6, cv_pct: 7.19, cite: "ncamp-7781-mtm45:p51", basis: "as measured, RTD (row 80)", normalised_mean: 2.86e6},
+       UNC: {mean: 3.17e6, cv_pct: 8.53, cite: "ncamp-7781-mtm45:p53", basis: "as measured, RTD (row 80)", normalised_mean: 3.07e6}}

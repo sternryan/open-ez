@@ -136,9 +136,8 @@
         "und_7715_wet.nu12",
         "und_7715_wet.t_ply"
       ],
-      "label": "blocked: glass_unvalidated, inputs_unsourced, requires_original_test",
+      "label": "blocked: inputs_unsourced, requires_original_test",
       "reasons": [
-        "glass_unvalidated",
         "inputs_unsourced",
         "requires_original_test"
       ],

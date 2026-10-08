@@ -44,7 +44,7 @@ STATES = ("pass", "fail", "blocked", "open")
 LOAD_CASES = ("+M", "-M", "+T", "-T")
 
 # M3.1 glass status, plan T5; see the geometry-correction ledger
-GLASS_VALIDATED = False
+GLASS_VALIDATED = True
 
 # Sizing-rule stations (docs/harness/block3-sizing-rule.md): the BL 0 centre, just inboard and
 # outboard of BL 10, 20 and 30, and BL 54 (end of the shear web and the cap troughs).

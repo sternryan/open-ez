@@ -1,0 +1,18 @@
+# NCAMP AS4/8552 measured laminate strengths, RTD, as-measured columns (not normalised).
+# Reported beside first-ply failure and a fibre-failure estimate by scripts/ncamp_strength_report.py.
+# NOT a gate (spec section 5: first-ply failure does not predict ultimate laminate strength).
+# Captain read from the report's text layer, 2026-10-08; the lamina strengths are data/materials.yaml as4_8552.
+material: as4_8552
+condition: RTD
+basis: as measured
+units: psi
+laminates:
+  "25/50/25":
+    UNT: {mean: 90090, cv_pct: 4.17, normalised_mean: 88610, cite: "ncamp-8552-as4:p40"}
+    UNC: {mean: 84270, cv_pct: 5.89, normalised_mean: 81320, cite: "ncamp-8552-as4:p43"}
+  "10/80/10":
+    UNT: {mean: 64140, cv_pct: 1.57, normalised_mean: 63620, cite: "ncamp-8552-as4:p41"}
+    UNC: {mean: 65390, cv_pct: 4.58, normalised_mean: 62420, cite: "ncamp-8552-as4:p44"}
+  "50/40/10":
+    UNT: {mean: 154860, cv_pct: 3.11, normalised_mean: 152320, cite: "ncamp-8552-as4:p42"}
+    UNC: {mean: 134640, cv_pct: 4.54, normalised_mean: 131050, cite: "ncamp-8552-as4:p45"}

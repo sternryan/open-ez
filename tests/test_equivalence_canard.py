@@ -309,7 +309,7 @@ def test_today_the_strength_gate_is_blocked_for_the_known_reasons(report):
     assert (
         "inputs_unsourced" in g["reasons"]
     )  # book and carbon lamina values are flagged
-    assert "glass_unvalidated" in g["reasons"]  # M3.1 is open on glass (plan T5)
+    assert "glass_unvalidated" not in g["reasons"]  # M3.1 glass closed, ledger row 80
     assert "bid_7725_wet.E1" in g["flagged_inputs"]
     # the carbon warp values need an original test (row 77): listed apart, with their coupons
     assert "requires_original_test" in g["reasons"]
