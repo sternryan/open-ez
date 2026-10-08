@@ -483,7 +483,7 @@ def build_report() -> dict:
     }
 
     notes = [
-        "strength: blocked; book and carbon inputs are unsourced and glass is not validated.",
+        "strength: blocked; book and carbon inputs are unsourced. Glass moduli are validated on one NCAMP 7781 prepreg laminate only (row 80); glass strength is not.",
         "strength: carbon warp values need an original coupon test (requires_original_test).",
         "mass_placement: blocked; cell geometry, lamina values and the destabilising-centroid citation are unsourced.",
         "elevator_balance: blocked by analogy; Report 45 elevator criteria need fuselage frequencies.",

@@ -722,8 +722,7 @@ geometry:
     unit: in
     cite: null
     flag: conflict
-    note: Captain reads 134.45 (glyph matches the 4 in 134), which closes TE 165.8 less chord 31.35; config carries the same label read as 134.95 (wing_book_le_fs_bl_106_25_printed). Pair kept, not resolved
-      here.
+    note: Label glyph read 134.45 by the captain and 134.95 by the grader and the config field; geometry gives 134.45 (TE 165.8 less chord 31.35) and 134.42 (LE line). Pair kept, not resolved.
   te_fs_by_bl:
     value:
       bl55_5: 155.6
@@ -972,8 +971,7 @@ reread_log:
   by: captain
   pages: cobelu ch19 pdf p13, p14, p17 (Fig 19-26), p19 (Fig 19-28), p21 (Fig 19-30), p24 (Fig 19-34), p27 (Fig 19-39), p28 (Fig 19-40), p32 (Fig 19-49), p34 (Fig 19-51)
   changes:
-  - 'BL 106.25 leading edge: crew read 134.95; the captain reads the glyph as 134.45, which closes the printed TE 165.8 less chord 31.35. Config already carries 134.95 printed vs 134.45 derived as a conflict
-    pair, so it is flagged conflict here too'
+  - 'BL 106.25 leading edge: the label glyph is ambiguous (captain 134.45, crew and grader 134.95); the geometry closes on 134.45. Config already carries the pair, so it is flagged conflict here too'
   - 'shear web plies 3-4 and 5-6: inboard of BL 120 and BL 70 (p14 text); the 39 and 91 in tip offsets run along the swept spar, not along BL'
   - 'spar caps: cut lengths run along the swept spar, so the crew''s BL ends (offset plus length added to BL 23) were wrong; only plies drawn to both labelled ends (bottom 1, top 1 and 2: BL 23 to BL 159)
     keep an extent, the rest are unsourced with the cut length in the note'

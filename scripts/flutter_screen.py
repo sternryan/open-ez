@@ -24,10 +24,14 @@ from core.kernels.flutter_r45 import (
 
 
 def missing_inputs(inputs: dict) -> list[str]:
-    """Return sorted names of every entry under inputs["inputs"] carrying a flag, plus "<strip id>.<field>" for every strip GJ_lbin2 carrying a flag and every aileron strip whose chord_in is null or flagged."""
-    names = [k for k, v in inputs["inputs"].items() if v.get("flag")]
+    """Sorted names of every flagged or null input, strip GJ and aileron chord."""
+    names = [
+        k
+        for k, v in inputs["inputs"].items()
+        if v.get("flag") or v.get("value") is None
+    ]
     for s in inputs["strips"]:
-        if s["GJ_lbin2"].get("flag"):
+        if s["GJ_lbin2"].get("flag") or s["GJ_lbin2"].get("value") is None:
             names.append(f"{s['id']}.GJ_lbin2")
         if s["aileron"] and (
             s["chord_in"] is None

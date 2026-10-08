@@ -2,8 +2,9 @@
 
 Contract for scripts/flutter_screen.py:
   missing_inputs(inputs: dict) -> list[str]
-      sorted names of every entry under inputs["inputs"] carrying a flag, plus "<strip id>.<field>"
-      for every strip GJ_lbin2 carrying a flag and every aileron strip whose chord_in is null or flagged.
+      sorted names of every entry under inputs["inputs"] carrying a flag or a null value, plus
+      "<strip id>.<field>" for every strip GJ_lbin2 flagged or null and every aileron strip whose
+      chord_in is null or flagged.
   screen(inputs: dict, limit_const: float) -> dict
       if missing_inputs is non-empty: state "blocked", reasons ["inputs_unsourced"], F and every speed
       None. Otherwise: strips in order from the centreline, GJ lb-in2 -> lb-ft2 (/144), widths in -> ft
@@ -126,3 +127,12 @@ def test_report_regenerates_byte_for_byte(tmp_path):
     r = json.loads(REPORT.read_text())
     assert r["state"] == "blocked" and r["vd_max"] is None
     assert len(r["inputs_sha256"]) == 64
+
+
+def test_null_value_without_a_flag_still_blocks():
+    case = _hand_case()
+    case["inputs"]["g"] = {"value": None}
+    case["strips"][2]["GJ_lbin2"] = {"value": None}
+    r = fs.screen(case, 200.0)
+    assert r["state"] == "blocked" and r["vd_max"] is None
+    assert r["missing_inputs"] == ["g", "s2.GJ_lbin2"]
