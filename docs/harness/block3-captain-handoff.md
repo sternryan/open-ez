@@ -33,55 +33,35 @@ the plan (`docs/superpowers/plans/2026-10-07-block3-equivalence-engine.md`), the
 - **T11 part 1:** `data/laminates/canard_book.yaml`, extracted by a crew. **The captain re-read is
   PENDING** (`reread: pending` in the file).
 
+## Done by captain #2 (2026-10-07, pre-10-09 wave part 2)
+
+- **T11 re-read:** `canard_book.yaml` is `reread: done` with a `reread_log`. Shear-web UND plies are
+  +-45 (Fig 30-16, p11); BID web extents confirmed; pads centred on BL 8 (Fig 30-13), extent open;
+  cap ply-1 cite p15; top-skin BID cut at 35 to 45 (Fig 30-34, noted); balance strips wrap
+  chordwise (Fig 30-55).
+- **T11 part 2:** `docs/harness/block3-sizing-rule.md`; `data/laminates/canard_carbon.yaml` (structure
+  only, every count null and flagged); inputs freeze row 74 with seven hashes
+  (`core/equivalence_inputs.py`, `scripts/equivalence_inputs_hash.py`, a pinning test).
+- **Stere registered** (`incas-stere-2010`); **T6** vectors and tests (`thinwall_textbook.yaml`,
+  `test_thinwall.py`, skipped until T7); M3.2 bounds frozen in row 75.
+- **Latent defect fixed:** 52 vector numbers (38.6e9 style) loaded as strings; `_vectors.load` now
+  parses them, with a guard test.
+- **T12 tests:** `tests/test_equivalence_canard.py` (skipped until the crew writes
+  `scripts/equivalence_report.py`; the contract is in the module docstring).
+- **vne_ktas label:** "knots indicated airspeed", row 76.
+- **Warp-direction search:** nothing citable. AGATE-106 makes the fill-only matrices deliberate.
+  See the source notes, "S2 follow-up".
+
 ## Next, in order
 
-1. **T11 re-read.** Re-read the canard schedule against the cobelu chapter 30 page images the crew
-   listed:
-   - p11, Fig 30-16: shear-web extents and crossing angle;
-   - p12, Fig 30-17: pads;
-   - p8: nutplate BL;
-   - p14 and p15: cap ply 1;
-   - p21, Fig 30-34: top skin order and angles;
-   - p23 and p24, Fig 30-41: elevator ±30;
-   - p32, Fig 30-54: strip angle.
-
-   Also check the crew's interpretation of the shear-web BID "inboard of BL 20/10" extents. Then set
-   `reread` in the file.
-2. **T11 part 2 (captain).**
-   - Write `docs/harness/block3-sizing-rule.md`. Priority: match EI and GJ per station, then check
-     strength; a strength miss at matched stiffness is a finding.
-   - Generate `data/laminates/canard_carbon.yaml` from `carbon3k_mgs418_wet` only. It is a design proxy:
-     MGS 418, not L285, and its 1-axis values are still unsourced, so every carbon gate will read
-     `blocked: inputs_unsourced` until those are read from AGATE 115.
-   - Write the inputs-freeze ledger row (next free row: 74) BEFORE any carbon number is computed.
-3. **S2 follow-up results (done after part 1).**
-   - **AGATE 114 and 115 test the FILL direction only** (Table 1.5.1, printed p8). No warp (1-axis)
-     values exist in either report, so the wet-layup design proxies cannot be completed from AGATE. The
-     notes in `data/materials.yaml` say so. Every carbon and glass design gate therefore reads
-     `blocked: inputs_unsourced` until a warp-direction source is found (another AGATE report, a supplier
-     sheet) or Block 5 coupons supply one. Finding that source is the next S2 task.
-   - **A multi-cell torsion vector was found and checked.** M. Stere, "The torsion of the multicell
-     sections", INCAS Bulletin vol 2 no 3 (2010), section 5, Example 1, printed pp104-105. It is a
-     three-cell wing section from Megson 3rd ed.
-     - Inputs: T 11.3 kNm, G 27600 N/mm2, cell areas 258000, 355000 and 161000 mm2, and the wall
-       length/thickness table.
-     - Printed results: q = 6.9764, 8.6951 and 4.7412 N/mm, and J = 6.4708e4 cm4.
-     - A crew recomputation from the printed geometry agrees to about 0.03%.
-     - The topology (cell I = wall 12 plus web 12i; II = 13, 24, 12i, 34; III = 35, 46, 34, 56) was
-       inferred from the wall labels and reproduces the printed web flows.
-     - The printed GJ units look a factor of 10 off. Use q and J, not GJ.
-     - To do: register it (`incas-stere-2010`), and the captain re-reads the figure for the topology.
-       Freeze its bound BEFORE T7 runs; the printed figures carry about 3 to 4 significant digits of
-       agreement, so 0.1 percent is the natural bound.
-4. **T6.** Write the thin-wall vectors from the Stere/Megson case plus the existing single-cell hand
-   case.
-5. **T12 tests (captain).** Gate states (`pass`, `fail`, `blocked: <reason>`); flagging any single
-   input forces `blocked`; strength ratio minimum over ±M, ±T and both f12 values; the mass-placement
-   gate; byte-identical regeneration; and the broken carbon schedule fails.
-6. **S3 follow-ups.**
-   - Correct the `vne_ktas` units label in `reference_data.json` (indicated, not true) with a ledger
-     row. `config.v_ne_ktas` is NOT edited.
-   - Retry the NTSB lookups for N25063 and N707LT (ASN 45809 and 39095).
+1. **T12 script (Sonnet crew):** implement `scripts/equivalence_report.py` to the test contract and
+   commit `data/validation/equivalence_canard.json`. Every gate will read blocked today. The
+   `station_capacities` test needs T4 and T7.
+2. **T5** (NCAMP and glass comparisons) after T4.
+3. **Warp data:** the untried leads in the source notes. A supplier request is outward contact, so it
+   is the owner's call.
+4. **S3:** retry the NTSB lookups for N25063 and N707LT.
+5. **Report 45:** re-read Figs 3 and 4 and the p8 tab constant before T10.
 
 ## Held for after the 10-09 remote-runner gate
 

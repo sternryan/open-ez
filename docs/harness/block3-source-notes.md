@@ -75,3 +75,28 @@ and await a captain re-read.
   check"; the Canard Pusher record shows elevator flutter on mis-balanced VariEze elevators.
 - Pages to photograph if the owner can: plans p11-6 (elevator scale drawing) and p19-14 (aileron
   full-size sections).
+
+## S2 follow-up (2026-10-07, captain #2)
+
+- **Multi-cell torsion vector registered:** `incas-stere-2010`, section 5 Example 1 (printed p103
+  to p104), from Megson 3rd ed. The captain re-read Fig 6 for the topology and the p104 tables for
+  every input and output; the vector file is `tests/kernels/vectors/thinwall_textbook.yaml` and its
+  bound is ledger row 75. Shear flows are printed in daN/cm (equal to N/mm). The printed GJ is a
+  factor 10 off G x J and is not used.
+- **Warp-direction wet-layup data: none found.** A crew searched AGATE, FAA (DOT/FAA/AR), CMH-17
+  excerpts, NASA NTRS, the Canard Pusher index, vendor data and theses.
+  - The AGATE wet-layup qualification methodology (AGATE-WP3.3-033051-106, Oct 2001, Tables 2.4
+    and 2.5, printed p8 and p9) requires only the 90-degree (fill) tension and compression tests.
+    The fill-only matrices of reports 114 and 115 are therefore by design, and no warp companion
+    exists in the series (reports 105 to 112 and 131 to 135 are prepreg or not material data).
+  - Nearest lead: D. Muser, "Advanced Composites in Sailplane Structures" (DFVLR, 1979, NASA NTRS
+    19790018908): hand-laid, room-temperature cure, 200 g/m2 plain-weave carbon and a glass
+    twill, but European fabrics and resins, and the data are bar charts with no printed values. It
+    is not registered: reading values off bars would be measuring a figure, and its axes would need
+    the captain's re-read first.
+  - A 2022 carbon twill/epoxy dataset (Data in Brief 45, 108650) is bought laminate, not wet layup,
+    and is not a design input.
+  - Untried: asking the resin or kit supplier for the AGATE warp raw data; Canard Pusher and Sport
+    Aviation scans for RAF coupon data; CAFE Foundation reports.
+  - Consequence: the carbon proxy's 1-axis values stay unsourced and every M3.4 carbon gate reads
+    `blocked: inputs_unsourced`. Block 5 coupons are the likely source.
