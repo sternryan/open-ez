@@ -32,6 +32,8 @@ def multicell_torsion(walls: list[Wall], cells: list[Cell]) -> tuple[float, np.n
 
     wall_to_cells = [[] for _ in range(len(walls))]
     for i, cell in enumerate(cells):
+        if len(set(cell.wall_ids)) != len(cell.wall_ids):
+            raise ValueError("a wall is listed twice in one cell")
         for w_id in cell.wall_ids:
             wall_to_cells[w_id].append(i)
 

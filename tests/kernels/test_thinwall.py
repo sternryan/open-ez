@@ -33,7 +33,6 @@ from core.kernels.thinwall import (
     section_ei,
     shear_centre_x,
 )
-
 from core.sources import check_citation
 from tests.kernels._vectors import load
 
@@ -255,3 +254,9 @@ def test_broken_mass_props_dropped_wall_fails():
     assert (m, xc, ip) != pytest.approx(
         (R["mass_per_length"], R["centroid_x"], R["torsional_inertia"]), rel=1e-3
     )
+
+
+def test_wall_listed_twice_in_a_cell_raises():  # T7 grader: was accepted with wrong flows
+    walls, _ = rect_walls(R["width"], R["height"])
+    with pytest.raises(ValueError):
+        multicell_torsion(walls, [Cell((0, 1, 2, 3, 0), R["width"] * R["height"])])

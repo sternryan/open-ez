@@ -13,12 +13,13 @@ def tsai_wu_strength_ratio(
     f12_star: float,
 ) -> float:
     """Calculate the Tsai-Wu strength ratio R for a given stress and strengths."""
-    if any(s <= 0 for s in [F1t, F1c, F2t, F2c, F6]):
+    if not all(s > 0 for s in [F1t, F1c, F2t, F2c, F6]):
         raise ValueError("All strengths must be positive.")
-    if sigma.size != 3:
-        raise ValueError("Stress sigma must have 3 components.")
+    sigma = np.asarray(sigma, dtype=float)
+    if sigma.shape != (3,) or not np.all(np.isfinite(sigma)):
+        raise ValueError("Stress sigma must be 3 finite components.")
 
-    s1, s2, t12 = sigma
+    s1, s2, t12 = (float(x) for x in sigma)
 
     if s1 == 0 and s2 == 0 and t12 == 0:
         return math.inf

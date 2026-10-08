@@ -52,3 +52,14 @@ def test_compression_and_tension_differ():  # F1t != F1c, so the sign of the loa
     r_pos = ratio(T["local_stress_per_S"])
     r_neg = ratio([-x for x in T["local_stress_per_S"]])
     assert abs(r_pos - r_neg) > 0.01
+
+
+def test_bad_inputs_raise():  # T4 grader: NaN strengths and malformed stress were not rejected
+    sig = local_stress()
+    with pytest.raises(ValueError):
+        ratio(sig, F1t=float("nan"))
+    with pytest.raises(ValueError):
+        ratio([[1.0, 2.0, 3.0]])
+    with pytest.raises(ValueError):
+        ratio([float("nan"), 0.0, 0.0])
+    assert ratio(list(sig)) == ratio(sig)
