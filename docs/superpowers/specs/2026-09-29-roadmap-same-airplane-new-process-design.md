@@ -215,8 +215,10 @@ Each block proves something before the next one relies on it.
   - repair and inspection methods.
 - **Mold accuracy.** Dimensional accuracy over the full span, and the mold's heat resistance at the
   chosen cure temperature. PLA softens at about 55–60°C, so a printed part is a plug, not the tool.
-- **Kernel validation.** The laminate kernel has been checked against a single textbook E-glass case
-  so far. Before Block 3 relies on it, it needs validation against published carbon and glass data.
+- **Kernel validation.** The laminate kernel has not been validated against anything. This section
+  previously said it had been checked against a single textbook E-glass case; no such test exists
+  (corrected 2026-10-07, ledger row 72). Before Block 3 relies on it, it needs validation against
+  published carbon and glass data (Block 3 spec, milestone M3.1).
 
 ## 6. Out of scope
 

@@ -54,8 +54,10 @@ an undimensioned image.
   with unsourced dimensions and no `manufacturing_plan`, so `AircraftAssembly` cannot be built
   (`scripts/assembly_test.py`, strict xfail). Rebuild the fuselage from book stations in Block 2
   rather than patching the placeholder.
-- **Kernel validation.** The laminate kernel has been checked against one textbook E-glass case.
-  It needs published carbon and glass data before Block 3 relies on it (roadmap section 5).
+- **Kernel validation.** The laminate kernel (`core/simulation/fea_adapter.py`) has never been tested: an
+  earlier note claimed "one textbook E-glass case", but no such test exists in the tree or its history
+  (ledger row 72). Block 3 milestone M3.1 validates a new kernel against registered published data
+  (`docs/superpowers/specs/2026-10-07-block3-equivalence-engine-design.md` section 5).
 - **Analysis wing and winglet fields (M2.8 update).** `wing_span` 314.0, `wing_root_bl` 23.0 and the
   `winglet_*` analysis fields now carry the book values (ledger rows 60 to 62); `wing_washout` 1.0 still
   matches no page (the book twist is in `wing_book_washout_deg`) and moving it changes the NP.

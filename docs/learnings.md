@@ -62,3 +62,17 @@ the render key, with a test pinning its node set and extent. Every script that k
 cutaway, public publish) points there.
 **Key Insight:** When a downstream consumer has a contract, export exactly what it needs instead of
 the growing whole. Treat any narrowing of a test's scope as a red flag in review.
+
+### A validation claim needs a test id, like a value needs a page
+<!-- problem_type: workflow -->
+<!-- component: core/simulation/fea_adapter.py, TODOS.md, roadmap section 5 -->
+<!-- date: 2026-10-07 -->
+
+**Problem:** The roadmap and TODOS said the laminate kernel had been checked against a textbook
+E-glass case. Block 3 planned around that.
+**Root Cause:** No such test ever existed in this repo (ledger row 72). The sentence was most likely
+carried over from an earlier project, and nobody asked for the test that backed it.
+**Solution:** Before relying on "X was validated", grep the tests and git history for it. The
+Block 3 kernels are validated from zero against registered published data.
+**Key Insight:** A claimed check is a claim. Treat "validated against" without a test id as
+`unsourced`.

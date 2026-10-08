@@ -1,0 +1,30 @@
+# Textbook vectors for the laminate kernel (Block 3, M3.1). Printed values only; the test passes when the
+# kernel reproduces each to its last printed digit. Captain re-read on the slide images 2026-10-07.
+glass_epoxy_lamina:
+  # Kaw glass/epoxy (the course's Table 2.1 values as used in the slides), SI units.
+  E1: 38.6e9
+  E2: 8.27e9
+  G12: 4.14e9
+  nu12: 0.26
+  cite: "kaw-ocw-ch4-laminate:p1 slide 4 (Q of the 0 deg ply)"
+  Q_printed: [[39.17e9, 2.182e9, 0.0], [2.182e9, 8.392e9, 0.0], [0.0, 0.0, 4.140e9]]
+laminate_30_m45_m60:
+  cite: "kaw-ocw-ch4-laminate:p4 slides 13, 15 and 16"
+  angles_deg: [30, -45, -60]     # ply 1 at the top, z = -h/2 (z positive down, as printed on slide 16)
+  t_ply: 0.005                   # m
+  N: [1500.0, 0.0, 0.0]          # N/m
+  M: [0.0, 1500.0, 0.0]          # N
+  A: [[2.735e8, 1.160e8, -9.636e6], [1.160e8, 2.735e8, -6.730e7], [-9.636e6, -6.730e7, 1.453e8]]
+  B: [[-3.847e5, 0.0, -3.332e5], [0.0, 3.847e5, -3.332e5], [-3.332e5, -3.332e5, 0.0]]
+  D: [[5.266e3, 2.036e3, 7.008e2], [2.036e3, 5.266e3, -8.611e2], [7.008e2, -8.611e2, 2.586e3]]
+  eps0: [1.624e-4, -3.532e-4, 4.908e-4]
+  kappa: [-1.403e-1, 4.210e-1, 1.536e-1]
+  strain_top_of_ply2: {z: -0.0025, eps: [5.131e-4, -1.406e-3, 1.068e-4]}
+tsai_wu_30deg_lamina:
+  cite: "kaw-ocw-ch2-tsaiwu:p16"
+  theta_deg: 30
+  global_stress_per_S: [2.0, -3.0, 4.0]
+  local_stress_per_S: [4.214, -5.214, -0.1651]
+  strengths_MPa: {F1t: 1062, F1c: 610, F2t: 31, F2c: 118, F6: 72}
+  f12_star: -0.5               # H12 = -1/2 sqrt(H11 H22), the deck's form
+  S_max_MPa: 21.82

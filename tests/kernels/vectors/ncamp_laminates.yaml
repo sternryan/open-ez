@@ -1,0 +1,29 @@
+# Lamina-in, measured-laminate-out validation of CLT in-plane moduli (Block 3, M3.1; spec section 5).
+# Bound frozen in ledger row 73 BEFORE any prediction was computed. Only moduli are gated; strengths are
+# reported beside FPF and fibre-failure estimates and never gated (FPF does not predict ultimate strength).
+# In-plane modulus of a symmetric laminate depends only on the ply angle fractions, so the stacking order
+# below is used as printed but does not move the prediction.
+bound: {k_sd: 2.0, basis: "measured mean +- k_sd * CV * mean, CV from the same report page", k_sd_flag: "captain choice, unsourced"}
+as4_8552:
+  lamina_cite: "ncamp-8552-as4:p30"
+  t_ply: 0.0074             # in, the report's CPT
+  tension:     {E1: 19.09e6, E2: 1.34e6, G12: 0.70e6, nu12: 0.302}   # E1 of LT, E2 of TT, measured RTD
+  compression: {E1: 16.76e6, E2: 1.43e6, G12: 0.70e6, nu12: 0.335}   # E1 of LC, E2 of TC, measured RTD
+  laminates:
+    - {name: "25/50/25", stack: [45, 0, -45, 90, 45, 0, -45, 90], symmetric: true, layup_cite: "ncamp-8552-as4:p40",
+       UNT: {mean: 7.08e6, cv_pct: 2.56, cite: "ncamp-8552-as4:p40"}, UNC: {mean: 6.66e6, cv_pct: 3.57, cite: "ncamp-8552-as4:p43"}}
+    - {name: "10/80/10", stack: [45, -45, 0, 45, -45, 90, 45, -45, 45, -45], symmetric: true, layup_cite: "ncamp-8552-as4:p21",
+       UNT: {mean: 4.57e6, cv_pct: 1.99, cite: "ncamp-8552-as4:p41"}, UNC: {mean: 4.51e6, cv_pct: 3.05, cite: "ncamp-8552-as4:p44"}}
+    - {name: "50/40/10", stack: [0, 45, 0, 90, 0, -45, 0, 45, 0, -45], symmetric: true, layup_cite: "ncamp-8552-as4:p21",
+       UNT: {mean: 10.73e6, cv_pct: 3.27, cite: "ncamp-8552-as4:p42"}, UNC: {mean: 9.89e6, cv_pct: 2.32, cite: "ncamp-8552-as4:p45"}}
+mtm45_7781:
+  # Woven E-glass fabric prepreg: lamina 1 = warp, 2 = fill. Stacking not printed in the statistics report;
+  # the 25/50/25 fractions are used (order does not move an in-plane modulus).
+  lamina_cite: "ncamp-7781-mtm45:p34"
+  t_ply: 0.0100
+  tension:     {E1: 3.64e6, E2: 3.39e6, G12: 0.54e6, nu12: 0.123, nu12_flag: "only a compression Poisson ratio is printed"}
+  compression: {E1: 3.56e6, E2: 3.39e6, G12: 0.54e6, nu12: 0.123}
+  laminates:
+    - {name: "25/50/25", stack: [0, 45, -45, 90], symmetric: true, layup_cite: "ncamp-7781-mtm45:p35",
+       UNT: {mean: 2.86e6, cv_pct: 7.19, cite: "ncamp-7781-mtm45:p51", mean_flag: "summary value is normalised; CV is the measured one"},
+       UNC: {mean: 3.07e6, cv_pct: 8.53, cite: "ncamp-7781-mtm45:p53", mean_flag: "summary value is normalised; CV is the measured one"}}
