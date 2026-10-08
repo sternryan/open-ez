@@ -344,21 +344,34 @@ Block 2 row with a new hash. Block 3 never edits `closure:`.
 Each exit test is written first and shown to fail, then made to pass. Each gate is shown to fail on a
 broken input.
 
-**Gate states.** Every Block 3 gate reports one of three states:
+**Gate states.** Every Block 3 gate reports one of four states:
 
 - `pass`;
 - `fail`, carried as a strict xfail with a ledger row;
 - `blocked: <reason>`. The reasons are `inputs_unsourced`, `glass_unvalidated`, `criterion_unavailable`
   and `not_applicable`.
+- `open: requires_original_test` (ledger row 77). Every input that keeps the gate from a result is
+  one that a recorded search shows has no public source, so only an owner test can close it.
+  - The input carries `flag: requires_original_test` in `data/materials.yaml`, with three fields:
+    - `search`: what was searched and why no public source exists;
+    - `closing_test`: an ASTM method and a Block 5 coupon id;
+    - `test_plan`: a link to the coupon test plan (`docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md`).
+  - The gate lists those inputs (`test_required_inputs`) and their coupons (`closing_coupons`).
+  - If any other reason also holds, the gate reads `blocked` and lists `requires_original_test`
+    among its reasons.
+  - The flag is applied only where the search evidence exists. Today that is the carbon proxy's
+    warp values (E1, nu12, F1t, F1c). Everything else stays `unsourced`.
 
-A gate whose inputs include any flagged value **cannot report `pass`**. A test enforces this: flagging
-a single input turns a `pass` into `blocked`.
+A gate whose inputs include any flagged value **cannot report `pass`**, under either flag. Tests
+enforce this: flagging a single input turns a `pass` into `blocked`, a single test-required input turns
+it into `open`, and `requires_original_test` cannot be asserted without its inputs and coupons.
 
 ### M3.0: sources and data skeleton
 
 - **Sources.** The sources marked "opened" in section 5 are registered.
-- **Materials file.** `data/materials.yaml` exists, and every property in it carries a cite or the flag
-  `unsourced`. A test rejects a property that has neither.
+- **Materials file.** `data/materials.yaml` exists, and every property in it carries a cite or a flag
+  (`unsourced`, or `requires_original_test` with its search, closing test and plan link). A test
+  rejects a property that has neither.
 - **Kernel purity guard.** A purity test is written. Modules under `core/kernels/` may import only:
   - the standard library's math, dataclasses, typing and enum;
   - numpy;
@@ -497,6 +510,9 @@ That does not matter here, because the comparison is book against carbon on the 
   analysis). It is stated now so that nobody reads the screening number as clearance.
 - **Design inputs may stay unsourced.** If no lamina data is found for the book cloths or for wet-layup
   carbon, every ratio gate stays `blocked: inputs_unsourced` until Block 5 coupons supply allowables.
+  Where the search shows no public source exists (the wet-layup warp values), the input reads
+  `requires_original_test` and names its coupon (row 77). The coupon plan is
+  `docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md`.
   Block 3 then delivers validated kernels, a frozen pipeline and reported deltas, but no green
   equivalence. That is an honest outcome.
 - **No designer V_D.** The absolute flutter result stays a speed.

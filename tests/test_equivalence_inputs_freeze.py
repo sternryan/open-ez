@@ -1,10 +1,15 @@
-"""Ledger row 74: the M3.4 inputs (sizing rule, lamina, plies, cell geometry, mass inputs) are frozen."""
+"""The M3.4 inputs (sizing rule, lamina, plies, cell geometry, mass inputs) are frozen.
+
+Row 74 froze them; row 77 re-recorded all seven hashes after the carbon warp flags changed (labels
+only, no value). The test reads the latest freeze row.
+"""
 
 import copy
 
 from core.equivalence_inputs import _sha, input_groups, inputs_sha256
 
 LEDGER = "docs/geometry-correction-ledger.md"
+FREEZE_ROW = 77
 
 
 def _row(n: int) -> str:
@@ -13,10 +18,12 @@ def _row(n: int) -> str:
     )
 
 
-def test_every_input_hash_is_recorded_in_row_74():
-    row = _row(74)
+def test_every_input_hash_is_recorded_in_the_freeze_row():
+    row = _row(FREEZE_ROW)
     for name, digest in inputs_sha256().items():
-        assert f"{name} `{digest}`" in row, f"{name} changed since row 74: needs a new row"
+        assert f"{name} `{digest}`" in row, (
+            f"{name} changed since row {FREEZE_ROW}: needs a new row"
+        )
 
 
 def test_a_changed_input_changes_its_hash():

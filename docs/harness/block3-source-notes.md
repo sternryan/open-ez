@@ -100,3 +100,6 @@ and await a captain re-read.
     Aviation scans for RAF coupon data; CAFE Foundation reports.
   - Consequence: the carbon proxy's 1-axis values stay unsourced and every M3.4 carbon gate reads
     `blocked: inputs_unsourced`. Block 5 coupons are the likely source.
+  - 2026-10-08 (row 77): E1, nu12, F1t and F1c of `carbon3k_mgs418_wet` now read
+    `flag: requires_original_test`, citing this search. Closing coupons: B5-CPW-T0 (D3039) and
+    B5-CPW-C0 (D6641), in `docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md`.

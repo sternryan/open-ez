@@ -52,6 +52,38 @@ the plan (`docs/superpowers/plans/2026-10-07-block3-equivalence-engine.md`), the
 - **Warp-direction search:** nothing citable. AGATE-106 makes the fill-only matrices deliberate.
   See the source notes, "S2 follow-up".
 
+## Done by captain #3 (2026-10-08, paper only, no outreach)
+
+- **`requires_original_test` notation (row 77).**
+  - It is a second property flag in `core/materials.py`. It needs:
+    - a null value;
+    - `search`: the evidence;
+    - `closing_test`: an ASTM method plus a coupon id matching `B5-<MAT>-<T0|T90|C0|C90|S45>`;
+    - `test_plan`.
+  - It is applied only to `carbon3k_mgs418_wet` E1, nu12 and F1t (closed by B5-CPW-T0, D3039) and F1c
+    (closed by B5-CPW-C0, D6641). A test pins that exact set, and also checks that each coupon and
+    method appears in the plan.
+  - The book lamina and the 7781 proxy stay `unsourced`.
+- **Gate contract** (`tests/test_equivalence_canard.py` docstring, for the T12 crew):
+  - It adds the state `open` and the reason `requires_original_test`, carried by a `test_required`
+    map, plus the outputs `test_required_inputs` and `closing_coupons`.
+  - `open` applies only when that is the sole reason. With any other reason the gate reads `blocked`.
+  - A gate can never read `pass` while either flag is present.
+  - The new gate tests passed against a scratch implementation outside the tree. The real script is
+    still pending.
+- **Freeze test** now reads row 77. Only carbon_lamina changed hash, and only labels changed.
+- **Coupon test plan:** `docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md`. The
+  oven/kiln and lab section is a placeholder for the separate agent.
+- **Draft purchase order:** `docs/harness/block5-coupon-purchase-order.md`.
+
+## Next, added by captain #3
+
+1. **Before any panel exists:** buy the standards (Ryan), so the NOT READ values in plan §5 can be
+   filled. Fill the lab and oven placeholder in plan §10 when that search reports.
+2. **Before the first record panel:** write `data/validation/block5_coupon_predictions.yaml` and freeze
+   its hash in a row (plan §8).
+3. **The T12 crew:** implement `gate()` to the extended contract.
+
 ## Next, in order
 
 1. **T12 script (Sonnet crew):** implement `scripts/equivalence_report.py` to the test contract and

@@ -177,8 +177,13 @@ materials:
       E1:
         value: null
         units: psi
-        flag: unsourced
-        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
+        flag: requires_original_test
+        search: 'searched 2026-10-07 (docs/harness/block3-source-notes.md, S2 follow-up): AGATE, FAA DOT/FAA/AR, CMH-17 excerpts, NASA NTRS, the Canard Pusher index, vendor data and theses. AGATE-WP3.3-033051-106 (Tables 2.4 and 2.5, printed p8 and p9) requires only 90-degree (fill) tension and compression, so agate-wp33-115 has no warp companion by design (Table 1.5.1, printed p8; summary p24 is 2-axis only). Muser 1979 (NTRS 19790018908) prints bar charts, no values. Remaining leads are not public (supplier raw data) or long shots (Canard Pusher and Sport Aviation scans, CAFE reports), and none would be L285.'
+        closing_test:
+          method: ASTM D3039/D3039M
+          coupon: B5-CPW-T0
+        test_plan: docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md
+        note: 'the closing test measures the design carbon in L285 and lands as a new owner-test material set; this MGS 418 proxy value stays null'
       E2:
         value: 6850000.0
         units: psi
@@ -191,18 +196,33 @@ materials:
       nu12:
         value: null
         units: '1'
-        flag: unsourced
-        note: 1-axis not read; nu21 = 0.074 is cited at agate-wp33-115:p24
+        flag: requires_original_test
+        search: 'searched 2026-10-07 (docs/harness/block3-source-notes.md, S2 follow-up): AGATE, FAA DOT/FAA/AR, CMH-17 excerpts, NASA NTRS, the Canard Pusher index, vendor data and theses. AGATE-WP3.3-033051-106 (Tables 2.4 and 2.5, printed p8 and p9) requires only 90-degree (fill) tension and compression, so agate-wp33-115 has no warp companion by design (Table 1.5.1, printed p8; summary p24 is 2-axis only). Muser 1979 (NTRS 19790018908) prints bar charts, no values. Remaining leads are not public (supplier raw data) or long shots (Canard Pusher and Sport Aviation scans, CAFE reports), and none would be L285.'
+        closing_test:
+          method: ASTM D3039/D3039M
+          coupon: B5-CPW-T0
+        test_plan: docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md
+        note: 'the closing test measures the design carbon in L285 and lands as a new owner-test material set; this MGS 418 proxy value stays null; measured with a 0/90 rosette, nu21 = 0.074 is cited at agate-wp33-115:p24'
       F1t:
         value: null
         units: psi
-        flag: unsourced
-        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
+        flag: requires_original_test
+        search: 'searched 2026-10-07 (docs/harness/block3-source-notes.md, S2 follow-up): AGATE, FAA DOT/FAA/AR, CMH-17 excerpts, NASA NTRS, the Canard Pusher index, vendor data and theses. AGATE-WP3.3-033051-106 (Tables 2.4 and 2.5, printed p8 and p9) requires only 90-degree (fill) tension and compression, so agate-wp33-115 has no warp companion by design (Table 1.5.1, printed p8; summary p24 is 2-axis only). Muser 1979 (NTRS 19790018908) prints bar charts, no values. Remaining leads are not public (supplier raw data) or long shots (Canard Pusher and Sport Aviation scans, CAFE reports), and none would be L285.'
+        closing_test:
+          method: ASTM D3039/D3039M
+          coupon: B5-CPW-T0
+        test_plan: docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md
+        note: 'the closing test measures the design carbon in L285 and lands as a new owner-test material set; this MGS 418 proxy value stays null'
       F1c:
         value: null
         units: psi
-        flag: unsourced
-        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
+        flag: requires_original_test
+        search: 'searched 2026-10-07 (docs/harness/block3-source-notes.md, S2 follow-up): AGATE, FAA DOT/FAA/AR, CMH-17 excerpts, NASA NTRS, the Canard Pusher index, vendor data and theses. AGATE-WP3.3-033051-106 (Tables 2.4 and 2.5, printed p8 and p9) requires only 90-degree (fill) tension and compression, so agate-wp33-115 has no warp companion by design (Table 1.5.1, printed p8; summary p24 is 2-axis only). Muser 1979 (NTRS 19790018908) prints bar charts, no values. Remaining leads are not public (supplier raw data) or long shots (Canard Pusher and Sport Aviation scans, CAFE reports), and none would be L285.'
+        closing_test:
+          method: ASTM D6641/D6641M
+          coupon: B5-CPW-C0
+        test_plan: docs/superpowers/specs/2026-10-08-block5-coupon-test-plan.md
+        note: 'the closing test measures the design carbon in L285 and lands as a new owner-test material set; this MGS 418 proxy value stays null'
       F2t:
         value: 61980.0
         units: psi

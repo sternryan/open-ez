@@ -2,11 +2,21 @@
 
 Contract for `scripts/equivalence_report.py` (the crew implements it to these tests):
 
-  gate(passed, flagged=(), reasons=()) -> {"state", "reasons", "flagged_inputs", "label"}
-      state is "pass", "fail" or "blocked". Any reason, any flagged input, or passed=None blocks.
-      A flagged input adds the reason "inputs_unsourced". reasons are sorted and de-duplicated; label
-      is "pass", "fail" or "blocked: <reasons joined by ', '>".
-  REASONS = {"inputs_unsourced", "glass_unvalidated", "criterion_unavailable", "not_applicable"}
+  gate(passed, flagged=(), reasons=(), test_required=None)
+      -> {"state", "reasons", "flagged_inputs", "test_required_inputs", "closing_coupons", "label"}
+      state is "pass", "fail", "blocked" or "open". Any reason, any flagged input, or passed=None
+      blocks. A flagged input adds the reason "inputs_unsourced". test_required maps
+      "<material>.<property>" -> coupon id for inputs flagged requires_original_test (ledger row 77);
+      any entry adds the reason "requires_original_test", lists the inputs in test_required_inputs
+      and the sorted unique coupon ids in closing_coupons (both lists always present). That reason
+      cannot be passed in reasons (ValueError): it must carry its inputs and coupons. The state is
+      "open" when requires_original_test is the only reason and no input is flagged unsourced; with
+      any other reason it is "blocked". Neither can ever be "pass". reasons are sorted and
+      de-duplicated; label is "pass", "fail", "blocked: <reasons joined by ', '>" or
+      "open: requires_original_test".
+  REASONS = {"inputs_unsourced", "glass_unvalidated", "criterion_unavailable", "not_applicable",
+             "requires_original_test"}
+  STATES = ("pass", "fail", "blocked", "open")
   LOAD_CASES = ("+M", "-M", "+T", "-T")
   strength_ratio_min(carbon, book) -> float
       carbon, book: {(load_case, f12_star): first-ply-failure capacity under that unit load}. The
@@ -20,7 +30,10 @@ Contract for `scripts/equivalence_report.py` (the crew implements it to these te
   stiffness_deltas(book, carbon, threshold) -> {name: {"book", "carbon", "delta_fraction", "flag"}}
       for every name in book (EI, GJ, ...); flag iff delta_fraction > threshold.
   flagged_inputs(schedule, materials, material_ids) -> sorted list of "<material>.<property>" for
-      every flagged property of the named materials, plus "<ply id>.count" etc. for every flagged ply.
+      every property flagged unsourced in the named materials, plus "<ply id>.count" etc. for every
+      flagged ply. Properties flagged requires_original_test are NOT in this list.
+  test_required_inputs(materials, material_ids) -> {"<material>.<property>": closing coupon id} for
+      every property flagged requires_original_test in the named materials.
   station_capacities(schedule, materials, section, bl, f12_star) -> {load_case: capacity}
       First-ply-failure capacity (minimum Tsai-Wu strength ratio over the plies) under a unit moment
       and a unit torque, both signs, at span station bl, through core.kernels.
@@ -79,17 +92,15 @@ def test_flagging_turns_fail_into_blocked_too():
     assert eq.gate(False, flagged=["x.E1"])["state"] == "blocked"
 
 
-@pytest.mark.parametrize(
-    "reason",
-    sorted(
-        {
-            "inputs_unsourced",
-            "glass_unvalidated",
-            "criterion_unavailable",
-            "not_applicable",
-        }
-    ),
-)
+BLOCKING = {
+    "inputs_unsourced",
+    "glass_unvalidated",
+    "criterion_unavailable",
+    "not_applicable",
+}
+
+
+@pytest.mark.parametrize("reason", sorted(BLOCKING))
 def test_every_reason_blocks(reason):
     assert reason in eq.REASONS
     g = eq.gate(True, reasons=[reason])
@@ -107,6 +118,77 @@ def test_reasons_are_sorted_and_unique():
 def test_unknown_reason_is_rejected():
     with pytest.raises(ValueError):
         eq.gate(True, reasons=["looks_fine"])
+
+
+# ---- requires_original_test (ledger row 77) -------------------------------------------------
+
+NEEDS_TEST = {"c.E1": "B5-CPW-T0", "c.F1c": "B5-CPW-C0", "c.F1t": "B5-CPW-T0"}
+
+
+def test_reasons_and_states_are_the_registered_sets():
+    assert eq.REASONS == BLOCKING | {"requires_original_test"}
+    assert tuple(eq.STATES) == ("pass", "fail", "blocked", "open")
+
+
+@pytest.mark.parametrize("passed", [True, False, None])
+def test_requires_original_test_alone_reads_open_never_pass(passed):
+    g = eq.gate(passed, test_required=NEEDS_TEST)
+    assert g["state"] == "open"
+    assert g["label"] == "open: requires_original_test"
+    assert g["reasons"] == ["requires_original_test"]
+    assert g["test_required_inputs"] == ["c.E1", "c.F1c", "c.F1t"]
+    assert g["closing_coupons"] == ["B5-CPW-C0", "B5-CPW-T0"]
+    assert g["flagged_inputs"] == []
+
+
+def test_one_test_required_input_turns_pass_into_open():
+    assert eq.gate(True)["state"] == "pass"
+    assert eq.gate(True, test_required={"c.E1": "B5-CPW-T0"})["state"] == "open"
+
+
+def test_requires_original_test_with_another_reason_is_blocked_and_keeps_both():
+    g = eq.gate(True, flagged=["b.E1"], test_required=NEEDS_TEST)
+    assert g["state"] == "blocked"
+    assert g["reasons"] == ["inputs_unsourced", "requires_original_test"]
+    assert g["label"] == "blocked: inputs_unsourced, requires_original_test"
+    assert g["closing_coupons"] == ["B5-CPW-C0", "B5-CPW-T0"]
+    g = eq.gate(True, reasons=["glass_unvalidated"], test_required=NEEDS_TEST)
+    assert g["state"] == "blocked"
+
+
+def test_requires_original_test_cannot_be_asserted_without_inputs_and_coupons():
+    with pytest.raises(ValueError):
+        eq.gate(True, reasons=["requires_original_test"])
+
+
+def test_plain_gates_carry_empty_test_lists():
+    g = eq.gate(True)
+    assert g["test_required_inputs"] == [] and g["closing_coupons"] == []
+
+
+def test_test_required_inputs_reads_the_flag_and_flagged_inputs_ignores_it():
+    mats = {
+        "m": {
+            "use": "design-proxy",
+            "properties": {
+                "E1": {
+                    "value": None,
+                    "units": "psi",
+                    "flag": "requires_original_test",
+                    "search": "s",
+                    "closing_test": {
+                        "method": "ASTM D3039/D3039M",
+                        "coupon": "B5-M-T0",
+                    },
+                    "test_plan": "plan.md",
+                },
+                "E2": {"value": None, "units": "psi", "flag": "unsourced"},
+            },
+        }
+    }
+    sched = {"plies": []}
+    assert eq.test_required_inputs(mats, ["m"]) == {"m.E1": "B5-M-T0"}
+    assert eq.flagged_inputs(sched, mats, ["m"]) == ["m.E2"]
 
 
 # ---- strength ratio -------------------------------------------------------------------------
@@ -216,12 +298,12 @@ def test_every_gate_has_a_state_and_reasons(report):
     gates = report["gates"]
     for name in ("strength", "mass_placement", "elevator_balance"):
         g = gates[name]
-        assert g["state"] in {"pass", "fail", "blocked"}, name
+        assert g["state"] in set(eq.STATES), name
         assert set(g["reasons"]) <= eq.REASONS, name
-        assert (g["state"] == "blocked") == bool(g["reasons"]), name
+        assert (g["state"] in {"blocked", "open"}) == bool(g["reasons"]), name
 
 
-def test_today_the_strength_gate_is_blocked_for_both_known_reasons(report):
+def test_today_the_strength_gate_is_blocked_for_the_known_reasons(report):
     g = report["gates"]["strength"]
     assert g["state"] == "blocked"
     assert (
@@ -229,7 +311,11 @@ def test_today_the_strength_gate_is_blocked_for_both_known_reasons(report):
     )  # book and carbon lamina values are flagged
     assert "glass_unvalidated" in g["reasons"]  # M3.1 is open on glass (plan T5)
     assert "bid_7725_wet.E1" in g["flagged_inputs"]
-    assert "carbon3k_mgs418_wet.E1" in g["flagged_inputs"]
+    # the carbon warp values need an original test (row 77): listed apart, with their coupons
+    assert "requires_original_test" in g["reasons"]
+    assert "carbon3k_mgs418_wet.E1" in g["test_required_inputs"]
+    assert "carbon3k_mgs418_wet.E1" not in g["flagged_inputs"]
+    assert {"B5-CPW-T0", "B5-CPW-C0"} <= set(g["closing_coupons"])
 
 
 def test_today_the_mass_placement_gate_is_blocked(report):

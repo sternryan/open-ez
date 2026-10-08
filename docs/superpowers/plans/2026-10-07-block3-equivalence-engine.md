@@ -27,7 +27,9 @@ it). **Review:** `docs/harness/block3-spec-review.md`.
   - A gate counts only after it has been shown to fail on a broken input. Broken-input tests PASS by
     asserting that the comparison fails.
   - A failing bound stays a strict xfail that cites its ledger row.
-- **Gate states** (§7). A gate reads `pass`, `fail` (strict xfail plus a row) or `blocked: <reason>`.
+- **Gate states** (§7). A gate reads `pass`, `fail` (strict xfail plus a row), `blocked: <reason>`
+  or `open: requires_original_test` (row 77: the only missing inputs are ones a recorded search shows
+  have no public source; each names its closing Block 5 coupon).
   A gate with any flagged input can never read `pass`.
 - **Ledger rows.** Rows are numbered when they are written; the next free row today is 72. This plan
   names rows by purpose, never by number, so a moved-test row cannot collide with a freeze row.
