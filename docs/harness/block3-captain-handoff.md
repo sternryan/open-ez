@@ -160,3 +160,21 @@ Pushed: 2428e7f (kernels and T12) and the commit that adds this section (T10 ker
 - **Kernel test modules skip rather than fail before a body exists** (`importorskip`), so a conduct
   verify must import the module first, or a missing body reads green.
 - **The purity guard rejects a data path even in a docstring.** Cite pages, not repo paths, in kernels.
+
+## Rotation note, captain #4 (2026-10-08)
+
+Captain #4 rotated on context before starting the lead's second list. Still open, in order:
+
+1. **T5 strengths:** fetch the public NCAMP reports (AS4/8552 CAM-RP-2010-002 Rev A; 7781/MTM45-1)
+   into the private source cache, transcribe the measured UNT and UNC strengths (p40 to p45) and
+   report them beside first-ply failure and a fibre-failure estimate, labelled not a gate.
+2. **7781 glass:** transcribe the measured, not normalised, laminate means (p51, p53), re-read them,
+   and close M3.1 on glass or record the miss, in a new row.
+3. **T13:** a crew types `data/laminates/wing_book.yaml` like `canard_book.yaml`; the captain re-reads
+   it against the page images. Then `scripts/flutter_screen.py` runs Report 45 on the sourced inputs
+   and lists exactly which inputs are missing if V_D,max cannot be computed.
+4. **Report 45:** re-read Figs 3 and 4 and the p8 tab constant (printed 63, handwritten 48).
+5. **Test-input changes need a fresh grader's confirmation in their ledger row.** The Tsai-Wu
+   input-path change in row 78 passed the T4 grader's full run, but the grader was not asked about
+   that change specifically: get an explicit confirmation and add it to row 78's notes.
+6. **Close the local-lane ledger jobs** for this wave (the lead has their ids) with the grader verdicts.
