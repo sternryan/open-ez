@@ -1,9 +1,7 @@
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Union
 
 import numpy as np
-
 
 KT_TO_MPH = 1852 / 1609.344
 
@@ -53,7 +51,9 @@ def twist_per_unit_torque(GJ: np.ndarray, ds: np.ndarray) -> np.ndarray:
     return theta
 
 
-def wing_flexibility_factor(theta: np.ndarray, chord: np.ndarray, ds: Union[float, np.ndarray]) -> float:
+def wing_flexibility_factor(
+    theta: np.ndarray, chord: np.ndarray, ds: float | np.ndarray
+) -> float:
     """Calculate wing flexibility factor sum(theta * chord^2 * ds)."""
     return float(np.sum(theta * (chord**2) * ds))
 
@@ -72,7 +72,7 @@ def vd_max_cleared_mph(F: float, limit_const: float) -> float:
     return math.sqrt(limit_const / F)
 
 
-def wing_criterion(F: float, v_d: Speed, limit_const: float) -> Dict[str, float]:
+def wing_criterion(F: float, v_d: Speed, limit_const: float) -> dict[str, float]:
     """Evaluate the wing criterion for a given dive speed."""
     if v_d.unit != "mph":
         raise ValueError("v_d must be in mph.")
@@ -85,7 +85,7 @@ def wing_criterion(F: float, v_d: Speed, limit_const: float) -> Dict[str, float]
     }
 
 
-def curve_limit(x: float, points: List[Tuple[float, float]]) -> float:
+def curve_limit(x: float, points: list[tuple[float, float]]) -> float:
     """Linear interpolation over a set of points."""
     pts = sorted(points, key=lambda p: p[0])
     xs = np.array([p[0] for p in pts])
@@ -95,7 +95,7 @@ def curve_limit(x: float, points: List[Tuple[float, float]]) -> float:
     return float(np.interp(x, xs, ys))
 
 
-def aileron_ki_limit(v_d: Speed, points: List[Tuple[float, float]]) -> float:
+def aileron_ki_limit(v_d: Speed, points: list[tuple[float, float]]) -> float:
     """Calculate aileron limit using curve interpolation."""
     if v_d.unit != "mph":
         raise ValueError("v_d must be in mph.")
