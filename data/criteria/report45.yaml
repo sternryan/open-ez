@@ -6,9 +6,11 @@ source_sha256: 1c93d5550a00031e10f410bfb7f49cd421bcb120e5de489f64f5aff107a8fbd3
 source_id: faa-report-45
 transcribed_by: crew
 reread:
-  status: partial
-  done: "captain, 2026-10-07: wing criterion (p4) and Fig 2 (p10)"
-  pending: "Figs 3 and 4 (p11, p12) and the tab frequency constant (p8); the elevator and rudder criteria are blocked on fuselage frequencies"
+  status: done
+  done: "captain, 2026-10-07: wing criterion (p4) and Fig 2 (p10). Captain #5, 2026-10-08: Fig 3 (p11), Fig 4 (p12) and the tab constant (p8), on 300 dpi renders of the held scan (sha256 above)"
+  fig3: "all 20 points lie on their curves within the stated uncertainty (independent gridline calibration; largest offset about 0.01 in y on the steep upper ends)"
+  fig4: "one point corrected: x 0.145 read 1.359, the curve is at 1.22 there (it passes y 1.359 near x 0.139); the other 22 points lie on the curve within their uncertainty"
+  tab_constant: "printed 63 is struck through on the held scan with 48 written above it by hand; see tabs.irreversible_criteria.frequency.a_form"
 
 applicability:
   criteria_status:
@@ -209,7 +211,8 @@ tabs:
         value: f_t = const * (Vd / c') * (St / Sc) cpm
         const_printed: 63
         const_handwritten_overstrike: 48
-        note: a handwritten figure appears above the printed constant on the scan; captain to confirm which is intended
+        const_status: conflict
+        note: "captain re-read 2026-10-08: the typed 63 is struck through and 48 is handwritten above it on the held NTIS scan. Who made the correction, and when, is not established, and AC 23.629-1B (3.d(3)) defers to this report without restating the constant. Both values are carried; no code uses either. The book Long-EZ wing has no trim tabs (cobelu:p1 ch19), so this criterion is not exercised for the wing."
         cite: faa-report-45:p8
       b_cap_low_speed:
         value: 2000
@@ -264,7 +267,7 @@ fig4:
   curve:
     label: single curve, elevator and rudder
     points:
-      - {x: 0.145, y: 1.359, x_uncertainty: 0.001, y_uncertainty: 0.05,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
+      - {x: 0.145, y: 1.22,  x_uncertainty: 0.001, y_uncertainty: 0.03,  chart-read: true, fig: 4, cite: "faa-report-45:p12", captain_reread: "2026-10-08: crew 1.359; row scans put the curve at x 0.1409 for y 1.3 and 0.1507 for y 1.1"}
       - {x: 0.155, y: 1.036, x_uncertainty: 0.001, y_uncertainty: 0.03,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
       - {x: 0.165, y: 0.900, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}
       - {x: 0.175, y: 0.802, x_uncertainty: 0.001, y_uncertainty: 0.02,  chart-read: true, fig: 4, cite: "faa-report-45:p12"}

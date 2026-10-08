@@ -178,3 +178,43 @@ Captain #4 rotated on context before starting the lead's second list. Still open
    input-path change in row 78 passed the T4 grader's full run, but the grader was not asked about
    that change specifically: get an explicit confirmation and add it to row 78's notes.
 6. **Close the local-lane ledger jobs** for this wave (the lead has their ids) with the grader verdicts.
+
+## Done by captain #5 (2026-10-08, the free items)
+
+- **7781 glass (row 80):** the laminate means now use the as-measured columns (UNT 2.92, UNC 3.17 Msi),
+  which match the measured CVs and lamina. Both cases are inside the frozen bound, so **M3.1 closes on
+  glass moduli** (one woven 7781 prepreg laminate only, not strength) and the strength gate drops
+  `glass_unvalidated`. A fresh grader confirmed this test-input change specifically.
+- **T5 strengths (row 81):** `scripts/ncamp_strength_report.py` puts the AS4 measured strengths
+  (p40 to p45) beside first-ply failure and a fibre-failure estimate. It is not a gate.
+- **T13 schedule and the T10 book run (row 82):**
+  - `wing_book.yaml` was typed by a crew and re-read by the captain. Cap and web lengths run along
+    the swept spar, and the BL 106.25 leading edge is a conflict pair.
+  - `flutter_inputs_book.yaml` is frozen by hash.
+  - `scripts/flutter_screen.py` reads `blocked: inputs_unsourced` with 21 missing inputs, and
+    V_D,max is not computed.
+- **Report 45 re-read:** Fig 3 is confirmed. One Fig 4 point is corrected, (0.145, 1.359) to 1.22.
+  The tab constant is printed 63, struck through, with 48 handwritten. Both are carried as a
+  conflict, and no code uses them; the book wing has no tabs.
+- **Row 78:** a fresh grader explicitly confirmed the Tsai-Wu input-path change (note added to
+  the row).
+- **Ledger jobs:** T4 f0217499, T7 313bd0d9 and T10 c0d6b11e are closed as merged, with their grader
+  verdicts. This wave's job 948a7fe8 closes after the push.
+
+## Next, added by captain #5
+
+1. **The book V_D,max needs, in order:**
+   - BID and UND wet-layup lamina properties (E1, E2, G12, nu12, t_ply). There is no free source
+     yet; the 7781 MGS 418 proxy is not the book cloth;
+   - the skin UND angle;
+   - the wing airfoil contour, from a registered source;
+   - the centre-section spar (ch14, not typed);
+   - the root-attach flexibility.
+
+   When any of these clears, a crew (not the captain) re-assembles the inputs, and a new row
+   freezes them before the run.
+2. **T13 remainder:** `wing_carbon.yaml`, `equivalence_wing.json` and `test_equivalence_wing.py`.
+   They follow the canard pattern and are blocked on the same lamina flags.
+3. **The plan's elevator balance-weight control test** needs fuselage frequencies and elevator mass
+   properties, none of which are held.
+4. **T8** (`fea_adapter` onto the kernels) is still open.
