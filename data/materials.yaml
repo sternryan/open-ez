@@ -123,7 +123,7 @@ materials:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-114 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p25 lists only 2-axis F2/E2/nu21 plus shear'
       E2:
         value: 2390000.0
         units: psi
@@ -142,12 +142,12 @@ materials:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-114 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p25 lists only 2-axis F2/E2/nu21 plus shear'
       F1c:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-114 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p25 lists only 2-axis F2/E2/nu21 plus shear'
       F2t:
         value: 48990.0
         units: psi
@@ -168,7 +168,7 @@ materials:
         value: null
         units: lb/ft2
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'areal mass not printed in the lamina summary (agate-wp33-114:p25)'
   carbon3k_mgs418_wet:
     use: design-proxy
     description: Lancair 3K plain-weave carbon, MGS 418 resin, wet layup, RTD mean (AGATE report 115);
@@ -178,7 +178,7 @@ materials:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
       E2:
         value: 6850000.0
         units: psi
@@ -197,12 +197,12 @@ materials:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
       F1c:
         value: null
         units: psi
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'no 1-axis (warp) data exist: agate-wp33-115 tests only the 2-axis (fill, "parallel to fill direction") per its test matrix (Table 1.5.1, printed p8); summary p24 lists only 2-axis F2/E2/nu21 plus shear'
       F2t:
         value: 61980.0
         units: psi
@@ -223,7 +223,7 @@ materials:
         value: null
         units: lb/ft2
         flag: unsourced
-        note: 1-axis value not yet read, or areal mass not read
+        note: 'areal mass not printed in the lamina summary (agate-wp33-115:p24)'
   bid_7725_wet:
     use: book
     description: book bidirectional glass 7725 wet layup
