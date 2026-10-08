@@ -1,0 +1,401 @@
+# Canard laminate schedule as printed in the Roncz canard chapter (ch30).
+# Every ply group carries exactly one of: cite (a registry page) or flag.
+# angle_status / extent_status say whether the angle and the BL extent were printed
+# (printed) or are open (unsourced | conflict); an open one is null here, never guessed.
+reread: pending   # the captain re-reads every value against the page images before freezing
+part: canard
+chapter: 30
+variant: roncz
+frame: "spanwise axis = BL (signed, left negative); angle 0 = spanwise. Elevator plies are measured from the elevator leading edge, not BL."
+units: in
+sources: >
+  cobelu transcription, chapter 30 (per-chapter pdf pages, cite form `cobelu:p<n> ch30`).
+  Template page C-3 (trough and elevator templates) is not held; values that depend on it are flagged.
+  Cloth ids are defined in data/materials.yaml.
+
+plies:
+  # ---- shear web (op r30.shear-web), laid in the printed order ----
+  - id: sw_und_full
+    region: shear_web
+    material: und_7715_wet
+    angle_deg: null
+    angle_status: unsourced   # "crossing plies": the crossing angle is not printed
+    count: 2
+    bl_from: -54
+    bl_to: 54
+    extent_status: printed    # "full span (108 in)"
+    stack_order: 1
+    op: r30.shear-web
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "Two crossing UND plies, full span 108 in (BL +-54). Crossing angle not printed; Figure 30-16 is on p11."
+  - id: sw_und_bl30
+    region: shear_web
+    material: und_7715_wet
+    angle_deg: null
+    angle_status: unsourced
+    count: 2
+    bl_from: -30
+    bl_to: 30
+    extent_status: printed
+    stack_order: 2
+    op: r30.shear-web
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "Two crossing UND plies to BL 30 left and right."
+  - id: sw_bid_bl20
+    region: shear_web
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 1
+    bl_from: -20
+    bl_to: 20
+    extent_status: printed
+    stack_order: 3
+    op: r30.shear-web
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "Printed 'from B.L. 20 left and B.L. 20 right'; read as centerline to BL 20 (the web is thicker inboard, p12). Re-read Figure 30-16, p11."
+  - id: sw_bid_bl10
+    region: shear_web
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 1
+    bl_from: -10
+    bl_to: 10
+    extent_status: printed
+    stack_order: 4
+    op: r30.shear-web
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "Printed 'from B.L. 10 left and B.L. 10 right'; same reading as sw_bid_bl20."
+  - id: pad_clt_9
+    region: pad
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 9
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced  # centred over each CL-1 nutplate; the nutplate BL is set in Step 10 (p8), not read here
+    stack_order: 5
+    op: r30.shear-web
+    cite: "cobelu:p12 ch30"
+    flag: null
+    note: "9 BID plies, 1 1/2 x 4 in, centred over each CL-1 nutplate (two pads, left and right)."
+  - id: pad_clt_cover
+    region: pad
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 6
+    op: r30.shear-web
+    cite: "cobelu:p12 ch30"
+    flag: null
+    note: "One BID ply, 4 x 8 in, over each 9-ply pad (Figure 30-17)."
+
+  # ---- spar caps (3 in UND tape, cross threads removed) ----
+  - id: cap_bottom_ply1
+    region: spar_cap_bottom
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: 1
+    bl_from: -54
+    bl_to: 54
+    extent_status: printed    # "tip to tip of the shear web", which p10 gives as 108 in
+    stack_order: 1
+    op: r30.bottom-spar-cap
+    cite: "cobelu:p14 ch30"
+    flag: null
+    note: "First ply runs the full shear-web length. Material: 3 in wide UND tape (BOM 'UND tape (Long-EZ)'); und_7715_wet stands in for UND in the model."
+  - id: cap_bottom_fill
+    region: spar_cap_bottom
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: null
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 2
+    op: r30.bottom-spar-cap
+    cite: null
+    flag: unsourced
+    note: "Plies 2..n: 'fill the trough one ply at a time', each about 4 to 6 in shorter at each end (p15), ends cut at about 60 degrees. No ply count and no per-segment count is printed; the trough depth on template C and D (page C-3, not held) would give it."
+  - id: cap_top_all
+    region: spar_cap_top
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: null
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 1
+    op: r30.top-spar-cap
+    cite: null
+    flag: unsourced
+    note: "Same method as the bottom cap, 'several more plies' because the top cap is thicker (p20). No count printed; templates C and D (page C-3, not held) set the trough depth."
+
+  # ---- skins ----
+  - id: skin_bottom_1
+    region: skin_bottom
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: conflict   # "full span of the canard"; canard span is flagged conflict in GEOMETRY_PROVENANCE
+    stack_order: 1
+    op: r30.bottom-skin
+    cite: "cobelu:p16 ch30"
+    flag: null
+    note: "UND spanwise, first ply."
+  - id: skin_bottom_2
+    region: skin_bottom
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: conflict
+    stack_order: 2
+    op: r30.bottom-skin
+    cite: "cobelu:p16 ch30"
+    flag: null
+    note: "BID at 45 degrees, full span, cut as 4 pieces."
+  - id: skin_bottom_3
+    region: skin_bottom
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: conflict
+    stack_order: 3
+    op: r30.bottom-skin
+    cite: "cobelu:p16 ch30"
+    flag: null
+    note: "UND spanwise, last ply."
+  - id: skin_top_1
+    region: skin_top
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: conflict
+    stack_order: 1
+    op: r30.top-skin
+    cite: "cobelu:p21 ch30"
+    flag: null
+    note: "UND full span, spanwise."
+  - id: skin_top_2
+    region: skin_top
+    material: bid_7725_wet
+    angle_deg: [45, -45]
+    angle_status: printed
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: conflict
+    stack_order: 2
+    op: r30.top-skin
+    cite: "cobelu:p21 ch30"
+    flag: null
+    note: "BID at 45 degrees, full span."
+  - id: skin_top_3
+    region: skin_top
+    material: und_7715_wet
+    angle_deg: 0
+    angle_status: printed
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: conflict
+    stack_order: 3
+    op: r30.top-skin
+    cite: "cobelu:p21 ch30"
+    flag: null
+    note: "Two UND plies, full span (printed '2 plies of UND full span'; spanwise orientation is the ply-1 convention, not restated)."
+
+  # ---- elevator skins: crossed UND at +-30 to the elevator leading edge, per elevator ----
+  - id: elev_bottom_crossed
+    region: elevator_skin
+    material: und_7715_wet
+    angle_deg: [30, -30]
+    angle_status: printed
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced  # each elevator's BL range is not stated in the skin steps
+    stack_order: 1
+    op: r30.elev-skin-bottom
+    cite: "cobelu:p24 ch30"
+    flag: null
+    note: "Per elevator. Angles from the elevator leading edge. Four plies are cut per elevator (p23); two go on the bottom."
+  - id: elev_top_crossed
+    region: elevator_skin
+    material: und_7715_wet
+    angle_deg: [30, -30]
+    angle_status: printed
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 2
+    op: r30.elev-skin-top
+    cite: "cobelu:p24 ch30"
+    flag: null
+    note: "Per elevator; overlaps the bottom skin at the leading edge by at least 1/2 in."
+  - id: elev_end_close
+    region: other
+    material: bid_7725_wet
+    angle_deg: null
+    angle_status: unsourced   # BID orientation is not printed for the end close-out
+    count: 1
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 3
+    op: r30.elev-trim-ends
+    cite: "cobelu:p25 ch30"
+    flag: null
+    note: "One BID ply over the outboard end of each elevator (small flox corner first)."
+  - id: elev_balance_strips
+    region: other
+    material: und_7715_wet
+    angle_deg: null
+    angle_status: unsourced
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 4
+    op: r30.elev-mass-balance
+    cite: "cobelu:p32 ch30"
+    flag: null
+    note: "Two UND strips around each CS-10 spacer and weight (Figure 30-54). Strip angle not read here."
+
+  # ---- canard tips ----
+  - id: tip_upper
+    region: other
+    material: und_7715_wet
+    angle_deg: null
+    angle_status: unsourced   # "crossing plies of UND or BID"
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 1
+    op: r30.canard-tips
+    cite: "cobelu:p29 ch30"
+    flag: null
+    note: "2 crossed plies of UND or BID on each tip foam, upper surface; UND preferred. The book says structure is not critical here. Starts 1 in inboard on the canard glass."
+  - id: tip_lower
+    region: other
+    material: und_7715_wet
+    angle_deg: null
+    angle_status: unsourced
+    count: 2
+    bl_from: null
+    bl_to: null
+    extent_status: unsourced
+    stack_order: 2
+    op: r30.canard-tips
+    cite: "cobelu:p30 ch30"
+    flag: null
+    note: "2 crossed plies of UND or BID, lower surface; overlaps the upper skin at least 1/2 in around the leading edge."
+
+geometry:
+  shear_web_span_in:
+    value: 108
+    unit: in
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "'full span (108 in)'; the model's canard_span is a conflict (see canard_span)."
+  web_chordwise_xc:
+    value: 0.25
+    unit: chord fraction
+    cite: null
+    flag: unsourced
+    note: "Placeholder WEB_XC in guide/layup_geometry.py, position_verified false. The trough edge is on template page C-3, not held (TODOS.md). Do not use for sizing without a source."
+  cap_width_in:
+    value: 3.0
+    unit: in
+    cite: "cobelu:p14 ch30"
+    flag: null
+    note: "3 in UND tape fills the 3 in wide spar trough."
+  cap_depth_in:
+    value: null
+    unit: in
+    cite: null
+    flag: unsourced
+    note: "Trough depth is set by hot-wire templates C and D (page C-3, not held). Visual TROUGH_D_* values in guide/layup_geometry.py are not sourced."
+  cap_end_taper_in_per_ply:
+    value: [4, 6]
+    unit: in
+    cite: "cobelu:p15 ch30"
+    flag: null
+    note: "Each added cap ply is 'on the order of 4 to 6 in' shorter at each end; 'probably', so an estimate in the book."
+  cap_extent_bl_max_in:
+    value: 54
+    unit: in
+    cite: "cobelu:p10 ch30"
+    flag: null
+    note: "Troughs run the inboard cores only, tip cores have none (p4). 54 is half the 108 in shear-web span."
+  skin_extent_spanwise:
+    value: full span of the canard
+    unit: null
+    cite: "cobelu:p16 ch30"
+    flag: null
+    note: "Printed 'full span'. Numeric span is not fixed."
+  skin_extent_chordwise:
+    value: leading edge to trailing edge
+    unit: null
+    cite: "cobelu:p16 ch30"
+    flag: null
+    note: "Bottom skin is slurried and laid leading edge to trailing edge; top skin wraps onto the bottom skin at the leading edge."
+  canard_span:
+    value: null
+    unit: in
+    config_field: canard_span
+    cite: null
+    flag: conflict
+    note: "GEOMETRY_PROVENANCE status conflict: GU 141.6, core jig blocks 126 apart (cobelu:p13), elevator tip to tip 130."
+  canard_chord:
+    value: null
+    unit: in
+    config_field: canard_chord
+    cite: null
+    flag: conflict
+    note: "GEOMETRY_PROVENANCE status conflict (CHORD_STATUS); Roncz chord not found."
+  core_foam_type:
+    value: styrofoam
+    unit: null
+    cite: "cobelu:p2 ch30"
+    flag: null
+    note: "Bill of materials: styrofoam block."
+  core_foam_density:
+    value: null
+    unit: lb/ft3
+    cite: null
+    flag: unsourced
+    note: "Density of the styrofoam block is not printed."
+  hinge_insert_foam:
+    value: "PVC H-100, 6 lb/ft3"
+    unit: null
+    cite: "cobelu:p20 ch30"
+    flag: null
+    note: "Seven hinge hard points."
