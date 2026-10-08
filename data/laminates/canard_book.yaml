@@ -2,11 +2,11 @@
 # Every ply group carries exactly one of: cite (a registry page) or flag.
 # angle_status / extent_status say whether the angle and the BL extent were printed
 # (printed) or are open (unsourced | conflict); an open one is null here, never guessed.
-reread: pending   # the captain re-reads every value against the page images before freezing
+reread: done      # captain re-read 2026-10-07 against the ch30 page images (see reread_log)
 part: canard
 chapter: 30
 variant: roncz
-frame: "spanwise axis = BL (signed, left negative); angle 0 = spanwise. Elevator plies are measured from the elevator leading edge, not BL."
+frame: "spanwise axis = BL (signed, left negative); angle 0 = spanwise. Elevator plies are measured from the elevator leading edge, not BL. An angle pair on UND with count 2 is one ply at each angle; an angle pair on BID is the cloth's two fibre directions in one ply."
 units: in
 sources: >
   cobelu transcription, chapter 30 (per-chapter pdf pages, cite form `cobelu:p<n> ch30`).
@@ -18,31 +18,31 @@ plies:
   - id: sw_und_full
     region: shear_web
     material: und_7715_wet
-    angle_deg: null
-    angle_status: unsourced   # "crossing plies": the crossing angle is not printed
+    angle_deg: [45, -45]
+    angle_status: printed     # Figure 30-16 labels: 1st ply UND full span at 45, 2nd ply opposite 45
     count: 2
     bl_from: -54
     bl_to: 54
-    extent_status: printed    # "full span (108 in)"
+    extent_status: printed    # "full span (108 in)", p10; Figure 30-16 dimensions 108 in
     stack_order: 1
     op: r30.shear-web
-    cite: "cobelu:p10 ch30"
+    cite: "cobelu:p11 ch30"
     flag: null
-    note: "Two crossing UND plies, full span 108 in (BL +-54). Crossing angle not printed; Figure 30-16 is on p11."
+    note: "Plies 1 and 2 of Figure 30-16: UND full span (108 in, BL +-54), one at 45 and one at the opposite 45. Text on p10 says only 'crossing'."
   - id: sw_und_bl30
     region: shear_web
     material: und_7715_wet
-    angle_deg: null
-    angle_status: unsourced
+    angle_deg: [45, -45]
+    angle_status: printed     # Figure 30-16 labels plies 3 and 4 "UND BL30-BL30, opposite 45"
     count: 2
     bl_from: -30
     bl_to: 30
     extent_status: printed
     stack_order: 2
     op: r30.shear-web
-    cite: "cobelu:p10 ch30"
+    cite: "cobelu:p11 ch30"
     flag: null
-    note: "Two crossing UND plies to BL 30 left and right."
+    note: "Plies 3 and 4 of Figure 30-16: UND from BL 30 left to BL 30 right, each opposite to the ply below."
   - id: sw_bid_bl20
     region: shear_web
     material: bid_7725_wet
@@ -56,7 +56,7 @@ plies:
     op: r30.shear-web
     cite: "cobelu:p10 ch30"
     flag: null
-    note: "Printed 'from B.L. 20 left and B.L. 20 right'; read as centerline to BL 20 (the web is thicker inboard, p12). Re-read Figure 30-16, p11."
+    note: "Ply 5 of Figure 30-16 (p11): BID at 45, drawn as one piece across the centreline, BL 20 left to BL 20 right. Confirms the reading of the p10 text."
   - id: sw_bid_bl10
     region: shear_web
     material: bid_7725_wet
@@ -70,7 +70,7 @@ plies:
     op: r30.shear-web
     cite: "cobelu:p10 ch30"
     flag: null
-    note: "Printed 'from B.L. 10 left and B.L. 10 right'; same reading as sw_bid_bl20."
+    note: "Ply 6 of Figure 30-16 (p11): BID 45, one piece BL 10 left to BL 10 right, across the centreline."
   - id: pad_clt_9
     region: pad
     material: bid_7725_wet
@@ -79,12 +79,13 @@ plies:
     count: 9
     bl_from: null
     bl_to: null
-    extent_status: unsourced  # centred over each CL-1 nutplate; the nutplate BL is set in Step 10 (p8), not read here
+    extent_status: unsourced  # centre printed (bl_centre_abs_in); which pad side runs spanwise is not printed
+    bl_centre_abs_in: 8.0       # Figure 30-13 (p8): insert centres 8.0 in each side of the CL; insert BL 6.5 to 9.5 (p8 text)
     stack_order: 5
     op: r30.shear-web
     cite: "cobelu:p12 ch30"
     flag: null
-    note: "9 BID plies, 1 1/2 x 4 in, centred over each CL-1 nutplate (two pads, left and right)."
+    note: "9 BID plies, 1 1/2 x 4 in, centred over each CL-1 nutplate (two pads, left and right), so centred on BL 8 left and right (Figure 30-13, p8). If the 4 in side runs spanwise the pad spans BL 6 to 10; the figure does not say which side is spanwise, so the extent stays open."
   - id: pad_clt_cover
     region: pad
     material: bid_7725_wet
@@ -94,11 +95,12 @@ plies:
     bl_from: null
     bl_to: null
     extent_status: unsourced
+    bl_centre_abs_in: 8.0
     stack_order: 6
     op: r30.shear-web
     cite: "cobelu:p12 ch30"
     flag: null
-    note: "One BID ply, 4 x 8 in, over each 9-ply pad (Figure 30-17)."
+    note: "One BID ply, 4 x 8 in, over each 9-ply pad (Figure 30-17, p12); the section view shows it wrapping the pad and the web face. Centred on the same nutplate, BL 8."
 
   # ---- spar caps (3 in UND tape, cross threads removed) ----
   - id: cap_bottom_ply1
@@ -112,9 +114,9 @@ plies:
     extent_status: printed    # "tip to tip of the shear web", which p10 gives as 108 in
     stack_order: 1
     op: r30.bottom-spar-cap
-    cite: "cobelu:p14 ch30"
+    cite: "cobelu:p15 ch30"
     flag: null
-    note: "First ply runs the full shear-web length. Material: 3 in wide UND tape (BOM 'UND tape (Long-EZ)'); und_7715_wet stands in for UND in the model."
+    note: "First ply cut 'from tip to tip of the shear web' (p15, top). Cross threads removed, so all roving spanwise (p15). Material: 3 in wide UND tape (BOM 'UND tape (Long-EZ)'); und_7715_wet stands in for UND in the model."
   - id: cap_bottom_fill
     region: spar_cap_bottom
     material: und_7715_wet
@@ -214,7 +216,7 @@ plies:
     op: r30.top-skin
     cite: "cobelu:p21 ch30"
     flag: null
-    note: "BID at 45 degrees, full span."
+    note: "BID at 45 degrees, full span (text, p21). The cutting diagram, Figure 30-34 (p21), cuts the BID pieces at '35 to 45' degrees to the selvage, so a built ply may be 35 to 45. Three pieces make the ply."
   - id: skin_top_3
     region: skin_top
     material: und_7715_wet
@@ -228,7 +230,7 @@ plies:
     op: r30.top-skin
     cite: "cobelu:p21 ch30"
     flag: null
-    note: "Two UND plies, full span (printed '2 plies of UND full span'; spanwise orientation is the ply-1 convention, not restated)."
+    note: "Two UND plies, full span. Figure 30-34 (p21) cuts three 152 x 12 in UND pieces with the fibre arrow along the 152 in length, used for skin plies 1, 3 and 4, so these two are spanwise."
 
   # ---- elevator skins: crossed UND at +-30 to the elevator leading edge, per elevator ----
   - id: elev_bottom_crossed
@@ -244,7 +246,7 @@ plies:
     op: r30.elev-skin-bottom
     cite: "cobelu:p24 ch30"
     flag: null
-    note: "Per elevator. Angles from the elevator leading edge. Four plies are cut per elevator (p23); two go on the bottom."
+    note: "Per elevator. Angles from the elevator leading edge (p23, p24 text). Figure 30-41 (p24): 64 x 7 in strips cut at 30 degrees across the UND roll, eight pieces, so four per elevator; two go on the bottom."
   - id: elev_top_crossed
     region: elevator_skin
     material: und_7715_wet
@@ -276,8 +278,8 @@ plies:
   - id: elev_balance_strips
     region: other
     material: und_7715_wet
-    angle_deg: null
-    angle_status: unsourced
+    angle_deg: 90
+    angle_status: printed     # Figure 30-55: fibre arrow along the 11 in strip, strip wrapped round the section
     count: 2
     bl_from: null
     bl_to: null
@@ -286,7 +288,7 @@ plies:
     op: r30.elev-mass-balance
     cite: "cobelu:p32 ch30"
     flag: null
-    note: "Two UND strips around each CS-10 spacer and weight (Figure 30-54). Strip angle not read here."
+    note: "Two UND strips, 11 x 0.8 in, fibres along the strip, wrapped chordwise round each CS-10 weight, spacer and elevator nose (Figure 30-55, p32; the p32 text calls it 30-54, a transcription slip). Four cut, two per elevator. 90 = chordwise in the elevator frame; strip width 0.8 in spanwise."
 
   # ---- canard tips ----
   - id: tip_upper
@@ -399,3 +401,16 @@ geometry:
     cite: "cobelu:p20 ch30"
     flag: null
     note: "Seven hinge hard points."
+
+reread_log:
+  date: 2026-10-07
+  by: captain
+  pages: "cobelu ch30 pdf p8 (Fig 30-13), p10, p11 (Fig 30-16), p12 (Fig 30-17), p14, p15, p16, p20, p21 (Fig 30-34), p23, p24 (Fig 30-41), p25, p29, p30, p32 (Fig 30-55)"
+  changes:
+    - "shear-web UND crossing angle: was unsourced, now +-45, printed on Figure 30-16 (p11)"
+    - "shear-web BID extents: the crew's 'centreline to BL 20 / BL 10' reading is confirmed by Figure 30-16"
+    - "CL-1 pads: centre BL 8 left and right added (Figure 30-13, p8); extent stays open"
+    - "cap ply 1 cite moved p14 to p15, where the 'tip to tip' text is"
+    - "top skin BID: the cutting diagram allows 35 to 45 degrees (noted, value 45 kept from the text)"
+    - "elevator balance strips: angle 90 (chordwise wrap), printed on Figure 30-55"
+  unchanged: "every other ply and geometry value matched its page"

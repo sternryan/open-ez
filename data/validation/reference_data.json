@@ -153,13 +153,13 @@
     },
     "vne_ktas": {
       "value": 190,
-      "units": "knots true airspeed",
+      "units": "knots indicated airspeed",
       "uncertainty_pct": null,
       "tolerance_abs": null,
       "tolerance_pct": null,
       "status": "confirmed",
       "cite": "om-1980:p23 red line speed 190 knots",
-      "notes": "Red line speed 190 knots."
+      "notes": "Red line speed 190 knots. Indicated: the builder placards the airspeed indicator with it (om-1980:p43). The key keeps its historical _ktas name; the units field is the basis (ledger row 76)."
     },
     "static_margin_pct": {
       "value": 12.0,

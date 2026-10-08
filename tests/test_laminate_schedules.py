@@ -21,7 +21,9 @@ REGIONS = {
     "other",
 }
 FLAGS = {"unsourced", "conflict", "representational"}
-STATUSES = {"printed", "unsourced", "conflict"}
+STATUSES = {"printed", "unsourced", "conflict", "rule"}
+# "rule": set by the Block 3 sizing rule (design schedules only), not read off a page.
+HAS_VALUE = {"printed", "rule"}
 
 
 def _guide_op_ids() -> set[str]:
@@ -80,12 +82,16 @@ def ply_problems(
         st = ply.get(key)
         if st not in STATUSES:
             errs.append(f"{pid}: {key} must be one of {sorted(STATUSES)}")
-        elif (ply.get(field) is None) != (st != "printed") and key == "angle_status":
-            errs.append(f"{pid}: {field} null iff {key} is not printed")
-        elif key == "extent_status" and (st == "printed") != (
+        elif (ply.get(field) is None) != (
+            st not in HAS_VALUE
+        ) and key == "angle_status":
+            errs.append(f"{pid}: {field} null iff {key} is not printed or rule")
+        elif key == "extent_status" and (st in HAS_VALUE) != (
             ply.get("bl_from") is not None and ply.get("bl_to") is not None
         ):
-            errs.append(f"{pid}: bl_from/bl_to numbers iff extent_status printed")
+            errs.append(
+                f"{pid}: bl_from/bl_to numbers iff extent_status printed or rule"
+            )
     return errs
 
 
@@ -190,3 +196,27 @@ def test_broken_geometry_fails():
     assert geometry_problems(
         {"a": {"value": None, "cite": "cobelu:p1 ch30", "flag": None}}
     )
+
+
+def test_book_schedules_have_no_rule_values():
+    """A book schedule is read off pages; only a design schedule may carry sizing-rule values."""
+    for path in LAMINATES:
+        d = _load(path)
+        if d.get("kind") == "design":
+            continue
+        for ply in d["plies"]:
+            assert "rule" not in (ply.get("angle_status"), ply.get("extent_status")), (
+                ply["id"]
+            )
+
+
+def test_design_schedules_use_design_materials_only():
+    mats = yaml.safe_load(MATERIALS.read_text())["materials"]
+    for path in LAMINATES:
+        d = _load(path)
+        if d.get("kind") != "design":
+            continue
+        kept = set(d.get("kept_from_book", []))
+        for ply in d["plies"]:
+            assert mats[ply["material"]]["use"] == "design-proxy", ply["id"]
+            assert ply["id"] not in kept

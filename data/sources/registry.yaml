@@ -185,3 +185,10 @@ sources:
     copy: document
     page_basis: pdf
     note: dry fabric data only; no cured lamina properties.
+  incas-stere-2010:
+    title: "M. Stere, The torsion of the multicell sections, INCAS Bulletin vol 2 no 3, pp 99-105"
+    edition: 2010, DOI 10.13111/2066-8201.2010.2.3.11
+    obtain: INCAS Bulletin open-access archive (bulletin.incas.ro), by the DOI
+    copy: document
+    page_basis: printed
+    note: section 5 Example 1 (printed p103 to p104) is a three-cell wing section attributed to Megson 3rd ed.; shear flows printed in daN/cm (equal to N/mm); the printed GJ is a factor 10 off G x J and is not used.

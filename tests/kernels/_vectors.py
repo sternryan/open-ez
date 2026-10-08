@@ -1,5 +1,6 @@
 """Shared loader for the published test vectors in tests/kernels/vectors."""
 
+import re
 from pathlib import Path
 
 import numpy as np
@@ -8,8 +9,19 @@ import yaml
 VEC = Path(__file__).resolve().parent / "vectors"
 
 
+class _Loader(yaml.SafeLoader):
+    """YAML 1.1 reads 38.6e9 (no exponent sign) as a string; the vector files print numbers that way."""
+
+
+_Loader.add_implicit_resolver(
+    "tag:yaml.org,2002:float",
+    re.compile(r"^[-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)[eE][-+]?[0-9]+$"),
+    list("-+0123456789."),
+)
+
+
 def load(name: str) -> dict:
-    return yaml.safe_load((VEC / name).read_text())
+    return yaml.load((VEC / name).read_text(), Loader=_Loader)
 
 
 def printed_close(actual, printed) -> bool:

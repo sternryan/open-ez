@@ -1,0 +1,94 @@
+# Vectors for the thin-wall section kernel (Block 3, M3.2). Captain-written 2026-10-07.
+# Two kinds of vector, kept apart:
+#   published: printed values from a registered source; the kernel must reproduce them within the
+#              bound frozen in the ledger (M3.2 validation-bounds freeze row) BEFORE the kernel exists.
+#   hand:      closed-form cases the captain derived by hand (exact fractions); they check the arithmetic
+#              and the conventions, they are not external validation.
+
+stere_megson_three_cell:
+  kind: published
+  cite: "incas-stere-2010:p103 (Fig 6, torque), p104 (input and output tables)"
+  origin: "Stere's Example 1, attributed by him to Megson, Aircraft Structures for Engineering Students, 3rd ed."
+  units: {length: mm, area: mm2, G: N/mm2, torque: N mm, shear_flow: N/mm, J: mm4}
+  torque: 11.3e+6                   # 11.3 kNm anticlockwise (p103 text and Fig 6)
+  G: 27600.0                       # every wall (p104 table)
+  # Wall lengths are printed; the wall coordinates are not (Fig 6 is undimensioned and is NOT measured).
+  # The kernel takes the printed length through Wall(..., length=...). Endpoint coordinates are zero.
+  # Topology read from Fig 6 by the captain: nodes 1-2 close the nose cell with web 12i; 1-3, 2-4 are the
+  # skins of cell II, 3-4 a web; 3-5, 4-6 the skins of cell III, 5-6 the rear web.
+  walls:
+    # id: [length, thickness]
+    nose_12o: [1650.0, 1.22]       # printed as "120": the outer 1-2 wall (nose), read as 12o
+    web_12i: [508.0, 2.03]
+    skin_13: [775.0, 1.22]         # printed as "13,24": two walls with the same values
+    skin_24: [775.0, 1.22]
+    web_34: [380.0, 1.63]
+    skin_35: [508.0, 0.92]         # printed as "35,46"
+    skin_46: [508.0, 0.92]
+    web_56: [254.0, 0.92]
+  cells:
+    - {walls: [nose_12o, web_12i], area: 258000.0}
+    - {walls: [skin_13, skin_24, web_12i, web_34], area: 355000.0}
+    - {walls: [skin_35, skin_46, web_34, web_56], area: 161000.0}
+  printed:
+    # p104 prints shear flows in daN/cm; 1 daN/cm = 1 N/mm, so the numbers carry over unchanged.
+    cell_shear_flow: [6.9764, 8.6951, 4.7412]
+    # Webs as printed ("Web no.1..4"): the net flow, aft cell minus forward cell; Web no.1 is the nose
+    # wall (cell I alone) and Web no.4 the rear web (cell III alone). Compared as magnitudes.
+    wall_shear_flow_abs:
+      nose_12o: 6.9764
+      web_12i: 1.7186
+      web_34: 3.9539
+      web_56: 4.7412
+      skin_13: 8.6951
+      skin_24: 8.6951
+      skin_35: 4.7412
+      skin_46: 4.7412
+    J: 6.4707641e+8                 # printed .64707641E+05 cm4
+    # The printed GJ (.17859309E+10 daNcm2) is a factor 10 below G x J in those units; it is NOT used.
+    # GJ is compared as G x J(printed).
+  bound:
+    cell_flow_and_J_rel: 1.0e-3      # frozen in the ledger M3.2 freeze row; captain choice, unsourced
+    web_flow_abs: 0.01               # N/mm, about 0.1 percent of the largest cell flow; captain choice
+  captain_check: >
+    Independent solve of the same printed inputs (numpy, captain, 2026-10-07): cell flows 6.9787,
+    8.6938, 4.7403 N/mm; webs 12i 1.7152, 34 3.9535; J 6.4721e+8 mm4. Largest relative difference
+    0.033 percent (cell I); largest web difference 0.0034 N/mm. The printed inputs are rounded
+    (areas to 1000 mm2), so about 3 to 4 significant figures agree.
+
+single_cell_rectangle:
+  kind: hand
+  cite: "tests/test_torsion_flutter.py::TestTorsionSection::test_gj_known_section (existing hand case)"
+  units: {length: in, G: psi, GJ: lb in2}
+  width: 10.0
+  height: 5.0
+  t: 0.05
+  G: 1.0e+6
+  rho: 1.0                         # mass per unit wall area, arbitrary units, for mass_props only
+  Et: 5.0e+4                        # axial stiffness per unit width, lb/in, for section_ei only
+  GJ: 16666666.666666667           # 4 A^2 G / sum(ds/t) = 4 x 50^2 x 1e+6 / 600
+  rel_tol: 1.0e-9                  # exact closed form; the kernel uses no approximation here
+  shear_centre_x: 5.0              # doubly symmetric: the centre
+  EI_walls: 7291666.666666667      # Et x (2 x 10 x 2.5^2 + 2 x 5^3/12)
+  caps_pair: {EA: 1.0e+6, z: [2.5, -2.5]}
+  EI_with_caps_pair: 19791666.666666667   # EI_walls + 2 x 1e+6 x 2.5^2
+  cap_top_only: {EA: 1.0e+6, x: 5.0, z: 2.5}
+  EI_with_top_cap: 11041666.666666667     # neutral axis moves to z = 1.0: 7291666.67 + 1.5e+6 x 1^2 + 1e+6 x 1.5^2
+  mass_per_length: 30.0            # rho x perimeter
+  centroid_x: 5.0
+  torsional_inertia: 562.5         # polar, about the mass centroid, wall own terms L^2/12 included
+  extra_point: {x: 15.0, z: 0.0, m: 30.0}
+  with_extra: {mass_per_length: 60.0, centroid_x: 10.0, torsional_inertia: 2062.5}
+
+two_cell_rectangle:
+  kind: hand
+  cite: "captain derivation 2026-10-07 (exact fractions); same outline as single_cell_rectangle plus one vertical web"
+  units: {length: in, G: psi, GJ: lb in2}
+  web_x_symmetric: 5.0
+  GJ_symmetric_web: 16666666.666666667     # a web on the symmetry line carries no torsion flow: GJ unchanged
+  web_flow_symmetric_per_unit_T: 0.0
+  web_x_offset: 2.0
+  GJ_offset_web: 17109144.542772861        # 5.8e+9 / 339, 2.65 percent above the single cell
+  cell_flows_offset_per_unit_T: [0.0079310344827586207, 0.010517241379310345]   # 23/2900, 61/5800
+  web_flow_offset_abs_per_unit_T: 0.0025862068965517241                         # 3/1160
+  rel_tol: 1.0e-9
