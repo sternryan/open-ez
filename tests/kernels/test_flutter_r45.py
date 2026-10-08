@@ -79,7 +79,7 @@ def test_ia100_limit_matches_printed():
 
 def test_ia100_passes_and_gj_over_four_fails_the_fixed_limit():
     ok = r45.wing_criterion(ia100_F(), mph(W["v_d_mph"]), LIMIT_CONST)
-    assert ok["passed"] is True and ok["margin"] == pytest.approx(3.29, abs=0.01)
+    assert ok["passed"] is True and ok["margin"] == pytest.approx(3.29, abs=0.005)
     k = V["ia100_wing"]["broken"]["gj_divisor"]
     broken = r45.wing_criterion(
         ia100_F([t * k for t in W["theta"]]), mph(W["v_d_mph"]), LIMIT_CONST
@@ -182,3 +182,48 @@ def test_elevator_parameters():
     assert r45.elevator_gamma(0.5, 2.0, 4.0) == pytest.approx(0.25)
     assert r45.elevator_lambda(0.5, 3.0, 6.0, 2.0) == pytest.approx(0.125)
     assert r45.flutter_speed_parameter(mph(200), 0.5, 2000.0) == pytest.approx(0.2)
+
+
+# ---- T10 grader findings (2026-10-08) ------------------------------------------------------
+
+
+def test_non_uniform_strips_twist():  # hand: GJ 2e5, 1e5, 5e4 lb ft2; ds 2, 1, 3 ft
+    th = r45.twist_per_unit_torque(np.array([2e5, 1e5, 5e4]), np.array([2.0, 1.0, 3.0]))
+    # 1e-5/2; 1e-5 + 1e-5/2; 1e-5 + 1e-5 + 6e-5/2
+    assert np.allclose(th, [5e-6, 1.5e-5, 5e-5], rtol=1e-12)
+
+
+def test_criterion_basis_must_be_ias():
+    with pytest.raises(ValueError):
+        r45.wing_criterion(ia100_F(), mph(W["v_d_mph"], "TAS"), LIMIT_CONST)
+    with pytest.raises(ValueError):
+        r45.aileron_ki_limit(mph(200, "EAS"), FIG2)
+
+
+def test_F_at_the_limit_passes_and_bad_F_raises():
+    lim = r45.wing_limit(250.0, LIMIT_CONST)
+    assert r45.wing_criterion(lim, mph(250.0), LIMIT_CONST)["passed"] is True
+    for bad in (0.0, -1e-4, float("nan")):
+        with pytest.raises(ValueError):
+            r45.wing_criterion(bad, mph(250.0), LIMIT_CONST)
+
+
+def test_equal_speeds_compare_le_and_bad_speeds_raise():
+    assert r45.speeds_le(mph(220), mph(220))
+    for bad in (-1.0, 0.0, float("nan")):
+        with pytest.raises(ValueError):
+            r45.Speed(bad, "mph", "IAS")
+
+
+def test_curve_points_are_sorted_and_checked():
+    assert r45.curve_limit(150.0, list(reversed(FIG2))) == pytest.approx(2.4)
+    for bad in ([], [(0.0, 1.0)], [(0.0, 1.0), (0.0, 2.0)]):
+        with pytest.raises(ValueError):
+            r45.curve_limit(0.0, bad)
+
+
+def test_flexibility_factor_rejects_mismatched_or_negative_strips():
+    with pytest.raises(ValueError):
+        r45.wing_flexibility_factor(np.ones(3), np.ones(1), 1.0)
+    with pytest.raises(ValueError):
+        r45.wing_flexibility_factor(np.ones(3), np.ones(3), -1.0)
