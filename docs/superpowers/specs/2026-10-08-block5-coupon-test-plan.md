@@ -458,10 +458,30 @@ reviewer item 2).
 
 That is worth it only if Block 5's part proof tests need the same frame. That decision is Ryan's.
 
-**Local ovens and kilns, and testing labs.** *Placeholder: a separate agent is researching these. Its
-findings go here: candidate ovens or kilns against the section 3 oven requirement, and candidate labs
-with their frame capacity, E4 status, ISO/IEC 17025 status, CLC and extensometer availability, and
-per-specimen prices for D3039, D6641 and D3518.*
+**Testing labs.** None of the candidates below was contacted. Contacting any of them is outward
+and is Ryan's call.
+
+- **Primary candidate: a university materials characterization facility** with a published external
+  rate of about $124/hr for an Instron 34TM-50. Open questions:
+  - Does the 50 mean 50 kN? If it does, is that enough? The section 7 estimates peak at 38 kN, and
+    50 kN is the minimum this plan accepts.
+  - Does it have wedge grips suited to composite specimens, and a CLC fixture or a way to mount one?
+  - Does it hold E4 verification, and does the calibrated range reach down to about 1 kN for UND T90?
+  - Is a strain extensometer available, and is ISO/IEC 17025 status held?
+- **Secondary:**
+  - a university structures lab that takes industry work;
+  - commercial testing labs, none of which published coupon pricing;
+  - a commercial thermal-analysis lab, which could run a Tg check (DMA or DSC) on the post-cure to
+    confirm the 80 °C cure reached the expected Tg.
+- Per-specimen prices for D3039, D6641 and D3518 are not known for any candidate.
+
+**Oven.** No rentable oven was found locally in public research. Kiln controllers can program low
+holds, but their uniformity at 80 °C is unproven. The recommended route is an owner-built hot box
+(insulated enclosure, heater and fan, PID controller with SSR, and the existing thermocouple logger),
+sized for the section 3 working zone. Its parts list is in the purchase order, lines 35 to 42, at
+about $339 before shipping and tax, all prices unverified. **Before any panel is cured,** an empty-box
+survey at 80 °C across the working zone must show every position within ±3 °C (the section 3 band) or
+tighter. A member or shop oven would need the same survey.
 
 ## 11. Optional conditions (not in the counts)
 

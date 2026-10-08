@@ -80,7 +80,15 @@ carbon on a 50 in roll.
 | 31 | 0/90 tee rosettes, 350 ohm, 5 per pack (CEA-06-125UTA-350) | Farnell | CEA-06-125UTA-350 | farnell.com | EUR 244.07 | 9 packs (42 needed) | EUR 2,196.63 | UNVERIFIED | owner-test |
 | 32 | M-Bond 200 gauge adhesive | DigiKey | MMF022656 | digikey.com | $109.40 | 1 | $109.40 | UNVERIFIED | owner-test |
 | 33 | Load frame (100 kN class, E4), wedge grips, D6641 CLC fixture, biaxial extensometer | not researched | | | not read | | not priced | | owner-test |
-| 34 | Oven or kiln (80 °C ramp-and-soak; 565 °C for burn-off) | separate agent | | | | | placeholder | | all |
+| 34 | Oven or kiln (80 °C ramp-and-soak; 565 °C for burn-off) | see lines 35 to 42 (hot box) | | | | | see group below | | all |
+| 35 | Insulated enclosure walls: foil-faced polyiso board, 1 in × 4 × 8 ft (RMAX R-Matte Plus-3 class) | Home Depot | not confirmed | homedepot.com | $34.68 | 3 | $104.04 | UNVERIFIED (search snippet) | all |
+| 36 | Frame: 2 × 2 in × 8 ft furring strips | Home Depot / lumber yard | not confirmed | | $4.99 | 8 | $39.92 | UNVERIFIED (snippet, other retailer) | all |
+| 37 | UL 181 aluminium foil tape, 2.5 in × 60 yd, for seams | Shurtape AF 099 | AF 099 | | $35.99 | 1 | $35.99 | UNVERIFIED (snippet) | all |
+| 38 | Heater: 1500 W ceramic space heater with fan (Lasko 754200) | Lasko / retailers | 754200 | lasko.com | $39.99 | 1 | $39.99 | UNVERIFIED (the page that loaded was a different model) | all |
+| 39 | Circulation fan: 120 mm, 12 V, ball bearing, rated to 70 °C | retailer | AD1212UB-A73GL (from a snippet) | | $20.70 | 1 | $20.70 | UNVERIFIED (snippet) | all |
+| 40 | 12 V DC supply for the fan, 3 A | retailer | generic | | $8.99 | 1 | $8.99 | UNVERIFIED ("from" price) | all |
+| 41 | PID controller with 40 A SSR, heat sink and type K probe (Inkbird ITC-100VH kit) | Inkbird / eBay | ITC-100VH | inkbird.com | $36.99 | 1 | $36.99 | UNVERIFIED (eBay snippet; the Inkbird page returned 429) | all |
+| 42 | Vacuum-line pass-through: 1/2 in hose barb × 1/4 in NPT, stainless | Titan Fittings | not confirmed | titanfittings.com | $26.10 | 2 | $52.20 | UNVERIFIED (snippet; the page returned 429) | all |
 
 **Rosette count (line 31).**
 
@@ -100,6 +108,7 @@ A lab with extensometers needs none of them.
 | Every route, page prices (lines 1 to 16) | $2,579.22 |
 | Every route, unverified prices (lines 17 to 25) | $1,623.95 |
 | **Every route, priced** | **$4,203.17**, plus lines 26 to 29 and 34, not priced |
+| Owner-built post-cure hot box (lines 35 to 42), priced | $338.82, all unverified, plus the unpriced items in the hot box section |
 | Owner-test route only, priced (lines 30 and 32) | $1,718.45, plus EUR 2,196.63 (line 31), plus line 33, not priced |
 
 **Top lines by cost:**
@@ -109,6 +118,60 @@ A lab with extensometers needs none of them.
 3. Carbon cloth: $325.50.
 4. Thermocouple logger: $337.95, unverified.
 5. Glass cloth: $312.20 for both styles.
+
+## Owner-built post-cure hot box (lines 35 to 42)
+
+This is the recommended oven route in the test plan, section 10. It must hold the section 3 cure: a
+ramp of 10 °C/h or slower to 80 °C, a 15 h hold with every panel thermocouple within 77 to 83 °C, and
+a cool-down at 10 °C/h or slower.
+
+**Sizing, from the plan's panel sizes.** One batch is nine panels, three per material: PT 600 × 300,
+PC 350 × 300 and PS 300 × 300 mm. One material fits on a 0.7 × 0.7 m shelf (PT along one edge, PC and
+PS side by side beside it). Three shelves give the nine-panel working zone.
+
+- Interior: 0.80 × 0.80 × 1.00 m.
+- Exterior with 1 in walls: about 0.82 × 0.82 × 1.02 m, which is about 4.7 m2 of board. Three 4 × 8 ft
+  sheets (8.9 m2) leave room for the door and cutting waste.
+- Frame: about 19 m of 2 × 2 (box edges plus shelf cleats), so eight 8 ft strips.
+- Heat loss at 80 °C with R-6 walls is roughly 250 W by a back-of-envelope calculation, so the 1500 W
+  heater has margin for the ramp. This was not measured.
+
+**Controls.** The PID kit (line 41) switches the heater's mains feed through the SSR. The heater's own
+thermostat is set to maximum. The fan (line 39) runs continuously. The Extech SDL200 logger on line 20
+serves both purposes: it is the cure record (3 panel channels plus 1 air channel, per the plan) and the
+survey instrument below. The PID probe is a separate fifth thermocouple.
+
+**Not priced, still needed:**
+
+- shelf boards or racks (3 at 0.7 × 0.7 m);
+- an independent over-temperature cutoff in series with the heater (a safety item, not optional);
+- wiring, a fused plug, a coupling and high-temperature sealant for the pass-through, and a door seal;
+- whether the heater's built-in overheat protection trips at 80 °C inside the box is unproven.
+
+**Pass-through note.** The plan debags before the post-cure, so the vacuum pass-through is not needed
+for the baseline cure. It is priced because it was asked for, and it also carries thermocouple leads.
+
+**Uniformity proof step (required before any panel cure).**
+
+1. Run the box empty, with the three shelves in place and the programmed 10 °C/h ramp to 80 °C.
+2. Hold at 80 °C and read the four logger channels at the four corners and the centre of each shelf
+   (15 positions). Move the channels between positions, allowing 30 minutes to re-equilibrate each time.
+3. Accept only if every position stays within ±3 °C of 80 °C (the plan's 77 to 83 °C band) with air
+   overshoot no more than +5 °C. Tighter is better. If it fails, add baffles or fan capacity and repeat.
+4. Keep the log with the batch record. Check the logger at the ice point and in boiling water first
+   (plan section 3, ±1.5 °C).
+
+**Compared with renting.**
+
+- No rentable oven was found locally in public research, so there is no rental price to set against
+  the $338.82 (unverified).
+- The real alternative is finding a member or shop oven that will hold 80 °C for about 15 h plus the
+  ramps, for nine panels, twice. That is a favour to ask, not a quote, and it is outward contact and
+  Ryan's call.
+- A kiln with a programmable controller can hold low temperatures, but its uniformity at 80 °C is
+  unproven, and it would need the same survey.
+- Verdict: the hot box costs a few hundred dollars and removes the dependency. It still needs the
+  survey to pass.
 
 ## Alternates and notes
 
