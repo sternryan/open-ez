@@ -110,3 +110,53 @@ def test_two_cell_section_mirrors():
 def test_symmetric_two_cell_section_is_centred():
     walls, cells = box(web_x=5.0)
     assert shear_centre_x(walls, cells) == pytest.approx(5.0, abs=1e-9)
+
+
+# ---- asymmetric sections: the product of inertia must enter (T7 grader finding, 2026-10-08) ------
+
+
+def polygon(points, Gt, Et, dx=0.0, dz=0.0):
+    n = len(points)
+    walls = [
+        SimpleNamespace(
+            x0=points[i][0] + dx,
+            z0=points[i][1] + dz,
+            x1=points[(i + 1) % n][0] + dx,
+            z1=points[(i + 1) % n][1] + dz,
+            t=1.0,
+            Gt=Gt[i],
+            Et=Et[i],
+            length=None,
+        )
+        for i in range(n)
+    ]
+    return walls, [SimpleNamespace(wall_ids=tuple(range(n)), area=0.0)]
+
+
+TRAPEZOID = ([(0, 0), (5, 0), (2, 3), (0, 3)], [1, 2, 1, 3], [1, 1, 1, 1])
+
+
+def test_asymmetric_section_matches_independent_integral():
+    # 1.2026: the T7 grader's independent fine-discretised cut-section integral with Ixz (not external
+    # validation); ignoring Ixz gives 2.1185 and depends on the reference point.
+    assert shear_centre_x(*polygon(*TRAPEZOID)) == pytest.approx(1.2026, abs=5e-5)
+
+
+@pytest.mark.parametrize("dx,dz", [(3.0, 0.0), (0.0, -2.0), (7.0, -3.0)])
+def test_asymmetric_section_follows_a_rigid_shift(dx, dz):
+    x0 = shear_centre_x(*polygon(*TRAPEZOID))
+    assert shear_centre_x(*polygon(*TRAPEZOID, dx=dx, dz=dz)) == pytest.approx(
+        x0 + dx, abs=1e-9
+    )
+
+
+def test_zero_shear_stiffness_raises():
+    walls, cells = polygon(TRAPEZOID[0], [1, 0, 1, 3], TRAPEZOID[2])
+    with pytest.raises(ValueError):
+        shear_centre_x(walls, cells)
+
+
+def test_open_loop_raises():
+    walls, _ = box()
+    with pytest.raises(ValueError):
+        shear_centre_x(walls, [SimpleNamespace(wall_ids=(0, 1, 2), area=50.0)])

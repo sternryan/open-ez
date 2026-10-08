@@ -10,7 +10,6 @@ pytest.importorskip(
 
 from core.kernels.lamina import stress_to_material
 from core.kernels.tsai_wu import tsai_wu_strength_ratio
-
 from tests.kernels._vectors import load
 
 T = load("clt_textbook.yaml")["tsai_wu_30deg_lamina"]
