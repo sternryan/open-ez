@@ -1,0 +1,332 @@
+{
+  "gates": {
+    "elevator_balance": {
+      "by_analogy": true,
+      "closing_coupons": [],
+      "flagged_inputs": [],
+      "label": "blocked: criterion_unavailable",
+      "reasons": [
+        "criterion_unavailable"
+      ],
+      "state": "blocked",
+      "test_required_inputs": []
+    },
+    "mass_placement": {
+      "closing_coupons": [],
+      "flagged_inputs": [
+        "basis.cg_aft_destabilising_cite",
+        "bid_7725_wet.E1",
+        "bid_7725_wet.E2",
+        "bid_7725_wet.F1c",
+        "bid_7725_wet.F1t",
+        "bid_7725_wet.F2c",
+        "bid_7725_wet.F2t",
+        "bid_7725_wet.F6",
+        "bid_7725_wet.G12",
+        "bid_7725_wet.areal_mass",
+        "bid_7725_wet.nu12",
+        "bid_7725_wet.t_ply",
+        "cap_bottom_c0.count",
+        "cap_bottom_fill.count",
+        "cap_bottom_fill.extent",
+        "cap_top_all.count",
+        "cap_top_all.extent",
+        "cap_top_c0.count",
+        "cap_top_c0.extent",
+        "carbon3k_mgs418_wet.areal_mass",
+        "cell.canard_chord",
+        "cell.canard_span",
+        "cell.cap_depth_in",
+        "cell.core_foam_density",
+        "cell.web_chordwise_xc",
+        "skin_bottom_1.extent",
+        "skin_bottom_2.extent",
+        "skin_bottom_3.extent",
+        "skin_bottom_c0.count",
+        "skin_bottom_c0.extent",
+        "skin_bottom_c45.count",
+        "skin_bottom_c45.extent",
+        "skin_top_1.extent",
+        "skin_top_2.extent",
+        "skin_top_3.extent",
+        "skin_top_c0.count",
+        "skin_top_c0.extent",
+        "skin_top_c45.count",
+        "skin_top_c45.extent",
+        "sw_c45_bl10.count",
+        "sw_c45_bl20.count",
+        "sw_c45_bl30.count",
+        "sw_c45_full.count",
+        "und_7715_wet.E1",
+        "und_7715_wet.E2",
+        "und_7715_wet.F1c",
+        "und_7715_wet.F1t",
+        "und_7715_wet.F2c",
+        "und_7715_wet.F2t",
+        "und_7715_wet.F6",
+        "und_7715_wet.G12",
+        "und_7715_wet.areal_mass",
+        "und_7715_wet.nu12",
+        "und_7715_wet.t_ply"
+      ],
+      "label": "blocked: inputs_unsourced",
+      "reasons": [
+        "inputs_unsourced"
+      ],
+      "state": "blocked",
+      "test_required_inputs": []
+    },
+    "strength": {
+      "closing_coupons": [
+        "B5-CPW-C0",
+        "B5-CPW-T0"
+      ],
+      "flagged_inputs": [
+        "bid_7725_wet.E1",
+        "bid_7725_wet.E2",
+        "bid_7725_wet.F1c",
+        "bid_7725_wet.F1t",
+        "bid_7725_wet.F2c",
+        "bid_7725_wet.F2t",
+        "bid_7725_wet.F6",
+        "bid_7725_wet.G12",
+        "bid_7725_wet.areal_mass",
+        "bid_7725_wet.nu12",
+        "bid_7725_wet.t_ply",
+        "cap_bottom_c0.count",
+        "cap_bottom_fill.count",
+        "cap_bottom_fill.extent",
+        "cap_top_all.count",
+        "cap_top_all.extent",
+        "cap_top_c0.count",
+        "cap_top_c0.extent",
+        "carbon3k_mgs418_wet.areal_mass",
+        "cell.canard_chord",
+        "cell.canard_span",
+        "cell.cap_depth_in",
+        "cell.core_foam_density",
+        "cell.web_chordwise_xc",
+        "skin_bottom_1.extent",
+        "skin_bottom_2.extent",
+        "skin_bottom_3.extent",
+        "skin_bottom_c0.count",
+        "skin_bottom_c0.extent",
+        "skin_bottom_c45.count",
+        "skin_bottom_c45.extent",
+        "skin_top_1.extent",
+        "skin_top_2.extent",
+        "skin_top_3.extent",
+        "skin_top_c0.count",
+        "skin_top_c0.extent",
+        "skin_top_c45.count",
+        "skin_top_c45.extent",
+        "sw_c45_bl10.count",
+        "sw_c45_bl20.count",
+        "sw_c45_bl30.count",
+        "sw_c45_full.count",
+        "und_7715_wet.E1",
+        "und_7715_wet.E2",
+        "und_7715_wet.F1c",
+        "und_7715_wet.F1t",
+        "und_7715_wet.F2c",
+        "und_7715_wet.F2t",
+        "und_7715_wet.F6",
+        "und_7715_wet.G12",
+        "und_7715_wet.areal_mass",
+        "und_7715_wet.nu12",
+        "und_7715_wet.t_ply"
+      ],
+      "label": "blocked: glass_unvalidated, inputs_unsourced, requires_original_test",
+      "reasons": [
+        "glass_unvalidated",
+        "inputs_unsourced",
+        "requires_original_test"
+      ],
+      "state": "blocked",
+      "test_required_inputs": [
+        "carbon3k_mgs418_wet.E1",
+        "carbon3k_mgs418_wet.F1c",
+        "carbon3k_mgs418_wet.F1t",
+        "carbon3k_mgs418_wet.nu12"
+      ]
+    }
+  },
+  "inputs_sha256": {
+    "book_lamina": "acdb4427af67a08953f0421d1e11671b134c05678955649790d61007ef143b89",
+    "book_plies": "4208ec05cceabd35061b362c47f3461c300f10ee009a2f0f5953405a95f002bd",
+    "carbon_lamina": "906e5ae51052a7bcd33b8b14ff20c3ac80781ab5812c76ac8cec1cdc79ec6f04",
+    "cell_geometry": "2d353834acacdbffacc11af18b326103124463c876e321518af6bfc2d0ecf5ca",
+    "mass_inputs": "a32fd6b73eba82c74598fbdf2f0eb8fece27d048c7d8cd3ddd7fe69da4ea255e",
+    "sizing_rule": "b427148fddb73b0b8374856a9b5a4f6fdffcda0cbd8d61bb1e5a0f03192721cb",
+    "stiffness_flag_fraction": "14be4b45f18e0d8c67b4f719b5144eee88497e413709d11d85b096d8e2346310"
+  },
+  "notes": [
+    "strength: blocked; book and carbon inputs are unsourced and glass is not validated.",
+    "strength: carbon warp values need an original coupon test (requires_original_test).",
+    "mass_placement: blocked; cell geometry, lamina values and the destabilising-centroid citation are unsourced.",
+    "elevator_balance: blocked by analogy; Report 45 elevator criteria need fuselage frequencies.",
+    "reported items are blocked with the gates; none is a gate."
+  ],
+  "part": "canard",
+  "reported": {
+    "book_canard_mass_vs_closure": {
+      "book_mass_lb": null,
+      "closure_band_lb": [
+        17.58,
+        19.43
+      ],
+      "closure_mass_lb": 18.5,
+      "delta_fraction": null,
+      "reasons": [
+        "inputs_unsourced"
+      ],
+      "reported_only": true,
+      "state": "blocked"
+    },
+    "f_relative": {
+      "F_book": null,
+      "F_carbon": null,
+      "closing_coupons": [],
+      "flagged_inputs": [
+        "basis.cg_aft_destabilising_cite",
+        "bid_7725_wet.E1",
+        "bid_7725_wet.E2",
+        "bid_7725_wet.F1c",
+        "bid_7725_wet.F1t",
+        "bid_7725_wet.F2c",
+        "bid_7725_wet.F2t",
+        "bid_7725_wet.F6",
+        "bid_7725_wet.G12",
+        "bid_7725_wet.areal_mass",
+        "bid_7725_wet.nu12",
+        "bid_7725_wet.t_ply",
+        "cap_bottom_c0.count",
+        "cap_bottom_fill.count",
+        "cap_bottom_fill.extent",
+        "cap_top_all.count",
+        "cap_top_all.extent",
+        "cap_top_c0.count",
+        "cap_top_c0.extent",
+        "carbon3k_mgs418_wet.areal_mass",
+        "cell.canard_chord",
+        "cell.canard_span",
+        "cell.cap_depth_in",
+        "cell.core_foam_density",
+        "cell.web_chordwise_xc",
+        "skin_bottom_1.extent",
+        "skin_bottom_2.extent",
+        "skin_bottom_3.extent",
+        "skin_bottom_c0.count",
+        "skin_bottom_c0.extent",
+        "skin_bottom_c45.count",
+        "skin_bottom_c45.extent",
+        "skin_top_1.extent",
+        "skin_top_2.extent",
+        "skin_top_3.extent",
+        "skin_top_c0.count",
+        "skin_top_c0.extent",
+        "skin_top_c45.count",
+        "skin_top_c45.extent",
+        "sw_c45_bl10.count",
+        "sw_c45_bl20.count",
+        "sw_c45_bl30.count",
+        "sw_c45_full.count",
+        "und_7715_wet.E1",
+        "und_7715_wet.E2",
+        "und_7715_wet.F1c",
+        "und_7715_wet.F1t",
+        "und_7715_wet.F2c",
+        "und_7715_wet.F2t",
+        "und_7715_wet.F6",
+        "und_7715_wet.G12",
+        "und_7715_wet.areal_mass",
+        "und_7715_wet.nu12",
+        "und_7715_wet.t_ply"
+      ],
+      "kind": "consistency_check",
+      "label": "blocked: inputs_unsourced",
+      "reasons": [
+        "inputs_unsourced"
+      ],
+      "state": "blocked",
+      "test_required_inputs": []
+    },
+    "stiffness_and_mass_deltas": {
+      "EI": {
+        "book": null,
+        "carbon": null,
+        "delta_fraction": null,
+        "flag": null,
+        "reasons": [
+          "inputs_unsourced"
+        ],
+        "state": "blocked"
+      },
+      "GJ": {
+        "book": null,
+        "carbon": null,
+        "delta_fraction": null,
+        "flag": null,
+        "reasons": [
+          "inputs_unsourced"
+        ],
+        "state": "blocked"
+      },
+      "mass_per_length": {
+        "book": null,
+        "carbon": null,
+        "delta_fraction": null,
+        "flag": null,
+        "reasons": [
+          "inputs_unsourced"
+        ],
+        "state": "blocked"
+      },
+      "torsional_inertia": {
+        "book": null,
+        "carbon": null,
+        "delta_fraction": null,
+        "flag": null,
+        "reasons": [
+          "inputs_unsourced"
+        ],
+        "state": "blocked"
+      }
+    },
+    "stiffness_flag_fraction": 0.1
+  },
+  "stations": [
+    {
+      "bl": 0.0,
+      "side": "centre"
+    },
+    {
+      "bl": 10.0,
+      "side": "inboard"
+    },
+    {
+      "bl": 10.0,
+      "side": "outboard"
+    },
+    {
+      "bl": 20.0,
+      "side": "inboard"
+    },
+    {
+      "bl": 20.0,
+      "side": "outboard"
+    },
+    {
+      "bl": 30.0,
+      "side": "inboard"
+    },
+    {
+      "bl": 30.0,
+      "side": "outboard"
+    },
+    {
+      "bl": 54.0,
+      "side": "end"
+    }
+  ]
+}
