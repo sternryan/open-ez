@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import os
 import html
 import json
 import hashlib
@@ -50,6 +51,12 @@ def build_lab() -> Path:
     lock_stamp = mods / ".lock-stamp"
     lock = _digest([LAB / "package-lock.json"])
     if not mods.is_dir() or not lock_stamp.is_file() or lock_stamp.read_text() != lock:
+        if os.environ.get("FABRIC_SEALED_ENV") == "1":
+            # A sealed (network-less, read-only node_modules) environment must fail loudly, never reach for `npm ci` or write the stamp.
+            raise RuntimeError(
+                "sealed environment: guide/lab/node_modules is missing or its .lock-stamp does not match package-lock.json; "
+                "refusing to run `npm ci` (rebuild the sealed runtime for this lock instead)"
+            )
         subprocess.run([npm, "--prefix", str(LAB), "ci"], check=True)
         lock_stamp.write_text(lock)
     stamp = _lab_stamp()
