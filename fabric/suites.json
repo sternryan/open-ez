@@ -1,5 +1,0 @@
-{"schema_version": "fabric-suites-v1",
- "suites": {
-  "fast": {"paths": ["tests"], "ignore": ["tests/guide/test_lab_e2e.py", "tests/guide/test_viewer_e2e.py"],
-           "markers": "not local_render and not network", "xdist": 8, "prime_lab": false},
-  "full": {"paths": ["tests"], "ignore": [], "markers": "not local_render and not network", "xdist": 8, "prime_lab": true}}}
