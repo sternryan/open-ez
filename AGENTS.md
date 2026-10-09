@@ -1,6 +1,6 @@
 # Open-EZ
 
-This file provides guidance to any coding agent working with code in this repository.
+This is the single instruction file for this repository; Claude Code, Codex and any other coding agent read it directly.
 
 ## Project Overview
 
