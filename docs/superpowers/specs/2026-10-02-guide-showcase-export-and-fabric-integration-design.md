@@ -128,7 +128,7 @@ Open-EZ expects a closed, versioned task envelope equivalent to:
     "quality": "high"
   },
   "requirements": {
-    "capabilities": ["browser.chromium", "render.gpu"],
+    "capabilities": ["browser.chromium", "render.metal"],
     "privacy": "public-only",
     "network": "none",
     "paid_access": false

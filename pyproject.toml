@@ -12,4 +12,5 @@ requires-python = ">=3.11"
 [tool.pytest.ini_options]
 markers = [
     "local_render: needs the laptop's (or the Mac test node's) GPU-like rendering: frame-time budgets, pixel counts and byte-exact frames that software GL on Linux (SwiftShader Subzero) or a parallel-loaded node cannot judge. scripts/remote_test.sh deselects them by default.",
+    "network: needs network access; the fabric runs with the network off, so these are deselected there.",
 ]

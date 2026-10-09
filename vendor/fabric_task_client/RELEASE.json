@@ -1,0 +1,7 @@
+{
+ "files": {
+  "fabric_task_client/__init__.py": "9f6e935a74d99b97ecce662d6afb6ecaa478928ee3e26fb9000e2dc4eb251cc1"
+ },
+ "schema": "fabric-task-request-v1",
+ "version": "1.0.0"
+}

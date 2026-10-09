@@ -1,0 +1,47 @@
+{
+  "consumer": "open-ez",
+  "inputs": [
+    {
+      "artifact_ref": "approved://open-ez/req",
+      "bytes": 1,
+      "name": "source",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "limits": {
+    "artifact_bytes": 67108864,
+    "attempts": 1,
+    "model_tokens": 0,
+    "usd_micros": 0,
+    "wall_ms": 2700000
+  },
+  "outputs": [
+    "junit",
+    "collection-manifest",
+    "execution-manifest"
+  ],
+  "parameters": {
+    "env_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "suite": "fast",
+    "suite_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "profile": {
+    "id": "cpu-test",
+    "implementation_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "version": "1"
+  },
+  "request_id": "11111111-2222-4333-8444-555555555555",
+  "requirements": {
+    "capabilities": [
+      "cpu.python"
+    ],
+    "network": "none",
+    "paid_access": false,
+    "privacy": "public-only"
+  },
+  "schema_version": "fabric-task-request-v1",
+  "source": {
+    "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  }
+}

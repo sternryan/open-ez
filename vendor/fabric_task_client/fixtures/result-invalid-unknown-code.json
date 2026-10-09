@@ -1,0 +1,58 @@
+{
+  "attempt_id": "66666666-7777-4888-8999-aaaaaaaaaaaa",
+  "execution": {
+    "exit_status": 0,
+    "validation": [
+      {
+        "name": "outputs-verified",
+        "passed": true
+      },
+      {
+        "name": "collection-matches",
+        "passed": true
+      }
+    ],
+    "wall_ms": 1000
+  },
+  "failure": {
+    "code": "expired",
+    "detail": "x"
+  },
+  "job_id": "11111111-2222-4333-8444-555555555555",
+  "outputs": [
+    {
+      "artifact_ref": "approved://fabric/66666666-7777-4888-8999-aaaaaaaaaaaa/collection-manifest",
+      "bytes": 10,
+      "media_type": "application/json",
+      "name": "collection-manifest",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    {
+      "artifact_ref": "approved://fabric/66666666-7777-4888-8999-aaaaaaaaaaaa/execution-manifest",
+      "bytes": 10,
+      "media_type": "application/json",
+      "name": "execution-manifest",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    },
+    {
+      "artifact_ref": "approved://fabric/66666666-7777-4888-8999-aaaaaaaaaaaa/junit",
+      "bytes": 10,
+      "media_type": "application/xml",
+      "name": "junit",
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "profile": {
+    "certification": "attended-certified",
+    "id": "cpu-test",
+    "implementation_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "runtime_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "version": "1"
+  },
+  "schema_version": "fabric-result-v1",
+  "source": {
+    "bundle_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "status": "failed"
+}

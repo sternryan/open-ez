@@ -55,3 +55,6 @@ private/
 # Lab app (built at site-assembly time)
 guide/lab/node_modules/
 guide/lab/dist/
+
+# Fabric request output (scripts/fabric_request.py)
+out/

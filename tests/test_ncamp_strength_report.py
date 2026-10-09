@@ -64,10 +64,29 @@ def test_unknown_mode_raises():
         nsr.case_result(plies, STR, "OHT")
 
 
-def test_report_regenerates_byte_for_byte(tmp_path):
+def _close(a, b):
+    """Equal keys and non-float fields exactly; floats to rel 1e-9 (the last digit differs across platforms)."""
+    if isinstance(a, dict):
+        return (
+            isinstance(b, dict)
+            and a.keys() == b.keys()
+            and all(_close(a[k], b[k]) for k in a)
+        )
+    if isinstance(a, list):
+        return (
+            isinstance(b, list)
+            and len(a) == len(b)
+            and all(_close(x, y) for x, y in zip(a, b))
+        )
+    if isinstance(a, float):
+        return isinstance(b, float) and a == pytest.approx(b, rel=1e-9)
+    return type(a) is type(b) and a == b
+
+
+def test_report_regenerates_to_tolerance(tmp_path):
     out = tmp_path / "r.json"
     assert nsr.main([str(out)]) == 0
-    assert out.read_text() == REPORT.read_text()
+    assert _close(json.loads(out.read_text()), json.loads(REPORT.read_text()))
 
 
 def test_report_carries_every_measured_case_and_no_gate():
