@@ -214,3 +214,59 @@ def test_main_refuses_unset_private_env(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as ei:
         briefing_server.main(["--site", str(tmp_path), "--port", "0"])
     assert ei.value.code == 2
+
+
+def raw(env, method, path, body=b"", headers=None):
+    import http.client
+
+    c = http.client.HTTPConnection("127.0.0.1", env.port, timeout=10)
+    c.request(method, path, body=body, headers=headers or {})
+    r = c.getresponse()
+    out = (r.status, r.read())
+    c.close()
+    return out
+
+
+def test_post_requires_json_content_type(env):
+    body = json.dumps({"record_id": "demo", "option": "alt", "reason": "r"}).encode()
+    assert raw(env, "POST", "/api/decide", body, {"Content-Type": "text/plain"})[0] == 415
+    assert yaml.safe_load(env.file.read_text())["status"] == "open"
+
+
+def test_foreign_host_or_origin_is_refused(env):
+    h = {"Content-Type": "application/json"}
+    assert raw(env, "GET", "/api/records", headers={"Host": "evil.example"})[0] == 403
+    assert raw(env, "POST", "/api/decide", b"{}", dict(h, Origin="http://evil.example"))[0] == 403
+    assert raw(env, "GET", "/api/records", headers={"Host": f"localhost:{env.port}"})[0] == 200
+
+
+def test_oversized_body_is_413(env):
+    big = b"x" * 200_000
+    assert raw(env, "POST", "/api/brief", big, {"Content-Type": "application/json"})[0] == 413
+
+
+def test_unhashable_option_is_400_not_500(env):
+    before = env.file.read_bytes()
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": [], "reason": "r"})[0] == 400
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": {"a": 1}, "reason": "r"})[0] == 400
+    assert env.file.read_bytes() == before
+
+
+def test_brief_does_not_touch_a_decided_record(env):
+    env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})
+    before = env.file.read_bytes()
+    status, out = env.req("POST", "/api/brief", {"record_id": "demo", "message": "again"})
+    assert status == 200 and env.file.read_bytes() == before
+
+
+def test_directory_listing_is_404(env):
+    (env.site / "sub").mkdir()
+    assert raw(env, "GET", "/sub/")[0] == 404
+
+
+def test_private_dir_inside_site_is_refused(tmp_path):
+    site = tmp_path / "site"
+    (site / "private").mkdir(parents=True)
+    with pytest.raises(SystemExit) as ei:
+        make_server(site, 0, site / "private")
+    assert ei.value.code == 2

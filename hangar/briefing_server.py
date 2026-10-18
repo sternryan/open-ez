@@ -175,9 +175,10 @@ def _reply_payload(reply: object) -> dict[str, Any]:
     }
 
 
-def _refuse_private_dir(private_dir: Path) -> None:
+def _refuse_private_dir(private_dir: Path, site: Path | None = None) -> None:
     resolved = Path(private_dir).resolve()
-    if resolved.is_relative_to(_REPO_ROOT):
+    if resolved.is_relative_to(_REPO_ROOT) or (site is not None and (
+            resolved.is_relative_to(Path(site).resolve()) or Path(site).resolve().is_relative_to(resolved))):
         print("HANGAR_PRIVATE_DIR resolves inside the repository", file=sys.stderr)
         raise SystemExit(2)
 
@@ -233,13 +234,45 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             except Exception:
                 return
 
+    _MAX_BODY = 64 * 1024
+
+    def _local_only(self) -> bool:
+        """Refuse foreign Host (DNS rebinding) and foreign Origin (cross-site requests)."""
+        port = self.server.server_address[1]
+        if self.headers.get("Host", "") not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+            self._send_json(403, {"error": "forbidden host"})
+            return False
+        origin = self.headers.get("Origin")
+        if origin and origin not in (f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
+            self._send_json(403, {"error": "forbidden origin"})
+            return False
+        return True
+
+    def list_directory(self, path):  # no directory listings
+        self.send_error(404)
+        return None
+
     def do_GET(self) -> None:
+        if not self._local_only():
+            return
         try:
             self._get()
         except Exception as exc:
             self._send_json(500, {"error": str(exc)})
 
     def do_POST(self) -> None:
+        if not self._local_only():
+            return
+        if not self.headers.get("Content-Type", "").lower().startswith("application/json"):
+            self._send_json(415, {"error": "content-type must be application/json"})
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            length = 0
+        if length > self._MAX_BODY:
+            self._send_json(413, {"error": "body too large"})
+            return
         try:
             self._post()
         except Exception as exc:
@@ -365,8 +398,8 @@ class BriefingHandler(SimpleHTTPRequestHandler):
         payload = _reply_payload(reply)
         with self.server.write_lock:
             self._append_turn(rec.id, message, payload)
-            if payload["error"] is None and payload["positions"]:
-                data = _read_mapping(path)
+            data = _read_mapping(path)
+            if payload["error"] is None and payload["positions"] and data.get("status") != "decided":
                 data["positions"] = copy.deepcopy(list(payload["positions"]))
                 if self._commit(path, data):
                     return
@@ -382,7 +415,8 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             option = body.get("option")
             reason = body.get("reason")
             rejected = (
-                option not in _option_ids(data)
+                not isinstance(option, str)
+                or option not in _option_ids(data)
                 or _blank(reason)
                 or data.get("status") == "decided"
             )
@@ -448,7 +482,7 @@ def make_server(
     council: Any = council.ask,
 ) -> ThreadingHTTPServer:
     """Bind the briefing service on loopback and return it (not yet serving)."""
-    _refuse_private_dir(private_dir)
+    _refuse_private_dir(private_dir, site)
     graph = guide.schema.load_graph(_REPO_ROOT / "guide" / "graph")
     return BriefingServer(
         port,
