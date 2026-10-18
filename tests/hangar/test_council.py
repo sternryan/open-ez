@@ -80,10 +80,32 @@ def test_good_cite_kept_bad_cite_dropped(tmp_path):
     assert p["judgment"] is True and p["reasoning"].endswith("(uncited)")
 
 
-def test_bad_role_and_option_dropped(tmp_path):
+def test_bad_role_dropped_bad_pick_dropped_but_advice_kept(tmp_path):
     out = ask(rec(tmp_path), "go", [], post=fake(reply_of([pos(role="chef"), pos(option="ghost"), pos()])))
-    assert len(out.positions) == 1
-    assert out.positions[0]["role"] == "propulsion" and out.positions[0]["picks"] == {"engine": "alt"}
+    assert [p["role"] for p in out.positions] == ["propulsion", "propulsion"]
+    assert out.positions[0]["picks"] == {}  # the ghost pick is gone; the comment-only advice stays
+    assert out.positions[1]["picks"] == {"engine": "alt"}
+
+
+def test_numeric_confidence_is_mapped(tmp_path):
+    got = [ask(rec(tmp_path), "go", [], post=fake(reply_of([pos(conf=c)]))).positions[0]["confidence"]
+           for c in (0.9, 0.75, 0.5, 0.2, 1.5, True)]
+    assert got == ["high", "high", "medium", "low", "low", "low"]
+
+
+def test_string_judgment_is_kept_visibly_and_flagged(tmp_path):
+    p = ask(rec(tmp_path), "go", [], post=fake(reply_of([pos(judgment="Best data-complete pick.")]))).positions[0]
+    assert p["judgment"] is True and p["reasoning"].endswith("Judgment: Best data-complete pick.")
+    q = ask(rec(tmp_path), "go", [], post=fake(reply_of([pos(judgment="")]))).positions[0]
+    assert q["judgment"] is False
+
+
+def test_prompt_asks_for_all_five_roles_and_typed_fields(tmp_path):
+    post = fake(reply_of([pos()]))
+    ask(rec(tmp_path), "go", [], post=post)
+    system = post.seen[0]["messages"][0]["content"]
+    assert all(r in system for r in ROLES) and "EACH of the five roles" in system
+    assert "boolean" in system and "low, medium or high" in system
 
 
 def test_bad_confidence_becomes_low(tmp_path):

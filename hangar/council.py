@@ -71,9 +71,20 @@ def backbone(rec: Record) -> dict:
         
     return res
 
+def _confidence(conf: Any) -> str:
+    """The enum, or a number in [0, 1] mapped to it (>= 0.75 high, >= 0.45 medium); anything else is low."""
+    if conf in ("low", "medium", "high"):
+        return conf
+    if isinstance(conf, (int, float)) and not isinstance(conf, bool) and 0 <= conf <= 1:
+        return "high" if conf >= 0.75 else "medium" if conf >= 0.45 else "low"
+    return "low"
+
+
 SYSTEM_PROMPT = (
     "JSON schema: positions[role,picks,confidence,reasoning,citations,judgment], reply_text, unknowns. "
-    "Roles: propulsion, structures, fuel-systems, aero-flight-test, historian. "
+    "Give exactly one position for EACH of the five roles: propulsion, structures, fuel-systems, aero-flight-test, historian. "
+    "confidence is the string low, medium or high. judgment is a boolean: true when the reasoning is opinion "
+    "rather than facts from the pack. A role with no pick on an axis gives picks {} and says why in reasoning. "
     "The pack contains axes ([{id, options}]). Each position provides picks as {axis_id: option_id} "
     "for the axes it has a view on. Use only axis ids and option ids from the pack; "
     "never recommend a dropped or unavailable option. "
@@ -180,7 +191,7 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
             # Validate picks
             picks_raw = p.get("picks")
             if not isinstance(picks_raw, dict):
-                continue
+                picks_raw = {}
             
             new_picks = {}
             for ax_id, opt_id in picks_raw.items():
@@ -189,19 +200,14 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
                 if ax_id in valid_axis_map and opt_id in valid_axis_map[ax_id]:
                     new_picks[ax_id] = opt_id
             
-            if not new_picks:
-                continue
-            
+            # A position with no valid pick is kept as comment-only advice (a concern or a dissent);
+            # invalid picks are dropped one by one above.
             p["picks"] = new_picks
 
             if not isinstance(p.get("reasoning"), str):
                 continue
 
-            conf = p.get("confidence")
-            if conf not in ["low", "medium", "high"]:
-                p["confidence"] = "low"
-            else:
-                p["confidence"] = conf
+            p["confidence"] = _confidence(p.get("confidence"))
 
             orig_cites = p.get("citations")
             kept_cites = []
@@ -222,8 +228,16 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
             n_given = len(orig_cites) if isinstance(orig_cites, list) else 0
             is_uncited = len(kept_cites) == 0 or len(kept_cites) != n_given
 
-            judgment = bool(p.get("judgment", False))
+            raw_judgment = p.get("judgment", False)
             reasoning = p["reasoning"]
+            if isinstance(raw_judgment, str):
+                # Some models put their opinion sentence here instead of a flag: keep the words, visibly.
+                judgment = False
+                if raw_judgment.strip():
+                    reasoning = f"{reasoning} Judgment: {raw_judgment.strip()}"
+                    judgment = True
+            else:
+                judgment = raw_judgment is True
             
             if is_uncited:
                 judgment = True
