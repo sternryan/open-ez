@@ -240,6 +240,16 @@ def test_foreign_host_or_origin_is_refused(env):
     assert raw(env, "GET", "/api/records", headers={"Host": f"localhost:{env.port}"})[0] == 200
 
 
+def test_allowed_proxy_origin_is_accepted_and_others_still_refused(env):
+    env.server.allow_origins = ("https://proxy.example:7497",)
+    h = {"Content-Type": "application/json", "Host": "proxy.example:7497"}
+    assert raw(env, "GET", "/api/records", headers={"Host": "proxy.example:7497"})[0] == 200
+    assert raw(env, "POST", "/api/decide", b"{}", dict(h, Origin="https://proxy.example:7497"))[0] == 400
+    assert raw(env, "POST", "/api/decide", b"{}", dict(h, Origin="https://evil.example"))[0] == 403
+    assert raw(env, "GET", "/api/records", headers={"Host": "evil.example"})[0] == 403
+    assert env.server.server_address[0] == "127.0.0.1"
+
+
 def test_oversized_body_is_413(env):
     big = b"x" * 200_000
     assert raw(env, "POST", "/api/brief", big, {"Content-Type": "application/json"})[0] == 413

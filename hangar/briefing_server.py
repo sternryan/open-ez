@@ -8,6 +8,7 @@ under the private directory, never in the repository.
 from __future__ import annotations
 
 import argparse
+from urllib.parse import urlsplit
 import copy
 import json
 import os
@@ -239,11 +240,13 @@ class BriefingHandler(SimpleHTTPRequestHandler):
     def _local_only(self) -> bool:
         """Refuse foreign Host (DNS rebinding) and foreign Origin (cross-site requests)."""
         port = self.server.server_address[1]
-        if self.headers.get("Host", "") not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+        allow = getattr(self.server, "allow_origins", ())
+        hosts = {f"127.0.0.1:{port}", f"localhost:{port}"} | {urlsplit(o).netloc for o in allow}
+        if self.headers.get("Host", "") not in hosts:
             self._send_json(403, {"error": "forbidden host"})
             return False
         origin = self.headers.get("Origin")
-        if origin and origin not in (f"http://127.0.0.1:{port}", f"http://localhost:{port}"):
+        if origin and origin not in {f"http://127.0.0.1:{port}", f"http://localhost:{port}", *allow}:
             self._send_json(403, {"error": "forbidden origin"})
             return False
         return True
@@ -517,11 +520,15 @@ def make_server(
     private_dir: Path,
     records_root: Path = DATA_ROOT,
     council: Any = council.ask,
+    allow_origins: tuple[str, ...] = (),
 ) -> ThreadingHTTPServer:
-    """Bind the briefing service on loopback and return it (not yet serving)."""
+    """Bind the briefing service on loopback and return it (not yet serving).
+
+    ``allow_origins`` adds origins (``scheme://host[:port]``) of a private reverse proxy in front of the
+    loopback socket; their host is accepted in ``Host`` too. The socket itself stays loopback-only."""
     _refuse_private_dir(private_dir, site)
     graph = guide.schema.load_graph(_REPO_ROOT / "guide" / "graph")
-    return BriefingServer(
+    server = BriefingServer(
         port,
         BriefingHandler,
         site=Path(site),
@@ -530,6 +537,8 @@ def make_server(
         records_root=Path(records_root),
         graph=graph,
     )
+    server.allow_origins = tuple(allow_origins)
+    return server
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -537,12 +546,15 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Hangar briefing companion")
     parser.add_argument("--site", type=Path, required=True)
     parser.add_argument("--port", type=int, default=8097)
+    parser.add_argument("--allow-origin", action="append", default=[],
+                        help="origin of a private reverse proxy, e.g. https://host:port (repeatable)")
     args = parser.parse_args(argv)
     private = os.environ.get("HANGAR_PRIVATE_DIR")
     if private is None or not str(private).strip():
         print("HANGAR_PRIVATE_DIR is unset", file=sys.stderr)
         raise SystemExit(2)
-    make_server(args.site, args.port, Path(str(private).strip())).serve_forever()
+    make_server(args.site, args.port, Path(str(private).strip()),
+                allow_origins=tuple(o.rstrip("/") for o in args.allow_origin)).serve_forever()
 
 
 if __name__ == "__main__":
