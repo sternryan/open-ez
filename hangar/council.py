@@ -247,6 +247,7 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
                     reasoning = f"{reasoning} (uncited)"
                 p["reasoning"] = reasoning
             
+            p["reasoning"] = reasoning
             p["judgment"] = judgment
             valid_positions.append(p)
 

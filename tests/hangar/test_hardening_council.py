@@ -163,14 +163,15 @@ def test_picks_are_validated_per_axis(tmp_path):
     r = make(tmp_path, two_axes())
     ps = [
         dict(pos(role="propulsion"), picks={"engine": "alt", "fuel_path": "f2", "colour": "red"}),  # bad axis dropped
-        dict(pos(role="structures"), picks={"engine": "f1"}),  # wrong option for the axis: nothing valid left, position dropped
+        dict(pos(role="structures"), picks={"engine": "f1"}),  # wrong option for the axis: pick dropped, advice kept
         dict(pos(role="historian"), picks={"fuel_path": "f1"}),  # partial picks are fine
         dict(pos(role="aero-flight-test"), picks="alt"),  # not a mapping
         dict(pos(role="fuel-systems"), picks={"engine": "old"}),  # a dropped option may be argued but not as a pick
     ]
     out = ask(r, "go", [], post=fake(reply_of(ps)))
     got = {p["role"]: p["picks"] for p in out.positions}
-    assert got == {"propulsion": {"engine": "alt", "fuel_path": "f2"}, "historian": {"fuel_path": "f1"}}
+    assert got == {"propulsion": {"engine": "alt", "fuel_path": "f2"}, "historian": {"fuel_path": "f1"},
+                   "structures": {}, "aero-flight-test": {}, "fuel-systems": {}}
 
 
 def test_prompt_and_backbone_carry_axes(tmp_path):
