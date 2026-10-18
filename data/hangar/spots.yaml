@@ -1,0 +1,20 @@
+- id: long-ez-1980
+  label: "1980 Rutan Long-EZ"
+  analogue: "concours restoration"
+  state: foundation
+  blurb: The book airplane, built exactly as the 1980 plans say: the knowledge foundation, open as the build rehearsal.
+- id: mod-ez
+  label: "Mod-EZ"
+  analogue: restomod
+  state: active
+  blurb: The modern Long-EZ: the same shape with a modern process, powerplant and systems, decided one record at a time.
+- id: rv-12
+  label: "Van's RV-12"
+  analogue: kit
+  state: reserved
+  blurb: A reserved spot for the second airplane this code is proven on.
+- id: model-1
+  label: "Stern Model 1"
+  analogue: "scratch build"
+  state: reserved
+  blurb: A reserved spot for an original design.

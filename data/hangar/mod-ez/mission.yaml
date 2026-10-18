@@ -1,0 +1,7 @@
+leg_nm: 300
+reserve_min: 30
+occupants_lb: [155, 155]
+bags_lb: 15
+cruise_ktas: {v: null, flag: unknown, note: "to be cited in Task 3"}
+fuel_capacity_gal: {v: null, flag: unknown, note: "to be cited in Task 3"}
+fuel_density_lb_per_gal: {v: null, flag: unknown, note: "to be cited in Task 3"}

@@ -1,0 +1,28 @@
+o235-book:
+  installed_lb: {v: 243, flag: sourced, cite: "tcds-e223:p7"}
+  cg_arm_in: {v: 141.05, flag: derived, note: "book engine arm by closure method"}
+  cruise_ff_gph: {v: null, flag: unknown}
+ul350i:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
+ul350is:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
+rotax-912is:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
+rotax-915is:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
+rotax-916is:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
+deltahawk-dhk180:
+  installed_lb: {v: null, flag: unknown}
+  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
+  cruise_ff_gph: {v: null, flag: unknown}
