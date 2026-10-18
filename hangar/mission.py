@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import dataclasses
 import yaml
 from core.ledger import load_ledger, in_envelope
+
+_DATA = Path(__file__).resolve().parents[1] / "data" / "hangar" / "mod-ez"
+
 
 @dataclass(frozen=True)
 class Value:
@@ -51,7 +55,7 @@ def _combine_values(v1: Value, v2: Value) -> Value:
     return Value(v1.v if v1.v is not None else v2.v, new_flag, new_note)
 
 def load_mission(private_dir: Path | None = None) -> dict:
-    path = Path("data/hangar/mod-ez/mission.yaml")
+    path = _DATA / "mission.yaml"
     with open(path, "r") as f:
         data = yaml.safe_load(f)
     if private_dir and (private_dir / "mission.yaml").exists():
@@ -63,7 +67,7 @@ def score(option_id: str, mission: dict = None, plants: dict = None) -> MissionS
     if mission is None:
         mission = load_mission()
     if plants is None:
-        with open("data/hangar/mod-ez/powerplants.yaml", "r") as f:
+        with open(_DATA / "powerplants.yaml", "r") as f:
             plants = yaml.safe_load(f)
 
     # Convert all Value-shaped dicts to Value objects
@@ -201,3 +205,38 @@ def score(option_id: str, mission: dict = None, plants: dict = None) -> MissionS
         assumptions=assumptions,
         worst_flag=worst_flag
     )
+
+
+def write_scores(root: Path) -> int:
+    """Recompute `mission_score` for every record under root that has one and write it back (scores are generated, never typed)."""
+    with open(_DATA / "powerplants.yaml", "r") as f:
+        plants = yaml.safe_load(f)
+    n = 0
+    for path in sorted(Path(root).glob("*/decisions/*.yaml")):
+        rec = yaml.safe_load(path.read_text())
+        if "mission_score" not in rec:
+            continue
+        ids = {o["id"] for o in rec.get("options", [])}
+        rec["mission_score"] = {
+            opt: dataclasses.asdict(score(opt, None, plants)) for opt in plants if opt in ids
+        }
+        path.write_text(yaml.safe_dump(rec, sort_keys=False, allow_unicode=True, width=120))
+        n += 1
+    return n
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="python -m hangar.mission")
+    ap.add_argument("--write-scores", action="store_true", help="recompute mission_score in the decision records")
+    ap.add_argument("--root", type=Path, default=_DATA.parent, help="records root (default data/hangar)")
+    args = ap.parse_args(argv)
+    if not args.write_scores:
+        ap.error("nothing to do; pass --write-scores")
+    print(f"scores written for {write_scores(args.root)} record(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
