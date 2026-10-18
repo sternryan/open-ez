@@ -111,9 +111,11 @@ def test_position_picks(tmp_path):
     d = two_axes()
     d["positions"] = [dict(base_pos, picks={"engine": "alt", "fuel_path": "f1"}), dict(base_pos, picks={"fuel_path": "f2"})]
     assert errs(tmp_path, d) == []
-    for bad in ({"colour": "alt"}, {"engine": "f1"}, ["alt"], {}):
+    for bad in ({"colour": "alt"}, {"engine": "f1"}, ["alt"]):
         d["positions"] = [dict(base_pos, picks=bad)]
         assert errs(tmp_path, d), bad
+    d["positions"] = [dict(base_pos, picks={})]  # comment-only advice is a valid position
+    assert errs(tmp_path, d) == []
 
 
 def test_decision_picks_with_two_axes_through_the_server_shape(tmp_path):
