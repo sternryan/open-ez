@@ -8850,3 +8850,40 @@ def test_m29_outside_shots_show_no_black_void(rsite):
             frac = dark / (img.width * img.height)
             print("near-black share", op, round(frac * 100, 2), "%")
             assert frac < 0.02, (op, frac)
+
+
+@pytest.fixture(scope="module")
+def public_briefing_site(tmp_path_factory):
+    """A --public site: briefing.html and hangar.json, no classic viewer and no companion service."""
+    tmp = tmp_path_factory.mktemp("public_briefing")
+    out = tmp / "site"
+    build(
+        ROOT / "guide" / "graph",
+        out,
+        models=None,
+        scan_base=None,
+        docs=None,
+        public=True,
+    )
+    return out
+
+
+def test_public_briefing_room_is_read_only(public_briefing_site):
+    """Review focus: a static public site shows the recommendation and awaiting briefing, with no chat or decide controls."""
+    s, url = serve(public_briefing_site)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 960, "height": 700})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "briefing.html#powerplant-fuel-resin")
+            pg.wait_for_selector('[data-test="recommendation"]')
+            assert pg.locator('[data-test="recommendation"]').is_visible()
+            assert pg.get_by_text("awaiting briefing", exact=True).is_visible()
+            assert pg.locator('[data-test="chat"]').count() == 0
+            assert pg.locator('[data-test="decide"]').count() == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
