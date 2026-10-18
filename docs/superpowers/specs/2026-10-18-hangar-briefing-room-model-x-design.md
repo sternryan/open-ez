@@ -242,6 +242,12 @@ generator.
 - **Models.** The council is the only part that needs a language model. It runs only when the owner is
   in the briefing room, never on a timer. Shop content stays fixed data, so the shop works with no
   model at all.
+- **Where the briefing room sits (owner, 2026-10-18):** inside the player, as part of one
+  self-contained app, not in a chat tool. The public static site keeps working with no backend: there
+  the briefing room shows decided records read-only. Talking to the council needs a small companion
+  service the owner runs privately (tailnet-only, never public), which serves the model calls, keeps
+  transcripts off the repo, and writes record updates for the owner to commit. The shop's
+  "decided in briefing N" marker opens the room on that record.
 - **Naming.** The rehearsal player has a workspace called "hangar bay". Rename it (for example "rental
   T-hangar") once phases 1 and 2 of the player land, so it never collides with the Hangar.
 
