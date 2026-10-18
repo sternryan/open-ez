@@ -1,6 +1,6 @@
-# The Hangar, the briefing room, and the Model X restomod
+# The Hangar, the briefing room, and the Mod-EZ restomod
 
-Status: design, from the owner brainstorm of 2026-10-18. Not yet approved.
+Status: approved by the owner 2026-10-18.
 
 ## 1. Intent
 
@@ -28,7 +28,7 @@ a spot in it:
 | Spot | What it is | Car-world analogue | State in this design |
 |---|---|---|---|
 | 1980 Rutan Long-EZ (Model 61, plans Section I, March 1980 first edition) | the book airplane, built exactly as the plans say: the knowledge foundation | concours restoration | exists as the rehearsal player; unchanged |
-| Stern Model X (working name; the owner names it) | the modern Long-EZ: the same shape with a modern process, powerplant and systems | restomod | **designed here** |
+| Mod-EZ (owner-named 2026-10-18) | the modern Long-EZ: the same shape with a modern process, powerplant and systems | restomod | **designed here** |
 | Van's RV-12 | the second airplane the code is proven on | kit car | reserved spot |
 | Stern Model 1 (bikeboatplane) | the owner's own design | scratch build | reserved spot |
 
@@ -38,15 +38,15 @@ The Hangar is a frame, not a new product. Two things are shared by every spot: t
 ## 2. Goals, non-goals, anti-goals
 
 **Goals**
-1. A Hangar index that shows the four spots. The Long-EZ spot opens the rehearsal player, the Model X
+1. A Hangar index that shows the four spots. The Long-EZ spot opens the rehearsal player, the Mod-EZ
    spot opens its decisions, and the reserved spots say what they are and that they are reserved.
-2. A **decision record** for every departure Model X makes from the book, which traces back to the
+2. A **decision record** for every departure Mod-EZ makes from the book, which traces back to the
    book steps it replaces and to its sources (section 4).
 3. A **briefing room** where the owner talks a decision through with an advisor council and closes it
    (section 3).
-4. Model X's first decision, **powerplant + fuel + tank resin**, run through the briefing room end to
+4. Mod-EZ's first decision, **powerplant + fuel + tank resin**, run through the briefing room end to
    end (section 5).
-5. A Model X path through the shop: the player shows the Model X build, swapping in each decided
+5. A Mod-EZ path through the shop: the player shows the Mod-EZ build, swapping in each decided
    departure, and marks the steps whose decisions are still open.
 
 **Non-goals**
@@ -55,7 +55,7 @@ The Hangar is a frame, not a new product. Two things are shared by every spot: t
   front (owner, 2026-10-07).
 - The council's ideas-generator mode for Model 1 ("bring your own idea"). It is named here so the
   council isn't designed in a way that forbids it, but it isn't designed.
-- Changes to the outer shape or aerodynamics. The roadmap's out-of-scope list still applies to Model X,
+- Changes to the outer shape or aerodynamics. The roadmap's out-of-scope list still applies to Mod-EZ,
   except for a cowl change the engine forces, which must be called out and analysed.
 - Any change to the book build. The Long-EZ spot keeps the book engine, the book fuel and every book step.
 
@@ -71,7 +71,7 @@ The Hangar is a frame, not a new product. Two things are shared by every spot: t
 ## 3. Two rooms: the shop and the briefing room
 
 **Shop: execution.** This is the rehearsal player as it exists: steps, materials, cure times, the
-gloves. In the Model X path it shows *what was decided*, never the debate. A step changed by a decision
+gloves. In the Mod-EZ path it shows *what was decided*, never the debate. A step changed by a decision
 carries a small marker (for example "UL350i, decided in briefing 3") that the owner can tap to jump to
 the record. A step whose decision is still open shows **awaiting briefing** instead of guessing.
 
@@ -116,10 +116,10 @@ backbone.
 One record per decision, stored as data in the repo (format is the builder's call; YAML beside
 `guide/graph/` is the natural fit). Fields:
 
-- `id`, `spot` (`model-x`), `title`, `status` (`open` | `decided` | `reopened`)
+- `id`, `spot` (`mod-ez`), `title`, `status` (`open` | `decided` | `reopened`)
 - `question`: what is being decided, in one sentence
 - `coupled_with`: other decision ids taken together
-- `replaces`: the book steps and parts (plans-graph ids) this departs from. Every Model X departure
+- `replaces`: the book steps and parts (plans-graph ids) this departs from. Every Mod-EZ departure
   must name at least one book step; that is what keeps the lineage.
 - `book_choice`: what the 1980 book did and the book's reason, with citations
 - `options`: every option considered, **including the book's choice and the dropped ones**, each with
@@ -137,28 +137,28 @@ One record per decision, stored as data in the repo (format is the builder's cal
 - `changes`: what the decision puts in the shop. A structured patch against the plans graph: the book
   steps it removes, and the substitute steps, parts and materials it adds. Substitute content follows
   the same provenance rule as book content; for the powerplant that means the manufacturer's
-  installation manual, cited. *(Designer's call: the shop shows real Model X execution, not only a
+  installation manual, cited. *(Designer's call: the shop shows real Mod-EZ execution, not only a
   marker on the book step, because the shop is where the owner understands the execution.)*
 - `evidence`: where the decision stands against the roadmap trust standard (paper, material, outside
   review, flight). A decided record is a design choice, not a trusted part.
 
 Gates (each must be shown to fail on a broken input, per the roadmap):
 - A record that cites an id missing from the registry fails.
-- A Model X record with an empty `replaces` fails.
+- A Mod-EZ record with an empty `replaces` fails.
 - A shop step tied to an `open` or `reopened` record renders **awaiting briefing**, never a default.
   When several coupled records touch one step, the step shows "awaiting briefing" if any of them is
   open or reopened, and otherwise lists every decided record in its marker.
 - A `decided` record can't change its `decision` without going back to `reopened` first, and that
   transition records a date and a reason.
 
-## 5. Model X's first decision: powerplant + fuel + tank resin
+## 5. Mod-EZ's first decision: powerplant + fuel + tank resin
 
-The roadmap ruled "Rotax, model open" (2026-09-29). **For Model X the owner opened the door wider
+The roadmap ruled "Rotax, model open" (2026-09-29). **For Mod-EZ the owner opened the door wider
 (2026-10-18):** UL Power, hybrid, electric and alternative fuels are all in scope. The roadmap spec
 needs a one-line amendment saying so.
 
 **Owner constraints (2026-10-18)**
-- **No 100LL.** It is being phased out, so Model X does not design around it. Mogas or electric only;
+- **No 100LL.** It is being phased out, so Mod-EZ does not design around it. Mogas or electric only;
   unleaded aviation gasolines count as "not 100LL".
 - The Long-EZ spot keeps the book engine and 100LL as the foundation.
 
@@ -203,12 +203,12 @@ fuel system architecture, and CG ballast. Each becomes its own decision record, 
 
 ## 6. Relationship to the roadmap
 
-Model X isn't a new phase after the roadmap. It is roadmap Blocks 3 to 6 seen as one airplane:
+Mod-EZ isn't a new phase after the roadmap. It is roadmap Blocks 3 to 6 seen as one airplane:
 - Block 3 (equivalence engine) supplies the paper case for structural departures;
 - Block 4 (process lane) holds the printed plugs, cast molds and vacuum-bagged layups;
 - Block 6 (engine and systems) is where section 5 sits.
 
-The decision record is the frame that makes them one design. Model X records for process changes (for
+The decision record is the frame that makes them one design. Mod-EZ records for process changes (for
 example "printed plug + cast mold instead of hot-wire foam" for a part) follow the same schema as the
 powerplant one.
 
@@ -220,14 +220,14 @@ powerplant one.
 2. **H2: the briefing room for one decision.** The council over that one record: the owner talks it
    through and closes it. Done when the owner has closed it in the briefing room and the record shows
    the decision and reason.
-3. **H3: Model X in the shop.** A Model X path through the player that applies decided records,
+3. **H3: Mod-EZ in the shop.** A Mod-EZ path through the player that applies decided records,
    shows markers, and renders "awaiting briefing" for open ones.
 
 **Dependencies.** H1 and H2 need only `main`. H3 depends on rehearsal player phases 1 and 2
 (`feat/rehearsal-p1`, `feat/rehearsal-p2`), which were not yet merged on 2026-10-18; it starts after they
 land, against their plans-graph step ids. The "hangar bay" rename (section 8) waits for the same landing.
 
-Later, each by the owner's word: more Model X decisions, the RV-12 spot, Model 1 and the ideas
+Later, each by the owner's word: more Mod-EZ decisions, the RV-12 spot, Model 1 and the ideas
 generator.
 
 ## 8. Constraints
@@ -238,7 +238,7 @@ generator.
   actuals.
 - **Sources.** The project's provenance rule applies unchanged: registry ids, page or URL citations,
   and visible flags for anything unsourced.
-- **The book build is untouched.** No Model X work changes the Long-EZ spot's data or steps.
+- **The book build is untouched.** No Mod-EZ work changes the Long-EZ spot's data or steps.
 - **Models.** The council is the only part that needs a language model. It runs only when the owner is
   in the briefing room, never on a timer. Shop content stays fixed data, so the shop works with no
   model at all.
@@ -258,8 +258,8 @@ generator.
   Which model lane serves it, following the project's cheapest-capable-lane rule.
 - How a conversation becomes a record update (the owner should not have to hand-edit YAML).
 - The Hangar index's look; it should match the player's.
-- The Model X path's mechanics in the player (overlay on the book DAG vs a derived DAG).
+- The Mod-EZ path's mechanics in the player (overlay on the book DAG vs a derived DAG).
 
 ## 10. Open for the owner
 
-- The Model X name.
+- None. The modern airplane is named Mod-EZ (owner, 2026-10-18).

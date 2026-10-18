@@ -15,7 +15,7 @@ shape, weights and CG envelope, but uses a new process and modern systems:
 by a fit-and-CG trade (Block 6), not up front.
 **Amended 2026-10-18 (owner):** the engine door is open wider than Rotax (UL Power, hybrid, electric,
 alternative fuels), and 100LL is out of scope for the modern airplane: mogas or electric only. See
-`2026-10-18-hangar-briefing-room-model-x-design.md` section 5.
+`2026-10-18-hangar-briefing-room-mod-ez-design.md` section 5.
 
 **Service assumptions (owner, 2026-09-29):** based at the owner's home field; design for outdoor tie-down (a hangar is
 hoped for, not assumed); the airplane travels, so hot ramps elsewhere are in the envelope; paint is

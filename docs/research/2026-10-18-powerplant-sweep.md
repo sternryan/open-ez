@@ -1,4 +1,4 @@
-> Research sweep, 2026-10-18. Public sources only; not yet spot-checked. Leads for the Model X powerplant decision record, not registered sources. See `docs/superpowers/specs/2026-10-18-hangar-briefing-room-model-x-design.md` section 5b.
+> Research sweep, 2026-10-18. Public sources only; not yet spot-checked. Leads for the Mod-EZ powerplant decision record, not registered sources. See `docs/superpowers/specs/2026-10-18-hangar-briefing-room-mod-ez-design.md` section 5b.
 
 # Long-EZ powerplant sweep (public sources only)
 
