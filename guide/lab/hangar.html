@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="data-base" content="./">
+  <title>Hangar</title>
+  <style>
+    /* Same tokens and card chrome as the shop (src/style.css), laid out as a page of spots rather than an overlay. */
+    :root {
+      --ink: #eee9e1;
+      --ink-dim: rgba(238, 233, 225, 0.6);
+      --ink-soft: rgba(238, 233, 225, 0.84);
+      --bg: #0f0d0b;
+      --card: rgba(18, 16, 14, 0.62);
+      --well: rgba(0, 0, 0, 0.22);
+      --line: rgba(238, 233, 225, 0.12);
+      --hover: rgba(238, 233, 225, 0.1);
+      --accent: #f2b15a;
+      --on-ink: #15120f;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --gap: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 13px/1.4 var(--sans); -webkit-font-smoothing: antialiased; }
+    body {
+      padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(var(--gap), env(safe-area-inset-left));
+      background:
+        radial-gradient(ellipse at 18% -10%, rgba(242, 177, 90, 0.07), transparent 46%),
+        var(--bg);
+    }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    header { max-width: 1080px; margin: 8px auto 18px; }
+    h1 { margin: 2px 0 0; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; font-weight: 600; letter-spacing: -0.01em; }
+    .kicker { margin: 0; font-size: 11px; line-height: 1.2; color: var(--ink-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+    #hangar { max-width: 1080px; margin: 0 auto; }
+    .spots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--gap); }
+    article.card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 180px;
+      padding: 16px 16px 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      -webkit-backdrop-filter: blur(16px) saturate(1.25);
+      backdrop-filter: blur(16px) saturate(1.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+    }
+    article.card h2 { margin: 0; font-size: 15px; line-height: 1.25; font-weight: 600; letter-spacing: -0.005em; }
+    .blurb { margin: 0; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; }
+    a { color: inherit; text-decoration: none; }
+    a.cover { display: flex; flex-direction: column; gap: 8px; flex: 1; border-radius: 8px; }
+    a.cover:hover h2 { color: var(--accent); }
+    article[data-state="active"] { border-color: rgba(242, 177, 90, 0.4); }
+    .records { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; }
+    .records li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .records a:hover { color: var(--accent); }
+    .status { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--accent); }
+    .flag { margin: auto 0 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink-dim); }
+    article[data-state="reserved"] { background: rgba(18, 16, 14, 0.4); }
+    #hangar:empty, #hangar:not(:has(.spots)) { color: var(--ink-dim); }
+  </style>
+</head>
+<body>
+  <header>
+    <p class="kicker">Spots</p>
+    <h1>Hangar</h1>
+  </header>
+  <div id="hangar"></div>
+  <script type="module" src="/src/hangar/index.ts"></script>
+</body>
+</html>

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from guide import layup, render_key
 from guide.schema import SchemaError, load_graph, topo_order, validate
+from hangar.records import load_records, load_spots
 
 VIEWER = Path(__file__).parent / "viewer"
 LAB = Path(__file__).parent / "lab"
@@ -22,6 +23,8 @@ _LAB_INPUTS = (
     "package.json",
     "package-lock.json",
     "index.html",
+    "hangar.html",
+    "briefing.html",
     "tsconfig.json",
     "vite.config.mjs",
 )
@@ -203,6 +206,14 @@ def _cutaway(g, models: Path, renders: Path, out: Path) -> dict:
     }
 
 
+def _hangar_payload() -> dict:
+    """Spots and decision records for the Hangar index. Records hold no private data, so a public build ships the same file."""
+    return {
+        "spots": load_spots(),
+        "records": {i: dataclasses.asdict(r) for i, r in load_records().items()},
+    }
+
+
 def build(
     graph_dir: Path,
     out: Path,
@@ -271,6 +282,7 @@ def build(
     (out / "config.json").write_text(
         json.dumps({"scanBase": scan_base, "model": "models/longez.glb"})
     )
+    (out / "hangar.json").write_text(json.dumps(_hangar_payload(), indent=1))
     (out / "models").mkdir()
     if models:
         shutil.copy(models, out / "models" / "longez.glb")
