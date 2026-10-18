@@ -1,5 +1,12 @@
 -r requirements.txt
+-r requirements-guide-dev.txt
 
 pre-commit>=3.7.0
 ruff>=0.5.4
 mypy>=1.10.0
+pytest-xdist>=3.5
+
+# CadQuery's OCP and VTK wheels must match: an unpinned install can pull a pair whose
+# OCP.IVtkOCC fails to import libvtkCommonCore.so. This pair is the one the suite runs on.
+cadquery-ocp==7.9.3.1.1
+vtk==9.6.2
