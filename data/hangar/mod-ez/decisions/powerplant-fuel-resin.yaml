@@ -143,7 +143,7 @@ mission_score:
   o235-book:
     option: o235-book
     empty_lb:
-      v: 730
+      v: 730.0
       flag: sourced
       note: ''
     empty_cg:
@@ -155,15 +155,15 @@ mission_score:
       flag: derived
       note: ''
     takeoff_lb:
-      v: 1140.115
+      v: 1148.115
       flag: derived
       note: ''
     takeoff_cg:
-      v: 102.52958473487324
+      v: 102.79067645662673
       flag: derived
       note: ''
     landing_cg:
-      v: 102.40442928929697
+      v: 102.68290906767727
       flag: derived
       note: ''
     range_full_fuel_nm:
@@ -177,13 +177,15 @@ mission_score:
     in_envelope: true
     assumptions:
     - book engine arm by closure method
-    - UL94 density applied to every gasoline option; mogas density is unsourced
+    - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
   ul350i:
     option: ul350i
     empty_lb:
-      v: 660
+      v: 660.0
       flag: sourced
       note: ''
     empty_cg:
@@ -195,15 +197,15 @@ mission_score:
       flag: derived
       note: ''
     takeoff_lb:
-      v: 1054.853
+      v: 1062.853
       flag: derived
       note: ''
     takeoff_cg:
-      v: 99.94486293350826
+      v: 100.24635438767167
       flag: derived
       note: ''
     landing_cg:
-      v: 99.69004863606595
+      v: 100.01029593118209
       flag: derived
       note: ''
     range_full_fuel_nm:
@@ -216,15 +218,17 @@ mission_score:
       note: ''
     in_envelope: true
     assumptions:
+    - ready-to-fly 78.4 kg (173 lb) as printed
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - factory estimated cruise average about 18 L/h divided by 3.785 L/gal; not tied to the mission speed
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
   ul350is:
     option: ul350is
     empty_lb:
-      v: 662
+      v: 662.0
       flag: sourced
       note: ''
     empty_cg:
@@ -257,10 +261,12 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
+    - possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - cruise fuel flow
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
   rotax-912is:
     option: rotax-912is
@@ -277,15 +283,15 @@ mission_score:
       flag: derived
       note: ''
     takeoff_lb:
-      v: 1041.3025
+      v: 1049.3025
       flag: derived
       note: ''
     takeoff_cg:
-      v: 99.64690495797332
+      v: 99.95456148250862
       flag: derived
       note: ''
     landing_cg:
-      v: 99.39964125691787
+      v: 99.72482768425357
       flag: derived
       note: ''
     range_full_fuel_nm:
@@ -298,9 +304,13 @@ mission_score:
       note: ''
     in_envelope: true
     assumptions:
+    - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6
+      kg = 75.4 kg; coolant and radiator weight unknown and not included
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
+    - 16.5 L/h at 75 percent continuous performance, 69 hp
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
   rotax-915is:
     option: rotax-915is
@@ -338,15 +348,17 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
+    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - cruise fuel flow
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
   rotax-916is:
     option: rotax-916is
     empty_lb:
-      v: 676
+      v: 676.0
       flag: sourced
       note: ''
     empty_cg:
@@ -379,15 +391,17 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
+    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - cruise fuel flow
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
   deltahawk-dhk180:
     option: deltahawk-dhk180
     empty_lb:
-      v: 822
+      v: 822.0
       flag: sourced
       note: ''
     empty_cg:
@@ -420,10 +434,12 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
+    - estimated, includes starter, alternator, turbo and exhaust
     - assumed same installed CG as the book engine
-    - UL94 density applied to every gasoline option; mogas density is unsourced
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - cruise fuel flow
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
+    - two tanks, 52 gal total; unusable fuel unknown
+    - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
 decision: null
 history: []
