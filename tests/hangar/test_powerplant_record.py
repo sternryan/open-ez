@@ -37,11 +37,20 @@ def test_fuel_paths_present():
     blob = yaml.safe_dump({"book": r.book_choice, "options": r.options})
     assert "ul94-ethanol-free" in blob and "mogas-e10" in blob
     paths = [o for o in r.options if o["id"] in ("ul94-ethanol-free", "mogas-e10")]
-    # the two fuel paths are listed as options of their own, each with a tank-resin consequence fact
     assert {o["id"] for o in paths} == {"ul94-ethanol-free", "mogas-e10"}
-    for o in paths:
-        assert any("resin" in f["text"].lower() for f in o["facts"])
+    for o in paths:  # resin follows from the fuel pick: the consequence is a structured, sourced-or-flagged field
+        imp = o["implies"]
+        assert "resin" in imp["tank_resin"].lower()
+        assert imp.get("cite") or imp.get("flag")
         assert all(f.get("cite") or f.get("flag") for f in o["facts"])
+
+
+def test_axes_declared():
+    r = rec()
+    axes = {a["id"]: a["options"] for a in r.axes}
+    assert list(axes) == ["engine", "fuel_path"]
+    assert set(axes["engine"]) == {"o235-book", "ul350i", "ul350is", "rotax-912is", "rotax-915is", "rotax-916is"}
+    assert axes["fuel_path"] == ["ul94-ethanol-free", "mogas-e10"]
 
 
 def test_replaces_engine_and_tanks():

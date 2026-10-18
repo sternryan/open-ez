@@ -72,7 +72,7 @@ def test_fence_and_prose_variants(tmp_path, content):
 def test_one_bad_position_does_not_kill_the_reply(tmp_path):
     bad = [
         "str", None, 5, dict(pos(), citations=None), dict(pos(), citations=[5, None, ["x"]]),
-        dict(pos(), option=["x"]), dict(pos(), reasoning=None), dict(pos(role="historian")),
+        dict(pos(), picks={"engine": ["x"]}), dict(pos(), reasoning=None), dict(pos(role="historian")),
     ]
     out = ask(rec(tmp_path), "go", [], post=fake(reply_of(bad)))
     assert out.error is None
@@ -155,3 +155,30 @@ def test_error_text_does_not_echo_the_url(tmp_path):
 
     out = ask(rec(tmp_path), "go", [], post=boom)
     assert out.error and "10.1.2.3" not in out.error and "secret" not in out.error
+
+
+def test_picks_are_validated_per_axis(tmp_path):
+    from tests.hangar.test_axes import two_axes
+
+    r = make(tmp_path, two_axes())
+    ps = [
+        dict(pos(role="propulsion"), picks={"engine": "alt", "fuel_path": "f2", "colour": "red"}),  # bad axis dropped
+        dict(pos(role="structures"), picks={"engine": "f1"}),  # wrong option for the axis: nothing valid left, position dropped
+        dict(pos(role="historian"), picks={"fuel_path": "f1"}),  # partial picks are fine
+        dict(pos(role="aero-flight-test"), picks="alt"),  # not a mapping
+        dict(pos(role="fuel-systems"), picks={"engine": "old"}),  # a dropped option may be argued but not as a pick
+    ]
+    out = ask(r, "go", [], post=fake(reply_of(ps)))
+    got = {p["role"]: p["picks"] for p in out.positions}
+    assert got == {"propulsion": {"engine": "alt", "fuel_path": "f2"}, "historian": {"fuel_path": "f1"}}
+
+
+def test_prompt_and_backbone_carry_axes(tmp_path):
+    from tests.hangar.test_axes import two_axes
+
+    r = make(tmp_path, two_axes())
+    assert backbone(r)["axes"][1]["id"] == "fuel_path"
+    post = fake(reply_of([pos()]))
+    ask(r, "go", [], post=post)
+    system = post.seen[0]["messages"][0]["content"].lower()
+    assert "picks" in system and "axes" in system

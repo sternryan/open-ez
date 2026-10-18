@@ -62,7 +62,7 @@ HOSTILE = [
     ("options", ["just a string"]), ("options", [{"id": "book", "kind": "book", "facts": ["str"], "why": "x"}]),
     ("options", [{"id": "book", "kind": "book", "facts": [{"text": "t", "cite": None}], "why": "x"}]),
     ("options", [{"id": "book", "kind": "book", "facts": [{"text": "t", "cite": 5}], "why": "x"}]),
-    ("positions", ["str"]), ("positions", [{"role": "propulsion", "option": ["x"], "citations": None}]),
+    ("positions", ["str"]), ("positions", [{"role": "propulsion", "picks": {"engine": ["x"]}, "citations": None}]),
     ("decision", "a string"), ("history", ["str"]), ("history", [{"from": "open"}]),
 ]
 
@@ -90,7 +90,7 @@ def test_option_without_id_fails(tmp_path):
 
 def test_open_record_with_history_fails(tmp_path):
     d = base()
-    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "x", "option": "alt"}]
+    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "x", "picks": {"engine": "alt"}}]
     assert errs(tmp_path, d)  # status open but history ends decided
 
 
@@ -105,23 +105,23 @@ def test_reopened_decision_option_must_exist(tmp_path):
     d = decided()
     d["history"].append({"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"})
     d["status"] = "reopened"
-    d["decision"] = {"option": "ghost", "date": "2026-10-20", "reason": "x"}
+    d["decision"] = {"picks": {"engine": "ghost"}, "date": "2026-10-20", "reason": "x"}
     assert any("ghost" in e for e in errs(tmp_path, d))
-    d["decision"]["option"] = "alt"
+    d["decision"]["picks"]["engine"] = "alt"
     assert errs(tmp_path, d) == []
 
 
 def test_decision_option_is_bound_to_history(tmp_path):
     """Review focus 3: editing decision.option alone (history untouched) must fail."""
     d = decided()
-    d["decision"]["option"] = "book"  # history still says the owner picked "alt"
+    d["decision"]["picks"]["engine"] = "book"  # history still says the owner picked "alt"
     out = errs(tmp_path, d)
-    assert out and any("option" in e for e in out)
+    assert out and any("pick" in e for e in out)
 
 
 def test_decided_history_entry_needs_option(tmp_path):
     d = decided()
-    d["history"][0].pop("option")
+    d["history"][0].pop("picks")
     assert errs(tmp_path, d)
 
 
@@ -152,7 +152,7 @@ def test_reopened_history_is_fully_checked(tmp_path):
     d["history"] = [{"to": "reopened"}]
     assert errs(tmp_path, d)
     d["history"] = [
-        {"date": "2026-10-20", "from": "open", "to": "decided", "reason": "r", "option": "alt"},
+        {"date": "2026-10-20", "from": "open", "to": "decided", "reason": "r", "picks": {"engine": "alt"}},
         {"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"},
     ]
     assert errs(tmp_path, d) == []

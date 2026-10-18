@@ -18,7 +18,7 @@ def rec(tmp_path):
 def pos(role="propulsion", option="alt", conf="medium", cites=("om-1980:p4",), judgment=False):
     return {
         "role": role,
-        "option": option,
+        "picks": {"engine": option},
         "confidence": conf,
         "reasoning": "because",
         "citations": list(cites),
@@ -83,7 +83,7 @@ def test_good_cite_kept_bad_cite_dropped(tmp_path):
 def test_bad_role_and_option_dropped(tmp_path):
     out = ask(rec(tmp_path), "go", [], post=fake(reply_of([pos(role="chef"), pos(option="ghost"), pos()])))
     assert len(out.positions) == 1
-    assert out.positions[0]["role"] == "propulsion" and out.positions[0]["option"] == "alt"
+    assert out.positions[0]["role"] == "propulsion" and out.positions[0]["picks"] == {"engine": "alt"}
 
 
 def test_bad_confidence_becomes_low(tmp_path):

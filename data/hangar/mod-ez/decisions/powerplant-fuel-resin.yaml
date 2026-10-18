@@ -2,6 +2,19 @@ id: powerplant-fuel-resin
 spot: mod-ez
 status: open
 question: Which engine, on which fuel, and with which tank resin, for the Mod-EZ?
+axes:
+- id: engine
+  options:
+  - o235-book
+  - ul350i
+  - ul350is
+  - rotax-912is
+  - rotax-915is
+  - rotax-916is
+- id: fuel_path
+  options:
+  - ul94-ethanol-free
+  - mogas-e10
 title: Powerplant, fuel and tank resin
 coupled_with: []
 replaces:
@@ -118,18 +131,17 @@ options:
   facts:
   - text: UL94 is ethanol-free and weighs 5.87 lb/gal
     cite: swift-ul94-faq:p1
-  - text: 'tank-resin consequence: no source tests UL94 on the book''s epoxy tanks, so a conventional tank resin is unconfirmed'
-    flag: unknown
   why: 'kept: removes the ethanol question, but no source shows how the book tank resin behaves in UL94, so the resin choice
     stays open'
+  implies:
+    tank_resin: No source tests UL94 on the book's epoxy tanks, so keeping the conventional tank resin is unconfirmed.
+    flag: unknown
 - id: mogas-e10
   label: Mogas E10
   kind: candidate
   facts:
   - text: ethanol can partly dissolve resins in composite tanks
     cite: bmaa-sb2695:p1
-  - text: 'tank-resin consequence: a fuel-resistant tank resin is needed, and which one is not yet decided'
-    flag: judgment
   - text: In a builder's 18-month immersion test (54 coupons, two per test) of E-Z Poxy, MGS and Jeffco epoxies in 100LL and
       8.4 percent ethanol mogas, none showed visible deterioration; all gained some weight, and post-cure mattered more than
       brand. Small sample, not a long-term or maker rating
@@ -138,6 +150,10 @@ options:
     tank resin is not shown safe), so this path needs a tank resin that is shown to hold up, with a good post-cure (the rehearsal
     player carries an open placeholder for it); vapor lock in a hot pusher engine bay is a further judgment-level concern
     with no source here'
+  implies:
+    tank_resin: Ethanol can partly dissolve some composite-tank resins, so this path needs a tank resin shown to hold up in
+      E10 with a good post-cure; which resin is not yet decided.
+    cite: bmaa-sb2695:p1
 positions: []
 mission_score:
   o235-book:

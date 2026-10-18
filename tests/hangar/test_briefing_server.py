@@ -62,7 +62,7 @@ class Env:
 
 def good_council(rec, message, history, **kw):
     return CouncilReply(
-        positions=[{"role": "propulsion", "option": "alt", "confidence": "medium",
+        positions=[{"role": "propulsion", "picks": {"engine": "alt"}, "confidence": "medium",
                     "reasoning": "lighter", "citations": ["om-1980:p4"], "judgment": False}],
         reply_text="here is my view", unknowns=["ethanol limit"],
     )
@@ -134,46 +134,46 @@ def test_brief_bad_input(env):
 
 
 def test_decide_happy_path(env):
-    status, out = env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "lighter"})
+    status, out = env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "lighter"})
     assert status == 200
     rec = yaml.safe_load(env.file.read_text())
     assert rec["status"] == "decided"
-    assert rec["decision"]["option"] == "alt" and rec["decision"]["reason"] == "lighter" and rec["decision"]["date"]
+    assert rec["decision"]["picks"]["engine"] == "alt" and rec["decision"]["reason"] == "lighter" and rec["decision"]["date"]
     assert [(h["from"], h["to"]) for h in rec["history"]] == [("open", "decided")]
     assert validate_all(env.root, REPO / "guide/graph") == []
 
 
 def test_decide_unknown_option_400_file_unchanged(env):
     before = env.file.read_bytes()
-    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "option": "ghost", "reason": "x"})
+    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "ghost"}, "reason": "x"})
     assert status == 400
     assert env.file.read_bytes() == before
 
 
 def test_decide_empty_reason_400(env):
     before = env.file.read_bytes()
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": " "})[0] == 400
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": " "})[0] == 400
     assert env.file.read_bytes() == before
 
 
 def test_decide_twice_400(env):
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})[0] == 200
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "r"})[0] == 200
     before = env.file.read_bytes()
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": "book", "reason": "r2"})[0] == 400
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "book"}, "reason": "r2"})[0] == 400
     assert env.file.read_bytes() == before
 
 
 def test_reopen_then_decide(env):
     assert env.req("POST", "/api/reopen", {"record_id": "demo", "reason": "x"})[0] == 400  # still open
-    env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "first"})
+    env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "first"})
     assert env.req("POST", "/api/reopen", {"record_id": "demo", "reason": ""})[0] == 400
     assert env.req("POST", "/api/reopen", {"record_id": "demo", "reason": "new data"})[0] == 200
     assert yaml.safe_load(env.file.read_text())["status"] == "reopened"
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": "book", "reason": "settled"})[0] == 200
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "book"}, "reason": "settled"})[0] == 200
     rec = yaml.safe_load(env.file.read_text())
     assert [(h["from"], h["to"]) for h in rec["history"]] == [
         ("open", "decided"), ("decided", "reopened"), ("reopened", "decided")]
-    assert rec["decision"]["option"] == "book"
+    assert rec["decision"]["picks"]["engine"] == "book"
     assert validate_all(env.root, REPO / "guide/graph") == []
 
 
@@ -182,7 +182,7 @@ def test_invalid_record_after_change_is_409(env):
     d["replaces"] = ["f99.nope"]  # fails the graph gate already on disk
     env.file.write_text(yaml.safe_dump(d))
     before = env.file.read_bytes()
-    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})
+    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "r"})
     assert status == 409
     assert env.file.read_bytes() == before
 
@@ -195,7 +195,7 @@ def test_atomic_write(env, monkeypatch):
         raise OSError("disk full")
 
     monkeypatch.setattr(os, "replace", boom)
-    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})
+    status, _ = env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "r"})
     assert status >= 500
     assert env.file.read_bytes() == before
     assert sorted(os.listdir(env.file.parent)) == names
@@ -228,7 +228,7 @@ def raw(env, method, path, body=b"", headers=None):
 
 
 def test_post_requires_json_content_type(env):
-    body = json.dumps({"record_id": "demo", "option": "alt", "reason": "r"}).encode()
+    body = json.dumps({"record_id": "demo", "picks": {"engine": "alt"}, "reason": "r"}).encode()
     assert raw(env, "POST", "/api/decide", body, {"Content-Type": "text/plain"})[0] == 415
     assert yaml.safe_load(env.file.read_text())["status"] == "open"
 
@@ -247,13 +247,13 @@ def test_oversized_body_is_413(env):
 
 def test_unhashable_option_is_400_not_500(env):
     before = env.file.read_bytes()
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": [], "reason": "r"})[0] == 400
-    assert env.req("POST", "/api/decide", {"record_id": "demo", "option": {"a": 1}, "reason": "r"})[0] == 400
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": []}, "reason": "r"})[0] == 400
+    assert env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": {"a": 1}}, "reason": "r"})[0] == 400
     assert env.file.read_bytes() == before
 
 
 def test_brief_does_not_touch_a_decided_record(env):
-    env.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})
+    env.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "r"})
     before = env.file.read_bytes()
     status, out = env.req("POST", "/api/brief", {"record_id": "demo", "message": "again"})
     assert status == 200 and env.file.read_bytes() == before
@@ -270,3 +270,27 @@ def test_private_dir_inside_site_is_refused(tmp_path):
     with pytest.raises(SystemExit) as ei:
         make_server(site, 0, site / "private")
     assert ei.value.code == 2
+
+
+def test_decide_with_two_axes(tmp_path):
+    from tests.hangar.test_axes import two_axes
+
+    e = Env(tmp_path, good_council)
+    try:
+        e.file.write_text(yaml.safe_dump(two_axes()))
+        before = e.file.read_bytes()
+        for picks in ({"engine": "alt"}, {"engine": "alt", "fuel_path": "ghost"}, {"engine": "old", "fuel_path": "f1"},
+                      {"engine": "alt", "fuel_path": "f1", "colour": "x"}, "alt", None):
+            status, _ = e.req("POST", "/api/decide", {"record_id": "demo", "picks": picks, "reason": "r"})
+            assert status == 400, picks
+            assert e.file.read_bytes() == before
+        assert e.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt", "fuel_path": "f2"}, "reason": " "})[0] == 400
+        assert e.req("POST", "/api/decide", {"record_id": "demo", "option": "alt", "reason": "r"})[0] == 400  # old shape
+        assert e.file.read_bytes() == before
+        status, _ = e.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt", "fuel_path": "f2"}, "reason": "r"})
+        assert status == 200
+        rec = yaml.safe_load(e.file.read_text())
+        assert rec["decision"]["picks"] == {"engine": "alt", "fuel_path": "f2"}
+        assert rec["history"][-1]["picks"] == {"engine": "alt", "fuel_path": "f2"}
+    finally:
+        e.close()

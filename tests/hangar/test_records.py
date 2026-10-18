@@ -28,6 +28,7 @@ def base() -> dict:
         "title": "Demo decision",
         "status": "open",
         "question": "Which engine?",
+        "axes": [{"id": "engine", "options": ["book", "alt"]}],
         "coupled_with": [],
         "replaces": ["f23.engine-install"],
         "book_choice": {"text": "the book engine", "cite": "om-1980:p4"},
@@ -107,7 +108,7 @@ def test_fact_needs_cite_or_flag(tmp_path):
 def position(role="propulsion", option="alt"):
     return {
         "role": role,
-        "option": option,
+        "picks": {"engine": option},
         "confidence": "medium",
         "reasoning": "because",
         "citations": ["om-1980:p4"],
@@ -134,8 +135,8 @@ def test_position_option_and_confidence(tmp_path):
 def decided(**kw):
     d = base()
     d["status"] = "decided"
-    d["decision"] = {"option": "alt", "date": "2026-10-20", "reason": "lighter"}
-    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "lighter", "option": "alt"}]
+    d["decision"] = {"picks": {"engine": "alt"}, "date": "2026-10-20", "reason": "lighter"}
+    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "lighter", "picks": {"engine": "alt"}}]
     d.update(kw)
     return d
 
@@ -147,31 +148,31 @@ def test_decided_record_is_valid(tmp_path):
 def test_decided_needs_decision(tmp_path):
     assert errs(tmp_path, decided(decision=None))
     d = base()
-    d["decision"] = {"option": "alt", "date": "2026-10-20", "reason": "x"}
+    d["decision"] = {"picks": {"engine": "alt"}, "date": "2026-10-20", "reason": "x"}
     assert errs(tmp_path, d)  # open with a decision
 
 
 def test_decision_option_exists(tmp_path):
-    d = decided(decision={"option": "ghost", "date": "2026-10-20", "reason": "x"})
+    d = decided(decision={"picks": {"engine": "ghost"}, "date": "2026-10-20", "reason": "x"})
     assert any("ghost" in e for e in errs(tmp_path, d))
 
 
 def test_decision_needs_reason(tmp_path):
-    d = decided(decision={"option": "alt", "date": "2026-10-20", "reason": ""})
+    d = decided(decision={"picks": {"engine": "alt"}, "date": "2026-10-20", "reason": ""})
     assert errs(tmp_path, d)
 
 
 def test_redecide_requires_reopen(tmp_path):
     bad = decided()
-    bad["history"].append({"date": "2026-10-21", "from": "decided", "to": "decided", "reason": "changed my mind", "option": "book"})
-    bad["decision"] = {"option": "book", "date": "2026-10-21", "reason": "changed my mind"}
+    bad["history"].append({"date": "2026-10-21", "from": "decided", "to": "decided", "reason": "changed my mind", "picks": {"engine": "book"}})
+    bad["decision"] = {"picks": {"engine": "book"}, "date": "2026-10-21", "reason": "changed my mind"}
     assert errs(tmp_path, bad)
     good = decided()
     good["history"] += [
         {"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"},
-        {"date": "2026-10-22", "from": "reopened", "to": "decided", "reason": "settled", "option": "book"},
+        {"date": "2026-10-22", "from": "reopened", "to": "decided", "reason": "settled", "picks": {"engine": "book"}},
     ]
-    good["decision"] = {"option": "book", "date": "2026-10-22", "reason": "settled"}
+    good["decision"] = {"picks": {"engine": "book"}, "date": "2026-10-22", "reason": "settled"}
     assert errs(tmp_path, good) == []
 
 
