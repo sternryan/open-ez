@@ -404,8 +404,14 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             data = _read_mapping(path)
             if payload["error"] is None and payload["positions"] and data.get("status") != "decided":
                 data["positions"] = copy.deepcopy(list(payload["positions"]))
-                if self._commit(path, data):
-                    return
+                # The owner still gets the council's answer when the record can't take the positions;
+                # the record stays byte-identical and the reason travels back as record_error.
+                try:
+                    errs = _atomic_write(path, data, self.server.graph, self.server.records_root)
+                except Exception as exc:  # noqa: BLE001 - reported, never swallowed
+                    errs = [str(exc)]
+                if errs:
+                    payload = dict(payload, record_error=list(errs))
         self._send_json(200, payload)
 
     def _decide(self, body: dict[str, Any]) -> None:

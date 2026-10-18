@@ -89,9 +89,9 @@ def load_records(root: Path = DATA_ROOT) -> dict[str, Record]:
 
 def _check_picks(picks: Any, axis_map: dict, kinds: dict, who: str, complete: bool, errors: list[str]) -> None:
     """Each pick: a declared axis, an option of that axis, and not dropped/unavailable. `complete` demands every axis."""
-    if not isinstance(picks, dict) or (not picks and not complete):
-        errors.append(f"{who} picks must be a non-empty dict" if not complete else f"{who} picks must be a dict")
-        return
+    if not isinstance(picks, dict):
+        errors.append(f"{who} picks must be a dict")
+        return  # an empty dict is a comment-only position; a decision's missing axes are caught below
     for ax_id, pick in picks.items():
         if not isinstance(ax_id, str) or ax_id not in axis_map:
             errors.append(f"{who} pick on unknown axis {ax_id}")

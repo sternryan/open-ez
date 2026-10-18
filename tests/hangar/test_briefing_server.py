@@ -114,6 +114,35 @@ def test_council_error_no_record_change(env):
     assert len((env.private / "transcripts" / "demo.jsonl").read_text().splitlines()) == 1
 
 
+def test_comment_only_position_is_written(env):
+    def council(rec, message, history, **kw):
+        return CouncilReply(
+            positions=[{"role": "aero-flight-test", "picks": {}, "confidence": "medium", "reasoning": "needs flight data",
+                        "citations": ["om-1980:p4"], "judgment": False}],
+            reply_text="ok", unknowns=[],
+        )
+
+    env.server.council = council  # type: ignore[attr-defined]
+    status, out = env.req("POST", "/api/brief", {"record_id": "demo", "message": "hi"})
+    assert status == 200 and "record_error" not in out
+    assert yaml.safe_load(env.file.read_text())["positions"][0]["picks"] == {}
+
+
+def test_reply_still_returned_when_record_rejects_positions(env):
+    def council(rec, message, history, **kw):
+        return CouncilReply(
+            positions=[{"role": "propulsion", "picks": {"ghost": "x"}, "confidence": "low", "reasoning": "r",
+                        "citations": [], "judgment": True}],
+            reply_text="the answer", unknowns=[],
+        )
+
+    env.server.council = council  # type: ignore[attr-defined]
+    before = env.file.read_bytes()
+    status, out = env.req("POST", "/api/brief", {"record_id": "demo", "message": "hi"})
+    assert status == 200 and out["reply_text"] == "the answer" and out["record_error"]
+    assert env.file.read_bytes() == before
+
+
 def test_council_unavailable_is_503_no_change(tmp_path):
     def unavailable(rec, message, history, **kw):
         raise CouncilUnavailable("no env")
