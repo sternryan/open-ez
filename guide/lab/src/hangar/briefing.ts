@@ -1,6 +1,15 @@
 // Briefing room. renderBriefingHtml is pure so tests can run it without a DOM.
 
-import { skin, statusLabel, type DecisionRecord, type HangarData, type Position, type Unknown } from './model'
+import {
+  skin,
+  statusLabel,
+  type Axis,
+  type DecisionRecord,
+  type HangarData,
+  type Option,
+  type Position,
+  type Unknown,
+} from './model'
 import {
   detectMode,
   reduce,
@@ -66,17 +75,40 @@ function renderList(items: string[], empty: string): string {
   return `<ul>${items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul>`
 }
 
+function renderDecision(record: DecisionRecord): string {
+  const decision = record.decision
+  if (!decision) return ''
+  const picks = decision.picks ?? {}
+  const ordered: string[] = []
+  const seen = new Set<string>()
+  for (const axis of record.axes ?? []) {
+    const id = picks[axis.id]
+    if (typeof id === 'string' && id) {
+      ordered.push(recommendationText(record, id))
+      seen.add(axis.id)
+    }
+  }
+  for (const [axis, id] of Object.entries(picks)) {
+    if (!seen.has(axis) && id) ordered.push(recommendationText(record, id))
+  }
+  return `<p class="decision"><span class="label">Decision</span> ${esc(ordered.join(' + '))} — ${esc(decision.reason)}</p>`
+}
+
 function renderSkin(record: DecisionRecord, state: State): string {
   const view = skin(record)
   const label = statusLabel({ ...record, status: state.status })
-  const recText = view.recommendation ? recommendationText(record, view.recommendation) : 'None yet'
-  const decision = record.decision
-    ? `<p class="decision"><span class="label">Decision</span> ${esc(record.decision.option)} — ${esc(record.decision.reason)}</p>`
-    : ''
+  const lines: string[] = []
+  for (const axis of record.axes ?? []) {
+    const id = view.recommendations[axis.id]
+    if (!id) continue
+    lines.push(`<p class="rec"><span class="label">${esc(axis.id)}</span> ${esc(recommendationText(record, id))}</p>`)
+  }
+  const recBody = lines.length > 0 ? lines.join('') : '<p class="rec">None yet</p>'
+  const decision = renderDecision(record)
   return `<section class="panel skin">
     <div data-test="recommendation">
       <p class="kicker">Recommendation</p>
-      <p class="rec">${esc(recText)}</p>
+      ${recBody}
     </div>
     <p><span class="label">Why</span> ${esc(view.why ?? '—')}</p>
     <p><span class="label">Confidence</span> ${esc(view.confidence ?? '—')}</p>
@@ -113,6 +145,14 @@ function renderBook(book: Record<string, unknown>): string {
   return chunks.join('') || '<p class="muted">No book choice recorded.</p>'
 }
 
+function renderImplies(option: Option): string {
+  const implies = option.implies
+  if (!implies || typeof implies.tank_resin !== 'string' || !implies.tank_resin.trim()) return ''
+  const cite = implies.cite ? ` <span class="cite">${esc(implies.cite)}</span>` : ''
+  const flag = implies.flag ? ` <span class="flag" data-flag="${esc(implies.flag)}">${esc(implies.flag)}</span>` : ''
+  return `<p class="implies">${esc(implies.tank_resin)}${cite}${flag}</p>`
+}
+
 function renderOptions(record: DecisionRecord): string {
   const options = record.options ?? []
   if (options.length === 0) return '<p class="muted">No options recorded.</p>'
@@ -121,7 +161,7 @@ function renderOptions(record: DecisionRecord): string {
       const facts = (o.facts ?? []).map((fact) => renderFact(fact)).join('')
       const why = o.why ? `<p>${esc(o.why)}</p>` : ''
       const list = facts ? `<ul>${facts}</ul>` : ''
-      return `<article class="option"><h3>${esc(o.label)} <span class="kind">${esc(o.kind)}</span></h3>${list}${why}</article>`
+      return `<article class="option"><h3>${esc(o.label)} <span class="kind">${esc(o.kind)}</span></h3>${list}${why}${renderImplies(o)}</article>`
     })
     .join('')
 }
@@ -168,12 +208,24 @@ function renderScore(record: DecisionRecord, id: string, row: unknown): string {
   return `<article class="score"><h3>${title}</h3>${list}${worstHtml}${assumptions}</article>`
 }
 
+/** Recommended engine when the council has one, otherwise the first option on the engine axis. */
+function missionEngineId(record: DecisionRecord): string | null {
+  const recommended = skin(record).recommendations.engine
+  if (typeof recommended === 'string' && recommended) return recommended
+  const engine = (record.axes ?? []).find((axis) => axis.id === 'engine')
+  const first = engine?.options?.[0]
+  return typeof first === 'string' && first ? first : null
+}
+
 function renderMission(record: DecisionRecord): string {
   const score = record.mission_score
   if (score === null || score === undefined) return '<p class="muted">No mission scores.</p>'
   if (typeof score !== 'object' || Array.isArray(score)) return `<p>${esc(formatUnknown(score))}</p>`
-  return Object.entries(score as Record<string, unknown>)
-    .map(([id, row]) => renderScore(record, id, row))
+  const table = score as Record<string, unknown>
+  const id = missionEngineId(record)
+  if (id) return renderScore(record, id, table[id])
+  return Object.entries(table)
+    .map(([key, row]) => renderScore(record, key, row))
     .join('')
 }
 
@@ -211,19 +263,52 @@ function renderChat(state: State): string {
   </form>${list}${err}`
 }
 
+function selectableOptions(record: DecisionRecord, axis: Axis): { id: string; label: string }[] {
+  const byId = new Map((record.options ?? []).map((o) => [o.id, o]))
+  const out: { id: string; label: string }[] = []
+  for (const id of axis.options ?? []) {
+    const found = byId.get(id)
+    if (found && (found.kind === 'dropped' || found.kind === 'unavailable')) continue
+    out.push({ id, label: found?.label || id })
+  }
+  return out
+}
+
 function renderDecide(record: DecisionRecord, state: State): string {
-  const options = (record.options ?? [])
-    .map((o) => `<option value="${esc(o.id)}">${esc(o.label || o.id)}</option>`)
+  const selects = (record.axes ?? [])
+    .map((axis) => {
+      const options = selectableOptions(record, axis)
+        .map((o) => `<option value="${esc(o.id)}">${esc(o.label)}</option>`)
+        .join('')
+      return `<label>${esc(axis.id)} <select name="pick-${esc(axis.id)}" required>${options}</select></label>`
+    })
     .join('')
   const disabled = state.decideEnabled ? '' : ' disabled'
   return `<form data-test="decide">
     <fieldset${disabled}>
       <legend>Decide</legend>
-      <label>Option <select name="option" required><option value="">Select an option</option>${options}</select></label>
+      ${selects}
       <label>Reason <textarea name="reason" required rows="3"></textarea></label>
       <button type="submit">Decide</button>
     </fieldset>
   </form>`
+}
+
+/** Reads `pick-<axisId>` fields into the body POST api/decide sends, aside from the record id. */
+export function buildDecidePayload(
+  data: { get(name: string): unknown },
+  axes: readonly { id: string }[],
+): { picks: Record<string, string>; reason: string } {
+  const picks: Record<string, string> = {}
+  for (const axis of axes) {
+    const raw = data.get(`pick-${axis.id}`)
+    if (typeof raw !== 'string') continue
+    const value = raw.trim()
+    if (value) picks[axis.id] = value
+  }
+  const reasonRaw = data.get('reason')
+  const reason = typeof reasonRaw === 'string' ? reasonRaw.trim() : ''
+  return { picks, reason }
 }
 
 function renderReopen(state: State): string {
@@ -303,17 +388,31 @@ function replyText(body: unknown): string {
   return typeof text === 'string' ? text : ''
 }
 
+function asPicks(value: unknown): Record<string, string> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const out: Record<string, string> = {}
+  for (const [key, pick] of Object.entries(value)) {
+    if (typeof pick !== 'string') return null
+    const trimmed = pick.trim()
+    if (!trimmed) return null
+    out[key] = trimmed
+  }
+  return out
+}
+
 function asPositions(value: unknown): Position[] | null {
   if (!Array.isArray(value)) return null
   const out: Position[] = []
   for (const item of value) {
     if (!item || typeof item !== 'object') return null
     const p = item as Record<string, unknown>
-    if (typeof p.role !== 'string' || typeof p.option !== 'string') return null
+    if (typeof p.role !== 'string') return null
+    const picks = asPicks(p.picks)
+    if (!picks) return null
     const citations = Array.isArray(p.citations) ? p.citations.filter((c): c is string => typeof c === 'string') : []
     out.push({
       role: p.role,
-      option: p.option,
+      picks,
       confidence: typeof p.confidence === 'string' ? p.confidence : 'low',
       reasoning: typeof p.reasoning === 'string' ? p.reasoning : '',
       citations,
@@ -520,11 +619,12 @@ async function onSubmit(ev: Event): Promise<void> {
         record = fresh ?? applyReply(current, res.body)
       }
     } else if (kind === 'decide') {
-      const option = String(data.get('option') ?? '').trim()
-      const reason = String(data.get('reason') ?? '').trim()
-      if (!option || !reason || !snapshot.decideEnabled) return
+      const axes = current.axes ?? []
+      const built = buildDecidePayload(data, axes)
+      const complete = axes.length > 0 && axes.every((axis) => built.picks[axis.id])
+      if (!complete || !built.reason || !snapshot.decideEnabled) return
       inflight = true
-      const res = await postJson('api/decide', { record_id: current.id, option, reason })
+      const res = await postJson('api/decide', { record_id: current.id, picks: built.picks, reason: built.reason })
       if (gen !== generation || !state) return
       if (!res.ok) {
         state = reduce(state, { type: 'errored', message: failureMessage(res.status, res.body) })
@@ -532,7 +632,7 @@ async function onSubmit(ev: Event): Promise<void> {
         state = reduce(state, { type: 'decided' })
         const fresh = await refreshRecord(current.id)
         if (gen !== generation) return
-        record = fresh ?? { ...current, status: 'decided', decision: { option, date: '', reason } }
+        record = fresh ?? { ...current, status: 'decided', decision: { picks: built.picks, date: '', reason: built.reason } }
       }
     } else {
       const reason = String(data.get('reason') ?? '').trim()

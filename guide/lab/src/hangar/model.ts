@@ -10,17 +10,24 @@ export type Spot = {
 
 export type OptionFact = { text: string; cite?: string; flag?: string }
 
+/** A fuel-path consequence: which tank resin that option forces, and where that claim comes from. */
+export type Implies = { tank_resin: string; cite?: string; flag?: string }
+
 export type Option = {
   id: string
   label: string
   kind: string
   facts: OptionFact[]
   why: string
+  implies?: Implies
 }
+
+/** One axis of a decision. `options` are option ids, in display order. */
+export type Axis = { id: string; options: string[] }
 
 export type Position = {
   role: string
-  option: string
+  picks: Record<string, string>
   confidence: string
   reasoning: string
   citations: string[]
@@ -30,9 +37,16 @@ export type Position = {
 /** A gap no source fills. `text` (or `what`) is the gap; `how` is how it would be found. */
 export type Unknown = { text?: string; what?: string; how?: string }
 
-export type Decision = { option: string; date: string; reason: string }
+export type Decision = { picks: Record<string, string>; date: string; reason: string }
 
-export type HistoryEntry = { date: string; from: string; to: string; reason: string }
+export type HistoryEntry = {
+  date: string
+  from: string
+  to: string
+  reason: string
+  /** Present when `to` is `decided`: the option id chosen on each axis. */
+  picks?: Record<string, string>
+}
 
 export type Evidence = {
   paper: string
@@ -50,6 +64,7 @@ export type DecisionRecord = {
   coupled_with: string[]
   replaces: string[]
   book_choice: Record<string, unknown>
+  axes: Axis[]
   options: Option[]
   positions: Position[]
   unknowns: Unknown[]
@@ -66,7 +81,10 @@ export type HangarData = {
 }
 
 export type Skin = {
+  /** Winning option ids in axis order, joined with ` + `. Null when no axis has a majority. */
   recommendation: string | null
+  /** Majority option id per axis. A tie, or no picks on that axis, is null. */
+  recommendations: Record<string, string | null>
   why: string | null
   confidence: string | null
   disagreements: string[]
@@ -97,18 +115,14 @@ function unknownLine(u: Unknown | string): string {
   return text || how
 }
 
-/**
- * The owner's skin: the option most advisors picked, their why and confidence,
- * the dissenters' reasoning, and the unknowns. No positions means no recommendation.
- */
-export function skin(r: DecisionRecord): Skin {
-  const unknowns = (r.unknowns ?? []).map(unknownLine).filter((s) => s.length > 0)
-  const positions = r.positions ?? []
-  if (positions.length === 0) {
-    return { recommendation: null, why: null, confidence: null, disagreements: [], unknowns }
-  }
+/** Unique highest count among positions that picked on this axis. A tie or no picks is null. */
+function axisMajority(positions: Position[], axisId: string): string | null {
   const counts = new Map<string, number>()
-  for (const p of positions) counts.set(p.option, (counts.get(p.option) ?? 0) + 1)
+  for (const p of positions) {
+    const pick = p.picks?.[axisId]
+    if (typeof pick !== 'string' || pick.length === 0) continue
+    counts.set(pick, (counts.get(pick) ?? 0) + 1)
+  }
   let best: string | null = null
   let bestN = 0
   let tied = false
@@ -121,27 +135,69 @@ export function skin(r: DecisionRecord): Skin {
       tied = true
     }
   }
-  if (best === null || tied) {
-    // A split council has no recommendation, and every position is dissent the owner should see.
-    const all = positions.map(labelled).filter((t) => typeof t === 'string' && t.length > 0)
-    return { recommendation: null, why: null, confidence: null, disagreements: all, unknowns }
-  }
-  const winners = positions.filter((p) => p.option === best)
-  let confidence = winners[0]?.confidence ?? null
+  if (best === null || tied) return null
+  return best
+}
+
+function lowestConfidence(positions: Position[]): string | null {
+  let confidence: string | null = null
   let low = Infinity
-  for (const p of winners) {
+  for (const p of positions) {
     const rank = CONFIDENCE_RANK[p.confidence] ?? 0
     if (rank < low) {
       low = rank
       confidence = p.confidence in CONFIDENCE_RANK ? p.confidence : 'low'
     }
   }
+  return confidence
+}
+
+/**
+ * The owner's skin, one majority per axis. `recommendation` joins the winning
+ * option ids with ` + ` in axis order. Advisors who match a winning pick supply
+ * the why and the lowest confidence; advisors who picked against a winner on
+ * some axis supply the disagreements. A fully tied council (no axis has a
+ * majority) recommends nothing and shows every reasoning.
+ */
+export function skin(r: DecisionRecord): Skin {
+  const unknowns = (r.unknowns ?? []).map(unknownLine).filter((s) => s.length > 0)
+  const axes = r.axes ?? []
+  const positions = r.positions ?? []
+  const recommendations: Record<string, string | null> = {}
+  for (const axis of axes) recommendations[axis.id] = axisMajority(positions, axis.id)
+  const winning = axes
+    .map((axis) => recommendations[axis.id])
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+  const recommendation = winning.length > 0 ? winning.join(' + ') : null
+  if (recommendation === null) {
+    return {
+      recommendation: null,
+      recommendations,
+      why: null,
+      confidence: null,
+      disagreements: positions.map(labelled).filter((t) => t.length > 0),
+      unknowns,
+    }
+  }
+  const agrees = (p: Position) =>
+    axes.some((axis) => {
+      const win = recommendations[axis.id]
+      return typeof win === 'string' && p.picks?.[axis.id] === win
+    })
+  const dissents = (p: Position) =>
+    axes.some((axis) => {
+      const win = recommendations[axis.id]
+      const pick = p.picks?.[axis.id]
+      return typeof win === 'string' && typeof pick === 'string' && pick !== win
+    })
+  const winners = positions.filter(agrees)
   const why = winners.map(labelled).filter((s) => s.length > 0).join(' ')
   return {
-    recommendation: best,
+    recommendation,
+    recommendations,
     why: why || null,
-    confidence,
-    disagreements: positions.filter((p) => p.option !== best).map(labelled),
+    confidence: lowestConfidence(winners),
+    disagreements: positions.filter(dissents).map(labelled).filter((s) => s.length > 0),
     unknowns,
   }
 }

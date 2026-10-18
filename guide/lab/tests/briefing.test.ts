@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { DecisionRecord, Option } from '../src/hangar/model'
 import type { State } from '../src/hangar/briefingState'
-import { linesFromTurns, renderBriefingHtml } from '../src/hangar/briefing'
+import { buildDecidePayload, linesFromTurns, renderBriefingHtml } from '../src/hangar/briefing'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
   return {
@@ -14,6 +14,7 @@ function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
     coupled_with: [],
     replaces: [],
     book_choice: {},
+    axes: [],
     options: [],
     positions: [],
     unknowns: [],
@@ -51,11 +52,12 @@ test('read-only render has no live controls and shows awaiting briefing', () => 
   const html = renderBriefingHtml(
     rec({
       status: 'open',
+      axes: [{ id: 'engine', options: ['ul350i', 'rotax-912is'] }],
       options: [ulOption],
       positions: [
-        { role: 'propulsion', option: 'ul350i', confidence: 'high', reasoning: 'lighter', citations: [], judgment: false },
-        { role: 'structures', option: 'ul350i', confidence: 'high', reasoning: 'mogas', citations: [], judgment: false },
-        { role: 'fuel-systems', option: 'rotax-912is', confidence: 'low', reasoning: 'burns less', citations: [], judgment: false },
+        { role: 'propulsion', picks: { engine: 'ul350i' }, confidence: 'high', reasoning: 'lighter', citations: [], judgment: false },
+        { role: 'structures', picks: { engine: 'ul350i' }, confidence: 'high', reasoning: 'mogas', citations: [], judgment: false },
+        { role: 'fuel-systems', picks: { engine: 'rotax-912is' }, confidence: 'low', reasoning: 'burns less', citations: [], judgment: false },
       ],
       unknowns: [{ text: 'ethanol limit', how: 'ask the maker' }],
     }),
@@ -82,7 +84,7 @@ test('read-only render has no live controls and shows awaiting briefing', () => 
 
 test('live render has chat, decide, and reopen', () => {
   const html = renderBriefingHtml(
-    rec({ options: [ulOption] }),
+    rec({ axes: [{ id: 'engine', options: ['ul350i'] }], options: [ulOption] }),
     'live',
     base({
       mode: 'live',
@@ -119,6 +121,11 @@ test('a record title containing script is escaped', () => {
           kind: 'book',
           facts: [{ text: '<script>fact</script>', cite: 'om-1980:p4', flag: '<script>flag</script>' }],
           why: '<script>why</script>',
+          implies: {
+            tank_resin: '<script>resin</script>',
+            cite: '<script>resincite</script>',
+            flag: '<script>resinflag</script>',
+          },
         },
       ],
       mission_score: {
@@ -137,6 +144,9 @@ test('a record title containing script is escaped', () => {
   assert.match(html, /&lt;script&gt;fact&lt;\/script&gt;/)
   assert.match(html, /&lt;script&gt;flag&lt;\/script&gt;/)
   assert.match(html, /&lt;script&gt;why&lt;\/script&gt;/)
+  assert.match(html, /&lt;script&gt;resin&lt;\/script&gt;/)
+  assert.match(html, /&lt;script&gt;resincite&lt;\/script&gt;/)
+  assert.match(html, /&lt;script&gt;resinflag&lt;\/script&gt;/)
   assert.match(html, /&lt;script&gt;score&lt;\/script&gt;/)
   assert.match(html, /&lt;script&gt;assume&lt;\/script&gt;/)
 })
@@ -145,12 +155,18 @@ test('decided record shows decided in briefing 1', () => {
   const html = renderBriefingHtml(
     rec({
       status: 'decided',
-      history: [{ date: '2026-10-20', from: 'open', to: 'decided', reason: 'settled' }],
+      axes: [{ id: 'engine', options: ['ul350i'] }],
+      options: [ulOption],
+      decision: { picks: { engine: 'ul350i' }, date: '2026-10-20', reason: 'settled <b>why</b>' },
+      history: [{ date: '2026-10-20', from: 'open', to: 'decided', reason: 'settled <b>why</b>', picks: { engine: 'ul350i' } }],
     }),
     'read-only',
     base({ status: 'decided', decideEnabled: false }),
   )
   assert.match(html, /decided in briefing 1/)
+  assert.match(html, /class="decision"[\s\S]*UL350i \(ul350i\)/)
+  assert.match(html, /settled &lt;b&gt;why&lt;\/b&gt;/)
+  assert.equal(html.includes('<b>'), false)
   assert.equal(html.includes('data-test="decide"'), false)
 })
 
@@ -158,8 +174,10 @@ test('a decided live room keeps decide in the page and disables it', () => {
   const html = renderBriefingHtml(
     rec({
       status: 'decided',
+      axes: [{ id: 'engine', options: ['ul350i'] }],
       options: [ulOption],
-      history: [{ date: '2026-10-20', from: 'open', to: 'decided', reason: 'settled' }],
+      decision: { picks: { engine: 'ul350i' }, date: '2026-10-20', reason: 'settled' },
+      history: [{ date: '2026-10-20', from: 'open', to: 'decided', reason: 'settled', picks: { engine: 'ul350i' } }],
     }),
     'live',
     base({ mode: 'live', status: 'decided', decideEnabled: false }),
@@ -175,6 +193,7 @@ test('backbone lists options, the book choice, and mission-score flags', () => {
   const html = renderBriefingHtml(
     rec({
       book_choice: { text: 'the book engine', cite: 'om-1980:p15' },
+      axes: [{ id: 'engine', options: ['o235-book'] }],
       options: [
         {
           id: 'o235-book',
@@ -220,4 +239,110 @@ test('linesFromTurns reads the server transcript shape and shows council errors'
     { who: 'owner', text: 'again' },
     { who: 'error', text: 'council call failed: TimeoutError' },
   ])
+})
+
+test('live decide form has one select per axis and only that axis options', () => {
+  const html = renderBriefingHtml(
+    rec({
+      axes: [
+        { id: 'engine', options: ['o235-book', 'ul350i', 'deltahawk-dhk180', 'hybrid'] },
+        { id: 'fuel_path', options: ['ul94-ethanol-free', 'mogas-e10'] },
+      ],
+      options: [
+        { id: 'o235-book', label: 'Lycoming O-235', kind: 'book', facts: [], why: '' },
+        { id: 'ul350i', label: 'UL350i', kind: 'candidate', facts: [], why: '' },
+        { id: 'deltahawk-dhk180', label: 'DeltaHawk DHK180', kind: 'dropped', facts: [], why: '' },
+        { id: 'hybrid', label: 'Hybrid', kind: 'unavailable', facts: [], why: '' },
+        { id: 'ul94-ethanol-free', label: 'UL94 Ethanol-Free', kind: 'candidate', facts: [], why: '' },
+        { id: 'mogas-e10', label: 'Mogas E10', kind: 'candidate', facts: [], why: '' },
+      ],
+    }),
+    'live',
+    base({ mode: 'live' }),
+  )
+  const decideAt = html.indexOf('data-test="decide"')
+  const reopenAt = html.indexOf('data-test="reopen"')
+  assert.ok(decideAt >= 0 && reopenAt > decideAt)
+  const decide = html.slice(decideAt, reopenAt)
+  const selects = [...decide.matchAll(/<label>([\s\S]*?)<select name="([^"]+)"[^>]*>([\s\S]*?)<\/select>/g)]
+  assert.deepEqual(
+    selects.map((m) => m[2]),
+    ['pick-engine', 'pick-fuel_path'],
+  )
+  assert.equal(selects[0][1].trim(), 'engine')
+  assert.equal(selects[1][1].trim(), 'fuel_path')
+  const values = (body: string) => [...body.matchAll(/value="([^"]*)"/g)].map((m) => m[1])
+  assert.deepEqual(values(selects[0][3]), ['o235-book', 'ul350i'])
+  assert.deepEqual(values(selects[1][3]), ['ul94-ethanol-free', 'mogas-e10'])
+  assert.equal(decide.includes('DeltaHawk'), false)
+  assert.equal(decide.includes('Hybrid'), false)
+  assert.equal(decide.includes('name="option"'), false)
+  assert.match(decide, /name="reason"/)
+  assert.match(decide, /required/)
+})
+
+test('buildDecidePayload produces picks keyed by axis', () => {
+  const fields: Record<string, string> = {
+    'pick-engine': 'ul350i',
+    'pick-fuel_path': ' mogas-e10 ',
+    reason: ' because ',
+    option: 'ignored',
+  }
+  const payload = buildDecidePayload(
+    { get: (name: string) => fields[name] ?? null },
+    [{ id: 'engine' }, { id: 'fuel_path' }],
+  )
+  assert.deepEqual(payload.picks, { engine: 'ul350i', fuel_path: 'mogas-e10' })
+  assert.equal(payload.reason, 'because')
+})
+
+test('backbone shows each recommended pick, fuel-path consequences, and one engine score', () => {
+  const axes = [
+    { id: 'engine', options: ['o235-book', 'ul350i'] },
+    { id: 'fuel_path', options: ['mogas-e10'] },
+  ]
+  const options = [
+    { id: 'o235-book', label: 'Lycoming O-235', kind: 'book' as const, facts: [], why: '' },
+    { id: 'ul350i', label: 'UL350i', kind: 'candidate' as const, facts: [], why: '' },
+    {
+      id: 'mogas-e10',
+      label: 'Mogas E10',
+      kind: 'candidate' as const,
+      facts: [],
+      why: '',
+      implies: { tank_resin: 'needs resin <shown>', cite: 'bmaa-sb2695:p1' },
+    },
+  ]
+  const mission_score = {
+    'o235-book': { empty_lb: { v: 730, flag: 'sourced' }, assumptions: ['book-score-marker'] },
+    ul350i: { empty_lb: { v: 660, flag: 'derived' }, assumptions: ['ul-score-marker'] },
+  }
+  const noRec = renderBriefingHtml(rec({ axes, options, mission_score }), 'read-only', base())
+  assert.match(noRec, /book-score-marker/)
+  assert.equal(noRec.includes('ul-score-marker'), false)
+  assert.match(noRec, /needs resin &lt;shown&gt;/)
+  assert.match(noRec, /bmaa-sb2695:p1/)
+  assert.equal(noRec.includes('<shown>'), false)
+  assert.equal(noRec.includes('data-test="decide"'), false)
+
+  const recommended = renderBriefingHtml(
+    rec({
+      axes,
+      options,
+      mission_score,
+      positions: [
+        { role: 'propulsion', picks: { engine: 'ul350i', fuel_path: 'mogas-e10' }, confidence: 'high', reasoning: 'lighter', citations: [], judgment: false },
+        { role: 'structures', picks: { engine: 'ul350i', fuel_path: 'mogas-e10' }, confidence: 'high', reasoning: 'lighter', citations: [], judgment: false },
+      ],
+    }),
+    'read-only',
+    base(),
+  )
+  assert.match(recommended, /ul-score-marker/)
+  assert.equal(recommended.includes('book-score-marker'), false)
+  const block = recommended.slice(recommended.indexOf('data-test="recommendation"'), recommended.indexOf('>Why<'))
+  assert.match(block, /engine/)
+  assert.match(block, /UL350i \(ul350i\)/)
+  assert.match(block, /fuel_path/)
+  assert.match(block, /Mogas E10 \(mogas-e10\)/)
 })
