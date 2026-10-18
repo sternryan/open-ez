@@ -140,3 +140,16 @@ test('renderHangarHtml survives a spot with a missing blurb and encodes the reco
   const html = renderHangarHtml(data)
   assert.ok(html.includes('briefing.html#a%20b'))
 })
+
+test('skin labels an advisor judgment as judgment', () => {
+  const r = {
+    id: 'x', title: 't', status: 'open',
+    positions: [
+      { role: 'propulsion', option: 'a', confidence: 'high', reasoning: 'I prefer a', citations: ['om-1980:p4'], judgment: true },
+      { role: 'structures', option: 'b', confidence: 'low', reasoning: 'b is heavier', citations: [], judgment: false },
+    ],
+  } as unknown as DecisionRecord
+  const s = skin(r)
+  assert.equal(s.why, '(judgment) I prefer a')
+  assert.deepEqual(s.disagreements, ['b is heavier'])
+})

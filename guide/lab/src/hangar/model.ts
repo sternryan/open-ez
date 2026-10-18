@@ -73,6 +73,12 @@ export type Skin = {
   unknowns: string[]
 }
 
+/** An advisor's opinion is shown as opinion, never as a sourced fact. */
+function labelled(p: Position): string {
+  const t = typeof p.reasoning === 'string' ? p.reasoning : ''
+  return p.judgment && t ? `(judgment) ${t}` : t
+}
+
 const CONFIDENCE_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 }
 
 /** Open and reopened records wait. A decided record names the briefing that last closed it. */
@@ -117,7 +123,7 @@ export function skin(r: DecisionRecord): Skin {
   }
   if (best === null || tied) {
     // A split council has no recommendation, and every position is dissent the owner should see.
-    const all = positions.map((p) => p.reasoning).filter((t) => typeof t === 'string' && t.length > 0)
+    const all = positions.map(labelled).filter((t) => typeof t === 'string' && t.length > 0)
     return { recommendation: null, why: null, confidence: null, disagreements: all, unknowns }
   }
   const winners = positions.filter((p) => p.option === best)
@@ -130,12 +136,12 @@ export function skin(r: DecisionRecord): Skin {
       confidence = p.confidence in CONFIDENCE_RANK ? p.confidence : 'low'
     }
   }
-  const why = winners.map((p) => p.reasoning).filter((s) => s.length > 0).join(' ')
+  const why = winners.map(labelled).filter((s) => s.length > 0).join(' ')
   return {
     recommendation: best,
     why: why || null,
     confidence,
-    disagreements: positions.filter((p) => p.option !== best).map((p) => p.reasoning),
+    disagreements: positions.filter((p) => p.option !== best).map(labelled),
     unknowns,
   }
 }

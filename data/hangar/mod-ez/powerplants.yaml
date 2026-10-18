@@ -30,9 +30,10 @@ ul350i:
 ul350is:
   installed_lb:
     v: 175
-    flag: sourced
+    flag: derived
     cite: ulpower-techdata:p1
-    note: possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS
+    note: possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS; oil cooler and gauges are extra, so not
+      a complete installed weight
   cg_arm_in:
     v: 141.05
     flag: derived
