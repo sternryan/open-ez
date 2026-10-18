@@ -59,10 +59,14 @@ def test_replaces_engine_and_tanks():
     assert any(i.startswith("f21.") for i in r.replaces)
 
 
-def test_status_open_no_decision():
+def test_closed_by_the_owner_in_the_briefing_room():
+    # H2 proof (2026-10-18): the owner closed this record; it changes again only through reopen
     r = rec()
-    assert r.status == "open" and r.decision is None and r.positions == []
-    assert r.spot == "mod-ez" and r.history == []
+    picks = {"engine": "rotax-912is", "fuel_path": "ul94-ethanol-free"}
+    assert r.spot == "mod-ez" and r.status == "decided"
+    assert r.decision["picks"] == picks and r.decision["date"] == "2026-10-18" and r.decision["reason"].strip()
+    assert [(h["from"], h["to"], h["picks"]) for h in r.history] == [("open", "decided", picks)]
+    assert {p["role"] for p in r.positions} <= {"propulsion", "structures", "fuel-systems", "aero-flight-test", "historian"}
 
 
 def test_ul_power_ethanol_unknown():
