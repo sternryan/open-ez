@@ -208,7 +208,7 @@ sources:
     note: a single web page, cite p1; read and noted, never stored in the repo. No ethanol percentage appears on the page, so the ethanol limit is unknown.
   rotax-912is-om:
     title: Rotax 912 iS operator's manual (D05875), hosted by a third party
-    edition: PDF read 2026-10-18; fuel consumption at 75 percent continuous performance is 16.5 L/h (4.3 gal/h)
+    edition: PDF read 2026-10-18; fuel consumption at 75 percent continuous performance is 16.5 L/h (4.3 gal/h), 51.8 kW (69 hp), specific consumption 250 g/kWh
     obtain: https://avsport.org/acft/Rotax/912iS/912iS_operators_manual_d05875.pdf
     copy: transcription
     page_basis: pdf
@@ -250,11 +250,11 @@ sources:
     note: cite p1; read and noted, never stored in the repo.
   kitplanes-tank-epoxy-2018:
     title: Kitplanes, Rapid Prototyping and Experimental Design, epoxy fuel resistance coupon test
-    edition: web article read 2026-10-18; 54 coupons, two per test, 18 months in 100LL, 93 octane E10 (8.4 percent ethanol measured) and acetone; no obvious degradation in avgas or mogas coupons, moderate to severe in acetone
+    edition: web article read 2026-10-18; three epoxies (E-Z Poxy E-Z 10 with E-Z 87, MGS 285/287, Jeffco 1307/3176), three post-cure treatments, three liquids (100LL, 93 octane E10 with 8.4 percent ethanol measured, acetone); 54 coupons, two per test, 18 months; none of the coupons in 100LL or E10 showed visible deterioration, all gained some weight (least in avgas, less with warmer post-cure), acetone coupons degraded slight to severe; post-cure mattered more than brand
     obtain: https://www.kitplanes.com/rapid-prototyping-and-experimental-design-17/
     copy: transcription
     page_basis: pdf
-    note: cite p1; a builder's test with n=2 per cell, not a manufacturer rating. Read and noted, never stored in the repo.
+    note: cite p1; a builder's test with n=2 per cell, not a manufacturer rating and not a long-term result. Read and noted, never stored in the repo.
   wired-yates-2013:
     title: Wired, Chip Yates electric Long-EZ record flights (July 2013)
     edition: web article read 2026-10-18; EnerDel pack, 450 V, 80 amp-hour, 525 lb, takes up the entire back seat

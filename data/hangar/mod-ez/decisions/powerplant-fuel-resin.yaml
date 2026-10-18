@@ -10,8 +10,8 @@ replaces:
 - f21.inside-layups
 - f21.plumbing
 book_choice:
-  text: the book airplane uses the Lycoming O-235 (115 hp class), two tanks totalling 52 gal and 100LL; max true cruise 161
-    kt at 75 percent
+  text: the book airplane uses the Lycoming O-235, two wing tanks totalling 52 gal, aviation gasoline, and a maximum true
+    cruise of 161 kt at 75 percent power
   cite: om-1980:p15
 options:
 - id: o235-book
@@ -37,8 +37,9 @@ options:
     cite: ulpower-ul350i:p1
   - text: ethanol limit
     flag: unknown
-  why: 'kept: lightest installed weight of the candidates, so the tail gets lighter and the empty CG moves forward; runs on
-    mogas; its ethanol limit is the open question'
+  why: 'kept: about 70 lb lighter installed than the book engine on the maker''s ready-to-fly weight, so the tail gets lighter
+    and the empty CG moves forward; runs on mogas; its ethanol limit is the open question. Weight bases differ between candidates
+    (ready-to-fly, operational, a build-up of listed parts), so the weights are not strictly like for like'
 - id: ul350is
   label: UL350iS
   kind: candidate
@@ -60,8 +61,8 @@ options:
     cite: rotax-fuel-si:p1
   - text: coolant and radiator weight
     flag: unknown
-  why: 'kept: the only candidate with a published fuel flow near the mission cruise power; approved for mogas up to 10 percent
-    ethanol, which ties it to the tank-resin question'
+  why: 'kept: a published fuel flow at 75 percent power (69 hp), close to the mission cruise power; the maker limits ethanol
+    to 10 percent, which ties it to the tank-resin question; coolant and radiator weight are not yet known'
 - id: rotax-915is
   label: Rotax 915iS
   kind: candidate
@@ -93,20 +94,24 @@ options:
   facts:
   - text: a flown electric Long-EZ carried a 525 lb pack, 450 V 80 Ah
     cite: wired-yates-2013:p1
-  - text: 36,000 Wh over 238 kg
+  - text: 'The flown pack stored 36 kWh (450 V x 80 Ah = 36,000 Wh) in 525 lb (238 kg): about 151 Wh/kg at pack level'
     flag: derived
   - text: a 500 Wh/kg cell is a company claim, cell level only
     cite: amprius-sicore500:p1
-  - text: 136 kWh over 500 Wh/kg
+  - text: 'Method: shaft power 52 kW at 150 kt (cube-law scaling of the manual''s 161 kt at 75 percent of 115 hp) over 0.96
+      motor efficiency for 2.5 h is about 136 kWh; at 500 Wh/kg that is about 272 kg (600 lb) of cells before pack structure
+      and reserve'
     flag: derived
-  why: does not close the mission; kept so it can be reopened when cells improve.
+  why: 'dropped for now: the numbers do not close the 300 nm mission with a pack that has flown (151 Wh/kg) or a claimed cell
+    (500 Wh/kg, cell level); kept so it can be reopened when cells improve'
 - id: hybrid
   label: Hybrid
   kind: unavailable
   facts:
   - text: no homebuilder hybrid kit with a published price was found
     flag: unknown
-  why: considered, not available.
+  why: 'none found: no homebuilder hybrid kit with a published price turned up in the sweep (not independently re-checked);
+    kept so it can be reopened'
 - id: ul94-ethanol-free
   label: UL94 Ethanol-Free
   kind: candidate
@@ -125,11 +130,14 @@ options:
     cite: bmaa-sb2695:p1
   - text: 'tank-resin consequence: a fuel-resistant tank resin is needed, and which one is not yet decided'
     flag: judgment
-  - text: in a builder's 18-month coupon test, E-Z Poxy and Jeffco coupons showed no obvious degradation in 100LL or 8.4 percent
-      ethanol mogas, two coupons per cell
+  - text: In a builder's 18-month immersion test (54 coupons, two per test) of E-Z Poxy, MGS and Jeffco epoxies in 100LL and
+      8.4 percent ethanol mogas, none showed visible deterioration; all gained some weight, and post-cure mattered more than
+      brand. Small sample, not a long-term or maker rating
     cite: kitplanes-tank-epoxy-2018:p1
-  why: 'kept: the common automotive fuel, but ethanol attacks conventional tank resin, so this path needs a fuel-resistant
-    resin (the rehearsal player carries an open placeholder for it) and attention to vapor lock in a hot pusher engine bay'
+  why: 'kept: the common automotive fuel, but ethanol can partly dissolve some composite-tank resins (judgment: the book''s
+    tank resin is not shown safe), so this path needs a tank resin that is shown to hold up, with a good post-cure (the rehearsal
+    player carries an open placeholder for it); vapor lock in a hot pusher engine bay is a further judgment-level concern
+    with no source here'
 positions: []
 mission_score:
   o235-book:
@@ -429,6 +437,9 @@ unknowns:
   how: soak coupons of the actual tank resin
 - text: unusable fuel in the 52 gal tanks
   how: measure on the airframe
+- text: The published cruise fuel flows sit at different power points (O-235 at 65 percent and 77 hp, 912 iS at 75 percent
+    and 69 hp, UL350i a factory average), so the mission scores compare them only roughly
+  how: flight-test or a common-power model for each engine
 evidence:
   paper: none
   material: none
