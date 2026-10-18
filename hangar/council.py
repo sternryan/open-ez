@@ -61,6 +61,7 @@ def backbone(rec: Record) -> dict:
         "mission_scores": rec.mission_score,
         "cites": sorted_cites,
         "sources": sources,
+        "axes": rec.axes if hasattr(rec, 'axes') and isinstance(rec.axes, list) else []
     }
     
     if hasattr(rec, 'coupled_with'):
@@ -71,8 +72,11 @@ def backbone(rec: Record) -> dict:
     return res
 
 SYSTEM_PROMPT = (
-    "JSON schema: positions[role,option,confidence,reasoning,citations,judgment], reply_text, unknowns. "
+    "JSON schema: positions[role,picks,confidence,reasoning,citations,judgment], reply_text, unknowns. "
     "Roles: propulsion, structures, fuel-systems, aero-flight-test, historian. "
+    "The pack contains axes ([{id, options}]). Each position provides picks as {axis_id: option_id} "
+    "for the axes it has a view on. Use only axis ids and option ids from the pack; "
+    "never recommend a dropped or unavailable option. "
     "Citation format: <id>:p<page>. "
     "Behaviors: cite only from the pack, say unknown rather than estimate, "
     "disagree out loud and keep dissent, name couplings, answer against the mission scores. "
@@ -151,7 +155,15 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
         valid_positions = []
         backbone_data = backbone(rec)
         backbone_cites = set(backbone_data["cites"])
-        opt_ids = {o["id"] for o in rec.options} if hasattr(rec, 'options') else set()
+        
+        # axis id -> option ids a position may pick (declared in the axis, not dropped or unavailable)
+        kinds = {o.get("id"): o.get("kind") for o in (rec.options if isinstance(rec.options, list) else []) if isinstance(o, dict)}
+        valid_axis_map = {}
+        for ax in backbone_data.get("axes", []):
+            if isinstance(ax, dict) and isinstance(ax.get("id"), str) and isinstance(ax.get("options"), list):
+                valid_axis_map[ax["id"]] = {
+                    o for o in ax["options"] if isinstance(o, str) and kinds.get(o) not in ("dropped", "unavailable")
+                }
 
         positions_raw = data.get("positions")
         if not isinstance(positions_raw, list):
@@ -165,9 +177,22 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
             if not isinstance(role, str) or role not in ROLES:
                 continue
             
-            option = p.get("option")
-            if not isinstance(option, str) or option not in opt_ids:
+            # Validate picks
+            picks_raw = p.get("picks")
+            if not isinstance(picks_raw, dict):
                 continue
+            
+            new_picks = {}
+            for ax_id, opt_id in picks_raw.items():
+                if not isinstance(ax_id, str) or not isinstance(opt_id, str):
+                    continue
+                if ax_id in valid_axis_map and opt_id in valid_axis_map[ax_id]:
+                    new_picks[ax_id] = opt_id
+            
+            if not new_picks:
+                continue
+            
+            p["picks"] = new_picks
 
             if not isinstance(p.get("reasoning"), str):
                 continue
@@ -194,7 +219,6 @@ def ask(rec: Record, message: str, history: list[dict], post: Optional[Callable[
             
             p["citations"] = kept_cites
             
-            # A position is uncited when it has no surviving citation, or any citation was dropped.
             n_given = len(orig_cites) if isinstance(orig_cites, list) else 0
             is_uncited = len(kept_cites) == 0 or len(kept_cites) != n_given
 

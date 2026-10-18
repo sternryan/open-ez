@@ -412,25 +412,58 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             return
         with self.server.write_lock:
             data = _read_mapping(path)
-            option = body.get("option")
+            picks = body.get("picks")
             reason = body.get("reason")
-            rejected = (
-                not isinstance(option, str)
-                or option not in _option_ids(data)
-                or _blank(reason)
-                or data.get("status") == "decided"
-            )
-            if rejected:
+
+            # Validation
+            if not isinstance(picks, dict) or not picks:
                 self._send_json(400, {"error": "decision rejected"})
                 return
-            if not isinstance(reason, str):
+            if not isinstance(reason, str) or _blank(reason):
                 self._send_json(400, {"error": "decision rejected"})
                 return
+            if data.get("status") == "decided":
+                self._send_json(400, {"error": "decision rejected"})
+                return
+
+            # Check axes and options
+            axes = data.get("axes", [])
+            if not isinstance(axes, list):
+                self._send_json(400, {"error": "decision rejected"})
+                return
+
+            # Map axis_id -> options_list
+            axis_map = {a["id"]: a.get("options", []) for a in axes if isinstance(a, dict) and "id" in a}
+            
+            # 1. Check if all axes in record have a pick
+            if len(picks) != len(axis_map):
+                self._send_json(400, {"error": "decision rejected"})
+                return
+            
+            # 2. Check if every pick is a valid axis and valid option
+            for axis_id, option_id in picks.items():
+                if axis_id not in axis_map:
+                    self._send_json(400, {"error": "decision rejected"})
+                    return
+                
+                options = axis_map[axis_id]
+                if not isinstance(options, list):
+                    self._send_json(400, {"error": "decision rejected"})
+                    return
+                
+                # Check if option_id is a string in the options list
+                valid_options = [o["id"] for o in options if isinstance(o, dict) and "id" in o]
+                if not isinstance(option_id, str) or option_id not in valid_options:
+                    self._send_json(400, {"error": "decision rejected"})
+                    return
+
+            # Success
             today = date.today().isoformat()
             updated = copy.deepcopy(data)
             updated["status"] = "decided"
             cleaned = reason.strip()
-            updated["decision"] = {"option": option, "date": today, "reason": cleaned}
+            updated["decision"] = {"picks": picks, "date": today, "reason": cleaned}
+            
             history = list(updated.get("history") or [])
             history.append(
                 {
@@ -438,7 +471,7 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     "from": data.get("status"),
                     "to": "decided",
                     "reason": cleaned,
-                    "option": option,
+                    "picks": picks,
                 }
             )
             updated["history"] = history
