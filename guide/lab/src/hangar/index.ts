@@ -2,8 +2,8 @@
 
 import { statusLabel, type DecisionRecord, type HangarData, type Spot } from './model'
 
-function esc(s: string): string {
-  return s
+function esc(s: unknown): string {
+  return String(s ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -30,7 +30,7 @@ function renderSpot(spot: Spot, records: HangarData['records']): string {
 }
 
 function renderRecord(r: DecisionRecord): string {
-  return `<li><a href="briefing.html#${esc(r.id)}">${esc(r.title)}</a><span class="status">${esc(statusLabel(r))}</span></li>`
+  return `<li><a href="briefing.html#${esc(encodeURIComponent(r.id))}">${esc(r.title)}</a><span class="status">${esc(statusLabel(r))}</span></li>`
 }
 
 /** Four cards in spot order. The page assigns this string to the root element's innerHTML. */

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { skin, statusLabel, type DecisionRecord, type Position, type Spot } from '../src/hangar/model'
+import { skin, statusLabel, type DecisionRecord, type HangarData, type Position, type Spot } from '../src/hangar/model'
 import { renderHangarHtml } from '../src/hangar/index'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
@@ -104,4 +104,39 @@ test('renderHangarHtml draws four spots, reserved marks, a briefing link, and es
   assert.match(html, /awaiting briefing/)
   assert.equal(html.includes('<script'), false)
   assert.match(html, /&lt;script&gt;/)
+})
+
+test('statusLabel counts the briefings that closed the record', () => {
+  const r = {
+    id: 'x', title: 't', status: 'decided',
+    history: [
+      { date: '2026-10-20', from: 'open', to: 'decided', reason: 'a' },
+      { date: '2026-10-21', from: 'decided', to: 'reopened', reason: 'b' },
+      { date: '2026-10-22', from: 'reopened', to: 'decided', reason: 'c' },
+    ],
+  } as unknown as DecisionRecord
+  assert.equal(statusLabel(r), 'decided in briefing 2')
+})
+
+test('skin: a tied council shows every position as dissent and recommends nothing', () => {
+  const r = {
+    id: 'x', title: 't', status: 'open', unknowns: ['bare string unknown', { text: 'ethanol limit', how: 'ask' }],
+    positions: [
+      { role: 'propulsion', option: 'a', confidence: 'high', reasoning: 'for a', citations: [], judgment: false },
+      { role: 'structures', option: 'b', confidence: 'low', reasoning: 'for b', citations: [], judgment: false },
+    ],
+  } as unknown as DecisionRecord
+  const s = skin(r)
+  assert.equal(s.recommendation, null)
+  assert.deepEqual(s.disagreements, ['for a', 'for b'])
+  assert.deepEqual(s.unknowns, ['bare string unknown', 'ethanol limit — ask'])
+})
+
+test('renderHangarHtml survives a spot with a missing blurb and encodes the record id', () => {
+  const data = {
+    spots: [{ id: 'mod-ez', label: 'Mod-EZ', analogue: 'restomod', state: 'active' }],
+    records: { 'a b': { id: 'a b', spot: 'mod-ez', title: 'T', status: 'open', history: [] } },
+  } as unknown as HangarData
+  const html = renderHangarHtml(data)
+  assert.ok(html.includes('briefing.html#a%20b'))
 })

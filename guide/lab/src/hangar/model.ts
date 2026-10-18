@@ -78,14 +78,13 @@ const CONFIDENCE_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 }
 /** Open and reopened records wait. A decided record names the briefing that last closed it. */
 export function statusLabel(r: DecisionRecord): string {
   if (r.status !== 'decided') return 'awaiting briefing'
-  const decided = (r.history ?? []).filter((h) => h.to === 'decided')
-  const last = decided[decided.length - 1]
-  if (!last) return 'decided in briefing 1'
-  const ordered = [...decided].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-  return `decided in briefing ${ordered.indexOf(last) + 1}`
+  // N counts the briefings that closed this record: a first decision is 1, a re-decision after a reopen is 2.
+  const decided = (r.history ?? []).filter((h) => h.to === 'decided').length
+  return `decided in briefing ${Math.max(1, decided)}`
 }
 
-function unknownLine(u: Unknown): string {
+function unknownLine(u: Unknown | string): string {
+  if (typeof u === 'string') return u.trim()
   const text = (u.text ?? u.what ?? '').trim()
   const how = (u.how ?? '').trim()
   if (text && how) return `${text} — ${how}`
@@ -117,7 +116,9 @@ export function skin(r: DecisionRecord): Skin {
     }
   }
   if (best === null || tied) {
-    return { recommendation: null, why: null, confidence: null, disagreements: [], unknowns }
+    // A split council has no recommendation, and every position is dissent the owner should see.
+    const all = positions.map((p) => p.reasoning).filter((t) => typeof t === 'string' && t.length > 0)
+    return { recommendation: null, why: null, confidence: null, disagreements: all, unknowns }
   }
   const winners = positions.filter((p) => p.option === best)
   let confidence = winners[0]?.confidence ?? null

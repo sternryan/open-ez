@@ -125,3 +125,16 @@ def test_decided_history_entry_needs_option(tmp_path):
     assert errs(tmp_path, d)
 
 
+
+
+def test_unquoted_yaml_dates_load_as_strings_and_json_dump(tmp_path):
+    """An unquoted `date: 2026-10-20` becomes datetime.date in YAML; records must hold strings so hangar.json can be built."""
+    d = decided()
+    text = yaml.safe_dump(d).replace("'2026-10-20'", "2026-10-20")
+    assert "date: 2026-10-20" in text
+    p = tmp_path / "demo.yaml"
+    p.write_text(text)
+    r = load_record(p)
+    assert isinstance(r.decision["date"], str) and isinstance(r.history[0]["date"], str)
+    json.dumps(dataclasses.asdict(r))
+    assert validate(r, GRAPH, {"demo"}) == []

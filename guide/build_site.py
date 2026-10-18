@@ -282,7 +282,7 @@ def build(
     (out / "config.json").write_text(
         json.dumps({"scanBase": scan_base, "model": "models/longez.glb"})
     )
-    (out / "hangar.json").write_text(json.dumps(_hangar_payload(), indent=1))
+    (out / "hangar.json").write_text(json.dumps(_hangar_payload(), indent=1, default=str))
     (out / "models").mkdir()
     if models:
         shutil.copy(models, out / "models" / "longez.glb")

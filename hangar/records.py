@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import datetime
 import yaml
 from core.sources import check_citation
 import guide.schema
@@ -29,17 +30,28 @@ class Record:
     changes: dict | None
     evidence: dict
 
+def _plain(x: Any) -> Any:
+    """YAML turns an unquoted 2026-10-20 into a date object; records hold ISO strings so they stay JSON-able."""
+    if isinstance(x, (datetime.date, datetime.datetime)):
+        return x.isoformat()
+    if isinstance(x, dict):
+        return {k: _plain(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_plain(v) for v in x]
+    return x
+
+
 def load_record(path: Path) -> Record:
     with open(path, 'r') as f:
-        data = yaml.safe_load(f)
-    
+        data = _plain(yaml.safe_load(f))
+
     if not isinstance(data, dict):
-        raise ValueError(path.stem)
+        raise ValueError(f"{path.stem}: not a mapping")
 
     required = ["id", "spot", "title", "status", "question", "coupled_with", "replaces", "book_choice", "options", "positions", "unknowns", "mission_score", "decision", "history", "changes", "evidence"]
     for req in required:
         if req not in data:
-            raise ValueError(path.stem)
+            raise ValueError(f"{path.stem}: missing key {req}")
             
     def get_val(key, default):
         return data.get(key, default)
