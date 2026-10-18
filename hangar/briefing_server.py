@@ -404,6 +404,7 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     "from": data.get("status"),
                     "to": "decided",
                     "reason": cleaned,
+                    "option": option,
                 }
             )
             updated["history"] = history
