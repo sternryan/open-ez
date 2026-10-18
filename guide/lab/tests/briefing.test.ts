@@ -271,7 +271,7 @@ test('live decide form has one select per axis and only that axis options', () =
   )
   assert.equal(selects[0][1].trim(), 'engine')
   assert.equal(selects[1][1].trim(), 'fuel_path')
-  const values = (body: string) => [...body.matchAll(/value="([^"]*)"/g)].map((m) => m[1])
+  const values = (body: string) => [...body.matchAll(/value="([^"]+)"/g)].map((m) => m[1])
   assert.deepEqual(values(selects[0][3]), ['o235-book', 'ul350i'])
   assert.deepEqual(values(selects[1][3]), ['ul94-ethanol-free', 'mogas-e10'])
   assert.equal(decide.includes('DeltaHawk'), false)
