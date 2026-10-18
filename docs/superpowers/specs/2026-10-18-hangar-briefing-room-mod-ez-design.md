@@ -132,7 +132,8 @@ One record per decision, stored as data in the repo (format is the builder's cal
   reserve), never written by the council. The council cites its output. An option with no published
   fuel flow gets an estimate from a stated method, flagged `derived`, or `unknown` when no method
   applies.
-- `decision`: the owner's pick, the date, and the reason, in the owner's words. Empty until closed in the
+- `axes`: the independent choices the decision is made of (for example engine and fuel path), each listing the option ids it allows
+- `decision`: the owner's pick of one option per declared axis, the date, and the reason, in the owner's words. Empty until closed in the
   briefing room.
 - `changes`: what the decision puts in the shop. A structured patch against the plans graph: the book
   steps it removes, and the substitute steps, parts and materials it adds. Substitute content follows
