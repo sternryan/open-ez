@@ -8883,6 +8883,8 @@ def test_public_briefing_room_is_read_only(public_briefing_site):
             assert pg.get_by_text("awaiting briefing", exact=True).is_visible()
             assert pg.locator('[data-test="chat"]').count() == 0
             assert pg.locator('[data-test="decide"]').count() == 0
+            assert pg.locator('[data-test="reopen"]').count() == 0
+            assert pg.locator('#briefing textarea, #briefing select').count() == 0
             assert not errors, errors
             b.close()
     finally:

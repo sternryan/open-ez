@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { DecisionRecord, Option } from '../src/hangar/model'
 import type { State } from '../src/hangar/briefingState'
-import { renderBriefingHtml } from '../src/hangar/briefing'
+import { linesFromTurns, renderBriefingHtml } from '../src/hangar/briefing'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
   return {
@@ -207,4 +207,17 @@ test('backbone lists options, the book choice, and mission-score flags', () => {
   assert.match(html, /sourced/)
   assert.match(html, /derived/)
   assert.match(html, /book engine arm/)
+})
+
+test('linesFromTurns reads the server transcript shape and shows council errors', () => {
+  const lines = linesFromTurns([
+    { ts: 't', message: 'hi', reply: { reply_text: 'view', positions: [], unknowns: [], error: null } },
+    { ts: 't', message: 'again', reply: { reply_text: '', positions: [], unknowns: [], error: 'council call failed: TimeoutError' } },
+  ])
+  assert.deepEqual(lines, [
+    { who: 'owner', text: 'hi' },
+    { who: 'council', text: 'view' },
+    { who: 'owner', text: 'again' },
+    { who: 'error', text: 'council call failed: TimeoutError' },
+  ])
 })

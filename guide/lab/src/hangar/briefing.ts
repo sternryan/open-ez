@@ -10,8 +10,8 @@ import {
   type TranscriptLine,
 } from './briefingState'
 
-function esc(s: string): string {
-  return s
+function esc(s: unknown): string {
+  return String(s ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -367,12 +367,20 @@ async function refreshRecord(id: string): Promise<DecisionRecord | null> {
   }
 }
 
-function linesFromTurns(body: unknown): TranscriptLine[] {
+export function linesFromTurns(body: unknown): TranscriptLine[] {
   if (!Array.isArray(body)) return []
   const lines: TranscriptLine[] = []
   for (const turn of body) {
     if (!turn || typeof turn !== 'object') continue
     const t = turn as Record<string, unknown>
+    if (typeof t.message === 'string' && t.reply && typeof t.reply === 'object') {
+      // the server's stored shape: {ts, message, reply: {reply_text, positions, unknowns, error}}
+      const rep = t.reply as Record<string, unknown>
+      if (t.message.trim()) lines.push({ who: 'owner', text: t.message })
+      if (typeof rep.reply_text === 'string' && rep.reply_text.trim()) lines.push({ who: 'council', text: rep.reply_text })
+      if (typeof rep.error === 'string' && rep.error) lines.push({ who: 'error', text: rep.error })
+      continue
+    }
     if (typeof t.message === 'string' || typeof t.reply === 'string') {
       if (typeof t.message === 'string' && t.message.trim()) lines.push({ who: 'owner', text: t.message })
       if (typeof t.reply === 'string' && t.reply.trim()) lines.push({ who: 'council', text: t.reply })
@@ -451,7 +459,7 @@ async function load(): Promise<void> {
     if (!res.ok) throw new Error(String(res.status))
     const data = (await res.json()) as HangarData
     if (gen !== generation) return
-    const found = data.records?.[id]
+    const found = data.records && Object.hasOwn(data.records, id) ? data.records[id] : undefined
     if (!found) {
       record = null
       state = null
