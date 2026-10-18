@@ -124,3 +124,34 @@ def test_decision_picks_with_two_axes_through_the_server_shape(tmp_path):
     assert errs(tmp_path, d) == []
     d["decision"]["picks"]["fuel_path"] = "ghost"
     assert errs(tmp_path, d)
+
+
+def test_hostile_axis_shapes_do_not_crash(tmp_path):
+    d = decided_two()
+    d["axes"][0]["id"] = ["a"]
+    assert errs(tmp_path, d)
+    d = decided_two()
+    d["options"].append("a string option")
+    assert isinstance(errs(tmp_path, d), list) and errs(tmp_path, d)
+    d = decided_two()
+    d["options"].append({"label": "no id", "kind": "candidate", "facts": [fact()], "why": "x"})
+    assert errs(tmp_path, d)
+
+
+def test_implies_is_strict(tmp_path):
+    d = two_axes()
+    d["options"][2]["implies"] = {"tank_resin": 5, "flag": "unknown"}
+    assert errs(tmp_path, d)
+    d = two_axes()
+    d["options"][2]["implies"] = {"tank_resin": "x", "flag": "unknown", "cite": "om-1980:p4"}
+    assert errs(tmp_path, d)
+
+
+def test_reopened_picks_are_still_checked(tmp_path):
+    d = decided_two()
+    d["status"] = "reopened"
+    d["history"].append({"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"})
+    d["decision"]["picks"]["engine"] = "old"  # a dropped option
+    assert any("dropped" in e for e in errs(tmp_path, d))
+    d["decision"]["picks"] = {"engine": "alt"}  # axis left unpicked
+    assert any("fuel_path" in e for e in errs(tmp_path, d))

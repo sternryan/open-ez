@@ -346,3 +346,16 @@ test('backbone shows each recommended pick, fuel-path consequences, and one engi
   assert.match(block, /fuel_path/)
   assert.match(block, /Mogas E10 \(mogas-e10\)/)
 })
+
+test('decide selects start on an empty placeholder so a pick is always deliberate', () => {
+  const html = renderBriefingHtml(
+    {
+      id: 'x', title: 't', status: 'open', question: 'q', spot: 'mod-ez', unknowns: [], positions: [], history: [],
+      axes: [{ id: 'engine', options: ['a'] }],
+      options: [{ id: 'a', label: 'A', kind: 'candidate', facts: [], why: '' }],
+    } as unknown as DecisionRecord,
+    'live',
+    { recordId: 'x', mode: 'live', status: 'open', transcript: [], error: null, busy: false, decideEnabled: true } as State,
+  )
+  assert.match(html, /<select name="pick-engine" required><option value="">/)
+})

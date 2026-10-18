@@ -86,6 +86,25 @@ def load_records(root: Path = DATA_ROOT) -> dict[str, Record]:
         records_dict[rec.id] = rec
     return records_dict
 
+
+def _check_picks(picks: Any, axis_map: dict, kinds: dict, who: str, complete: bool, errors: list[str]) -> None:
+    """Each pick: a declared axis, an option of that axis, and not dropped/unavailable. `complete` demands every axis."""
+    if not isinstance(picks, dict) or (not picks and not complete):
+        errors.append(f"{who} picks must be a non-empty dict" if not complete else f"{who} picks must be a dict")
+        return
+    for ax_id, pick in picks.items():
+        if not isinstance(ax_id, str) or ax_id not in axis_map:
+            errors.append(f"{who} pick on unknown axis {ax_id}")
+        elif not isinstance(pick, str) or pick not in axis_map[ax_id]:
+            errors.append(f"bad pick {pick} for axis {ax_id} in {who}")
+        elif kinds.get(pick) in ("dropped", "unavailable"):
+            errors.append(f"{who} pick {pick} is {kinds.get(pick)}")
+    if complete:
+        for ax_id in axis_map:
+            if ax_id not in picks:
+                errors.append(f"{who} is missing a pick for axis {ax_id}")
+
+
 def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
     errors = []
     
@@ -111,7 +130,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                     continue
                 aid = ax.get("id")
                 opts = ax.get("options")
-                if not aid or not isinstance(opts, list) or not opts:
+                if not isinstance(aid, str) or not aid or not isinstance(opts, list) or not opts:
                     errors.append("axis must have non-empty options list")
                 elif aid in axis_map:
                     errors.append(f"duplicate axis id {aid}")
@@ -153,7 +172,11 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                 has_flag = "flag" in impl
                 has_resin = "tank_resin" in impl
                 
-                if not (has_resin and (has_cite or has_flag)):
+                if has_resin and not (isinstance(impl["tank_resin"], str) and impl["tank_resin"].strip()):
+                    errors.append("implies tank_resin must be a non-empty string")
+                elif has_cite and has_flag:
+                    errors.append("implies takes a cite or a flag, not both")
+                elif not (has_resin and (has_cite or has_flag)):
                     errors.append("implies must have tank_resin and (cite or flag)")
                 else:
                     if has_cite:
@@ -210,6 +233,8 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
     if not isinstance(rec.book_choice, dict):
         errors.append("book_choice must be a mapping")
 
+    kinds = {o.get("id"): o.get("kind") for o in opts if isinstance(o, dict) and isinstance(o.get("id"), str)}
+
     # 4. Positions
     positions = rec.positions if isinstance(rec.positions, list) else []
     if not isinstance(rec.positions, list):
@@ -223,20 +248,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
             if role not in ROLES:
                 errors.append(f"bad role {role}")
             
-            picks = pos.get("picks")
-            if not isinstance(picks, dict) or not picks:
-                errors.append("picks must be a non-empty dict")
-            else:
-                for ax_id, pick_id in picks.items():
-                    if ax_id not in axis_map:
-                        errors.append(f"unknown axis {ax_id}")
-                    elif pick_id not in axis_map[ax_id]:
-                        errors.append(f"bad pick {pick_id} for axis {ax_id}")
-                    else:
-                        # Check if pick is dropped/unavailable
-                        for o in opts:
-                            if o["id"] == pick_id and o["kind"] in {"dropped", "unavailable"}:
-                                errors.append(f"pick {pick_id} is {o['kind']}")
+            _check_picks(pos.get("picks"), axis_map, kinds, "position", False, errors)
 
             if pos.get("confidence") not in {"low", "medium", "high"}:
                 errors.append("invalid confidence")
@@ -281,26 +293,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
         if decision is None:
             errors.append("decided status requires decision")
         else:
-            picks = decision.get("picks")
-            if not isinstance(picks, dict):
-                errors.append("decision picks must be a dict")
-            else:
-                # Every axis must have a pick
-                for ax_id, ax_opts in axis_map.items():
-                    if ax_id not in picks:
-                        errors.append(f"missing axis {ax_id}")
-                    elif picks[ax_id] not in ax_opts:
-                        errors.append(f"bad pick {picks[ax_id]} for axis {ax_id}")
-                    else:
-                        # Check if pick is dropped/unavailable
-                        for o in opts:
-                            if o["id"] == picks[ax_id] and o["kind"] in {"dropped", "unavailable"}:
-                                errors.append(f"pick {picks[ax_id]} is {o['kind']}")
-                
-                # Check for unknown axis in picks
-                for k in picks:
-                    if k not in axis_map:
-                        errors.append(f"unknown axis {k}")
+            _check_picks(decision.get("picks"), axis_map, kinds, "decision", True, errors)
 
             if not decision.get("reason"):
                 errors.append("decision needs reason")
@@ -348,14 +341,8 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                 else:
                     if last_entry.get("to") != "reopened":
                         errors.append("history last 'to' must equal status")
-                    if decision and decision.get("picks") and decision.get("picks").get("engine") and decision.get("picks").get("engine") not in opt_ids:
-                        # This is a specific check for the test case where decision.picks is checked
-                        pass
-                    # The test expects: if decision exists and its pick is bad, error.
-                    if decision and isinstance(decision.get("picks"), dict):
-                        for k, v in decision["picks"].items():
-                            if v not in opt_ids:
-                                errors.append(f"bad option {v}")
+                    if decision:
+                        _check_picks(decision.get("picks"), axis_map, kinds, "decision", True, errors)
 
         if rec.status in ("decided", "reopened"):
             prev_to = "open"

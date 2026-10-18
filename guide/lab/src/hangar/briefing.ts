@@ -277,8 +277,9 @@ function selectableOptions(record: DecisionRecord, axis: Axis): { id: string; la
 function renderDecide(record: DecisionRecord, state: State): string {
   const selects = (record.axes ?? [])
     .map((axis) => {
-      const options = selectableOptions(record, axis)
-        .map((o) => `<option value="${esc(o.id)}">${esc(o.label)}</option>`)
+      const options = ['<option value="">Select\u2026</option>']
+        .concat(selectableOptions(record, axis)
+        .map((o) => `<option value="${esc(o.id)}">${esc(o.label)}</option>`))
         .join('')
       return `<label>${esc(axis.id)} <select name="pick-${esc(axis.id)}" required>${options}</select></label>`
     })
