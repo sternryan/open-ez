@@ -3,6 +3,12 @@
 Date: 2026-10-18. Branch `feat/hangar-h1h2`, plan Tasks 1 to 7 (Task 8, the owner proof run, is not part of this record).
 Lanes are named by role; the private per-lane numbers live outside the repo.
 
+## Where tests ran
+
+- Authoring and git: the shared authoring host. Batched Python suite (`pytest -n 20`, browser files excluded): the 24-core GPU node (GPU lease checked free first), in its own clone and venv built from the dev requirements, then the pinned CAD packages matched to the authoring host. 1846 passed, 5 skipped, 21 xfailed in 8 min 16 s; the same suite on the 8-core authoring host took 9 min 25 s, so the gain is small because a few heavy tests dominate.
+- TypeScript tests and typecheck: the authoring host.
+- Browser e2e: the Apple-silicon test node, `-n 8` then frame-time tests serially, only after confirming it was idle (its earlier high load was this build's own e2e run).
+
 ## Lanes used
 
 | Role | Used for | Notes |
