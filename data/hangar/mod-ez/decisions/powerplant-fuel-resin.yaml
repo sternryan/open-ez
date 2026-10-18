@@ -229,7 +229,7 @@ mission_score:
     option: ul350is
     empty_lb:
       v: 662.0
-      flag: sourced
+      flag: derived
       note: ''
     empty_cg:
       v: 108.68519637462236
@@ -261,7 +261,8 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS
+    - possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS; oil cooler and gauges are extra, so not a
+      complete installed weight
     - assumed same installed CG as the book engine
     - cruise fuel flow
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
