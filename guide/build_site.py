@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import dataclasses
 import os
 import html
@@ -44,7 +45,20 @@ def _lab_stamp() -> str:
 
 
 def build_lab() -> Path:
-    """Build guide/lab with npm (only when its inputs changed) and return its dist directory. Never skips silently."""
+    """Build guide/lab with npm (only when its inputs changed) and return its dist directory. Never skips silently.
+
+    Holds an exclusive file lock for the whole check-and-build, so parallel callers (pytest -n) build once and the
+    rest wait and reuse it; concurrent `npm ci` / `vite build` runs on one directory corrupt each other."""
+    LAB.mkdir(parents=True, exist_ok=True)
+    with open(LAB / ".build.lock", "w") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            return _build_lab_locked()
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
+
+
+def _build_lab_locked() -> Path:
     npm = shutil.which("npm")
     if not npm:
         raise RuntimeError(
