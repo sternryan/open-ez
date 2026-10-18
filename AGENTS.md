@@ -35,6 +35,7 @@ node --test guide/viewer/tests/*.test.mjs          # viewer unit tests
 python3.13 scripts/vspaero_np.py                   # VSPAERO NP leg -> data/validation/vspaero_np.json
 .venv/bin/python scripts/generate_accuracy_report.py  # -> data/validation/accuracy_report.json
 pre-commit run --all-files                         # ruff, ruff-format, mypy (scripts/), smoke test
+python -m hangar.briefing_server --site <dir> --port <n>
 ```
 
 The test suite writes only to pytest's `tmp_path`. It does not rewrite tracked files; if a run
