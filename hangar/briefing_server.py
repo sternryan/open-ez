@@ -452,8 +452,12 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     return
                 
                 # Check if option_id is a string in the options list
-                valid_options = [o["id"] for o in options if isinstance(o, dict) and "id" in o]
-                if not isinstance(option_id, str) or option_id not in valid_options:
+                kind = next((o.get("kind") for o in (data.get("options") or []) if isinstance(o, dict) and o.get("id") == option_id), None)
+                if (
+                    not isinstance(option_id, str)
+                    or option_id not in options
+                    or kind in ("dropped", "unavailable")
+                ):
                     self._send_json(400, {"error": "decision rejected"})
                     return
 
