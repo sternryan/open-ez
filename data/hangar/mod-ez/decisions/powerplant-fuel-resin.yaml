@@ -316,7 +316,7 @@ mission_score:
     option: rotax-915is
     empty_lb:
       v: 668.2
-      flag: sourced
+      flag: derived
       note: ''
     empty_cg:
       v: 108.98549835378628
@@ -348,7 +348,8 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included
+    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
+      so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
@@ -359,7 +360,7 @@ mission_score:
     option: rotax-916is
     empty_lb:
       v: 676.0
-      flag: sourced
+      flag: derived
       note: ''
     empty_cg:
       v: 109.35547337278106
@@ -391,7 +392,8 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included
+    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
+      so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
@@ -402,7 +404,7 @@ mission_score:
     option: deltahawk-dhk180
     empty_lb:
       v: 822.0
-      flag: sourced
+      flag: derived
       note: ''
     empty_cg:
       v: 114.98491484184916
@@ -434,7 +436,7 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - estimated, includes starter, alternator, turbo and exhaust
+    - estimated, includes starter, alternator, turbo and exhaust; not a complete installed weight, so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
