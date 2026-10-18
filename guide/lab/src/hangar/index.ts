@@ -52,7 +52,14 @@ function mount(): void {
       if (!res.ok) throw new Error(String(res.status))
       return res.json() as Promise<HangarData>
     })
-    .then((data) => {
+    .then(async (data) => {
+      // With the companion service running, its records are newer than the build-time copy.
+      try {
+        const live = await fetch(new URL('api/records', hangarUrl()).href)
+        if (live.ok) data = { ...data, records: (await live.json()) as HangarData['records'] }
+      } catch {
+        /* public site: keep the built copy */
+      }
       root.innerHTML = renderHangarHtml(data)
     })
     .catch(() => {

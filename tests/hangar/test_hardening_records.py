@@ -138,3 +138,21 @@ def test_unquoted_yaml_dates_load_as_strings_and_json_dump(tmp_path):
     assert isinstance(r.decision["date"], str) and isinstance(r.history[0]["date"], str)
     json.dumps(dataclasses.asdict(r))
     assert validate(r, GRAPH, {"demo"}) == []
+
+
+def test_decision_reason_is_bound_to_history(tmp_path):
+    d = decided()
+    d["decision"]["reason"] = "quietly rewritten"
+    assert any("reason" in e for e in errs(tmp_path, d))
+
+
+def test_reopened_history_is_fully_checked(tmp_path):
+    d = decided()
+    d["status"] = "reopened"
+    d["history"] = [{"to": "reopened"}]
+    assert errs(tmp_path, d)
+    d["history"] = [
+        {"date": "2026-10-20", "from": "open", "to": "decided", "reason": "r", "option": "alt"},
+        {"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"},
+    ]
+    assert errs(tmp_path, d) == []

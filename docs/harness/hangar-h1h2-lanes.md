@@ -10,10 +10,10 @@ Lanes are named by role; the private per-lane numbers live outside the repo.
 | Deterministic script | scaffolding, the lane fan-out harness (one brief, several lanes at once, tests decide), the source spot-check (HTTP fetch, text extraction, regex), score generation (`python -m hangar.mission --write-scores`) | cheapest and first |
 | Local GPU lane (one 24 GB card, served model) | first drafts of the Python bodies for Tasks 1, 2, 3 (data), 5; hardening rounds | three concurrent streams per task, first passing stream kept |
 | Local laptop-class lane (small MLX model) | tried on the micro task and T1/T2 | too slow for file-sized output (about 18 tokens/s, backend timeout); not used again |
-| Subscription coding agent (Grok, pinned model) | Task 4 (index page and `hangar.json`), the Task 7 state module and page, Task 6 (companion service) | runs in separate worktrees, never graded by itself |
+| Subscription coding agent (pinned model) | Task 4 (index page and `hangar.json`), the Task 7 state module and page, Task 6 (companion service) | runs in separate worktrees, never graded by itself |
 | Hosted lanes (five) | concurrency speed tests only | about $0.10 of a $5 cap; see the private speed-test table |
-| Claude Sonnet reviews | one fresh-context review per task | every review found real defects |
-| Codex | one batched phase grade of the whole H1+H2 diff | recorded at the end of this file |
+| Fresh-context model reviews | one fresh-context review per task | every review found real defects |
+| Second-vendor model | one batched phase grade of the whole H1+H2 diff | recorded at the end of this file |
 
 ## Escalations and what failed
 
@@ -23,6 +23,11 @@ Lanes are named by role; the private per-lane numbers live outside the repo.
 - Reviewer-found fixes (records: malformed files, hostile values, status/history/option binding; mission: oil, unknown arm, private override that never reaches public records; council: schema in the prompt, env model, per-position validation; index: dissent on a tie, string unknowns, date objects in `hangar.json`) each have a test that was red first.
 
 ## Known limits
+
+- The council's citations are checked for membership (the cited source is in the pack the model was shown), not for support: a position can cite a real source and still misstate it, and `reply_text` is not citation-checked. The roadmap's trust standard, not the council, is the gate.
+- Council positions are written into the tracked record. The owner reviews the record diff before committing; nothing checks positions for private details the owner typed into the chat.
+- The decision closes one option id. Engine, fuel path and tank resin are coupled, so the owner's reason must name all three; the record schema does not yet hold a composite pick.
+- The Hangar index shows the build-time copy of the records on a public site; with the companion service running it reads the live copy.
 
 - The decision gate sees only the file as it is now. A hand edit of `decision.option` is caught because each `to: decided` history entry records the option the owner picked; an edit of both together passes. A git-aware check (compare with the committed version) would close that and belongs in the push gate, not in the validator.
 - Published fuel flows for the candidate engines sit at different power points. The mission scores compare them roughly and the record says so under `unknowns`.

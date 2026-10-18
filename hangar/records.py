@@ -246,6 +246,8 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                         if last_entry.get("to") == "decided":
                             if last_entry.get("option") != d_opt:
                                 errors.append("option mismatch between decision and history")
+                            if last_entry.get("reason") != decision.get("reason"):
+                                errors.append("decision reason must equal last history entry reason")
                             if last_entry.get("date") != decision.get("date"):
                                 errors.append("decision date must equal last history entry date")
 
@@ -274,7 +276,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                     if decision and decision.get("option") not in opt_ids:
                         errors.append(f"bad option {decision.get('option')}")
 
-        if rec.status == "decided":
+        if rec.status in ("decided", "reopened"):
             prev_to = "open"
             for entry in history:
                 if not isinstance(entry, dict):
@@ -300,10 +302,8 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                 
                 prev_to = e_to
             
-            if history and history[-1].get("to") != rec.status:
-                errors.append(f"history last 'to' must equal status")
-            if history and history[-1].get("to") != "decided":
-                errors.append("decided record must end with a to:decided entry")
+            if history and isinstance(history[-1], dict) and history[-1].get("to") != rec.status:
+                errors.append("history last 'to' must equal status")
 
     # 8. Evidence
     evidence = rec.evidence if isinstance(rec.evidence, dict) else {}
