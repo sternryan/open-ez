@@ -199,3 +199,94 @@ sources:
     copy: document
     page_basis: printed
     note: section 5 Example 1 (printed p103 to p104) is a three-cell wing section attributed to Megson 3rd ed.; shear flows printed in daN/cm (equal to N/mm); the printed GJ is a factor 10 off G x J and is not used.
+  ulpower-ul350i:
+    title: ULPower product page, UL350i
+    edition: web page read 2026-10-18; shows 118 hp, ready-to-fly 78.4 kg (173 lb), mogas 95 RON (91 AKI) for serials below 223501 and 91 RON (87 AKI) above, 100LL allowed if mogas is unavailable, estimated cruise fuel about 18 L/h, no ethanol limit stated
+    obtain: https://ulpower.com/en/engines/ul350/ul350i
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo. No ethanol percentage appears on the page, so the ethanol limit is unknown.
+  rotax-912is-om:
+    title: Rotax 912 iS operator's manual (D05875), hosted by a third party
+    edition: PDF read 2026-10-18; fuel consumption at 75 percent continuous performance is 16.5 L/h (4.3 gal/h)
+    obtain: https://avsport.org/acft/Rotax/912iS/912iS_operators_manual_d05875.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1 as the document; the figure was found by text search, not by page. Read and noted, never stored in the repo.
+  rotax-912is-datasheet:
+    title: Rotax 912 iS / iSc Sport aircraft engine datasheet
+    edition: PDF read 2026-10-18; 63.6 kg (140.2 lb) with gearbox i=2.43 and overload clutch; exhaust 4.8 kg, mount frame 2.0 kg, external alternator 3.0 kg, air guide 0.4 kg, fuel pumps 1.6 kg
+    obtain: https://www.flyrotax.com/assets/files/products/Datasheet-Aircraft-Engine-912-iS-iSc-Sport.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo. Coolant and radiator weight are not in the datasheet.
+  rotax-fuel-si:
+    title: Rotax service instruction on operating fluids (UL91 note), hosted by a flying club
+    edition: PDF read 2026-10-18; fuels containing more than 10 percent ethanol are not permitted
+    obtain: https://arvikaflygklubb.se/onewebmedia/UL91%20Rotax%20v%C3%A4tskor.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo.
+  deltahawk-spec-2025:
+    title: DeltaHawk DHK180 spec sheet, April 2025
+    edition: PDF read 2026-10-18; estimated weight 335 lb (151 kg) including starter, alternator, turbo and exhaust
+    obtain: https://www.deltahawk.com/wp-content/uploads/2025/04/SpecSheetBack-April2025.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; the PDF text layer is letter-spaced, so the figure was read after removing the spaces. Read and noted, never stored in the repo.
+  swift-ul94-faq:
+    title: Swift Fuels FAQ, UL94
+    edition: web page read 2026-10-18; UL94 weighs 5.87 lb/gal and is rated an ethanol-free super-premium autogasoline
+    obtain: https://www.swiftfuelsavgas.com/faq
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo. A vendor statement, not a lab report. No soak test on Long-EZ epoxy tanks is given.
+  bmaa-sb2695:
+    title: BMAA Technical Information Leaflet / Safety Bulletin 2695, ethanol in composite fuel tanks
+    edition: PDF dated 16 Apr 2018, read 2026-10-18; many resins used in composite fuel tanks are partially dissolved by ethanol
+    obtain: https://www.bmaa.org/files/oa_sb_2695.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo.
+  kitplanes-tank-epoxy-2018:
+    title: Kitplanes, Rapid Prototyping and Experimental Design, epoxy fuel resistance coupon test
+    edition: web article read 2026-10-18; 54 coupons, two per test, 18 months in 100LL, 93 octane E10 (8.4 percent ethanol measured) and acetone; no obvious degradation in avgas or mogas coupons, moderate to severe in acetone
+    obtain: https://www.kitplanes.com/rapid-prototyping-and-experimental-design-17/
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; a builder's test with n=2 per cell, not a manufacturer rating. Read and noted, never stored in the repo.
+  wired-yates-2013:
+    title: Wired, Chip Yates electric Long-EZ record flights (July 2013)
+    edition: web article read 2026-10-18; EnerDel pack, 450 V, 80 amp-hour, 525 lb, takes up the entire back seat
+    obtain: https://www.wired.com/2013/07/yates-250mph-electric/
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo.
+  amprius-sicore500:
+    title: Amprius press release, SiCore 500 cells (2 Sep 2026)
+    edition: web page read 2026-10-18; claims a 500 Wh/kg cell at 1C continuous discharge, company claim
+    obtain: https://ir.amprius.com/news-events/press-releases/detail/174/amprius-introduces-sicore500-high-energy-density-cells-for-unmanned-aviation
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; a cell figure and a company claim, not a pack figure. Read and noted, never stored in the repo.
+  rotax-916is-page:
+    title: Rotax 916 iS product page
+    edition: web page read 2026-10-18; 160 hp, 85.8 kg (189 lb) with gearbox i=2.54, overload clutch, turbocharger, intercooler and exhaust
+    obtain: https://www.flyrotax.com/products/916-is-c
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo. No fuel consumption is given.
+  rotax-915is-card:
+    title: Rotax 912 iS Sport / 915 iS limited edition specification card
+    edition: PDF read 2026-10-18; 915 iS 141 hp for 5 min, 82.2 kg (181.2 lb) with gearbox i=2.43, turbo, intercooler and exhaust
+    obtain: https://www.rotax-owner.com/en/support-topmenu/technical-information/rotax-engine-specifications/26-rotax-912-is-sport-915-is-limited-edition/file
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo. An older limited-edition card; the later 24 V brochure gives 83.3 kg.
+  ulpower-techdata:
+    title: ULPower technical data, document M0510 Rev 5 (22 Mar 2024)
+    edition: PDF read 2026-10-18; possible fully operational weight UL350i / UL350iS 79.5 kg (175 lb)
+    obtain: https://ulpower.com/content/1-engines/5-manuals/technical-data-2023-rev-5.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; read and noted, never stored in the repo. Operational weight includes coils, ECU, exhaust, pumps, filters and oil; oil cooler and gauges are extra.
