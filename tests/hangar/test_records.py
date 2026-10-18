@@ -135,7 +135,7 @@ def decided(**kw):
     d = base()
     d["status"] = "decided"
     d["decision"] = {"option": "alt", "date": "2026-10-20", "reason": "lighter"}
-    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "lighter"}]
+    d["history"] = [{"date": "2026-10-20", "from": "open", "to": "decided", "reason": "lighter", "option": "alt"}]
     d.update(kw)
     return d
 
@@ -163,13 +163,13 @@ def test_decision_needs_reason(tmp_path):
 
 def test_redecide_requires_reopen(tmp_path):
     bad = decided()
-    bad["history"].append({"date": "2026-10-21", "from": "decided", "to": "decided", "reason": "changed my mind"})
+    bad["history"].append({"date": "2026-10-21", "from": "decided", "to": "decided", "reason": "changed my mind", "option": "book"})
     bad["decision"] = {"option": "book", "date": "2026-10-21", "reason": "changed my mind"}
     assert errs(tmp_path, bad)
     good = decided()
     good["history"] += [
         {"date": "2026-10-21", "from": "decided", "to": "reopened", "reason": "new data"},
-        {"date": "2026-10-22", "from": "reopened", "to": "decided", "reason": "settled"},
+        {"date": "2026-10-22", "from": "reopened", "to": "decided", "reason": "settled", "option": "book"},
     ]
     good["decision"] = {"option": "book", "date": "2026-10-22", "reason": "settled"}
     assert errs(tmp_path, good) == []

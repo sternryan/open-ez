@@ -69,7 +69,7 @@ def test_fuel_math():
 def test_takeoff_and_landing():
     s = score("x", MISSION, plants(ff=V(4.3)))
     fuel = 4.3 * 2.5 * 6.0
-    assert s.takeoff_lb.v == pytest.approx(s.empty_lb.v + 310 + 15 + fuel)
+    assert s.takeoff_lb.v == pytest.approx(s.empty_lb.v + 310 + 15 + 8 + fuel)  # 8 lb oil, the book's loading rows
     leg_fuel = 4.3 * (300 / 150) * 6.0
     # landing weight is not a field; landing CG must lie between takeoff CG and the no-fuel CG
     assert s.landing_cg.v is not None and s.takeoff_cg.v is not None
