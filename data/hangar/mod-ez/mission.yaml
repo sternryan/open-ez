@@ -2,6 +2,18 @@ leg_nm: 300
 reserve_min: 30
 occupants_lb: [155, 155]
 bags_lb: 15
-cruise_ktas: {v: null, flag: unknown, note: "to be cited in Task 3"}
-fuel_capacity_gal: {v: null, flag: unknown, note: "to be cited in Task 3"}
-fuel_density_lb_per_gal: {v: null, flag: unknown, note: "to be cited in Task 3"}
+cruise_ktas:
+  v: 150
+  flag: derived
+  note: "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt"
+  cite: "om-1980:p15"
+fuel_capacity_gal:
+  v: 52
+  flag: sourced
+  cite: "om-1980:p8"
+  note: "two tanks, 52 gal total; unusable fuel unknown"
+fuel_density_lb_per_gal:
+  v: 5.87
+  flag: derived
+  cite: "swift-ul94-faq:p1"
+  note: "UL94 density applied to every gasoline option; mogas density is unsourced"

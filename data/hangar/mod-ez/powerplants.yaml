@@ -1,28 +1,100 @@
 o235-book:
-  installed_lb: {v: 243, flag: sourced, cite: "tcds-e223:p7"}
-  cg_arm_in: {v: 141.05, flag: derived, note: "book engine arm by closure method"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 243
+    flag: sourced
+    cite: "tcds-e223:p7"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "book engine arm by closure method"
+  cruise_ff_gph:
+    v: 5.8
+    flag: sourced
+    cite: "lyc-om-o235:p3-8"
+    note: "O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled"
 ul350i:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 173
+    flag: sourced
+    cite: "ulpower-ul350i:p1"
+    note: "ready-to-fly 78.4 kg (173 lb) as printed"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: 4.76
+    flag: derived
+    cite: "ulpower-ul350i:p1"
+    note: "factory estimated cruise average about 18 L/h divided by 3.785 L/gal; not tied to the mission speed"
 ul350is:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 175
+    flag: sourced
+    cite: "ulpower-techdata:p1"
+    note: "possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: null
+    flag: unknown
+    note: "cruise fuel flow"
 rotax-912is:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 166.2
+    flag: derived
+    cite: "rotax-912is-datasheet:p1"
+    note: "63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: 4.3
+    flag: sourced
+    cite: "rotax-912is-om:p1"
+    note: "16.5 L/h at 75 percent continuous performance, 69 hp"
 rotax-915is:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 181.2
+    flag: sourced
+    cite: "rotax-915is-card:p1"
+    note: "82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: null
+    flag: unknown
+    note: "cruise fuel flow"
 rotax-916is:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 189
+    flag: sourced
+    cite: "rotax-916is-page:p1"
+    note: "85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: null
+    flag: unknown
+    note: "cruise fuel flow"
 deltahawk-dhk180:
-  installed_lb: {v: null, flag: unknown}
-  cg_arm_in: {v: 141.05, flag: derived, note: "assumed same installed CG as the book engine"}
-  cruise_ff_gph: {v: null, flag: unknown}
+  installed_lb:
+    v: 335
+    flag: sourced
+    cite: "deltahawk-spec-2025:p1"
+    note: "estimated, includes starter, alternator, turbo and exhaust"
+  cg_arm_in:
+    v: 141.05
+    flag: derived
+    note: "assumed same installed CG as the book engine"
+  cruise_ff_gph:
+    v: null
+    flag: unknown
+    note: "cruise fuel flow"
