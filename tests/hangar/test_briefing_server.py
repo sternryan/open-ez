@@ -368,8 +368,7 @@ def test_decide_diff_touches_only_status_decision_history(tmp_path):
                 continue
             owners = {keys[j] for j in range(j1, j2)} or {_owner_keys(before)[i1] if i1 < len(old) else ""}
             assert owners <= {"status", "decision", "history"}, (tag, owners, new[j1:j2], old[i1:i2])
-        # the long strings survive byte for byte
-        assert "a very long reason " * 12 in after.replace("\n", " ").replace("  ", " ") or d["options"][1]["why"].strip() in after
+        assert yaml.safe_load(after)["options"][1]["why"] == d["options"][1]["why"]
     finally:
         e.close()
 
