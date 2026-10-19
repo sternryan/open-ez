@@ -60,34 +60,44 @@ rotax-912is:
     note: 16.5 L/h at 75 percent continuous performance, 69 hp
 rotax-915is:
   installed_lb:
-    v: 181.2
+    v: 201.1
     flag: derived
-    cite: rotax-915is-card:p1
-    note: 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
-      so flagged derived
+    cite: easa-tcds-e121:p13
+    note: 'Build-up on the same basis as the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo,
+      intercooler, exhaust, ECU, fusebox, wiring, oil tank, cooling baffle; no fuel pumps, radiator or oil cooler) plus engine
+      suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg from the maker product page (rotax-915is-page:p1)
+      = 91.2 kg. Coolant, radiator and oil cooler are not included (unknown). The 82.2 kg product-page figure uses a smaller
+      include list.'
   cg_arm_in:
     v: 141.05
     flag: derived
     note: assumed same installed CG as the book engine
   cruise_ff_gph:
-    v: null
-    flag: unknown
-    note: cruise fuel flow
+    v: 5.92
+    flag: derived
+    cite: rotax-om-915i:p1
+    note: Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 87,47 kW, 26,53 kg/h = 303 g/kWh) to the
+      52.0 kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably
+      higher at low power, so this understates the fuel flow.
 rotax-916is:
   installed_lb:
-    v: 189
+    v: 203.7
     flag: derived
-    cite: rotax-916is-page:p1
-    note: 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
-      so flagged derived
+    cite: easa-tcds-e121:p13
+    note: 'Build-up on the same basis as the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915)
+      plus engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the
+      same add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).'
   cg_arm_in:
     v: 141.05
     flag: derived
     note: assumed same installed CG as the book engine
   cruise_ff_gph:
-    v: null
-    flag: unknown
-    note: cruise fuel flow
+    v: 4.88
+    flag: derived
+    cite: rotax-om-916i:p1
+    note: Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 89,96 kW, 22,48027 kg/h = 250 g/kWh) to the
+      52.0 kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably
+      higher at low power, so this understates the fuel flow.
 deltahawk-dhk180:
   installed_lb:
     v: 335

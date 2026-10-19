@@ -275,7 +275,7 @@ sources:
     obtain: https://www.flyrotax.com/products/916-is-c
     copy: transcription
     page_basis: pdf
-    note: a single web page, cite p1; read and noted, never stored in the repo. No fuel consumption is given.
+    note: a single web page, cite p1; read and noted, never stored in the repo. No fuel consumption is given. The page also prints TBO 2,000 hrs and lists the same separate add-on weights as the 915 page.
   rotax-915is-card:
     title: Rotax 912 iS Sport / 915 iS limited edition specification card
     edition: PDF read 2026-10-18; 915 iS 141 hp for 5 min, 82.2 kg (181.2 lb) with gearbox i=2.43, turbo, intercooler and exhaust
@@ -290,3 +290,38 @@ sources:
     copy: transcription
     page_basis: pdf
     note: cite p1; read and noted, never stored in the repo. Operational weight includes coils, ECU, exhaust, pumps, filters and oil; oil cooler and gauges are extra.
+  easa-tcds-e121:
+    title: EASA Type Certificate Data Sheet E.121, Rotax 912 series (includes 915 iSc and 916 iSc)
+    edition: Issue 17, 18 Dec 2023; read 2026-10-18; section 5 dry weights, 915 iSc2 A 84,6 kg (186.51 lb) and 916 iSc2 A 85,8 kg (189.16 lb), each with base engine, gearbox, turbocharger, cooling air baffle, wiring harness, sensors, ECU, fusebox, oil tank, intercooler and exhaust, and without fuel pumps, radiator, oil cooler and governor; 912 iSc2 Sport 63,6 kg without exhaust, suspension frame, fuel pumps, baffle, radiator and oil cooler
+    obtain: https://www.easa.europa.eu/en/downloads/7633/en
+    copy: transcription
+    page_basis: pdf
+    note: cite p13 for the dry-weight section (the 915 and 916 rows run onto pp14-15). Read and noted, never stored in the repo.
+  rotax-om-915i:
+    title: Rotax Operators Manual OM-915 i A / C24, Edition 0 Rev. 4 (engine deck)
+    edition: PDF read 2026-10-18; the engine deck lists, at 5500 rpm, sea level, throttle 97,4 percent, 87,46870538 kW and fuel flow 26,53 kg/h; at 5500 rpm throttle 100 percent 99,17 kW and 32,16 kg/h; the deck prints kg/h and no L/h or density
+    obtain: https://rotax.my.salesforce-sites.com/DocumentsSearch/sfc/servlet.shepherd/version/download/068Mm00000JDCwpIAH?asPdf=false
+    copy: transcription
+    page_basis: pdf
+    note: cite p1 as the document; the deck page number was not exposed by the text fetch. Read and noted, never stored in the repo.
+  rotax-om-916i:
+    title: Rotax Operators Manual OM-916 i A / C24, Edition 0 Rev. 1 (engine deck)
+    edition: PDF read 2026-10-18; the engine deck lists, at 5500 rpm, sea level, throttle 97 percent, 89,96 kW and fuel flow 22,48027 kg/h (BSFC 250 g/kWh); the deck prints kg/h and no L/h or density
+    obtain: https://www.rotax-owner.com/pdf/OM_916i%20A_C24%20Series_Ed0_Rev1.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1 as the document; the deck page number was not exposed by the text fetch. Read and noted, never stored in the repo.
+  rotax-mml-915i:
+    title: Rotax Maintenance Manual Line MML-915 i A / C24, Ed. 0 Rev. 2 (1 Jul 2021)
+    edition: PDF read 2026-10-18; section Time Limit, 915 iS and 915 iSc TBO 1200 h or 15 years, whichever comes first
+    obtain: https://motory.teveso.cz/content/m_dokumentace/2021/MML_915_i_A_C24_Series.pdf
+    copy: transcription
+    page_basis: pdf
+    note: cite p1; a third-party host of the maker's manual, and a later edition exists that was not opened. Read and noted, never stored in the repo.
+  rotax-915is-page:
+    title: Rotax 915 iS product page
+    edition: web page read 2026-10-18; TBO 1,200 hrs; engine with gearbox i = 2,54, turbocharger, intercooler and exhaust 82.2 kg (181.2 lb); engine suspension frame 2.0 kg, external alternator 3.0 kg, air guide hood 0.4 kg, fuel pumps 1.6 kg listed separately
+    obtain: https://www.flyrotax.com/products/915-is-a-isc-a
+    copy: transcription
+    page_basis: pdf
+    note: a single web page, cite p1; read and noted, never stored in the repo.

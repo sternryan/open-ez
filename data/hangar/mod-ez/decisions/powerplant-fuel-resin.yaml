@@ -80,20 +80,32 @@ options:
   label: Rotax 915iS
   kind: candidate
   facts:
-  - text: 82.2 kg, 141 hp for 5 min
-    cite: rotax-915is-card:p1
-  - text: cruise fuel flow
+  - text: 141 hp for 5 min and 82.2 kg with gearbox, turbo, intercooler and exhaust on the maker card; the EASA data sheet
+      gives 84.6 kg dry for the 915 iSc2 A on a larger include list
+    cite: easa-tcds-e121:p13
+  - text: 'Maker deck row at 5500 rpm: 87,47 kW burns 26,53 kg/h (about 303 g/kWh); the deck prints kg/h only'
+    cite: rotax-om-915i:p1
+  - text: TBO 1200 h or 15 years, whichever comes first
+    cite: rotax-mml-915i:p1
+  - text: coolant and radiator weight
     flag: unknown
-  why: 'kept: more power than the mission needs; no published cruise fuel flow, so it is scored with unknowns'
+  why: 'kept, not chosen: about 35 lb heavier installed than the 912 iS on the same build-up basis and more power than the
+    mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough'
 - id: rotax-916is
   label: Rotax 916iS
   kind: candidate
   facts:
-  - text: 85.8 kg, 160 hp
+  - text: 160 hp and 85.8 kg with gearbox, turbo, intercooler and exhaust (maker page); the EASA data sheet gives 85.8 kg
+      dry for the 916 iSc2 A
+    cite: easa-tcds-e121:p13
+  - text: 'Maker deck row at 5500 rpm: 89,96 kW burns 22,48027 kg/h (250 g/kWh); the deck prints kg/h only'
+    cite: rotax-om-916i:p1
+  - text: TBO 2,000 hrs
     cite: rotax-916is-page:p1
-  - text: cruise fuel flow
+  - text: coolant and radiator weight
     flag: unknown
-  why: 'kept: more power than the mission needs; no published cruise fuel flow, so it is scored with unknowns'
+  why: 'kept, not chosen: about 37 lb heavier installed than the 912 iS on the same build-up basis and more power than the
+    mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough'
 - id: deltahawk-dhk180
   label: DeltaHawk DHK180
   kind: dropped
@@ -387,91 +399,99 @@ mission_score:
   rotax-915is:
     option: rotax-915is
     empty_lb:
-      v: 668.2
+      v: 688.1
       flag: derived
       note: ''
     empty_cg:
-      v: 108.98549835378628
+      v: 109.91281063798867
       flag: derived
       note: assumed same installed CG as the book engine
     fuel_needed_lb:
-      v: null
-      flag: unknown
+      v: 86.876
+      flag: derived
       note: ''
     takeoff_lb:
-      v: null
-      flag: unknown
+      v: 1107.976
+      flag: derived
       note: ''
     takeoff_cg:
-      v: null
-      flag: unknown
+      v: 101.34655173036239
+      flag: derived
       note: ''
     landing_cg:
-      v: null
-      flag: unknown
+      v: 101.13550463217611
+      flag: derived
       note: ''
     range_full_fuel_nm:
-      v: null
-      flag: unknown
+      v: 1242.5675675675677
+      flag: derived
       note: ''
     block_time_h:
       v: 2.5
       flag: derived
       note: ''
-    in_envelope: null
+    in_envelope: true
     assumptions:
-    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
-      so flagged derived
+    - 'Build-up on the same basis as the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo, intercooler,
+      exhaust, ECU, fusebox, wiring, oil tank, cooling baffle; no fuel pumps, radiator or oil cooler) plus engine suspension
+      frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg from the maker product page (rotax-915is-page:p1) = 91.2
+      kg. Coolant, radiator and oil cooler are not included (unknown). The 82.2 kg product-page figure uses a smaller include
+      list.'
     - assumed same installed CG as the book engine
-    - cruise fuel flow
+    - Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 87,47 kW, 26,53 kg/h = 303 g/kWh) to the 52.0
+      kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably
+      higher at low power, so this understates the fuel flow.
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
-    worst_flag: unknown
+    worst_flag: derived
   rotax-916is:
     option: rotax-916is
     empty_lb:
-      v: 676.0
+      v: 690.7
       flag: derived
       note: ''
     empty_cg:
-      v: 109.35547337278106
+      v: 110.03002026929201
       flag: derived
       note: assumed same installed CG as the book engine
     fuel_needed_lb:
-      v: null
-      flag: unknown
+      v: 71.61399999999999
+      flag: derived
       note: ''
     takeoff_lb:
-      v: null
-      flag: unknown
+      v: 1095.314
+      flag: derived
       note: ''
     takeoff_cg:
-      v: null
-      flag: unknown
+      v: 101.39685788732729
+      flag: derived
       note: ''
     landing_cg:
-      v: null
-      flag: unknown
+      v: 101.22558733777329
+      flag: derived
       note: ''
     range_full_fuel_nm:
-      v: null
-      flag: unknown
+      v: 1523.360655737705
+      flag: derived
       note: ''
     block_time_h:
       v: 2.5
       flag: derived
       note: ''
-    in_envelope: null
+    in_envelope: true
     assumptions:
-    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
-      so flagged derived
+    - 'Build-up on the same basis as the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915) plus
+      engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the same
+      add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).'
     - assumed same installed CG as the book engine
-    - cruise fuel flow
+    - Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 89,96 kW, 22,48027 kg/h = 250 g/kWh) to the 52.0
+      kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably
+      higher at low power, so this understates the fuel flow.
     - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
-    worst_flag: unknown
+    worst_flag: derived
   deltahawk-dhk180:
     option: deltahawk-dhk180
     empty_lb:

@@ -36,3 +36,20 @@ The total (52 gal) agrees. The record uses the manual's 52 gal.
 
 Not checked, so unknown in the record: BMAA and Rotax statements beyond those above, any UL350i ethanol limit, hybrid kit
 availability, 916 iS fuel flow, coolant and radiator weights, tank-resin behavior with UL94, and every price.
+
+## Follow-up: Rotax 915 iS and 916 iS figures (2026-10-18)
+
+Method as above (HTTP fetch, text extraction, regular-expression search; a local extraction model asked independently).
+
+| Fact | URL (registry id) | Value seen in the fetched text | Result |
+|---|---|---|---|
+| 915 iS 82.2 kg, TBO 1,200 hrs | flyrotax 915 page (`rotax-915is-page`) | "TBO 1,200 hrs", "82.2" with gearbox, turbocharger, intercooler, exhaust | match |
+| 916 iS 85.8 kg, TBO 2,000 hrs | flyrotax 916 page (`rotax-916is-page`) | "TBO 2,000h", "85.8" | match |
+| 915 iSc2 A 84,6 kg; 916 iSc2 A 85,8 kg | EASA E.121 Issue 17 (`easa-tcds-e121`) | 84,6 and 85,8 present in the dry-weight section (the extraction model found only the 915 row; both values confirmed by text search) | match |
+| 915 deck row 87,46870538 kW / 26,53 kg/h at 5500 rpm | OM-915 i A/C24 Ed. 0 Rev. 4 (`rotax-om-915i`) | row "271 5500 1,013 15 97,4 0 87,46870538 26,53" | match |
+| 916 deck row 89,96 kW / 22,48027 kg/h, 250 g/kWh | OM-916 i A/C24 Ed. 0 Rev. 1 (`rotax-om-916i`) | row "4642 5500 97 0 0 89,96 22,48027 ..." with BSFC 250 | match |
+| 915 TBO 1200 h or 15 years | MML-915 i (`rotax-mml-915i`) | "915 iS from start of production (ASTM compliant) 1200 h or 15 years, whichever comes first" | match |
+| 916 base engine with gearbox 75.44 kg | IM-916 i A/C24 (download) | "Base engine with gearbox: 75.44 kg (166.3 lb)" | match (not used in the record; context only) |
+
+Derived in the record, not fetched: installed weights (data-sheet dry weight plus frame, alternator, pumps), and fuel flow at the
+52.0 kW mission power (constant specific consumption from one deck row). Not found: price, L/h, coolant and radiator weight.
