@@ -300,6 +300,10 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             records = load_records(self.server.records_root)
             self._send_json(200, {rid: asdict(rec) for rid, rec in records.items()})
             return
+        pp = "/api/pilots/"
+        if path.startswith(pp):
+            self._pilots(urllib.parse.unquote(path[len(pp) :]))
+            return
         prefix = "/api/transcript/"
         if path.startswith(prefix):
             record_id = urllib.parse.unquote(path[len(prefix) :])
@@ -309,6 +313,25 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             self._send_json(404, {"error": "not found"})
             return
         super().do_GET()
+
+    def _pilots(self, record_id: str) -> None:
+        """Private per-owner margins for each option that declares an `effect`; empty when no pilots are configured. Never written to a record."""
+        rec_path = self._record_path(record_id)
+        if rec_path is None:
+            self._send_json(404, {"error": "unknown record"})
+            return
+        from hangar import mission as _m
+
+        data = _read_mapping(rec_path)
+        by_label: dict[str, dict] = {}
+        for opt in data.get("options") or []:
+            if not isinstance(opt, dict) or not isinstance(opt.get("effect"), dict):
+                continue
+            engine, extras, plants = _m.apply_effect(opt["effect"])
+            for row in _m.score_pilots(engine, extras=extras, plants=plants, private_dir=self.server.private_dir):
+                entry = by_label.setdefault(row["label"], {"label": row["label"], "options": []})
+                entry["options"].append({"option": opt.get("id"), **{k: row[k] for k in ("solo", "two_up_with", "two_up")}})
+        self._send_json(200, {"pilots": list(by_label.values())})
 
     def _read_json(self) -> dict[str, Any] | None:
         try:

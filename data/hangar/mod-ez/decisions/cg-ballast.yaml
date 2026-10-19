@@ -32,28 +32,47 @@ options:
 - id: book-engine-cg
   label: Book engine and loading (baseline)
   kind: book
+  effect:
+    engine: o235-book
   facts:
   - text: 'Calculator output on the book''s own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine''s. Book engine,
       heavy pilot solo (210 lb): landing CG 100.3 in, forward margin +3.3 in; two adults: +3.7 in'
     cite: om-1980:p28
+  - text: 'Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward
+      limit: 292 lb. Landing margin at 120 lb +7.3 in, 160 lb +5.4 in, 200 lb +3.6 in, 220 lb +2.8 in. Public weight range,
+      no owner weights'
+    flag: derived
   - text: 'Book engine, light pilot (135 lb): CG 104.0 in at takeoff, aft of the 103.0 in limit, as in the book''s own sample'
     cite: om-1980:p26
   why: 'baseline: the envelope and loadings the book itself prints; the 912 iS changes where the empty CG sits'
 - id: loading-limit
   label: No change, publish a loading limit
   kind: candidate
+  effect:
+    engine: rotax-912is
   facts:
   - text: 'Calculator output on the book''s own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine''s. 912 iS, heavy
       pilot solo: landing CG 96.8 in, forward margin -0.2 in (forward of the 97.0 in limit); two adults: +0.9 in; light pilot:
       +3.3 in'
     cite: om-1980:p28
-  why: 'kept: costs no weight, but a 210 lb pilot flying solo is outside the envelope, so the airplane would need a minimum-passenger
-    or maximum-front-seat rule; two adults stay inside by only 0.9 in'
+  - text: 'Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward
+      limit: 202 lb. Landing margin at 120 lb +3.9 in, 160 lb +1.9 in, 200 lb +0.1 in, 220 lb -0.7 in. Public weight range,
+      no owner weights'
+    flag: derived
+  why: 'kept: costs no weight, but a heavy pilot flying solo is outside the envelope (see the solo crossing weight), so the
+    airplane would need a maximum-front-seat-weight or minimum-passenger rule; two adults stay inside by only 0.9 in'
 - id: fixed-aft-ballast
   label: Fixed aft ballast
   kind: candidate
+  effect:
+    engine: rotax-912is
+    extras:
+    - name: ballast
+      weight_lb: 14.587749712973439
+      arm_in: 141.05
+      flag: derived
   facts:
   - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. 14.6 lb at
@@ -61,6 +80,10 @@ options:
       arm is an assumption
     flag: derived
   - text: 'Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside'
+    flag: derived
+  - text: 'Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward
+      limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range,
+      no owner weights'
     flag: derived
   - text: With that ballast the heavy solo landing CG is 97.5 in and empty weight rises by the same 14.6 lb, which comes off
       useful load
@@ -70,6 +93,17 @@ options:
 - id: battery-aft
   label: Move the battery aft
   kind: candidate
+  effect:
+    engine: rotax-912is
+    extras:
+    - name: battery out of the nose
+      weight_lb: -19.0
+      arm_in: 11.0
+      flag: derived
+    - name: battery aft
+      weight_lb: 19.0
+      arm_in: 141.05
+      flag: derived
   facts:
   - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. The ledger
@@ -77,6 +111,10 @@ options:
       the heavy solo margin to +2.6 in and two adults to +3.1 in
     flag: derived
   - text: 'Aft check with the same change, light pilot: highest CG 103.6 in against the 103.0 in aft limit, OUTSIDE the envelope'
+    flag: derived
+  - text: 'Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward
+      limit: 267 lb. Landing margin at 120 lb +6.9 in, 160 lb +4.8 in, 200 lb +2.9 in, 220 lb +2.0 in. Public weight range,
+      no owner weights'
     flag: derived
   - text: Whether the book airplane carries the larger battery in its 730 lb empty weight (the ledger notes it may carry the
       small one); if it carries the small one the figures above are an upper bound
@@ -86,12 +124,19 @@ options:
 - id: engine-arm-aft
   label: Move the engine installation aft
   kind: candidate
+  effect:
+    engine: rotax-912is
+    engine_arm_shift_in: 3.82
   facts:
   - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. Moving the
       engine's installed CG 3.8 in aft of the book arm brings the heavy solo case to +0.5 in
     flag: derived
   - text: 'Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside'
+    flag: derived
+  - text: 'Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward
+      limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range,
+      no owner weights'
     flag: derived
   - text: A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)
     flag: unknown
@@ -115,6 +160,8 @@ unknowns:
   how: weigh and balance the installation, or compute from the maker flange datum
 - text: Whether the book 730 lb empty weight already includes the large battery
   how: the builder weight records behind the empty-weight ladder
+- text: Each owner's own solo and two-up margins (checked privately at brief time, not recorded here)
+  how: private pilots list in the briefing room configuration
 - text: Propeller weight and arm change if the propeller record picks a heavier hub
   how: weights from the maker once the propeller is chosen
 mission_score:

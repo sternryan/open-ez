@@ -265,7 +265,8 @@ def score_loading(
 ) -> LoadingScore:
     mission, plants = _mission_and_plants(mission, plants)
     plant_raw = plants[option_id]
-    loading = load_loadings()[loading_id]
+    loading = load_loadings()[loading_id] if isinstance(loading_id, str) else loading_id
+    loading_id = loading_id if isinstance(loading_id, str) else loading.get("id", "custom")
 
     value_keys = {"cruise_ktas", "fuel_capacity_gal", "fuel_density_lb_per_gal"}
     m = {}
@@ -373,6 +374,144 @@ def score_loading(
         assumptions=assumptions,
         worst_flag=_get_worst_flag([item.flag for item in outputs]),
     )
+
+def _pilot_loading(option_id, pilot_lb, passenger_lb, mission, plants):
+    """A solo or two-up loading: oil from the book rows, the mission's fuel and baggage, the pilot in front, an optional rear seat."""
+    fuel = score(option_id, mission, plants).fuel_needed_lb
+    if fuel.v is None:
+        return None
+    bags = mission.get("bags_lb", 0) or 0
+    items = {"oil": float(load_ledger()["samples"]["light_pilot"]["items"]["oil"]), "fuel": fuel.v, "pilot": float(pilot_lb)}
+    if passenger_lb:
+        items["passenger"] = float(passenger_lb)
+    if bags:
+        items["baggage"] = float(bags)
+    seat = "two up" if passenger_lb else "solo, rear seat empty"
+    return {
+        "id": f"pilot-{pilot_lb:g}" + (f"+{passenger_lb:g}" if passenger_lb else ""),
+        "items": items,
+        "label": f"{seat}: pilot {pilot_lb:g} lb, mission fuel at takeoff and the reserve only at landing, mission baggage",
+        "flag": "derived" if fuel.flag != "sourced" else "sourced",
+    }
+
+
+def score_pilot(
+    option_id: str,
+    pilot_lb: float,
+    passenger_lb: float = 0.0,
+    mission: dict | None = None,
+    plants: dict | None = None,
+    extras: list[dict] | None = None,
+) -> LoadingScore:
+    """Score one pilot weight (front seat), alone or with a rear passenger, at takeoff and at landing with the reserve only."""
+    mission, plants = _mission_and_plants(mission, plants)
+    loading = _pilot_loading(option_id, pilot_lb, passenger_lb, mission, plants)
+    if loading is None:
+        unknown = Value(None, "unknown")
+        return LoadingScore(option_id, f"pilot-{pilot_lb:g}", unknown, unknown, unknown, unknown, unknown, None,
+                            ["fuel flow or density unknown"], "unknown")
+    return score_loading(option_id, loading, mission, plants, extras=extras)
+
+
+def _public(mission: dict | None) -> dict:
+    return load_mission(None) if mission is None else mission
+
+
+def solo_crossing_weight(
+    option_id: str,
+    extras: list[dict] | None = None,
+    mission: dict | None = None,
+    plants: dict | None = None,
+    lo: float = 50.0,
+    hi: float = 400.0,
+) -> Value:
+    """Solo pilot weight (lb) at which the forward margin reaches zero. Public mission by default, never the private one.
+
+    v is None with a note when the margin never reaches zero in [lo, hi] or the inputs are unknown."""
+    mission = _public(mission)
+
+    def margin(w: float):
+        return score_pilot(option_id, w, mission=mission, plants=plants, extras=extras).fwd_margin_in.v
+
+    mlo, mhi = margin(lo), margin(hi)
+    if mlo is None or mhi is None:
+        return Value(None, "unknown", "inputs unknown")
+    if mlo < 0:
+        return Value(None, "derived", f"already forward of the limit at {lo:g} lb")
+    if mhi >= 0:
+        return Value(None, "derived", f"no crossing up to {hi:g} lb")
+    a, b = lo, hi
+    for _ in range(60):
+        mid = (a + b) / 2
+        a, b = (mid, b) if margin(mid) >= 0 else (a, mid)
+    return Value((a + b) / 2, "derived", "solved on the solo loading score, mission fuel and baggage")
+
+
+def solo_table(
+    option_id: str,
+    extras: list[dict] | None = None,
+    mission: dict | None = None,
+    plants: dict | None = None,
+) -> list[dict]:
+    """The public range: pilot 120 to 220 lb in 10 lb steps plus the book's light (135) and heavy (210) pilot samples."""
+    mission = _public(mission)
+    samples = load_ledger()["samples"]
+    lbs = sorted({*range(120, 221, 10), samples["light_pilot"]["items"]["pilot"], samples["heavy_pilot"]["items"]["pilot"]})
+    rows = []
+    for lb in lbs:
+        s = score_pilot(option_id, lb, mission=mission, plants=plants, extras=extras)
+        rows.append({"pilot_lb": lb, "takeoff_cg": s.takeoff_cg.v, "landing_cg": s.landing_cg.v,
+                     "fwd_margin_in": s.fwd_margin_in.v, "in_envelope": s.in_envelope})
+    return rows
+
+
+def _row(s: LoadingScore) -> dict:
+    return {"takeoff_cg": s.takeoff_cg.v, "landing_cg": s.landing_cg.v, "fwd_margin_in": s.fwd_margin_in.v,
+            "in_envelope": s.in_envelope, "flag": s.worst_flag}
+
+
+def score_pilots(
+    option_id: str,
+    extras: list[dict] | None = None,
+    plants: dict | None = None,
+    private_dir: Path | None = None,
+) -> list[dict]:
+    """Private check: each `pilots: [{label, lb}]` entry of $HANGAR_PRIVATE_DIR/mission.yaml, alone and two up with the next listed pilot.
+
+    Returns [] when the private file lists no pilots. Never read by anything that writes tracked files."""
+    priv = private_dir if private_dir is not None else os.environ.get("HANGAR_PRIVATE_DIR")
+    if not priv:
+        return []
+    mission = load_mission(Path(priv))
+    pilots = [p for p in (mission.get("pilots") or []) if isinstance(p, dict) and isinstance(p.get("lb"), (int, float))]
+    out = []
+    for i, p in enumerate(pilots):
+        solo = score_pilot(option_id, p["lb"], mission=mission, plants=plants, extras=extras)
+        other = pilots[(i + 1) % len(pilots)] if len(pilots) > 1 else None
+        two = score_pilot(option_id, p["lb"], other["lb"], mission=mission, plants=plants, extras=extras) if other else None
+        out.append({"label": str(p.get("label", f"pilot {i + 1}")), "solo": _row(solo),
+                    "two_up_with": str(other.get("label")) if other else None, "two_up": _row(two) if two else None})
+    return out
+
+
+def apply_effect(effect: dict | None, plants: dict | None = None) -> tuple[str, list[dict], dict]:
+    """A record option's machine-readable `effect` -> (engine option id, extras, plants).
+
+    effect keys: engine (default the 912 iS), extras (weights added or moved), engine_arm_shift_in (engine CG arm moved aft)."""
+    effect = effect or {}
+    engine = effect.get("engine", "rotax-912is")
+    if plants is None:
+        with open(_DATA / "powerplants.yaml", "r") as f:
+            plants = yaml.safe_load(f)
+    shift = effect.get("engine_arm_shift_in")
+    if shift:
+        import copy
+
+        plants = copy.deepcopy(plants)
+        arm = plants[engine]["cg_arm_in"]
+        plants[engine]["cg_arm_in"] = {"v": arm["v"] + shift, "flag": "derived", "note": f"engine installed CG moved {shift:.2f} in aft"}
+    return engine, list(effect.get("extras") or []), plants
+
 
 def ballast_for_margin(
     option_id: str,
