@@ -408,7 +408,7 @@ function renderOption(record: DecisionRecord, opt: MatrixOption): string {
 /** Empty when there is no matrix or no options. Text is escaped. Null margins are an en dash. */
 export function renderMatrix(record: DecisionRecord, data: MatrixResponse | null): string {
   if (!data || !Array.isArray(data.options) || data.options.length === 0) return ''
-  return `<section class="matrix" data-test="matrix"><h3>Loading matrix</h3>${data.options.map((opt) => renderOption(record, opt)).join('')}</section>`
+  return `<section class="panel matrix" data-test="matrix"><h3>Loading matrix</h3>${data.options.map((opt) => renderOption(record, opt)).join('')}</section>`
 }
 
 function optionLabel(record: DecisionRecord, id: string): string {
@@ -475,5 +475,5 @@ function renderOneUnknown(record: DecisionRecord, item: MatrixUnknown, live: boo
 export function renderUnknowns(record: DecisionRecord, data: MatrixResponse | null, live: boolean): string {
   if (!data || !Array.isArray(data.unknowns) || data.unknowns.length === 0) return ''
   const items = data.unknowns.map((item) => renderOneUnknown(record, item, live)).join('')
-  return `<section class="unknowns" data-test="unknowns"><h3>Unknowns</h3>${items}</section>`
+  return `<section class="panel unknowns" data-test="unknowns"><h3>Unknowns</h3>${items}</section>`
 }

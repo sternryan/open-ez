@@ -468,6 +468,19 @@ function renderLive(record: DecisionRecord, state: State, matrix: MatrixResponse
   return `<section class="panel live"><h3>Council</h3>${renderChat(state)}${renderDecide(record, state, openUnknownIds(matrix))}${renderReopenFlag(record)}${renderReopen(state)}</section>`
 }
 
+const BACKBONE_OPEN = /<details\b[^>]*\bclass="[^"]*\bbackbone\b[^"]*"/
+
+/** Matrix and unknowns go before the backbone disclosure. With no disclosure, they go before `</article>`. */
+export function placeBeforeBackbone(html: string, panelsHtml: string): string {
+  if (!panelsHtml) return html
+  const exact = html.indexOf('<details class="backbone"')
+  const at = exact >= 0 ? exact : html.search(BACKBONE_OPEN)
+  if (at >= 0) return html.slice(0, at) + panelsHtml + html.slice(at)
+  const close = html.lastIndexOf('</article>')
+  if (close >= 0) return html.slice(0, close) + panelsHtml + html.slice(close)
+  return html + panelsHtml
+}
+
 /** Skin, backbone, and (in live mode) the council controls. Record text is escaped. */
 export function renderBriefingHtml(
   record: DecisionRecord,
@@ -718,15 +731,30 @@ function mountPilotMargins(root: ParentNode): void {
 
 function mountMatrix(root: ParentNode): void {
   if (mode !== 'live') return
-  const backbone = root.querySelector('details.backbone')
-  if (!backbone) return
-  backbone.querySelector('[data-test="matrix"]')?.remove()
-  backbone.querySelector('[data-test="unknowns"]')?.remove()
-  const html = `${matrixHtml}${unknownsHtml}`
-  if (!html) return
-  const pilots = backbone.querySelector('[data-test="pilot-margins"]')
-  if (pilots) pilots.insertAdjacentHTML('afterend', html)
-  else backbone.insertAdjacentHTML('beforeend', html)
+  const article = root.querySelector('article.record')
+  if (!article) return
+  // Drop the previous pair first so a re-mount, including after paint(), replaces rather than stacks.
+  article.querySelectorAll('[data-test="matrix"], [data-test="unknowns"]').forEach((node) => {
+    node.remove()
+  })
+  const panels = `${matrixHtml}${unknownsHtml}`
+  if (!panels) return
+  const backbone = article.querySelector('details.backbone')
+  if (backbone) {
+    const skeleton = `<article class="record">${backbone.outerHTML}</article>`
+    const placed = placeBeforeBackbone(skeleton, panels)
+    const at = placed.indexOf(panels)
+    const mark = placed.indexOf(backbone.outerHTML)
+    if (at >= 0 && mark >= 0 && at < mark) {
+      backbone.insertAdjacentHTML('beforebegin', panels)
+      return
+    }
+  }
+  const open = '<article class="record">'
+  const placed = placeBeforeBackbone(`${open}</article>`, panels)
+  const end = placed.lastIndexOf('</article>')
+  const html = end > open.length ? placed.slice(open.length, end) : panels
+  article.insertAdjacentHTML('beforeend', html)
 }
 
 function mountAck(root: ParentNode): void {

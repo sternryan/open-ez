@@ -233,3 +233,22 @@ body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, 
 
 /* the motion and reference rows carry whole sentences (the canopy's conflicts, its weight row): they wrap instead of clipping */
 #readout #ro-kin, #readout #ro-ref { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+
+/* Briefing room only. The loading matrix and the unknowns list are open cards, the same chrome as .panel. */
+#briefing .matrix,
+#briefing .unknowns {
+  margin-top: var(--gap);
+  padding: 16px 16px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+  overflow-wrap: anywhere;
+}
+#briefing .matrix h3,
+#briefing .unknowns h3 { margin: 0 0 8px; }
+#briefing .matrix article + article,
+#briefing .unknowns article + article { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+#briefing .matrix .out { color: var(--accent); }

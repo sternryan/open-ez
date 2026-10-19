@@ -303,7 +303,7 @@ test('an unscored option with no public matrix is not scored yet', () => {
 
 test('renderMatrix shows worst rows, crossings, unknown cells, the private block, and escapes loading text', () => {
   const html = renderMatrix(record, sampleMatrix())
-  assert.match(html, /<section class="matrix" data-test="matrix">/)
+  assert.match(html, /<section class="panel matrix" data-test="matrix">/)
   assert.match(html, /<h3>Loading matrix<\/h3>/)
   assert.match(html, /Battery aft/)
   assert.match(html, /data-limit="fwd"[\s\S]*Forward limit[\s\S]*\+2\.8 in/)
@@ -432,7 +432,7 @@ function unknownsResponse(): MatrixResponse {
 
 test('renderUnknowns shows research only for an open live unknown, job state, and the proposal verdict', () => {
   const live = renderUnknowns(record, unknownsResponse(), true)
-  assert.match(live, /<section class="unknowns" data-test="unknowns">/)
+  assert.match(live, /<section class="panel unknowns" data-test="unknowns">/)
   assert.match(live, /<h3>Unknowns<\/h3>/)
   assert.match(live, /coolant mass/)
   assert.match(live, /weigh it/)

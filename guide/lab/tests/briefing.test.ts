@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { DecisionRecord, Option } from '../src/hangar/model'
 import type { State } from '../src/hangar/briefingState'
-import { buildDecidePayload, linesFromTurns, renderBriefingHtml, renderPilotMargins } from '../src/hangar/briefing'
+import { buildDecidePayload, linesFromTurns, placeBeforeBackbone, renderBriefingHtml, renderPilotMargins } from '../src/hangar/briefing'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
   return {
@@ -413,4 +413,53 @@ test('decide selects start on an empty placeholder so a pick is always deliberat
     { recordId: 'x', mode: 'live', status: 'open', transcript: [], error: null, busy: false, decideEnabled: true } as State,
   )
   assert.match(html, /<select name="pick-engine" required><option value="">/)
+})
+
+const panels =
+  '<section class="panel matrix" data-test="matrix"></section><section class="panel unknowns" data-test="unknowns"></section>'
+
+function stripPanels(html: string): string {
+  return html
+    .replace(/<section class="panel matrix" data-test="matrix"><\/section>/g, '')
+    .replace(/<section class="panel unknowns" data-test="unknowns"><\/section>/g, '')
+}
+
+test('placeBeforeBackbone puts the matrix and unknowns before the backbone disclosure', () => {
+  const present =
+    '<article class="record"><section class="panel skin"></section><details class="backbone"><section data-test="pilot-margins"></section></details><section class="panel live"></section></article>'
+  const placed = placeBeforeBackbone(present, panels)
+  const matrixAt = placed.indexOf('data-test="matrix"')
+  const unknownsAt = placed.indexOf('data-test="unknowns"')
+  const backboneAt = placed.indexOf('<details class="backbone"')
+  const liveAt = placed.indexOf('class="panel live"')
+  const pilotsAt = placed.indexOf('data-test="pilot-margins"')
+  assert.ok(matrixAt >= 0 && unknownsAt > matrixAt && backboneAt > unknownsAt && liveAt > backboneAt)
+  assert.ok(pilotsAt > backboneAt)
+  assert.equal((placed.match(/data-test="matrix"/g) ?? []).length, 1)
+  assert.equal((placed.match(/data-test="unknowns"/g) ?? []).length, 1)
+
+  const absent = '<article class="record"><section class="panel skin"></section></article>'
+  const appended = placeBeforeBackbone(absent, panels)
+  assert.equal(appended, `<article class="record"><section class="panel skin"></section>${panels}</article>`)
+  assert.equal(appended.includes('<details'), false)
+
+  const again = placeBeforeBackbone(stripPanels(placed), panels)
+  assert.equal((again.match(/data-test="matrix"/g) ?? []).length, 1)
+  assert.equal((again.match(/data-test="unknowns"/g) ?? []).length, 1)
+  assert.ok(again.indexOf('data-test="unknowns"') < again.indexOf('<details class="backbone"'))
+})
+
+test('placeBeforeBackbone puts both panels ahead of the briefing backbone and the council', () => {
+  const article = renderBriefingHtml(rec(), 'live', base({ mode: 'live' }))
+  const placed = placeBeforeBackbone(article, panels)
+  const skinAt = placed.indexOf('class="panel skin"')
+  const matrixAt = placed.indexOf('data-test="matrix"')
+  const unknownsAt = placed.indexOf('data-test="unknowns"')
+  const backboneAt = placed.indexOf('<details class="panel backbone"')
+  const councilAt = placed.indexOf('class="panel live"')
+  assert.ok(skinAt >= 0 && matrixAt > skinAt && unknownsAt > matrixAt && backboneAt > unknownsAt && councilAt > backboneAt)
+  assert.equal(placed.slice(0, backboneAt).includes('<details'), false)
+  const again = placeBeforeBackbone(stripPanels(placed), panels)
+  assert.equal((again.match(/data-test="matrix"/g) ?? []).length, 1)
+  assert.equal((again.match(/data-test="unknowns"/g) ?? []).length, 1)
 })
