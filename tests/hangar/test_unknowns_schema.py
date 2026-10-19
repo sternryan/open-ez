@@ -134,7 +134,7 @@ def test_real_records_give_every_unknown_an_id(tmp_path):
         seen = []
         for row in rows:
             assert isinstance(row["id"], str) and 2 <= len(row["id"].split("-")) <= 4
-            assert row["state"] == "open"
+            assert row["state"] in ("open", "researching")  # wave 4 stages three cg-ballast unknowns for the owner
             assert isinstance(row["affects"], list)
             assert set(row["affects"]) <= opt_ids
             assert row["text"] and row["how"]
