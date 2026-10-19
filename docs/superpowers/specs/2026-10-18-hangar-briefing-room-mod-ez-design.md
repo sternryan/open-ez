@@ -264,3 +264,28 @@ generator.
 ## 10. Open for the owner
 
 - None. The modern airplane is named Mod-EZ (owner, 2026-10-18).
+
+## Addendum 2026-10-19 (owner): the loading matrix and research-before-decision
+
+Owner, in the briefing room on `cg-ballast`: the point of the app is to find what needs testing, test it, and slide
+things around until every presented condition is accounted for; each discovered unknown is researched before deciding.
+
+### A. Loading matrix (every option that changes mass or CG)
+- The calculator scores each option over a fixed matrix, not sample rows:
+  - occupants: two-up (front/rear), solo front; solo pilots across a public range (120-220 lb, 10 lb steps);
+  - baggage: none, light overnight bag;
+  - fuel: full, mission fuel, reserve only; each at takeoff and at landing (landing = takeoff minus leg fuel, floored at reserve).
+- Both limits are checked: forward and aft CG, and max gross. Each option reports its worst cell for each limit, with the
+  loading that produced it, and the public crossing weights (solo pilot weight where a limit binds).
+- Private overlay: `pilots` (and optional `bags_lb`) in `$HANGAR_PRIVATE_DIR/mission.yaml` produce the same matrix for the
+  real owners at request time, shown in the briefing room, never written to tracked files.
+- Gate: a mass/CG record may not be decided while any option's matrix has a cell flagged `unknown` that the owner hasn't
+  acknowledged (see B).
+
+### B. Unknowns become research
+- Each `unknowns` entry gets an id, the options it affects, and a state: `open` -> `researching` -> `sourced` | `unsourceable`.
+- The briefing room shows, per decision, which open unknowns affect which options, with a "research this" action. Research
+  runs on the public research lane (public content only), then a spot-check by a different method, then source registration
+  and an automatic re-score. Nothing becomes a fact without that chain.
+- The owner may still decide with unknowns open; the decision then records the unknown ids it was taken over, so a later
+  sourced value that changes the matrix flags the decision for a briefing-room reopen (never an edit).
