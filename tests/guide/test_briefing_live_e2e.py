@@ -65,6 +65,11 @@ def live(tmp_path, site, monkeypatch):
 
     monkeypatch.setattr(core_sources, "REGISTRY", registry)   # citations are validated against the registry the test writes to
     core_sources.load_registry.cache_clear()
+    import hangar.matrix as hm
+    import hangar.mission as hmi
+
+    monkeypatch.setattr(hm, "_PLANTS", records / "mod-ez" / "powerplants.yaml")   # the scorers read the data the patch writes
+    monkeypatch.setattr(hmi, "_DATA", records / "mod-ez")
     srv = make_server(site, 0, priv, records_root=records, council=lambda *a, **k: None, research_lane=lane,
                       spotcheck=check, registry_path=registry)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
