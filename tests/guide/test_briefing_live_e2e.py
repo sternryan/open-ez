@@ -77,10 +77,10 @@ def test_matrix_unknowns_research_and_reopen_flag(live):
         pg.wait_for_selector('[data-test="matrix"]', state="visible", timeout=20000)
         pg.wait_for_selector('[data-test="unknowns"]', state="visible", timeout=20000)
         text = pg.inner_text('[data-test="matrix"]')
-        assert all(s in text for s in ("Forward limit", "Aft limit", "Gross"))
-        assert "Your loadings" in text and "Pat" in text           # private overlay, labels only
+        assert all(s in text.lower() for s in ("forward limit", "aft limit", "gross"))  # inner_text applies CSS case transforms
+        assert "your loadings" in text.lower() and "Pat" in text   # private overlay, labels only
         assert "133.37" not in text and "187.91" not in text
-        assert "not scored yet" in text                              # radiator-aft has no loading effect
+        assert "not scored yet" in text.lower()                           # radiator-aft has no loading effect
         assert pg.locator('[data-test="matrix"] .out').count() > 0   # something is outside a limit and marked so
         assert pg.locator('[data-test="unknowns"] [data-action="research"]').count() >= 3
 
