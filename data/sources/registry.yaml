@@ -325,3 +325,52 @@ sources:
     copy: transcription
     page_basis: pdf
     note: a single web page, cite p1; read and noted, never stored in the repo.
+  sensenich-3b0r5:
+    title: "Sensenich 3B0R5 composite ground-adjustable propeller installation instructions, rev C (2 Oct 2018)"
+    edition: "PDF read 2026-10-18; approved-combination table: L68C pusher, 68 in max and 64 in min diameter, 9.0 lb without spacer, Rotax 912, 912S, 912iS and 914 series reduction drives only, 5800 rpm engine, 80-115 HP; R68C tractor and R72C 72 in 9.5 lb also listed"
+    obtain: https://www.sensenich.com/wp-content/uploads/2019/07/3B0R5-Installation-Instructions-rev-C-2018-10-02.pdf
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo."
+  sensenich-2a0:
+    title: "Sensenich 2A0 composite ground-adjustable propeller installation instructions, rev F (2 Oct 2018)"
+    edition: "PDF read 2026-10-18; approved-combination table: 2A0R5/L69E pusher, 69 in max and 65 in min diameter, 10.5 lb, Rotax 912, 912S, 912iS and 914 series reduction drives only, 5800 rpm engine, 80-115 HP"
+    obtain: https://www.sensenich.com/wp-content/uploads/2019/02/2A0-Installation-Instructions-rev-F-2018-10-02.pdf
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo."
+  rotax-im-912i:
+    title: "Rotax Installation Manual IM-912 i (912 iS, 912 iS Sport, 912 iSc Sport), Rev. 1, 01 Feb 2020"
+    edition: "PDF read 2026-10-18; chapter 61-00-00: propeller shaft turns counter clockwise looking towards the face of the flange, gear ratio i = 2.4286 (51/21 teeth), propeller moment of inertia 1500 to 6000 kg cm2, shaft extension 120 mm maximum, torque 340 Nm on the propeller"
+    obtain: https://www.rotax-owner.com/pdf/IM_912_iSeries_ED2_R1.pdf
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo."
+  mt-mtv34:
+    title: "MT-Propeller product page, UL/LSA propellers (MTV-33 and MTV-34)"
+    edition: "web page read 2026-10-18; two or three blade hydraulic constant speed or ground adjustable composite propeller for the Rotax 912/914 series, MTV-34 also for the 915 iS; 3-blade 9 kg (19.8 lb) plus governor 1 kg; EASA certified"
+    obtain: https://www.mt-propeller.com/mt/en/products/sport_aircraft/ul-lsa-2190/
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo. It does not name the 912 iS and does not say pusher or tractor."
+  catto-canards:
+    title: "Catto Propellers canard page"
+    edition: "web page read 2026-10-18; Long EZ 360/180-200hp two-blade 66 in, 320/150-160hp two-blade 64 in, three-blade 60 in; carbon structure with a wood core; most canards need a 6 in or 8 in extension"
+    obtain: https://cattoprops.com/canards-1
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo. No Rotax 912 iS statement, weight or price on the page."
+  powerfin-guide:
+    title: "Powerfin selection guide hosted by a reseller"
+    edition: "web page read 2026-10-18; direction of rotation is noted from the rear of the vehicle; pushers run a left turning prop on the Rotax 912, 912S and 914"
+    obtain: https://www.uflyit.com/powerfin2.htm
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo. A reseller page, not the maker; it does not name the 912 iS."
+  airmaster-ap332:
+    title: "Airmaster AP332CTF-WWR70Z product page"
+    edition: "web page read 2026-10-18; three blade electric constant speed, clockwise tractor configuration, 70 in, 25 lbs, up to 115 hp on gear reduced engines, Rotax 912, 912S, 914 or similar"
+    obtain: https://www.propellor.com/ap332ctf-wwr70z-2
+    copy: transcription
+    page_basis: pdf
+    note: "a single document or web page, cite p1; read and noted, never stored in the repo. It does not name the 912 iS and lists no pusher configuration."
