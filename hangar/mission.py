@@ -70,7 +70,9 @@ def load_mission(private_dir: Path | None = None) -> dict:
         data = yaml.safe_load(f)
     if private_dir and (private_dir / "mission.yaml").exists():
         with open(private_dir / "mission.yaml", "r") as f:
-            data.update(yaml.safe_load(f))
+            extra = yaml.safe_load(f)
+        if isinstance(extra, dict):
+            data.update(extra)
     return data
 
 def score(option_id: str, mission: dict = None, plants: dict = None) -> MissionScore:
@@ -482,8 +484,19 @@ def score_pilots(
     priv = private_dir if private_dir is not None else os.environ.get("HANGAR_PRIVATE_DIR")
     if not priv:
         return []
-    mission = load_mission(Path(priv))
-    pilots = [p for p in (mission.get("pilots") or []) if isinstance(p, dict) and isinstance(p.get("lb"), (int, float))]
+    try:
+        mission = load_mission(Path(priv))
+    except Exception:  # an unreadable private file means no pilots; its text (owner weights) is never echoed
+        return []
+    pilots = []
+    seen: dict[str, int] = {}
+    for i, p in enumerate(mission.get("pilots") or []):
+        lb = p.get("lb") if isinstance(p, dict) else None
+        if isinstance(lb, bool) or not isinstance(lb, (int, float)) or not (30.0 <= float(lb) <= 500.0):
+            continue  # also rejects NaN and inf, which fail the range test
+        label = str(p.get("label", f"pilot {i + 1}"))
+        seen[label] = seen.get(label, 0) + 1
+        pilots.append({"label": label if seen[label] == 1 else f"{label} ({seen[label]})", "lb": float(lb)})
     out = []
     for i, p in enumerate(pilots):
         solo = score_pilot(option_id, p["lb"], mission=mission, plants=plants, extras=extras)

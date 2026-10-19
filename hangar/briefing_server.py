@@ -281,13 +281,15 @@ class BriefingHandler(SimpleHTTPRequestHandler):
         except Exception as exc:
             self._send_json(500, {"error": str(exc)})
 
-    def _send_json(self, code: int, payload: object) -> None:
+    def _send_json(self, code: int, payload: object, no_store: bool = False) -> None:
         if getattr(self, "_responded", False):
             return
         body = json.dumps(payload).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        if no_store:
+            self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
@@ -327,11 +329,21 @@ class BriefingHandler(SimpleHTTPRequestHandler):
         for opt in data.get("options") or []:
             if not isinstance(opt, dict) or not isinstance(opt.get("effect"), dict):
                 continue
-            engine, extras, plants = _m.apply_effect(opt["effect"])
-            for row in _m.score_pilots(engine, extras=extras, plants=plants, private_dir=self.server.private_dir):
+            try:
+                engine, extras, plants = _m.apply_effect(opt["effect"])
+                rows = _m.score_pilots(engine, extras=extras, plants=plants, private_dir=self.server.private_dir)
+                err = None
+            except Exception:  # a malformed effect must not 500 or echo anything private
+                rows, err = [], "bad effect"
+            if err:
+                for label in {r["label"] for r in _m.score_pilots("rotax-912is", private_dir=self.server.private_dir)}:
+                    entry = by_label.setdefault(label, {"label": label, "options": []})
+                    entry["options"].append({"option": opt.get("id"), "error": err})
+                continue
+            for row in rows:
                 entry = by_label.setdefault(row["label"], {"label": row["label"], "options": []})
                 entry["options"].append({"option": opt.get("id"), **{k: row[k] for k in ("solo", "two_up_with", "two_up")}})
-        self._send_json(200, {"pilots": list(by_label.values())})
+        self._send_json(200, {"pilots": list(by_label.values())}, no_store=True)
 
     def _read_json(self) -> dict[str, Any] | None:
         try:

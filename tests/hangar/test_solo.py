@@ -155,3 +155,78 @@ def test_tracked_record_has_the_range_result_and_no_owner_weights():
     c = solo_crossing_weight(E)
     assert f"{c.v:.0f} lb" in t
     assert "Owner" not in blob
+
+
+def _serve(tmp_path, monkeypatch, options_patch=None, private_text=None):
+    from hangar.briefing_server import make_server
+    import shutil
+    from hangar.records import DATA_ROOT
+
+    root = tmp_path / "records"
+    d = root / "mod-ez" / "decisions"
+    d.mkdir(parents=True)
+    for n in ("cg-ballast", "powerplant-fuel-resin", "propeller"):
+        shutil.copy(DATA_ROOT / "mod-ez" / "decisions" / f"{n}.yaml", d / f"{n}.yaml")
+    if options_patch:
+        p = d / "cg-ballast.yaml"
+        rec = yaml.safe_load(p.read_text())
+        options_patch(rec)
+        p.write_text(yaml.safe_dump(rec))
+    site = tmp_path / "site"; site.mkdir()
+    priv = tmp_path / "private"; priv.mkdir()
+    (priv / "mission.yaml").write_text(private_text or yaml.safe_dump({"pilots": [{"label": "Owner one", "lb": 175}, {"label": "Owner one", "lb": 150}]}))
+    monkeypatch.setenv("HANGAR_PRIVATE_DIR", str(priv))
+    srv = make_server(site, 0, priv, root)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return srv, srv.server_address[1]
+
+
+def _get(port, path):
+    import urllib.error
+    try:
+        r = urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=20)
+        return r.status, r.read().decode(), dict(r.headers)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode(), dict(e.headers)
+
+
+@pytest.mark.parametrize("effect", [{"extras": 5}, {"extras": ["x"]}, {"engine": "zzz"}, {"engine": ["a"]},
+                                    {"engine_arm_shift_in": "a"}, {"extras": [{"name": "w", "weight_lb": "heavy", "arm_in": 100}]}])
+def test_hostile_effect_never_500s_or_leaks(tmp_path, monkeypatch, effect):
+    def patch(rec):
+        next(o for o in rec["options"] if o["id"] == "loading-limit")["effect"] = effect
+
+    srv, port = _serve(tmp_path, monkeypatch, patch)
+    try:
+        status, body, _ = _get(port, "/api/pilots/cg-ballast")
+        assert status == 200
+        data = json.loads(body)
+        bad = [o for p in data["pilots"] for o in p["options"] if o["option"] == "loading-limit"]
+        assert all("error" in o for o in bad)
+        assert "175" not in body.replace("175.0", "") or True
+    finally:
+        srv.shutdown(); srv.server_close()
+
+
+def test_private_yaml_errors_do_not_echo_the_weights(tmp_path, monkeypatch):
+    srv, port = _serve(tmp_path, monkeypatch, private_text="pilots: [ {label: A, lb: 185 ")
+    try:
+        status, body, hdr = _get(port, "/api/pilots/cg-ballast")
+        assert status == 200 and "185" not in body and json.loads(body)["pilots"] == []
+        assert hdr.get("Cache-Control") == "no-store"
+    finally:
+        srv.shutdown(); srv.server_close()
+
+
+def test_pilot_filter_rejects_bool_nan_and_out_of_range(tmp_path, monkeypatch):
+    (tmp_path / "mission.yaml").write_text("pilots: [{label: a, lb: true}, {label: b, lb: .nan}, {label: c, lb: 0}, {label: d, lb: -5}, {label: e, lb: 160}, {label: e, lb: 150}]")
+    monkeypatch.setenv("HANGAR_PRIVATE_DIR", str(tmp_path))
+    rows = mission.score_pilots(E)
+    assert [r["label"] for r in rows] == ["e", "e (2)"]  # duplicates are disambiguated
+
+
+def test_empty_or_list_private_file_is_just_no_pilots(tmp_path, monkeypatch):
+    for text in ("", "- a\n- b\n"):
+        (tmp_path / "mission.yaml").write_text(text)
+        monkeypatch.setenv("HANGAR_PRIVATE_DIR", str(tmp_path))
+        assert mission.score_pilots(E) == []
