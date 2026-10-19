@@ -27,7 +27,7 @@ import yaml
 import guide.schema
 from hangar import council
 from hangar.council import CouncilUnavailable
-from hangar.records import DATA_ROOT, load_record, load_records, validate
+from hangar.records import DATA_ROOT, dump_record, load_record, load_records, validate
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LOOPBACK = "127.0.0.1"
@@ -58,7 +58,7 @@ def _atomic_write(
     tmp = Path(tmp_name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            yaml.safe_dump(_normalize(data), handle, sort_keys=False)
+            handle.write(dump_record(_normalize(data)))
         try:
             rec = load_record(tmp)
         except ValueError as exc:

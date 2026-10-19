@@ -333,3 +333,52 @@ def test_decide_with_two_axes(tmp_path):
         assert rec["history"][-1]["picks"] == {"engine": "alt", "fuel_path": "f2"}
     finally:
         e.close()
+
+
+def _owner_keys(text: str) -> list[str]:
+    """Top-level key that owns each line of a YAML mapping dumped with block style."""
+    out, cur = [], ""
+    for line in text.splitlines():
+        if line and not line[0].isspace() and not line.startswith("-") and ":" in line:
+            cur = line.split(":", 1)[0]
+        out.append(cur)
+    return out
+
+
+def test_decide_diff_touches_only_status_decision_history(tmp_path):
+    """A decide must not re-wrap or reorder the rest of the record (long strings stay on their lines)."""
+    import difflib
+
+    from hangar.records import dump_record
+
+    e = Env(tmp_path, good_council)
+    try:
+        d = base()
+        d["options"][1]["why"] = "a very long reason " * 12  # > 120 chars: a re-wrap at the wrong width would change it
+        d["question"] = "Which engine, on which fuel, with which tank resin, for the airplane that is being rebuilt " * 2
+        e.file.write_text(dump_record(d))
+        before = e.file.read_text()
+        assert e.req("POST", "/api/decide", {"record_id": "demo", "picks": {"engine": "alt"}, "reason": "lighter"})[0] == 200
+        after = e.file.read_text()
+        keys = _owner_keys(after)
+        old, new = before.splitlines(), after.splitlines()
+        sm = difflib.SequenceMatcher(None, old, new, autojunk=False)
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag == "equal":
+                continue
+            owners = {keys[j] for j in range(j1, j2)} or {_owner_keys(before)[i1] if i1 < len(old) else ""}
+            assert owners <= {"status", "decision", "history"}, (tag, owners, new[j1:j2], old[i1:i2])
+        # the long strings survive byte for byte
+        assert "a very long reason " * 12 in after.replace("\n", " ").replace("  ", " ") or d["options"][1]["why"].strip() in after
+    finally:
+        e.close()
+
+
+def test_dump_record_style_is_stable(tmp_path):
+    from hangar.records import dump_record
+
+    d = base()
+    text = dump_record(d)
+    assert yaml.safe_load(text) == d
+    assert list(yaml.safe_load(text)) == list(d)  # key order kept
+    assert dump_record(yaml.safe_load(text)) == text  # idempotent

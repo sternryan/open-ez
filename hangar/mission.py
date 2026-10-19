@@ -4,6 +4,7 @@ from typing import Any
 import dataclasses
 import yaml
 import os
+from hangar.records import dump_record
 from core.ledger import load_ledger, in_envelope
 
 _DATA = Path(__file__).resolve().parents[1] / "data" / "hangar" / "mod-ez"
@@ -225,7 +226,7 @@ def write_scores(root: Path) -> int:
         rec["mission_score"] = {
             opt: dataclasses.asdict(score(opt, load_mission(None), plants)) for opt in plants if opt in ids
         }
-        path.write_text(yaml.safe_dump(rec, sort_keys=False, allow_unicode=True, width=120))
+        path.write_text(dump_record(rec))
         n += 1
     return n
 

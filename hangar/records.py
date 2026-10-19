@@ -438,3 +438,8 @@ def validate_all(root: Path = DATA_ROOT, graph_dir: Path = GRAPH_DIR) -> list[st
 def load_spots(path: Path = DATA_ROOT / "spots.yaml") -> list[dict]:
     with open(path, 'r') as f:
         return yaml.safe_load(f)
+
+
+def dump_record(data: dict) -> str:
+    """The one way records are written: block style, keys in their given order, width 120 (so a decide never re-wraps)."""
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=120)

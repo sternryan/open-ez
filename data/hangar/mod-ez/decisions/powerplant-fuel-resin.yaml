@@ -23,8 +23,8 @@ replaces:
 - f21.inside-layups
 - f21.plumbing
 book_choice:
-  text: the book airplane uses the Lycoming O-235, two wing tanks totalling 52 gal,
-    aviation gasoline, and a maximum true cruise of 161 kt at 75 percent power
+  text: the book airplane uses the Lycoming O-235, two wing tanks totalling 52 gal, aviation gasoline, and a maximum true
+    cruise of 161 kt at 75 percent power
   cite: om-1980:p15
 options:
 - id: o235-book
@@ -44,18 +44,15 @@ options:
   facts:
   - text: 118 hp, ready-to-fly 78.4 kg (173 lb)
     cite: ulpower-ul350i:p1
-  - text: mogas minimum 95 RON (91 AKI) below serial 223501, 91 RON (87 AKI) above,
-      100LL allowed if mogas is unavailable
+  - text: mogas minimum 95 RON (91 AKI) below serial 223501, 91 RON (87 AKI) above, 100LL allowed if mogas is unavailable
     cite: ulpower-ul350i:p1
   - text: estimated cruise about 18 L/h
     cite: ulpower-ul350i:p1
   - text: ethanol limit
     flag: unknown
-  why: 'kept: about 70 lb lighter installed than the book engine on the maker''s ready-to-fly
-    weight, so the tail gets lighter and the empty CG moves forward; runs on mogas;
-    its ethanol limit is the open question. Weight bases differ between candidates
-    (ready-to-fly, operational, a build-up of listed parts), so the weights are not
-    strictly like for like'
+  why: 'kept: about 70 lb lighter installed than the book engine on the maker''s ready-to-fly weight, so the tail gets lighter
+    and the empty CG moves forward; runs on mogas; its ethanol limit is the open question. Weight bases differ between candidates
+    (ready-to-fly, operational, a build-up of listed parts), so the weights are not strictly like for like'
 - id: ul350is
   label: UL350iS
   kind: candidate
@@ -64,8 +61,7 @@ options:
     cite: ulpower-techdata:p1
   - text: power and fuel specifics not verified
     flag: unknown
-  why: 'kept: same weight class as the UL350i; its power and fuel numbers have not
-    been verified, so it is scored with unknowns'
+  why: 'kept: same weight class as the UL350i; its power and fuel numbers have not been verified, so it is scored with unknowns'
 - id: rotax-912is
   label: Rotax 912iS
   kind: candidate
@@ -78,9 +74,8 @@ options:
     cite: rotax-fuel-si:p1
   - text: coolant and radiator weight
     flag: unknown
-  why: 'kept: a published fuel flow at 75 percent power (69 hp), close to the mission
-    cruise power; the maker limits ethanol to 10 percent, which ties it to the tank-resin
-    question; coolant and radiator weight are not yet known'
+  why: 'kept: a published fuel flow at 75 percent power (69 hp), close to the mission cruise power; the maker limits ethanol
+    to 10 percent, which ties it to the tank-resin question; coolant and radiator weight are not yet known'
 - id: rotax-915is
   label: Rotax 915iS
   kind: candidate
@@ -89,8 +84,7 @@ options:
     cite: rotax-915is-card:p1
   - text: cruise fuel flow
     flag: unknown
-  why: 'kept: more power than the mission needs; no published cruise fuel flow, so
-    it is scored with unknowns'
+  why: 'kept: more power than the mission needs; no published cruise fuel flow, so it is scored with unknowns'
 - id: rotax-916is
   label: Rotax 916iS
   kind: candidate
@@ -99,8 +93,7 @@ options:
     cite: rotax-916is-page:p1
   - text: cruise fuel flow
     flag: unknown
-  why: 'kept: more power than the mission needs; no published cruise fuel flow, so
-    it is scored with unknowns'
+  why: 'kept: more power than the mission needs; no published cruise fuel flow, so it is scored with unknowns'
 - id: deltahawk-dhk180
   label: DeltaHawk DHK180
   kind: dropped
@@ -114,38 +107,34 @@ options:
   facts:
   - text: a flown electric Long-EZ carried a 525 lb pack, 450 V 80 Ah
     cite: wired-yates-2013:p1
-  - text: 'The flown pack stored 36 kWh (450 V x 80 Ah = 36,000 Wh) in 525 lb (238
-      kg): about 151 Wh/kg at pack level'
+  - text: 'The flown pack stored 36 kWh (450 V x 80 Ah = 36,000 Wh) in 525 lb (238 kg): about 151 Wh/kg at pack level'
     flag: derived
   - text: a 500 Wh/kg cell is a company claim, cell level only
     cite: amprius-sicore500:p1
-  - text: 'Method: shaft power 52 kW at 150 kt (cube-law scaling of the manual''s
-      161 kt at 75 percent of 115 hp) over 0.96 motor efficiency for 2.5 h is about
-      136 kWh; at 500 Wh/kg that is about 272 kg (600 lb) of cells before pack structure
+  - text: 'Method: shaft power 52 kW at 150 kt (cube-law scaling of the manual''s 161 kt at 75 percent of 115 hp) over 0.96
+      motor efficiency for 2.5 h is about 136 kWh; at 500 Wh/kg that is about 272 kg (600 lb) of cells before pack structure
       and reserve'
     flag: derived
-  why: 'dropped for now: the numbers do not close the 300 nm mission with a pack that
-    has flown (151 Wh/kg) or a claimed cell (500 Wh/kg, cell level); kept so it can
-    be reopened when cells improve'
+  why: 'dropped for now: the numbers do not close the 300 nm mission with a pack that has flown (151 Wh/kg) or a claimed cell
+    (500 Wh/kg, cell level); kept so it can be reopened when cells improve'
 - id: hybrid
   label: Hybrid
   kind: unavailable
   facts:
   - text: no homebuilder hybrid kit with a published price was found
     flag: unknown
-  why: 'none found: no homebuilder hybrid kit with a published price turned up in
-    the sweep (not independently re-checked); kept so it can be reopened'
+  why: 'none found: no homebuilder hybrid kit with a published price turned up in the sweep (not independently re-checked);
+    kept so it can be reopened'
 - id: ul94-ethanol-free
   label: UL94 Ethanol-Free
   kind: candidate
   facts:
   - text: UL94 is ethanol-free and weighs 5.87 lb/gal
     cite: swift-ul94-faq:p1
-  why: 'kept: removes the ethanol question, but no source shows how the book tank
-    resin behaves in UL94, so the resin choice stays open'
+  why: 'kept: removes the ethanol question, but no source shows how the book tank resin behaves in UL94, so the resin choice
+    stays open'
   implies:
-    tank_resin: No source tests UL94 on the book's epoxy tanks, so keeping the conventional
-      tank resin is unconfirmed.
+    tank_resin: No source tests UL94 on the book's epoxy tanks, so keeping the conventional tank resin is unconfirmed.
     flag: unknown
 - id: mogas-e10
   label: Mogas E10
@@ -153,31 +142,27 @@ options:
   facts:
   - text: ethanol can partly dissolve resins in composite tanks
     cite: bmaa-sb2695:p1
-  - text: In a builder's 18-month immersion test (54 coupons, two per test) of E-Z
-      Poxy, MGS and Jeffco epoxies in 100LL and 8.4 percent ethanol mogas, none showed
-      visible deterioration; all gained some weight, and post-cure mattered more than
+  - text: In a builder's 18-month immersion test (54 coupons, two per test) of E-Z Poxy, MGS and Jeffco epoxies in 100LL and
+      8.4 percent ethanol mogas, none showed visible deterioration; all gained some weight, and post-cure mattered more than
       brand. Small sample, not a long-term or maker rating
     cite: kitplanes-tank-epoxy-2018:p1
-  why: 'kept: the common automotive fuel, but ethanol can partly dissolve some composite-tank
-    resins (judgment: the book''s tank resin is not shown safe), so this path needs
-    a tank resin that is shown to hold up, with a good post-cure (the rehearsal player
-    carries an open placeholder for it); vapor lock in a hot pusher engine bay is
-    a further judgment-level concern with no source here'
+  why: 'kept: the common automotive fuel, but ethanol can partly dissolve some composite-tank resins (judgment: the book''s
+    tank resin is not shown safe), so this path needs a tank resin that is shown to hold up, with a good post-cure (the rehearsal
+    player carries an open placeholder for it); vapor lock in a hot pusher engine bay is a further judgment-level concern
+    with no source here'
   implies:
-    tank_resin: Ethanol can partly dissolve some composite-tank resins, so this path
-      needs a tank resin shown to hold up in E10 with a good post-cure; which resin
-      is not yet decided.
+    tank_resin: Ethanol can partly dissolve some composite-tank resins, so this path needs a tank resin shown to hold up in
+      E10 with a good post-cure; which resin is not yet decided.
     cite: bmaa-sb2695:p1
 positions:
 - role: propulsion
   picks:
     engine: rotax-912is
   confidence: high
-  reasoning: The Rotax 912iS is the only candidate with a verified cruise fuel flow
-    of 16.5 L/h at 75% power <rotax-912is-om:p1>. The 915iS and 916iS offer more power,
-    but their cruise fuel flows are unknown <rotax-915is-card:p1, rotax-916is-page:p1>,
-    making them speculative 'waste' for this mission. The UL350i is lighter but its
-    fuel specifics are not fully verified <ulpower-ul350i:p1>.
+  reasoning: The Rotax 912iS is the only candidate with a verified cruise fuel flow of 16.5 L/h at 75% power <rotax-912is-om:p1>.
+    The 915iS and 916iS offer more power, but their cruise fuel flows are unknown <rotax-915is-card:p1, rotax-916is-page:p1>,
+    making them speculative 'waste' for this mission. The UL350i is lighter but its fuel specifics are not fully verified
+    <ulpower-ul350i:p1>.
   citations:
   - rotax-912is-om:p1
   - rotax-915is-card:p1
@@ -188,12 +173,10 @@ positions:
   picks:
     fuel_path: ul94-ethanol-free
   confidence: medium
-  reasoning: Choosing Mogas E10 introduces a risk where ethanol can dissolve resins
-    in composite tanks <bmaa-sb2695:p1>. While a small-scale test showed some epoxies
-    held up <kitplanes-tank-epoxy-2018:p1>, the compatibility of the specific book
-    tank resin with UL94 is unknown <ul94-ethanol-free:p1>. UL94 is ethanol-free <swift-ul94-faq:p1>,
-    making it the safer structural choice, though the final decision depends on the
-    unconfirmed behavior of the epoxy tanks in UL94.
+  reasoning: Choosing Mogas E10 introduces a risk where ethanol can dissolve resins in composite tanks <bmaa-sb2695:p1>. While
+    a small-scale test showed some epoxies held up <kitplanes-tank-epoxy-2018:p1>, the compatibility of the specific book
+    tank resin with UL94 is unknown <ul94-ethanol-free:p1>. UL94 is ethanol-free <swift-ul94-faq:p1>, making it the safer
+    structural choice, though the final decision depends on the unconfirmed behavior of the epoxy tanks in UL94.
   citations:
   - bmaa-sb2695:p1
   - kitplanes-tank-epoxy-2018:p1
@@ -203,9 +186,8 @@ positions:
   picks:
     fuel_path: ul94-ethanol-free
   confidence: medium
-  reasoning: The Rotax 912iS specifically prohibits more than 10 percent ethanol <rotax-fuel-si:p1>.
-    Using UL94 ethanol-free <swift-ul94-faq:p1> avoids the ethanol-related resin dissolution
-    risks associated with Mogas E10 <bmaa-sb2695:p1>.
+  reasoning: The Rotax 912iS specifically prohibits more than 10 percent ethanol <rotax-fuel-si:p1>. Using UL94 ethanol-free
+    <swift-ul94-faq:p1> avoids the ethanol-related resin dissolution risks associated with Mogas E10 <bmaa-sb2695:p1>.
   citations:
   - rotax-fuel-si:p1
   - swift-ul94-faq:p1
@@ -213,9 +195,8 @@ positions:
   judgment: false
 - role: aero-flight-test
   picks: {}
-  reasoning: No flight test data is available to verify the cruise fuel flows for
-    the higher-power Rotax models (915iS/916iS) or the UL350i average <rotax-915is-card:p1,
-    rotax-916is-page:p1, ulpower-ul350i:p1>. A common-power model for each engine
+  reasoning: No flight test data is available to verify the cruise fuel flows for the higher-power Rotax models (915iS/916iS)
+    or the UL350i average <rotax-915is-card:p1, rotax-916is-page:p1, ulpower-ul350i:p1>. A common-power model for each engine
     is required to close the paper case. (uncited)
   citations: []
   judgment: true
@@ -224,8 +205,8 @@ positions:
   picks:
     engine: o235-book
   confidence: high
-  reasoning: The baseline for the mission is the Lycoming O-235, which uses aviation
-    gasoline and provides a maximum true cruise of 161 kt at 75% power <om-1980:p15>.
+  reasoning: The baseline for the mission is the Lycoming O-235, which uses aviation gasoline and provides a maximum true
+    cruise of 161 kt at 75% power <om-1980:p15>.
   citations:
   - om-1980:p15
   judgment: false
@@ -267,10 +248,8 @@ mission_score:
     in_envelope: true
     assumptions:
     - book engine arm by closure method
-    - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to
-      the mission power, not scaled
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
@@ -312,10 +291,8 @@ mission_score:
     assumptions:
     - ready-to-fly 78.4 kg (173 lb) as printed
     - assumed same installed CG as the book engine
-    - factory estimated cruise average about 18 L/h divided by 3.785 L/gal; not tied
-      to the mission speed
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - factory estimated cruise average about 18 L/h divided by 3.785 L/gal; not tied to the mission speed
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
@@ -355,12 +332,11 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS; oil
-      cooler and gauges are extra, so not a complete installed weight
+    - possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS; oil cooler and gauges are extra, so not a
+      complete installed weight
     - assumed same installed CG as the book engine
     - cruise fuel flow
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
@@ -400,13 +376,11 @@ mission_score:
       note: ''
     in_envelope: true
     assumptions:
-    - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator
-      3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight
-      unknown and not included
+    - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6
+      kg = 75.4 kg; coolant and radiator weight unknown and not included
     - assumed same installed CG as the book engine
     - 16.5 L/h at 75 percent continuous performance, 69 hp
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: derived
@@ -446,12 +420,11 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not
-      included; not a complete installed weight, so flagged derived
+    - 82.2 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
+      so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
@@ -491,12 +464,11 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not
-      included; not a complete installed weight, so flagged derived
+    - 85.8 kg with gearbox, turbo, intercooler, exhaust; coolant and radiator not included; not a complete installed weight,
+      so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
@@ -536,12 +508,10 @@ mission_score:
       note: ''
     in_envelope: null
     assumptions:
-    - estimated, includes starter, alternator, turbo and exhaust; not a complete installed
-      weight, so flagged derived
+    - estimated, includes starter, alternator, turbo and exhaust; not a complete installed weight, so flagged derived
     - assumed same installed CG as the book engine
     - cruise fuel flow
-    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent
-      power; no flight test at 150 kt
+    - mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt
     - two tanks, 52 gal total; unusable fuel unknown
     - UL94 density applied to every gasoline option; mogas density is unsourced
     worst_flag: unknown
@@ -569,9 +539,8 @@ unknowns:
   how: soak coupons of the actual tank resin
 - text: unusable fuel in the 52 gal tanks
   how: measure on the airframe
-- text: The published cruise fuel flows sit at different power points (O-235 at 65
-    percent and 77 hp, 912 iS at 75 percent and 69 hp, UL350i a factory average),
-    so the mission scores compare them only roughly
+- text: The published cruise fuel flows sit at different power points (O-235 at 65 percent and 77 hp, 912 iS at 75 percent
+    and 69 hp, UL350i a factory average), so the mission scores compare them only roughly
   how: flight-test or a common-power model for each engine
 evidence:
   paper: none
