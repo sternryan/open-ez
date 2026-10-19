@@ -553,17 +553,43 @@ history:
     fuel_path: ul94-ethanol-free
 changes: null
 unknowns:
-- text: UL Power ethanol limit
+- id: ul-power-ethanol
+  text: UL Power ethanol limit
   how: ask the maker for the ethanol limit in writing
-- text: coolant and radiator weight for the Rotax installs
+  affects:
+  - ul350i
+  state: open
+- id: rotax-coolant-weight
+  text: coolant and radiator weight for the Rotax installs
   how: dealer installation manual
-- text: UL94 behaviour on the book's epoxy tanks
+  affects:
+  - rotax-912is
+  - rotax-915is
+  - rotax-916is
+  state: open
+- id: ul94-tank-behaviour
+  text: UL94 behaviour on the book's epoxy tanks
   how: soak coupons of the actual tank resin
-- text: unusable fuel in the 52 gal tanks
+  affects:
+  - ul94-ethanol-free
+  state: open
+- id: unusable-fuel
+  text: unusable fuel in the 52 gal tanks
   how: measure on the airframe
-- text: The published cruise fuel flows sit at different power points (O-235 at 65 percent and 77 hp, 912 iS at 75 percent
+  affects: []
+  state: open
+- id: cruise-fuel-flows
+  text: The published cruise fuel flows sit at different power points (O-235 at 65 percent and 77 hp, 912 iS at 75 percent
     and 69 hp, UL350i a factory average), so the mission scores compare them only roughly
   how: flight-test or a common-power model for each engine
+  affects:
+  - o235-book
+  - ul350i
+  - ul350is
+  - rotax-912is
+  - rotax-915is
+  - rotax-916is
+  state: open
 evidence:
   paper: none
   material: none

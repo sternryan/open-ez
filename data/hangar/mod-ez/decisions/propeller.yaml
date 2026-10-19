@@ -120,20 +120,50 @@ options:
   why: dropped on the book's own caution; no other source was found either way
 positions: []
 unknowns:
-- text: Prop-tip-to-ground clearance of the Long-EZ in the tail-down attitude for each diameter (the manual prints only a
+- id: tip-ground-clearance
+  text: Prop-tip-to-ground clearance of the Long-EZ in the tail-down attitude for each diameter (the manual prints only a
     rotation-angle limit, and the clearance rule of thumb found is general homebuilder advice, not a Long-EZ number)
   how: measure on the airframe with the nose gear in its takeoff and landing attitudes
-- text: Maximum propeller diameter that fits a Long-EZ (the plans back-page figure was not read; the designers flew a larger
+  affects:
+  - wood-fixed-book
+  - carbon-wood-fixed
+  - ground-adjustable-composite
+  - in-flight-adjustable
+  - airmaster-electric
+  state: open
+- id: maximum-prop-diameter
+  text: Maximum propeller diameter that fits a Long-EZ (the plans back-page figure was not read; the designers flew a larger
     propeller than the plans show)
   how: read the plans back page; measure on the airframe
-- text: Rotation direction of the book propeller
+  affects: []
+  state: open
+- id: book-rotation-direction
+  text: Rotation direction of the book propeller
   how: plans or the Canard Pusher index of propeller articles
-- text: Whether the maker's 2021 Warp Drive manual names the 912 iS (the older manual does, the newer table extract does not)
+  affects:
+  - wood-fixed-book
+  state: open
+- id: warp-drive-naming
+  text: Whether the maker's 2021 Warp Drive manual names the 912 iS (the older manual does, the newer table extract does not)
   how: ask the maker
-- text: A tip-speed or noise limit for the 912 iS gearbox propeller
+  affects: []
+  state: open
+- id: tip-speed-limit
+  text: A tip-speed or noise limit for the 912 iS gearbox propeller
   how: maker installation manual or a noise measurement
-- text: Pusher yaw and pitch effect of a left-turning versus right-turning propeller on this airframe
+  affects:
+  - carbon-wood-fixed
+  - ground-adjustable-composite
+  - in-flight-adjustable
+  - airmaster-electric
+  state: open
+- id: pusher-turning-effect
+  text: Pusher yaw and pitch effect of a left-turning versus right-turning propeller on this airframe
   how: flight test
+  affects:
+  - carbon-wood-fixed
+  - ground-adjustable-composite
+  state: open
 mission_score: null
 decision: null
 history: []

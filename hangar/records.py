@@ -31,6 +31,7 @@ class Record:
     evidence: dict
     axes: list
     scoring: dict | None = None
+    reopen_flag: dict | None = None
 
 def _plain(x: Any) -> Any:
     """YAML turns an unquoted 2026-10-20 into a date object; records hold ISO strings so they stay JSON-able."""
@@ -77,6 +78,7 @@ def load_record(path: Path) -> Record:
         evidence=get_val("evidence", {}),
         axes=get_val("axes", []),
         scoring=get_val("scoring", None),
+        reopen_flag=get_val("reopen_flag", None),
     )
 
 def load_records(root: Path = DATA_ROOT) -> dict[str, Record]:
@@ -105,6 +107,75 @@ def _check_picks(picks: Any, axis_map: dict, kinds: dict, who: str, complete: bo
         for ax_id in axis_map:
             if ax_id not in picks:
                 errors.append(f"{who} is missing a pick for axis {ax_id}")
+
+
+_UNKNOWN_STATES = {"open", "researching", "sourced", "unsourceable"}
+
+
+def _check_unknowns(rec: Record, opt_ids: list, errors: list[str]) -> list[str]:
+    """Id-bearing unknowns. Rows with no id, and non-dicts, stay legal."""
+    seen: list[str] = []
+    rows = rec.unknowns if isinstance(rec.unknowns, list) else []
+    for row in rows:
+        if not isinstance(row, dict) or "id" not in row:
+            continue
+        uid = row.get("id")
+        if not isinstance(uid, str) or uid.strip() == "":
+            errors.append("unknown id must be a non-empty string")
+        elif uid in seen:
+            errors.append(f"duplicate unknown id {uid}")
+        else:
+            seen.append(uid)
+        if "affects" not in row:
+            errors.append("unknown affects is required")
+        elif not isinstance(row.get("affects"), list):
+            errors.append("unknown affects must be a list")
+        else:
+            for affected in row["affects"]:
+                if not isinstance(affected, str) or affected not in opt_ids:
+                    errors.append(f"unknown affects bad option {affected}")
+        state = row.get("state")
+        if state not in _UNKNOWN_STATES:
+            errors.append(f"unknown state {state}")
+        if "source" in row and not isinstance(row.get("source"), str):
+            errors.append("unknown source must be a string")
+        elif state == "sourced" and isinstance(row.get("source"), str):
+            try:
+                check_citation(f"{row['source']}:p1")
+            except ValueError as exc:
+                errors.append(str(exc))
+    return seen
+
+
+def _check_decision_extras(decision: dict, unknown_ids: list[str], opt_ids: list, errors: list[str]) -> None:
+    if "over_unknowns" in decision:
+        named = decision["over_unknowns"]
+        if not isinstance(named, list) or any(not isinstance(item, str) or item not in unknown_ids for item in named):
+            errors.append("over_unknowns must name unknown ids")
+    if "matrix_digest" in decision:
+        digest = decision["matrix_digest"]
+        if not isinstance(digest, dict):
+            errors.append("matrix_digest must be a dict")
+        elif any(not isinstance(key, str) or key not in opt_ids or not isinstance(value, str) for key, value in digest.items()):
+            errors.append("matrix_digest must map option ids to strings")
+
+
+def _check_reopen_flag(rec: Record, errors: list[str]) -> None:
+    flag = rec.reopen_flag
+    if flag is None:
+        return
+    if rec.status != "decided":
+        errors.append("reopen_flag only while decided")
+    if not isinstance(flag, dict):
+        errors.append("reopen_flag must be a dict")
+        return
+    if not isinstance(flag.get("date"), str):
+        errors.append("reopen_flag needs a date")
+    if not isinstance(flag.get("reason"), str):
+        errors.append("reopen_flag needs a reason")
+    named = flag.get("unknowns")
+    if not isinstance(named, list) or any(not isinstance(item, str) for item in named):
+        errors.append("reopen_flag unknowns must be a list of strings")
 
 
 def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
@@ -236,6 +307,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
         errors.append("book_choice must be a mapping")
 
     kinds = {o.get("id"): o.get("kind") for o in opts if isinstance(o, dict) and isinstance(o.get("id"), str)}
+    unknown_ids = _check_unknowns(rec, opt_ids, errors)
 
     # 4. Positions
     positions = rec.positions if isinstance(rec.positions, list) else []
@@ -290,6 +362,8 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
     decision = rec.decision if isinstance(rec.decision, dict) else None
     if not isinstance(rec.decision, dict) and rec.decision is not None:
         errors.append("decision must be a dict")
+    if isinstance(decision, dict):
+        _check_decision_extras(decision, unknown_ids, opt_ids, errors)
 
     if rec.status == "decided":
         if decision is None:
@@ -398,6 +472,7 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
     if rec.status == "open" and isinstance(rec.history, list) and len(rec.history) > 0:
         errors.append("open status must have decision None")
 
+    _check_reopen_flag(rec, errors)
     return errors
 
 GRAPH_DIR = Path(__file__).resolve().parents[1] / "guide" / "graph"

@@ -25,9 +25,13 @@ from typing import Any
 import yaml
 
 import guide.schema
-from hangar import council
+from hangar import council, research
 from hangar.council import CouncilUnavailable
+from hangar.matrix import matrix_for_effect
+from hangar.matrix_extra import matrix_digest, private_matrix
 from hangar.records import DATA_ROOT, dump_record, load_record, load_records, validate
+from hangar.reopen import flag_reopen
+from hangar.spotcheck import apply_patch, register_source, spotcheck_url
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LOOPBACK = "127.0.0.1"
@@ -176,6 +180,78 @@ def _reply_payload(reply: object) -> dict[str, Any]:
     }
 
 
+def _id_unknowns(data: dict[str, Any]) -> list[dict[str, Any]]:
+    found: list[dict[str, Any]] = []
+    for row in data.get("unknowns") or []:
+        if isinstance(row, dict) and isinstance(row.get("id"), str) and row["id"]:
+            found.append(row)
+    return found
+
+
+def _open_unknown_ids(data: dict[str, Any]) -> list[str]:
+    return [row["id"] for row in _id_unknowns(data) if row.get("state") in ("open", "researching")]
+
+
+def _loadings_need_acknowledgement(data: dict[str, Any]) -> bool:
+    scoring = data.get("scoring")
+    if not isinstance(scoring, dict) or scoring.get("kind") != "loadings":
+        return False
+    for opt in data.get("options") or []:
+        if not isinstance(opt, dict) or not isinstance(opt.get("effect"), dict):
+            continue
+        try:
+            made = matrix_for_effect(opt["effect"])
+        except Exception:
+            return True
+        if made.get("unknown_cells", 0):
+            return True
+    return False
+
+
+def _find_unknown(data: dict[str, Any], unknown_id: object) -> dict[str, Any] | None:
+    if not isinstance(unknown_id, str) or not unknown_id:
+        return None
+    for row in data.get("unknowns") or []:
+        if isinstance(row, dict) and row.get("id") == unknown_id:
+            return row
+    return None
+
+
+def _newest_job(jobs: list[dict[str, Any]], unknown_id: object) -> dict[str, Any] | None:
+    if not isinstance(unknown_id, str):
+        return None
+    matched = [job for job in jobs if job.get("unknown_id") == unknown_id]
+    if not matched:
+        return None
+    return max(matched, key=lambda job: (str(job.get("created") or ""), str(job.get("id") or "")))
+
+
+def _research_worker(server: BriefingServer, path: Path, unknown_id: str, job_id: str) -> None:
+    """Run one queued job. A failure puts the unknown back to open. Nothing else starts jobs."""
+    try:
+        job = research.run_job(str(server.private_dir), job_id, server.research_lane, server.spotcheck)
+    except Exception:
+        return
+    if not isinstance(job, dict) or job.get("state") != "failed":
+        return
+    with server.write_lock:
+        try:
+            data = _read_mapping(path)
+        except (OSError, ValueError, yaml.YAMLError):
+            return
+        changed = False
+        for row in data.get("unknowns") or []:
+            if isinstance(row, dict) and row.get("id") == unknown_id and row.get("state") == "researching":
+                row["state"] = "open"
+                changed = True
+        if not changed:
+            return
+        try:
+            _atomic_write(path, data, server.graph, server.records_root)
+        except Exception:
+            return
+
+
 def _refuse_private_dir(private_dir: Path, site: Path | None = None) -> None:
     resolved = Path(private_dir).resolve()
     if resolved.is_relative_to(_REPO_ROOT) or (site is not None and (
@@ -311,6 +387,14 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             record_id = urllib.parse.unquote(path[len(prefix) :])
             self._send_json(200, _load_turns(self.server.private_dir, record_id))
             return
+        matrix_prefix = "/api/matrix/"
+        if path.startswith(matrix_prefix):
+            self._matrix(urllib.parse.unquote(path[len(matrix_prefix) :]))
+            return
+        research_prefix = "/api/research/"
+        if path.startswith(research_prefix):
+            self._research_index(urllib.parse.unquote(path[len(research_prefix) :]))
+            return
         if path.startswith("/api/"):
             self._send_json(404, {"error": "not found"})
             return
@@ -379,6 +463,18 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                 self._send_json(400, {"error": "body is not JSON"})
                 return
             self._reopen(body)
+            return
+        if path == "/api/research":
+            if body is None:
+                self._send_json(400, {"error": "body is not JSON"})
+                return
+            self._research(body)
+            return
+        if path == "/api/research/resolve":
+            if body is None:
+                self._send_json(400, {"error": "body is not JSON"})
+                return
+            self._resolve(body)
             return
         self._send_json(404, {"error": "not found"})
 
@@ -505,12 +601,32 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     self._send_json(400, {"error": "decision rejected"})
                     return
 
+            if _loadings_need_acknowledgement(data):
+                required = _open_unknown_ids(data)
+                acknowledged = body.get("acknowledged_unknowns")
+                if not isinstance(acknowledged, list):
+                    acknowledged = []
+                missing = [item for item in required if item not in acknowledged]
+                if missing:
+                    self._send_json(409, {"error": "unknown cells not acknowledged", "unknowns": missing})
+                    return
+
             # Success
             today = date.today().isoformat()
             updated = copy.deepcopy(data)
             updated["status"] = "decided"
             cleaned = reason.strip()
-            updated["decision"] = {"picks": picks, "date": today, "reason": cleaned}
+            decision: dict[str, Any] = {"picks": picks, "date": today, "reason": cleaned}
+            if _id_unknowns(data):
+                decision["over_unknowns"] = _open_unknown_ids(data)
+            scoring = data.get("scoring")
+            if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
+                digest: dict[str, str] = {}
+                for opt in data.get("options") or []:
+                    if isinstance(opt, dict) and isinstance(opt.get("effect"), dict) and isinstance(opt.get("id"), str):
+                        digest[opt["id"]] = matrix_digest(opt["effect"])
+                decision["matrix_digest"] = digest
+            updated["decision"] = decision
             
             history = list(updated.get("history") or [])
             history.append(
@@ -544,6 +660,7 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             today = date.today().isoformat()
             updated = copy.deepcopy(data)
             updated["status"] = "reopened"
+            updated.pop("reopen_flag", None)
             cleaned = reason.strip()
             history = list(updated.get("history") or [])
             history.append(
@@ -554,6 +671,182 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                 return
         self._send_json(200, {"ok": True})
 
+    def _matrix(self, record_id: str) -> None:
+        path = self._record_path(record_id)
+        if path is None:
+            self._send_json(404, {"error": "unknown record"})
+            return
+        data = _read_mapping(path)
+        jobs = research.list_jobs(str(self.server.private_dir), record_id)
+        options = []
+        for opt in data.get("options") or []:
+            if not isinstance(opt, dict):
+                continue
+            entry: dict[str, Any] = {
+                "option": opt.get("id"),
+                "label": opt.get("label") if isinstance(opt.get("label"), str) else "",
+                "public": None,
+                "private": None,
+            }
+            effect = opt.get("effect")
+            if isinstance(effect, dict):
+                try:
+                    entry["public"] = matrix_for_effect(effect)
+                except Exception:
+                    entry["public"] = None
+                    entry["error"] = "bad effect"
+                    entry["private"] = None
+                else:
+                    try:
+                        entry["private"] = private_matrix(effect, self.server.private_dir)
+                    except Exception:
+                        entry["private"] = None
+            options.append(entry)
+        unknowns = []
+        for row in data.get("unknowns") or []:
+            if not isinstance(row, dict):
+                continue
+            item = {
+                "id": row.get("id"),
+                "text": row.get("text"),
+                "how": row.get("how"),
+                "state": row.get("state"),
+                "affects": row.get("affects") if isinstance(row.get("affects"), list) else [],
+                "job": _newest_job(jobs, row.get("id")),
+            }
+            if "source" in row:
+                item["source"] = row["source"]
+            unknowns.append(item)
+        self._send_json(200, {"record_id": record_id, "options": options, "unknowns": unknowns}, no_store=True)
+
+    def _research_index(self, record_id: str) -> None:
+        jobs = research.list_jobs(str(self.server.private_dir), record_id)
+        self._send_json(200, {"jobs": jobs}, no_store=True)
+
+    def _research(self, body: dict[str, Any]) -> None:
+        path = self._record_path(body.get("record_id"))
+        if path is None:
+            self._send_json(404, {"error": "unknown record"})
+            return
+        unknown_id = body.get("unknown_id")
+        with self.server.write_lock:
+            data = _read_mapping(path)
+            unknown = _find_unknown(data, unknown_id)
+            if unknown is None:
+                self._send_json(400, {"error": "unknown unknown"})
+                return
+            if unknown.get("state") != "open":
+                self._send_json(400, {"error": "unknown is not open"})
+                return
+            rec = load_record(path)
+            try:
+                job = research.queue_job(str(self.server.private_dir), rec, unknown_id)
+            except KeyError as exc:
+                self._send_json(400, {"error": str(exc)})
+                return
+            except ValueError as exc:
+                text = str(exc)
+                code = 409 if "already" in text else 400
+                self._send_json(code, {"error": text})
+                return
+            unknown["state"] = "researching"
+            if self._commit(path, data):
+                return
+        threading.Thread(
+            target=_research_worker,
+            args=(self.server, path, unknown_id, job["id"]),
+            daemon=True,
+        ).start()
+        self._send_json(202, {"job": job})
+
+    def _resolve(self, body: dict[str, Any]) -> None:
+        outcome = body.get("outcome")
+        if outcome not in ("accept", "dismiss", "unsourceable"):
+            self._send_json(400, {"error": "bad outcome"})
+            return
+        job_id = body.get("job_id")
+        if not isinstance(job_id, str):
+            self._send_json(404, {"error": "unknown job"})
+            return
+        try:
+            job = research.load_job(str(self.server.private_dir), job_id)
+        except KeyError:
+            self._send_json(404, {"error": "unknown job"})
+            return
+        path = self._record_path(job.get("record_id"))
+        if path is None:
+            self._send_json(404, {"error": "unknown record"})
+            return
+        if outcome == "accept":
+            self._accept(path, job)
+            return
+        self._close_research(path, job, "unsourceable" if outcome == "unsourceable" else "open")
+
+    def _accept(self, path: Path, job: dict[str, Any]) -> None:
+        from core.sources import load_registry
+        from hangar.mission import write_scores
+
+        spot = job.get("spotcheck")
+        if job.get("state") != "proposed" or not (isinstance(spot, dict) and spot.get("matched") is True):
+            reason = "job is not proposed" if job.get("state") != "proposed" else "spot-check did not match"
+            self._send_json(409, {"error": reason})
+            return
+        proposal = job.get("proposal")
+        if not isinstance(proposal, dict):
+            self._send_json(409, {"error": "job has no proposal"})
+            return
+        registry = Path(self.server.registry_path)
+        before = registry.read_text(encoding="utf-8")
+        try:
+            source_id = register_source(registry, proposal, date.today().isoformat())
+            load_registry.cache_clear()
+            patch = proposal.get("patch")
+            if patch is not None:
+                current = _read_mapping(path)
+                data_dir = self.server.data_dir
+                if data_dir is None:
+                    data_dir = self.server.records_root / str(current.get("spot") or "")
+                apply_patch(data_dir, patch, source_id)
+        except Exception as exc:
+            if registry.exists() and registry.read_text(encoding="utf-8") != before:
+                registry.write_text(before, encoding="utf-8")
+            load_registry.cache_clear()
+            self._send_json(409, {"error": str(exc)})
+            return
+        with self.server.write_lock:
+            data = _read_mapping(path)
+            unknown = _find_unknown(data, job.get("unknown_id"))
+            if unknown is None:
+                self._send_json(400, {"error": "unknown unknown"})
+                return
+            unknown["state"] = "sourced"
+            unknown["source"] = source_id
+            if self._commit(path, data):
+                return
+            try:
+                finished = research.finish_job(str(self.server.private_dir), job["id"], "accepted")
+            except (KeyError, ValueError) as exc:
+                self._send_json(409, {"error": str(exc)})
+                return
+            write_scores(self.server.records_root)
+            reopened = flag_reopen(self.server.records_root)
+        self._send_json(200, {"ok": True, "job": finished, "reopened": reopened})
+
+    def _close_research(self, path: Path, job: dict[str, Any], unknown_state: str) -> None:
+        with self.server.write_lock:
+            try:
+                finished = research.finish_job(str(self.server.private_dir), job["id"], "dismissed")
+            except (KeyError, ValueError) as exc:
+                self._send_json(409, {"error": str(exc)})
+                return
+            data = _read_mapping(path)
+            unknown = _find_unknown(data, job.get("unknown_id"))
+            if unknown is not None:
+                unknown["state"] = unknown_state
+                if self._commit(path, data):
+                    return
+        self._send_json(200, {"ok": True, "job": finished, "reopened": []})
+
 
 def make_server(
     site: Path,
@@ -562,6 +855,10 @@ def make_server(
     records_root: Path = DATA_ROOT,
     council: Any = council.ask,
     allow_origins: tuple[str, ...] = (),
+    research_lane: Any = None,
+    spotcheck: Any = None,
+    registry_path: Path | None = None,
+    data_dir: Path | None = None,
 ) -> ThreadingHTTPServer:
     """Bind the briefing service on loopback and return it (not yet serving).
 
@@ -579,6 +876,12 @@ def make_server(
         graph=graph,
     )
     server.allow_origins = tuple(allow_origins)
+    server.research_lane = research.default_lane if research_lane is None else research_lane
+    server.spotcheck = spotcheck_url if spotcheck is None else spotcheck
+    server.registry_path = (
+        _REPO_ROOT / "data" / "sources" / "registry.yaml" if registry_path is None else Path(registry_path)
+    )
+    server.data_dir = None if data_dir is None else Path(data_dir)
     return server
 
 

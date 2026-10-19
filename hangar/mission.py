@@ -580,6 +580,9 @@ def ballast_for_margin(
 
 
 def write_scores(root: Path) -> int:
+    from hangar.matrix import matrix_for_effect
+    from hangar.matrix_extra import matrix_text
+
     with open(_DATA / "powerplants.yaml", "r") as f:
         plants = yaml.safe_load(f)
     n = 0
@@ -592,6 +595,8 @@ def write_scores(root: Path) -> int:
                 for fact in opt.get("facts") or []:
                     if isinstance(fact, dict) and fact.get("computed") == "solo-range":
                         fact["text"] = solo_range_text(opt["effect"])
+                    elif isinstance(fact, dict) and fact.get("computed") == "matrix":
+                        fact["text"] = matrix_text(matrix_for_effect(opt["effect"]))
         scoring = rec.get("scoring")
         if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
             rec["mission_score"] = {
@@ -623,7 +628,12 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if not args.write_scores:
         ap.error("nothing to do; pass --write-scores")
-    print(f"scores written for {write_scores(args.root)} record(s)")
+    from hangar.reopen import flag_reopen
+
+    count = write_scores(args.root)
+    flagged = flag_reopen(args.root)
+    print(f"scores written for {count} record(s)")
+    print("flagged: " + " ".join(flagged))
     return 0
 
 if __name__ == "__main__":
