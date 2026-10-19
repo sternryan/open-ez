@@ -215,7 +215,7 @@ _FORBIDDEN_URLS = [
     "http://a@0x7f.1/",
     "http://[::ffff:127.0.0.1]/",
     "http://[::ffff:7f00:1]/",
-    "http://100.64.0.1/",
+    "http://100.64.0.1/",  # leak-ok: RFC 6598 example address in an SSRF test
     "http://[fec0::1]/",
     "ftp://127.0.0.1/secret",
 ]
@@ -272,7 +272,7 @@ def test_every_resolved_address_must_be_global():
     assert seen == [] and r["fetched"] is False and "refused" in r["detail"]
 
 
-@pytest.mark.parametrize("address", ["100.64.0.1", "fec0::1", "::ffff:10.1.2.3", "::ffff:7f00:1", "224.0.0.1", "0.0.0.0"])
+@pytest.mark.parametrize("address", ["100.64.0.1", "fec0::1", "::ffff:10.1.2.3", "::ffff:7f00:1", "224.0.0.1", "0.0.0.0"])  # leak-ok: RFC 6598 example address in an SSRF test
 def test_resolver_refuses_non_global_and_special_ranges(address):
     seen = []
 

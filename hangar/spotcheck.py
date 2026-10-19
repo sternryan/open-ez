@@ -23,7 +23,7 @@ sources = MockSources()
 
 _REDIRECTS = {301, 302, 303, 307, 308}
 _FEC0 = ipaddress.ip_network("fec0::/10")
-_CGNAT = ipaddress.ip_network("100.64.0.0/10")
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")  # leak-ok: RFC 6598 CGNAT range blocked for SSRF, not a host address
 _IPV4_LITERAL = re.compile(r"(?i)^(?:0x[0-9a-f]+|\d+)(?:\.(?:0x[0-9a-f]+|\d+)){0,3}$")
 _SCRIPT_STYLE = re.compile(r"(?is)<(script|style)\b[^>]*>.*?(?:</\1(?:\s[^>]*)?>|$)")
 
