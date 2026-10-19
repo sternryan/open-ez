@@ -18,6 +18,7 @@ import {
   type Status,
   type TranscriptLine,
 } from './briefingState'
+import { asMatrixResponse, openUnknownIds, renderMatrix, renderUnknowns, type MatrixResponse } from './matrixView'
 
 /** One scored loading from `api/pilots`: CG, forward margin, and whether it sits in the envelope. */
 export type PilotMarginRow = {
@@ -371,7 +372,7 @@ function selectableOptions(record: DecisionRecord, axis: Axis): { id: string; la
   return out
 }
 
-function renderDecide(record: DecisionRecord, state: State): string {
+function renderDecide(record: DecisionRecord, state: State, ackIds: readonly string[] = []): string {
   const selects = (record.axes ?? [])
     .map((axis) => {
       const options = ['<option value="">Select\u2026</option>']
@@ -387,16 +388,33 @@ function renderDecide(record: DecisionRecord, state: State): string {
       <legend>Decide</legend>
       ${selects}
       <label>Reason <textarea name="reason" required rows="3"></textarea></label>
+      ${renderAck(ackIds)}
       <button type="submit">Decide</button>
     </fieldset>
   </form>`
 }
 
-/** Reads `pick-<axisId>` fields into the body POST api/decide sends, aside from the record id. */
+function renderAck(ids: readonly string[]): string {
+  if (ids.length === 0) return ''
+  const listed = ids.join(', ')
+  return `<label data-test="ack-unknowns" data-ids="${esc(listed)}" title="${esc(listed)}"><input type="checkbox" name="ack-unknowns"> Decide with these unknowns still open (${ids.length}) <small>${esc(listed)}</small></label>`
+}
+
+function ackChecked(value: unknown): boolean {
+  if (value === true) return true
+  if (typeof value !== 'string') return false
+  const text = value.trim().toLowerCase()
+  return text.length > 0 && text !== 'false' && text !== 'off' && text !== '0'
+}
+
+/** Reads `pick-<axisId>` fields into the body POST api/decide sends, aside from the record id.
+ *  A checked `ack-unknowns` box adds `acknowledged_unknowns` when `openUnknowns` is given.
+ */
 export function buildDecidePayload(
   data: { get(name: string): unknown },
   axes: readonly { id: string }[],
-): { picks: Record<string, string>; reason: string } {
+  openUnknowns?: readonly string[],
+): { picks: Record<string, string>; reason: string; acknowledged_unknowns?: string[] } {
   const picks: Record<string, string> = {}
   for (const axis of axes) {
     const raw = data.get(`pick-${axis.id}`)
@@ -406,7 +424,16 @@ export function buildDecidePayload(
   }
   const reasonRaw = data.get('reason')
   const reason = typeof reasonRaw === 'string' ? reasonRaw.trim() : ''
+  const ids = (openUnknowns ?? []).filter((id) => typeof id === 'string' && id.trim()).map((id) => id.trim())
+  if (ackChecked(data.get('ack-unknowns')) && ids.length > 0) return { picks, reason, acknowledged_unknowns: ids }
   return { picks, reason }
+}
+
+function renderReopenFlag(record: DecisionRecord): string {
+  const flag = record.reopen_flag
+  if (!flag || typeof flag !== 'object') return ''
+  const ids = Array.isArray(flag.unknowns) ? flag.unknowns.filter((id): id is string => typeof id === 'string' && id.length > 0) : []
+  return `<p class="reopen-flag" data-test="reopen-flag">A sourced value changed the loading matrix after this decision (unknowns: ${esc(ids.join(', '))}). Reopen it in the briefing room.</p>`
 }
 
 function renderReopen(state: State): string {
@@ -420,16 +447,23 @@ function renderReopen(state: State): string {
   </form>`
 }
 
-function renderLive(record: DecisionRecord, state: State): string {
-  return `<section class="panel live"><h3>Council</h3>${renderChat(state)}${renderDecide(record, state)}${renderReopen(state)}</section>`
+function renderLive(record: DecisionRecord, state: State, matrix: MatrixResponse | null): string {
+  return `<section class="panel live"><h3>Council</h3>${renderChat(state)}${renderDecide(record, state, openUnknownIds(matrix))}${renderReopenFlag(record)}${renderReopen(state)}</section>`
 }
 
 /** Skin, backbone, and (in live mode) the council controls. Record text is escaped. */
-export function renderBriefingHtml(record: DecisionRecord, mode: Mode, state: State): string {
-  const live = mode === 'live' ? renderLive(record, state) : ''
+export function renderBriefingHtml(
+  record: DecisionRecord,
+  mode: Mode,
+  state: State,
+  matrix: MatrixResponse | null = null,
+): string {
+  const live = mode === 'live' ? renderLive(record, state, matrix) : ''
+  const banner = mode === 'live' ? '' : renderReopenFlag(record)
   return `<article class="record">
     <header class="record-head"><p class="kicker">${esc(record.spot)}</p><h2>${esc(record.title)}</h2><p class="question">${esc(record.question)}</p></header>
     ${renderSkin(record, state)}
+    ${banner}
     ${renderBackbone(record)}
     ${live}
   </article>`
@@ -478,6 +512,17 @@ function bodyError(body: unknown): string | null {
 
 function failureMessage(status: number, body: unknown): string {
   return bodyError(body) ?? `The briefing service returned ${status}.`
+}
+
+/** A 409 whose error says the unknowns were not acknowledged gets the checkbox hint. */
+export function decideErrorMessage(status: number, body: unknown): string {
+  if (status === 409) {
+    const err = bodyError(body)
+    if (err && err.includes('not acknowledged')) {
+      return 'Some loading cells depend on unknown values: tick the box to decide with them open, or research them first'
+    }
+  }
+  return failureMessage(status, body)
 }
 
 function replyText(body: unknown): string {
@@ -620,6 +665,16 @@ let bound = false
 let pilotsFor: string | null = null
 /** Rendered fragment only, so a later paint can put the same table back. Weights are not kept. */
 let pilotsHtml = ''
+/** Last matrix for this page. Re-fetched after research; not written onto the record. */
+let matrixData: MatrixResponse | null = null
+let matrixHtml = ''
+let unknownsHtml = ''
+let pollTimer: number | null = null
+let pollEpoch = 0
+let pollCount = 0
+
+const MATRIX_POLL_MS = 2000
+const MATRIX_POLL_CAP = 150
 
 function mountPilotMargins(root: ParentNode): void {
   if (mode !== 'live' || !pilotsHtml) return
@@ -629,7 +684,107 @@ function mountPilotMargins(root: ParentNode): void {
   const section = document.createElement('section')
   section.setAttribute('data-test', 'pilot-margins')
   section.innerHTML = `<h3>CG margins</h3>${pilotsHtml}`
-  backbone.appendChild(section)
+  const matrix = backbone.querySelector('[data-test="matrix"]')
+  if (matrix) backbone.insertBefore(section, matrix)
+  else backbone.appendChild(section)
+}
+
+function mountMatrix(root: ParentNode): void {
+  if (mode !== 'live') return
+  const backbone = root.querySelector('details.backbone')
+  if (!backbone) return
+  backbone.querySelector('[data-test="matrix"]')?.remove()
+  backbone.querySelector('[data-test="unknowns"]')?.remove()
+  const html = `${matrixHtml}${unknownsHtml}`
+  if (!html) return
+  const pilots = backbone.querySelector('[data-test="pilot-margins"]')
+  if (pilots) pilots.insertAdjacentHTML('afterend', html)
+  else backbone.insertAdjacentHTML('beforeend', html)
+}
+
+function mountAck(root: ParentNode): void {
+  const form = root.querySelector('form[data-test="decide"] fieldset')
+  if (!form) return
+  const ids = openUnknownIds(matrixData)
+  const listed = ids.join(', ')
+  const existing = form.querySelector('[data-test="ack-unknowns"]')
+  const checked = existing?.querySelector('input') instanceof HTMLInputElement && existing.querySelector('input')?.checked === true
+  if (existing?.getAttribute('data-ids') === listed) return
+  existing?.remove()
+  if (ids.length === 0) return
+  const html = renderAck(ids)
+  const button = form.querySelector('button[type="submit"]')
+  if (button) button.insertAdjacentHTML('beforebegin', html)
+  else form.insertAdjacentHTML('beforeend', html)
+  if (checked) {
+    const input = form.querySelector('[data-test="ack-unknowns"] input')
+    if (input instanceof HTMLInputElement) input.checked = true
+  }
+}
+
+function stopPoll(): void {
+  pollEpoch += 1
+  if (pollTimer !== null) {
+    window.clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+function clearMatrix(): void {
+  stopPoll()
+  pollCount = 0
+  matrixData = null
+  matrixHtml = ''
+  unknownsHtml = ''
+}
+
+function hasResearching(data: MatrixResponse | null): boolean {
+  return !!data && data.unknowns.some((item) => item.state === 'researching')
+}
+
+/** Re-read the matrix while a job is in flight. This timer never starts research. */
+function beginPolling(id: string, gen: number): void {
+  stopPoll()
+  pollCount = 0
+  const epoch = pollEpoch
+  const schedule = (): void => {
+    if (epoch !== pollEpoch || gen !== generation) return
+    if (pollCount >= MATRIX_POLL_CAP) return
+    if (!hasResearching(matrixData)) return
+    if (!document.getElementById('briefing')) return
+    pollTimer = window.setTimeout(() => {
+      pollTimer = null
+      void (async () => {
+        if (epoch !== pollEpoch || gen !== generation) return
+        if (!document.getElementById('briefing')) return
+        if (!record || record.id !== id || mode !== 'live') return
+        pollCount += 1
+        await loadMatrix(id, gen)
+        schedule()
+      })()
+    }, MATRIX_POLL_MS)
+  }
+  schedule()
+}
+
+async function loadMatrix(id: string, gen: number): Promise<void> {
+  if (mode !== 'live' || !id) return
+  try {
+    const res = await fetch(resourceUrl(`api/matrix/${encodeURIComponent(id)}`), { cache: 'no-store' })
+    if (gen !== generation || mode !== 'live' || !record || record.id !== id) return
+    if (!res.ok) return
+    const parsed = asMatrixResponse(await res.json())
+    if (gen !== generation || mode !== 'live' || !record || record.id !== id) return
+    matrixData = parsed
+    matrixHtml = renderMatrix(record, parsed)
+    unknownsHtml = renderUnknowns(record, parsed, true)
+    const root = document.getElementById('briefing')
+    if (!root) return
+    mountMatrix(root)
+    mountAck(root)
+  } catch {
+    // Absent on a public site, a network failure, or a non-JSON body.
+  }
 }
 
 function asNullableNumber(value: unknown): number | null {
@@ -705,8 +860,9 @@ async function loadPilotMargins(id: string, gen: number): Promise<void> {
 function paint(): void {
   const root = document.getElementById('briefing')
   if (!root || !record || !state) return
-  root.innerHTML = renderBriefingHtml(record, mode, state)
+  root.innerHTML = renderBriefingHtml(record, mode, state, mode === 'live' ? matrixData : null)
   mountPilotMargins(root)
+  mountMatrix(root)
 }
 
 function initialState(recordId: string, nextMode: Mode, status: Status, transcript: TranscriptLine[]): State {
@@ -731,6 +887,7 @@ async function load(): Promise<void> {
   const gen = ++generation
   pilotsFor = null
   pilotsHtml = ''
+  clearMatrix()
   const id = recordIdFromLocation()
   if (!id) {
     record = null
@@ -766,7 +923,12 @@ async function load(): Promise<void> {
     state = initialState(id, mode, asStatus(next.status), transcript)
     document.title = `${next.title} — Briefing`
     paint()
-    if (mode === 'live') void loadPilotMargins(next.id, gen)
+    if (mode === 'live') {
+      void loadPilotMargins(next.id, gen)
+      void loadMatrix(next.id, gen).then(() => {
+        if (gen === generation) beginPolling(next.id, gen)
+      })
+    }
   } catch {
     if (gen !== generation) return
     record = null
@@ -807,14 +969,20 @@ async function onSubmit(ev: Event): Promise<void> {
       }
     } else if (kind === 'decide') {
       const axes = current.axes ?? []
-      const built = buildDecidePayload(data, axes)
+      const built = buildDecidePayload(data, axes, openUnknownIds(matrixData))
       const complete = axes.length > 0 && axes.every((axis) => built.picks[axis.id])
       if (!complete || !built.reason || !snapshot.decideEnabled) return
       inflight = true
-      const res = await postJson('api/decide', { record_id: current.id, picks: built.picks, reason: built.reason })
+      const payload: { record_id: string; picks: Record<string, string>; reason: string; acknowledged_unknowns?: string[] } = {
+        record_id: current.id,
+        picks: built.picks,
+        reason: built.reason,
+      }
+      if (built.acknowledged_unknowns) payload.acknowledged_unknowns = built.acknowledged_unknowns
+      const res = await postJson('api/decide', payload)
       if (gen !== generation || !state) return
       if (!res.ok) {
-        state = reduce(state, { type: 'errored', message: failureMessage(res.status, res.body) })
+        state = reduce(state, { type: 'errored', message: decideErrorMessage(res.status, res.body) })
       } else {
         state = reduce(state, { type: 'decided' })
         const fresh = await refreshRecord(current.id)
@@ -833,10 +1001,64 @@ async function onSubmit(ev: Event): Promise<void> {
         state = reduce(state, { type: 'reopened' })
         const fresh = await refreshRecord(current.id)
         if (gen !== generation) return
-        record = fresh ?? { ...current, status: 'reopened' }
+        record = fresh ?? { ...current, status: 'reopened', reopen_flag: null }
       }
     }
     if (gen === generation) paint()
+  } catch {
+    if (gen !== generation || !state) return
+    state = reduce(state, { type: 'errored', message: 'The briefing service did not respond.' })
+    paint()
+  } finally {
+    inflight = false
+  }
+}
+
+async function researchUnknown(unknownId: string): Promise<void> {
+  if (!record || !state || mode !== 'live' || inflight || !unknownId) return
+  const current = record
+  const gen = generation
+  inflight = true
+  try {
+    const res = await postJson('api/research', { record_id: current.id, unknown_id: unknownId })
+    if (gen !== generation || !state) return
+    if (!res.ok) {
+      state = reduce(state, { type: 'errored', message: failureMessage(res.status, res.body) })
+      paint()
+      return
+    }
+    await loadMatrix(current.id, gen)
+    if (gen !== generation) return
+    beginPolling(current.id, gen)
+  } catch {
+    if (gen !== generation || !state) return
+    state = reduce(state, { type: 'errored', message: 'The briefing service did not respond.' })
+    paint()
+  } finally {
+    inflight = false
+  }
+}
+
+async function resolveJob(jobId: string, outcome: 'accept' | 'dismiss' | 'unsourceable'): Promise<void> {
+  if (!record || !state || mode !== 'live' || inflight || !jobId) return
+  const current = record
+  const gen = generation
+  inflight = true
+  try {
+    const res = await postJson('api/research/resolve', { job_id: jobId, outcome })
+    if (gen !== generation || !state) return
+    if (!res.ok) {
+      state = reduce(state, { type: 'errored', message: failureMessage(res.status, res.body) })
+      paint()
+      return
+    }
+    const fresh = await refreshRecord(current.id)
+    if (gen !== generation || !state) return
+    if (fresh) record = fresh
+    await loadMatrix(current.id, gen)
+    if (gen !== generation) return
+    paint()
+    beginPolling(current.id, gen)
   } catch {
     if (gen !== generation || !state) return
     state = reduce(state, { type: 'errored', message: 'The briefing service did not respond.' })
@@ -853,6 +1075,24 @@ function mount(): void {
     bound = true
     root.addEventListener('submit', (ev) => {
       void onSubmit(ev)
+    })
+    root.addEventListener('click', (ev) => {
+      const target = ev.target
+      if (!(target instanceof Element)) return
+      const button = target.closest('button')
+      if (!(button instanceof HTMLButtonElement) || button.disabled) return
+      if (!button.closest('[data-test="unknowns"]')) return
+      const action = button.getAttribute('data-action')
+      if (action === 'research') {
+        const unknownId = button.getAttribute('data-unknown')
+        if (unknownId) void researchUnknown(unknownId)
+        return
+      }
+      if (action !== 'resolve') return
+      const jobId = button.getAttribute('data-job')
+      const outcome = button.getAttribute('data-outcome')
+      if (!jobId) return
+      if (outcome === 'accept' || outcome === 'dismiss' || outcome === 'unsourceable') void resolveJob(jobId, outcome)
     })
     window.addEventListener('hashchange', () => {
       void load()

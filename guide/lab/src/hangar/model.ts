@@ -35,7 +35,28 @@ export type Position = {
 }
 
 /** A gap no source fills. `text` (or `what`) is the gap; `how` is how it would be found. */
-export type Unknown = { text?: string; what?: string; how?: string }
+export type UnknownState = 'open' | 'researching' | 'sourced' | 'unsourceable'
+
+export type Unknown = {
+  text?: string
+  what?: string
+  how?: string
+  /** Slug unique in the record. Legacy entries omit it. */
+  id?: string
+  /** Option ids this gap changes. Empty means the whole record. */
+  affects?: string[]
+  state?: UnknownState
+  /** Set when `state` is `sourced`. */
+  source?: string
+  note?: string
+}
+
+/** Set on a decided record when a sourced value moved the loading matrix after the decision. */
+export type ReopenFlag = {
+  date: string
+  reason: string
+  unknowns: string[]
+}
 
 export type Decision = { picks: Record<string, string>; date: string; reason: string }
 
@@ -73,6 +94,8 @@ export type DecisionRecord = {
   history: HistoryEntry[]
   changes: Record<string, unknown> | null
   evidence: Evidence
+  /** Present when a later sourced value disagrees with the matrix this decision closed on. */
+  reopen_flag?: ReopenFlag | null
 }
 
 export type HangarData = {
