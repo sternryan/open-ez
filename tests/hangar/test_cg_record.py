@@ -70,6 +70,18 @@ def test_battery_row_matches_the_ledger():
 def test_unknowns_stay_unknown_and_no_private_numbers():
     r = rec()
     assert any("coolant" in u["text"].lower() for u in r.unknowns)
-    blob = yaml.safe_dump(r.options)
-    # only the book's own sample weights appear as pilot weights
-    assert "155" not in blob and "310" not in blob
+    # only the book's own sample weights are used as pilot weights: the record carries no occupant list
+    assert "occupants" not in yaml.safe_dump(r.options) and "occupants" not in yaml.safe_dump(r.unknowns)
+    for fixed in ("book-engine-cg", "loading-limit"):
+        assert "book's own sample" in text(fixed) or "sample" in text(fixed)
+
+
+def test_each_moved_weight_option_states_its_aft_check():
+    for opt in ("fixed-aft-ballast", "battery-aft", "engine-arm-aft"):
+        assert "Aft check" in text(opt) and "aft limit" in text(opt), opt
+    # the battery move is the one that can leave the envelope on the light pilot case
+    batt = [{"name": "o", "weight_lb": -19.0, "arm_in": 11.0, "flag": "derived"},
+            {"name": "n", "weight_lb": 19.0, "arm_in": 141.05, "flag": "derived"}]
+    s = score_loading(E, "light_solo", extras=batt)
+    inside = s.in_envelope
+    assert ("OUTSIDE" in text("battery-aft")) == (inside is False)

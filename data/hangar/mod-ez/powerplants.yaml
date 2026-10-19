@@ -63,7 +63,7 @@ rotax-915is:
     v: 201.1
     flag: derived
     cite: easa-tcds-e121:p13
-    note: 'Build-up on the same basis as the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo,
+    note: 'Build-up on a similar basis to the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo,
       intercooler, exhaust, ECU, fusebox, wiring, oil tank, cooling baffle; no fuel pumps, radiator or oil cooler) plus engine
       suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg from the maker product page (rotax-915is-page:p1)
       = 91.2 kg. Coolant, radiator and oil cooler are not included (unknown). The 82.2 kg product-page figure uses a smaller
@@ -84,7 +84,7 @@ rotax-916is:
     v: 203.7
     flag: derived
     cite: easa-tcds-e121:p13
-    note: 'Build-up on the same basis as the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915)
+    note: 'Build-up on a similar basis to the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915)
       plus engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the
       same add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).'
   cg_arm_in:

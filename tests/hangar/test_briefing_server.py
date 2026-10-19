@@ -381,3 +381,34 @@ def test_dump_record_style_is_stable(tmp_path):
     assert yaml.safe_load(text) == d
     assert list(yaml.safe_load(text)) == list(d)  # key order kept
     assert dump_record(yaml.safe_load(text)) == text  # idempotent
+
+
+def test_shipped_records_are_already_in_dump_style():
+    """A first decide on a real record must not reflow it: every shipped record is a fixed point of dump_record."""
+    from hangar.records import DATA_ROOT, dump_record
+
+    for path in sorted(DATA_ROOT.glob("*/decisions/*.yaml")):
+        text = path.read_text()
+        assert dump_record(yaml.safe_load(text)) == text, path.name
+
+
+def test_brief_diff_touches_only_positions(tmp_path):
+    import difflib
+
+    from hangar.records import dump_record
+
+    e = Env(tmp_path, good_council)
+    try:
+        d = base()
+        d["question"] = "Which engine, on which fuel, with which tank resin, for the airplane that is being rebuilt " * 2
+        e.file.write_text(dump_record(d))
+        before = e.file.read_text()
+        assert e.req("POST", "/api/brief", {"record_id": "demo", "message": "go"})[0] == 200
+        after = e.file.read_text()
+        keys = _owner_keys(after)
+        sm = difflib.SequenceMatcher(None, before.splitlines(), after.splitlines(), autojunk=False)
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag != "equal":
+                assert {keys[j] for j in range(j1, j2)} <= {"positions"}, (tag, after.splitlines()[j1:j2])
+    finally:
+        e.close()

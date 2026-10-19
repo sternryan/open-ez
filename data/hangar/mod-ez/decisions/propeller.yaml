@@ -37,8 +37,8 @@ options:
     flag: unknown
   - text: Weight of the book wood propeller
     flag: unknown
-  why: 'baseline: the only type the book approves for the pusher; it is matched to a direct-drive engine at 2800 rpm, not
-    to a geared 5800 rpm engine'
+  why: 'baseline: the only type the book approves for the pusher; it is matched to a direct-drive engine, not to a geared
+    one'
 - id: carbon-wood-fixed
   label: Fixed-pitch carbon with wood core
   kind: candidate
@@ -46,11 +46,12 @@ options:
   - text: 'Catto lists Long EZ propellers with a carbon structure and wood core: two-blade 66 in for 180-200 hp and 64 in
       for 150-160 hp, three-blade 60 in, and says most canards need a 6 in or 8 in extension'
     cite: catto-canards:p1
-  - text: The 912 iS propeller shaft turns counter clockwise looking at the flange face; on a pusher that face looks aft,
-      so the propeller turns counter clockwise seen from behind, a left-turning pusher propeller
+  - text: The 912 iS propeller shaft turns counter clockwise looking towards the face of the flange
     cite: rotax-im-912i:p1
-  - text: A reseller guide says pushers run a left turning propeller on the Rotax 912 family
-    cite: powerfin-guide:p1
+  - text: 'Inference: if the flange face points aft on a pusher (no reverse-rotation variant fitted), the propeller turns
+      counter clockwise seen from behind, a left-turning pusher propeller; a reseller guide says pushers run a left turning
+      propeller on the Rotax 912 family'
+    flag: derived
   - text: Catto statement for the Rotax 912 iS, weight and price
     flag: unknown
   why: 'kept: closest to the book (fixed pitch, wood in the structure), but no source ties it to this engine or to a geared
@@ -59,20 +60,27 @@ options:
   label: Ground-adjustable composite
   kind: candidate
   facts:
-  - text: 'Sensenich 3B0R5 left-hand pusher blades (L68C): 68 in maximum and 64 in minimum diameter, 9.0 lb, approved for
-      Rotax 912, 912S, 912iS and 914 series reduction drives, 5800 rpm engine, 80-115 hp'
+  - text: 'Sensenich 3B0R5 pusher blades (L68C): 68 in maximum and 64 in minimum diameter, 9.0 lb without spacer, approved
+      for Rotax 912, 912S, 912iS and 914 series reduction drives, 5800 rpm engine, 80-115 hp'
     cite: sensenich-3b0r5:p1
   - text: 'Sensenich 2A0R5/L69E two-blade pusher: 69 in maximum and 65 in minimum, 10.5 lb, same engine list'
     cite: sensenich-2a0:p1
   - text: The 912 iS gearbox ratio is 2.4286 and the propeller moment of inertia window is 1500 to 6000 kg cm2
     cite: rotax-im-912i:p1
-  - text: Takeoff engine speed 5800 rpm divided by the 2.4286 ratio gives about 2388 propeller rpm (limited to 5 minutes),
-      the number to compare with the book's 2450 static rpm minimum
+  - text: The 912 iS propeller shaft turns counter clockwise looking towards the face of the flange
+    cite: rotax-im-912i:p1
+  - text: 'Inference: if the flange face points aft on a pusher (no reverse-rotation variant fitted), the propeller turns
+      counter clockwise seen from behind, a left-turning pusher propeller; a reseller guide says pushers run a left turning
+      propeller on the Rotax 912 family'
+    flag: derived
+  - text: Maximum takeoff engine speed 5800 rpm over the 2.4286 ratio is about 2388 propeller rpm. That is a ceiling, not
+      a static reading, and the book's 2450 static minimum is a direct-drive O-235 check that does not transfer to a geared
+      engine
     flag: derived
   - text: Approval of any of these for a Long-EZ airframe, and the pitch to set
     flag: unknown
-  why: 'kept: the only type with a maker table that names the 912 iS and pusher blades; pitch can be set on the ground to
-    fit the geared engine, but the book does not approve non-wood propellers for this airplane'
+  why: 'kept: the maker table found that names the 912 iS and has pusher blades; pitch can be set on the ground to fit the
+    geared engine, but the book does not approve non-wood propellers for this airplane'
 - id: in-flight-adjustable
   label: Constant speed (hydraulic governor)
   kind: candidate
@@ -80,7 +88,8 @@ options:
   - text: MT-Propeller lists the MTV-34 hydraulic constant-speed propeller for the Rotax 912/914 series and the 915 iS, three-blade
       9 kg (19.8 lb) plus a 1 kg governor
     cite: mt-mtv34:p1
-  - text: Only the 912 iSc3 Sport variant has the hydraulic governor drive (64,4 kg against 63,6 kg for the iSc2 Sport)
+  - text: On the certified Sport series the iSc3 variant has the hydraulic governor drive (64,4 kg) and the iSc2 has a fixed-propeller
+      flange (63,6 kg)
     cite: easa-tcds-e121:p13
   - text: The book does not recommend constant speed or variable pitch propellers for the pusher, citing aerodynamic-induced
       vibration and the development testing needed
@@ -98,7 +107,10 @@ options:
     cite: airmaster-ap332:p1
   - text: Airmaster pusher configuration for the 912 iS
     flag: unknown
-  why: 'none found: no pusher configuration turned up; the 25 lb hub is heavy but sits aft; kept so it can be reopened'
+  - text: A 25 lb hub is heavy against the 9 to 10 lb ground-adjustable composites, which would matter for the empty weight
+      and for where the weight sits
+    flag: judgment
+  why: 'none found: no pusher configuration turned up on the page; kept so it can be reopened'
 - id: metal-fixed
   label: Metal fixed pitch
   kind: dropped
@@ -108,10 +120,11 @@ options:
   why: dropped on the book's own caution; no other source was found either way
 positions: []
 unknowns:
-- text: Prop-tip-to-ground clearance of the Long-EZ in the tail-down attitude for each diameter (the manual prints only the
-    12 degree rotation limit; the 9 inch figure often quoted is general homebuilt advice, not a Long-EZ number)
+- text: Prop-tip-to-ground clearance of the Long-EZ in the tail-down attitude for each diameter (the manual prints only a
+    rotation-angle limit, and the clearance rule of thumb found is general homebuilder advice, not a Long-EZ number)
   how: measure on the airframe with the nose gear in its takeoff and landing attitudes
-- text: Maximum propeller diameter that fits a Long-EZ (the plans back-page figure was not read; RAF flew 62 in)
+- text: Maximum propeller diameter that fits a Long-EZ (the plans back-page figure was not read; the designers flew a larger
+    propeller than the plans show)
   how: read the plans back page; measure on the airframe
 - text: Rotation direction of the book propeller
   how: plans or the Canard Pusher index of propeller articles

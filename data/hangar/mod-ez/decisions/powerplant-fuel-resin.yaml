@@ -80,31 +80,33 @@ options:
   label: Rotax 915iS
   kind: candidate
   facts:
-  - text: 141 hp for 5 min and 82.2 kg with gearbox, turbo, intercooler and exhaust on the maker card; the EASA data sheet
-      gives 84.6 kg dry for the 915 iSc2 A on a larger include list
+  - text: The EASA data sheet gives 84,6 kg dry for the 915 iSc2 A, on a larger include list than the maker card
     cite: easa-tcds-e121:p13
+  - text: 141 hp for 5 min and 82.2 kg with gearbox, turbo, intercooler and exhaust on the maker page
+    cite: rotax-915is-page:p1
   - text: 'Maker deck row at 5500 rpm: 87,47 kW burns 26,53 kg/h (about 303 g/kWh); the deck prints kg/h only'
     cite: rotax-om-915i:p1
   - text: TBO 1200 h or 15 years, whichever comes first
     cite: rotax-mml-915i:p1
   - text: coolant and radiator weight
     flag: unknown
-  why: 'kept, not chosen: about 35 lb heavier installed than the 912 iS on the same build-up basis and more power than the
+  why: 'kept, not chosen: about 35 lb heavier installed than the 912 iS on a similar build-up basis and more power than the
     mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough'
 - id: rotax-916is
   label: Rotax 916iS
   kind: candidate
   facts:
-  - text: 160 hp and 85.8 kg with gearbox, turbo, intercooler and exhaust (maker page); the EASA data sheet gives 85.8 kg
-      dry for the 916 iSc2 A
+  - text: The EASA data sheet gives 85.8 kg dry for the 916 iSc2 A
     cite: easa-tcds-e121:p13
+  - text: 160 hp and 85.8 kg with gearbox, turbo, intercooler and exhaust on the maker page
+    cite: rotax-916is-page:p1
   - text: 'Maker deck row at 5500 rpm: 89,96 kW burns 22,48027 kg/h (250 g/kWh); the deck prints kg/h only'
     cite: rotax-om-916i:p1
   - text: TBO 2,000 hrs
     cite: rotax-916is-page:p1
   - text: coolant and radiator weight
     flag: unknown
-  why: 'kept, not chosen: about 37 lb heavier installed than the 912 iS on the same build-up basis and more power than the
+  why: 'kept, not chosen: about 38 lb heavier installed than the 912 iS on a similar build-up basis and more power than the
     mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough'
 - id: deltahawk-dhk180
   label: DeltaHawk DHK180
@@ -432,7 +434,7 @@ mission_score:
       note: ''
     in_envelope: true
     assumptions:
-    - 'Build-up on the same basis as the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo, intercooler,
+    - 'Build-up on a similar basis to the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo, intercooler,
       exhaust, ECU, fusebox, wiring, oil tank, cooling baffle; no fuel pumps, radiator or oil cooler) plus engine suspension
       frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg from the maker product page (rotax-915is-page:p1) = 91.2
       kg. Coolant, radiator and oil cooler are not included (unknown). The 82.2 kg product-page figure uses a smaller include
@@ -481,9 +483,9 @@ mission_score:
       note: ''
     in_envelope: true
     assumptions:
-    - 'Build-up on the same basis as the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915) plus
-      engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the same
-      add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).'
+    - 'Build-up on a similar basis to the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915)
+      plus engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the
+      same add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).'
     - assumed same installed CG as the book engine
     - Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 89,96 kW, 22,48027 kg/h = 250 g/kWh) to the 52.0
       kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably

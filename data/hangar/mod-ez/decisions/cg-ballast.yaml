@@ -20,8 +20,8 @@ replaces:
 - f23.engine-install
 - f22.battery-shelf
 book_choice:
-  text: 'The book airplane has no ballast: its CG envelope is 97.0 to 103.0 inches and its sample loadings are the book''s
-    own check (light pilot 103.96 printed, which sits aft of the 103.0 limit).'
+  text: The book defines the CG envelope as 97.0 to 103.0 inches and prints sample loadings as its own check (the light pilot
+    sample prints 103.96, aft of the 103.0 limit); the sample rows carry no ballast.
   cite: om-1980:p26
 scoring:
   kind: loadings
@@ -60,6 +60,8 @@ options:
       the engine's CG arm (141.05 in) brings the heavy solo case to +0.5 in; two adults already hold that margin. The ballast
       arm is an assumption
     flag: derived
+  - text: 'Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside'
+    flag: derived
   - text: With that ballast the heavy solo landing CG is 97.5 in and empty weight rises by the same 14.6 lb, which comes off
       useful load
     flag: derived
@@ -74,11 +76,13 @@ options:
       carries a 19 lb larger battery at fuselage station 11 in the nose (a derived row); moving it to 141.05 in aft changes
       the heavy solo margin to +2.6 in and two adults to +3.1 in
     flag: derived
+  - text: 'Aft check with the same change, light pilot: highest CG 103.6 in against the 103.0 in aft limit, OUTSIDE the envelope'
+    flag: derived
   - text: Whether the book airplane carries the larger battery in its 730 lb empty weight (the ledger notes it may carry the
-      small one)
+      small one); if it carries the small one the figures above are an upper bound
     flag: unknown
-  why: 'kept: free ballast, because the battery already has to be carried; needs longer cable runs and a firewall-side location,
-    and the saving is only real if the book empty weight includes the large battery'
+  why: 'kept: ballast that is already carried, but it pushes the light pilot case toward or past the aft limit (see the aft
+    check), needs longer cable runs, and is an upper bound if the book empty weight carries the small battery'
 - id: engine-arm-aft
   label: Move the engine installation aft
   kind: candidate
@@ -86,6 +90,8 @@ options:
   - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
       coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. Moving the
       engine's installed CG 3.8 in aft of the book arm brings the heavy solo case to +0.5 in
+    flag: derived
+  - text: 'Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside'
     flag: derived
   - text: A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)
     flag: unknown

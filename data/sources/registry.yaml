@@ -292,7 +292,7 @@ sources:
     note: cite p1; read and noted, never stored in the repo. Operational weight includes coils, ECU, exhaust, pumps, filters and oil; oil cooler and gauges are extra.
   easa-tcds-e121:
     title: EASA Type Certificate Data Sheet E.121, Rotax 912 series (includes 915 iSc and 916 iSc)
-    edition: Issue 17, 18 Dec 2023; read 2026-10-18; section 5 dry weights, 915 iSc2 A 84,6 kg (186.51 lb) and 916 iSc2 A 85,8 kg (189.16 lb), each with base engine, gearbox, turbocharger, cooling air baffle, wiring harness, sensors, ECU, fusebox, oil tank, intercooler and exhaust, and without fuel pumps, radiator, oil cooler and governor; 912 iSc2 Sport 63,6 kg without exhaust, suspension frame, fuel pumps, baffle, radiator and oil cooler
+    edition: Issue 17, 18 Dec 2023; read 2026-10-18; section 5 dry weights, 915 iSc2 A 84,6 kg (186.51 lb) and 916 iSc2 A 85,8 kg (189.16 lb), each with base engine, gearbox, turbocharger, cooling air baffle, wiring harness, sensors, ECU, fusebox, oil tank, intercooler and exhaust, and without fuel pumps, radiator, oil cooler and governor; 912 iSc2 Sport 63,6 kg with a fixed-propeller flange, and 912 iSc3 Sport 64,4 kg with the drive for a hydraulic governor for a constant speed propeller, both without exhaust, suspension frame, fuel pumps, baffle, radiator and oil cooler
     obtain: https://www.easa.europa.eu/en/downloads/7633/en
     copy: transcription
     page_basis: pdf
