@@ -261,6 +261,7 @@ def score_loading(
     loading_id: str,
     mission: dict | None = None,
     plants: dict | None = None,
+    extras: list[dict] | None = None,
 ) -> LoadingScore:
     mission, plants = _mission_and_plants(mission, plants)
     plant_raw = plants[option_id]
@@ -278,7 +279,11 @@ def score_loading(
     base_lb = float(ledger["empty"]["weight_lb"])
     base_arm = float(ledger["empty"]["arm_in"])
     items = loading["items"]
-    loading_flag = loading["flag"]
+    extras = list(extras or [])
+    ex_known = all(e.get("weight_lb") is not None and e.get("arm_in") is not None for e in extras)
+    ex_w = sum(e["weight_lb"] for e in extras) if ex_known else 0.0
+    ex_m = sum(e["weight_lb"] * e["arm_in"] for e in extras) if ex_known else 0.0
+    loading_flag = _get_worst_flag([loading["flag"], *[e.get("flag", "derived") for e in extras]])
 
     inst = plant["installed_lb"]
     cg_arm = plant["cg_arm_in"]
@@ -292,13 +297,13 @@ def score_loading(
             return "unknown"
         return _get_worst_flag([*flags, loading_flag])
 
-    weights_known = inst.v is not None
+    weights_known = inst.v is not None and ex_known
     cg_known = weights_known and cg_arm.v is not None
     burn_known = flow.v is not None and density.v is not None and reserve_min is not None
 
     if weights_known:
         empty_lb = base_lb - BOOK_WEIGHT_LB + inst.v
-        takeoff_w = empty_lb + sum(items.values())
+        takeoff_w = empty_lb + sum(items.values()) + ex_w
         takeoff_lb = Value(takeoff_w, flagged(False, inst.flag))
     else:
         takeoff_w = None
@@ -306,7 +311,7 @@ def score_loading(
 
     if cg_known:
         empty_m = base_lb * base_arm - BOOK_WEIGHT_LB * BOOK_ARM_IN + inst.v * cg_arm.v
-        takeoff_m = empty_m + sum(items[key] * arms[key]["arm_in"] for key in items)
+        takeoff_m = empty_m + sum(items[key] * arms[key]["arm_in"] for key in items) + ex_m
         takeoff_cg = Value(takeoff_m / takeoff_w, flagged(False, inst.flag, cg_arm.flag))
     else:
         takeoff_m = None
@@ -352,6 +357,8 @@ def score_loading(
                 assumptions.append(val.note)
     if loading["label"] not in assumptions:
         assumptions.append(loading["label"])
+    for e in extras:
+        assumptions.append(f"{e.get('name', 'extra weight')}: {e.get('weight_lb')} lb at {e.get('arm_in')} in")
 
     outputs = (takeoff_lb, takeoff_cg, landing_lb, landing_cg, fwd_margin)
     return LoadingScore(
@@ -367,6 +374,39 @@ def score_loading(
         worst_flag=_get_worst_flag([item.flag for item in outputs]),
     )
 
+def ballast_for_margin(
+    option_id: str,
+    loading_id: str,
+    arm_in: float,
+    margin_in: float,
+    mission: dict | None = None,
+    plants: dict | None = None,
+) -> Value:
+    """Ballast (lb) at `arm_in` that brings the forward margin of a loading up to `margin_in`; 0 when it already holds.
+
+    Solved numerically on score_loading (the margin rises monotonically with aft ballast). Unknown inputs give an
+    unknown Value; the flag is derived because the ballast arm is a choice, not a measurement."""
+    base = score_loading(option_id, loading_id, mission, plants)
+    if base.fwd_margin_in.v is None:
+        return Value(None, "unknown", "inputs unknown")
+    if base.fwd_margin_in.v >= margin_in:
+        return Value(0.0, "derived", "margin already holds")
+
+    def margin(b: float) -> float:
+        ex = [{"name": "ballast", "weight_lb": b, "arm_in": arm_in, "flag": "derived"}]
+        return score_loading(option_id, loading_id, mission, plants, extras=ex).fwd_margin_in.v
+
+    lo, hi = 0.0, 1.0
+    while margin(hi) < margin_in:
+        hi *= 2
+        if hi > 2000:
+            return Value(None, "unknown", "no ballast at this arm reaches the margin")
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if margin(mid) < margin_in else (lo, mid)
+    return Value(hi, "derived", f"solved on the loading score, ballast arm {arm_in} in")
+
+
 def write_scores(root: Path) -> int:
     with open(_DATA / "powerplants.yaml", "r") as f:
         plants = yaml.safe_load(f)
@@ -374,6 +414,18 @@ def write_scores(root: Path) -> int:
     for path in sorted(Path(root).glob("*/decisions/*.yaml")):
         rec = yaml.safe_load(path.read_text())
         if "mission_score" not in rec:
+            continue
+        scoring = rec.get("scoring")
+        if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
+            rec["mission_score"] = {
+                eng: {
+                    ld: dataclasses.asdict(score_loading(eng, ld, load_mission(None), plants))
+                    for ld in load_loadings()
+                }
+                for eng in scoring.get("engines", [])
+            }
+            path.write_text(dump_record(rec))
+            n += 1
             continue
         ids = {o["id"] for o in rec.get("options", [])}
         # write_scores must NOT use private dir: pass mission=load_mission(None)

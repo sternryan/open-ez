@@ -30,6 +30,7 @@ class Record:
     changes: dict | None
     evidence: dict
     axes: list
+    scoring: dict | None = None
 
 def _plain(x: Any) -> Any:
     """YAML turns an unquoted 2026-10-20 into a date object; records hold ISO strings so they stay JSON-able."""
@@ -74,7 +75,8 @@ def load_record(path: Path) -> Record:
         history=get_val("history", []),
         changes=get_val("changes", None),
         evidence=get_val("evidence", {}),
-        axes=get_val("axes", [])
+        axes=get_val("axes", []),
+        scoring=get_val("scoring", None),
     )
 
 def load_records(root: Path = DATA_ROOT) -> dict[str, Record]:
@@ -374,6 +376,15 @@ def validate(rec: Record, graph: Any, all_ids: set[str]) -> list[str]:
                 errors.append("history last 'to' must equal status")
 
     # 9. Evidence
+    if rec.scoring is not None:
+        sc = rec.scoring
+        if not isinstance(sc, dict) or sc.get("kind") not in ("mission", "loadings"):
+            errors.append("scoring must be a mapping with kind mission or loadings")
+        elif sc.get("kind") == "loadings" and not (
+            isinstance(sc.get("engines"), list) and sc["engines"] and all(isinstance(e, str) for e in sc["engines"])
+        ):
+            errors.append("scoring kind loadings needs a non-empty engines list")
+
     evidence = rec.evidence if isinstance(rec.evidence, dict) else {}
     if not isinstance(rec.evidence, dict):
         errors.append("evidence must be a dict")
