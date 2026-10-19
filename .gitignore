@@ -28,6 +28,8 @@ vspaero.out
 output/
 # Regenerable cache written by core.openvsp_runner.OpenVSPRunner
 data/validation/openvsp_validation.json
+# Lock files beside registry and data writes
+data/**/*.lock
 
 # Logs and Debugging
 logs/

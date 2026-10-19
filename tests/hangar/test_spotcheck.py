@@ -467,3 +467,63 @@ def test_apply_patch_holds_a_lock_and_concurrent_patches_both_land(tmp_path):
     assert saved["cg_arm_in"]["v"] == 139.2
     assert saved["installed_lb"]["v"] == 170.0
     assert not (tmp_path / "powerplants.yaml.tmp").exists()
+
+
+# ---- review round 2: registry shape, source id, unicode dump ----
+
+@pytest.mark.parametrize("text", ["", "# comment only\n", "sources: {}\n", "sources:\n"])
+def test_register_source_refuses_flow_empty_or_comment_registries(tmp_path, text):
+    p = tmp_path / "registry.yaml"
+    p.write_text(text)
+    before = p.read_bytes()
+    with pytest.raises(ValueError, match="refusing to edit"):
+        sc.register_source(p, prop(), today="2026-10-19")
+    assert p.read_bytes() == before
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_register_source_reparse_failure_leaves_the_file(tmp_path, monkeypatch):
+    p = registry(tmp_path)
+    before = p.read_bytes()
+    real = sc.yaml.safe_load
+
+    def wrapped(text, *args, **kwargs):
+        if isinstance(text, str) and "example.org/engine.html" in text:
+            raise sc.yaml.YAMLError("reparse refused")
+        return real(text, *args, **kwargs)
+
+    monkeypatch.setattr(sc.yaml, "safe_load", wrapped)
+    with pytest.raises(ValueError):
+        sc.register_source(p, prop(), today="2026-10-19")
+    assert p.read_bytes() == before
+
+
+@pytest.mark.parametrize("source_id", ["", "Rotax", "rotax_sheet", "-bad", "rotax sheet", "a/b", None, 12])
+def test_apply_patch_rejects_a_bad_source_id(tmp_path, source_id):
+    p = powerplants(tmp_path)
+    before = p.read_text()
+    with pytest.raises(ValueError):
+        sc.apply_patch(tmp_path, PATCH, source_id)
+    assert p.read_text() == before
+
+
+@pytest.mark.parametrize("note", [12, None, ["weighed"], {"text": "weighed"}])
+def test_apply_patch_rejects_a_non_string_note(tmp_path, note):
+    p = powerplants(tmp_path)
+    before = p.read_text()
+    with pytest.raises(ValueError):
+        sc.apply_patch(tmp_path, {**PATCH, "note": note}, "rotax-sheet")
+    assert p.read_text() == before
+
+
+def test_apply_patch_dumps_unicode_as_characters(tmp_path):
+    p = powerplants(tmp_path)
+    sc.apply_patch(tmp_path, {**PATCH, "note": "weighed — jig"}, "rotax-sheet")
+    text = p.read_text(encoding="utf-8")
+    assert "weighed — jig" in text
+    assert "\\u2014" not in text
+
+
+def test_data_lock_files_are_gitignored():
+    text = Path(".gitignore").read_text(encoding="utf-8")
+    assert "data/**/*.lock" in text

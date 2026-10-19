@@ -34,17 +34,21 @@ def public_brief(rec: Record, unknown_id: str) -> str:
     lines.append("Find a PUBLIC source that states this value.")
     return "\n".join(lines)
 
-def _norm_text(text: str) -> str:
+def _visible_text(text: str) -> str:
     text = unicodedata.normalize("NFKC", text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Cf")
     text = re.sub(r"\s+", " ", text)
-    return text.strip().casefold()
+    return text.strip()
 
 
+def _norm_text(text: str) -> str:
+    return _visible_text(text).casefold()
+
+
+# A number token, without a letter boundary. Callers reject a match that is
+# part of a longer number: an adjacent digit, or '.'/',' that continues into digits.
 _NUM_TOKEN = re.compile(
-    r"(?<![0-9A-Za-z.])"
-    r"([+-]?(?:\d{1,3}(?:[, ]\d{3})+|\d+)(?:\.\d+)?(?:[eE][+-]?\d+)?)"
-    r"(?![0-9A-Za-z.])"
+    r"[+-]?(?:\d{1,3}(?:[, ]\d{3})+|\d+)(?:\.\d+)?(?:[eE][+-]?\d+)?"
 )
 
 
@@ -56,6 +60,19 @@ def _parse_number_token(token: str):
     if not math.isfinite(value):
         return None
     return value
+
+
+def _number_boundary(text: str, start: int, end: int) -> bool:
+    """True when [start, end) is not part of a longer number."""
+    if start > 0 and text[start - 1].isdigit():
+        return False
+    if start >= 2 and text[start - 1] in ".," and text[start - 2].isdigit():
+        return False
+    if end < len(text) and text[end].isdigit():
+        return False
+    if end + 1 < len(text) and text[end] in ".," and text[end + 1].isdigit():
+        return False
+    return True
 
 
 def _whole_string_number(text: str):
@@ -85,11 +102,23 @@ def _collect_private(node, labels: list, phrases: list, numbers: list, key=None)
             phrases.append(node)
     elif isinstance(node, bool):
         return
-    elif isinstance(node, (int, float)) and math.isfinite(float(node)):
-        numbers.append(float(node))
+    elif isinstance(node, int):
+        # An integer weight cannot be told apart from a public number.
+        return
+    elif isinstance(node, float) and math.isfinite(node):
+        if not node.is_integer():
+            numbers.append(float(node))
 
 
 def assert_public(text: str, private_dir: str | None, record=None) -> None:
+    """Refuse private labels, phrases, and fractional weights in public text.
+
+    The structural exclusion of private data from the brief is the primary guard.
+    Integer weights cannot be told apart from coincidences, so the numeric check
+    does not treat an integer-valued private number as a leak. A number with a
+    fractional part still is. Labels of three characters or fewer match
+    case-sensitively as whole words; longer labels stay case-insensitive.
+    """
     if private_dir is None and record is None:
         return
 
@@ -109,13 +138,19 @@ def assert_public(text: str, private_dir: str | None, record=None) -> None:
         for attr in ("positions", "history", "decision"):
             _collect_private(getattr(record, attr, None), labels, phrases, numbers)
 
-    folded = _norm_text(text)
+    visible = _visible_text(text)
+    folded = visible.casefold()
     for label in labels:
-        secret = _norm_text(label)
-        if len(secret) < 2:
+        shown = _visible_text(label)
+        if len(shown) < 2:
             continue
-        if re.search(rf"(?<![0-9a-z]){re.escape(secret)}(?![0-9a-z])", folded):
-            raise ValueError(f"Private label leak: {label}")
+        if len(shown) <= 3:
+            if re.search(rf"(?<![0-9A-Za-z]){re.escape(shown)}(?![0-9A-Za-z])", visible):
+                raise ValueError(f"Private label leak: {label}")
+        else:
+            secret = shown.casefold()
+            if re.search(rf"(?<![0-9a-z]){re.escape(secret)}(?![0-9a-z])", folded):
+                raise ValueError(f"Private label leak: {label}")
     for phrase in phrases:
         secret = _norm_text(phrase)
         if len(secret) >= 4 and secret in folded:
@@ -123,7 +158,9 @@ def assert_public(text: str, private_dir: str | None, record=None) -> None:
     if not numbers:
         return
     for match in _NUM_TOKEN.finditer(folded):
-        parsed = _parse_number_token(match.group(1))
+        if not _number_boundary(folded, match.start(), match.end()):
+            continue
+        parsed = _parse_number_token(match.group(0))
         if parsed is None:
             continue
         for secret in numbers:
@@ -140,6 +177,26 @@ def _save_job(path: Path, job_dict: dict):
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
         raise
+
+def _save_terminal(path: Path, job: dict, *, reraise: bool) -> None:
+    """Save a proposed or failed job. If that write fails, try once to record failed.
+
+    The original exception is re-raised when ``reraise`` is set. A failure of the
+    retry is swallowed so it cannot mask that exception.
+    """
+    try:
+        _save_job(path, job)
+    except Exception as exc:
+        job["state"] = "failed"
+        if not job.get("error"):
+            job["error"] = f"{type(exc).__name__}: {exc}"
+        try:
+            _save_job(path, job)
+        except Exception:
+            pass
+        if reraise:
+            raise
+
 
 def _sanitize_id(raw: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]", "-", raw)
@@ -241,7 +298,7 @@ def _execute_job(path: Path, job: dict, lane_fn, spotcheck_fn) -> dict:
     except Exception as e:
         job["state"] = "failed"
         job["error"] = f"{type(e).__name__}: {e}"
-        _save_job(path, job)
+        _save_terminal(path, job, reraise=True)
         return job
 
     # Validate proposal
@@ -263,7 +320,7 @@ def _execute_job(path: Path, job: dict, lane_fn, spotcheck_fn) -> dict:
         job["state"] = "failed"
         job["error"] = err
         job["proposal"] = None
-        _save_job(path, job)
+        _save_terminal(path, job, reraise=True)
         return job
 
     try:
@@ -271,13 +328,13 @@ def _execute_job(path: Path, job: dict, lane_fn, spotcheck_fn) -> dict:
     except Exception as e:
         job["state"] = "failed"
         job["error"] = str(e)
-        _save_job(path, job)
+        _save_terminal(path, job, reraise=True)
         return job
 
     job["state"] = "proposed"
     job["proposal"] = proposal
     job["spotcheck"] = spotcheck
-    _save_job(path, job)
+    _save_terminal(path, job, reraise=True)
     return job
 
 
@@ -306,7 +363,7 @@ def run_job(private_dir: str, job_id: str, lane_fn, spotcheck_fn) -> dict:
             job["state"] = "failed"
             if not job.get("error"):
                 job["error"] = "interrupted"
-            _save_job(path, job)
+            _save_terminal(path, job, reraise=False)
 
 def abandon_job(private_dir: str, job_id: str, error: str) -> dict:
     """Fail a queued or running job. Finished jobs are left untouched. The write is atomic."""

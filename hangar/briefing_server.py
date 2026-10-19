@@ -15,6 +15,7 @@ import os
 import sys
 import tempfile
 import threading
+import traceback
 import urllib.parse
 from dataclasses import asdict
 from datetime import date, datetime, timezone
@@ -412,13 +413,15 @@ def _research_worker(server: BriefingServer, path: Path, unknown_id: str, job_id
             return
         _reopen_unknown(server, path, unknown_id)
     except Exception:
+        traceback.print_exc(file=sys.stderr)
         try:
             research.abandon_job(str(server.private_dir), job_id, _WORKER_FAILED)
         except Exception:
-            pass
+            traceback.print_exc(file=sys.stderr)
         try:
             _reopen_unknown(server, path, unknown_id)
         except Exception:
+            traceback.print_exc(file=sys.stderr)
             print("research worker could not reopen the unknown", file=sys.stderr)
 
 
@@ -1105,6 +1108,7 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     self._send_json(409, {"error": _ACCEPT_FAILED})
                     return
             except Exception:
+                traceback.print_exc(file=sys.stderr)
                 self._send_json(409, {"error": _ACCEPT_FAILED})
                 return
 
@@ -1135,8 +1139,15 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                 reopened = flag_reopen(self.server.records_root)
                 _log_skips()
             except Exception:
-                snap.restore()
-                load_registry.cache_clear()
+                traceback.print_exc(file=sys.stderr)
+                try:
+                    snap.restore()
+                except Exception:
+                    traceback.print_exc(file=sys.stderr)
+                try:
+                    load_registry.cache_clear()
+                except Exception:
+                    traceback.print_exc(file=sys.stderr)
                 self._send_json(409, {"error": _ACCEPT_FAILED})
                 return
         self._send_json(200, {"ok": True, "job": finished, "reopened": reopened})

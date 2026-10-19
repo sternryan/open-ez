@@ -414,3 +414,110 @@ def test_default_lane_passes_timeout_to_urlopen(monkeypatch):
     monkeypatch.setattr(rs.urllib.request, "urlopen", fake_urlopen)
     got = rs.default_lane("brief", timeout_s=7)
     assert got["value"] == 4.1 and seen["timeout"] == 7
+
+
+# ---- review round 2: number tokens, integer weights, short labels, final save ----
+
+def test_private_numbers_glued_to_a_unit_or_letter_still_leak(priv):
+    """A unit or letter beside a private number is still that number."""
+    for leak in ("133.37lb", "133.37kg", "133.37LB", "x133.37", "x133.37y"):
+        with pytest.raises(ValueError):
+            rs.assert_public(leak, priv)
+    rs.assert_public("1133.375 is a different number", priv)
+    rs.assert_public("133.37.1 is a longer token", priv)
+    rs.assert_public("133.37,1 is a longer token", priv)
+
+
+def test_integer_weights_and_short_labels_do_not_block_ordinary_prose(tmp_path):
+    """Integer weights collide with public numbers; short labels are case-sensitive."""
+    private = tmp_path / "private"
+    private.mkdir()
+    payload = {
+        "pilots": [
+            {"label": "In", "lb": 160},
+            {"label": "Al", "lb": 200},
+            {"label": "Nimbus", "lb": 31.5},
+        ],
+        "spare_lb": 200.0,
+    }
+    (private / "mission.yaml").write_text(yaml.safe_dump(payload))
+    doc = rs.assert_public.__doc__ or ""
+    assert "primary guard" in doc
+    assert "integer" in doc.casefold()
+    rs.assert_public("Landing margin at 160 lb and also 200", private)
+    rs.assert_public("in the aluminum skin", private)
+    rs.assert_public("inside the cabin", private)
+    rs.assert_public("IN the log and AL of it", private)
+    with pytest.raises(ValueError):
+        rs.assert_public("pilot In today", private)
+    with pytest.raises(ValueError):
+        rs.assert_public("crew Al today", private)
+    with pytest.raises(ValueError):
+        rs.assert_public("bag 31.5 lb", private)
+    with pytest.raises(ValueError):
+        rs.assert_public("ask nimbus later", private)
+
+
+def test_queue_job_accepts_a_brief_that_mentions_public_integer_weights(tmp_path):
+    private = tmp_path / "private"
+    private.mkdir()
+    (private / "mission.yaml").write_text(yaml.safe_dump({"pilots": [{"label": "In", "lb": 160}, {"label": "Al", "lb": 200}]}))
+    job = rs.queue_job(str(private), rec_with_unknowns(), "u-coolant")
+    assert job["state"] == "queued"
+    assert "160" in job["brief"]
+
+
+def test_final_save_failure_records_failed_and_reraises(priv, monkeypatch):
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+    real = rs._save_job
+
+    def flaky(path, job_dict):
+        if job_dict.get("state") == "proposed":
+            raise OSError("disk full")
+        return real(path, job_dict)
+
+    monkeypatch.setattr(rs, "_save_job", flaky)
+    with pytest.raises(OSError, match="disk full"):
+        rs.run_job(priv, job["id"], lane_returning(proposal()), check_ok)
+    saved = rs.load_job(priv, job["id"])
+    assert saved["state"] == "failed"
+    assert "disk full" in (saved.get("error") or "")
+
+
+def test_failed_state_save_is_retried_without_masking(priv, monkeypatch):
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+    real = rs._save_job
+    seen = {"failed": 0}
+
+    def flaky(path, job_dict):
+        if job_dict.get("state") == "failed":
+            seen["failed"] += 1
+            if seen["failed"] == 1:
+                raise OSError("disk full")
+            if seen["failed"] > 2:
+                raise RuntimeError("retry failed")
+        return real(path, job_dict)
+
+    monkeypatch.setattr(rs, "_save_job", flaky)
+    with pytest.raises(OSError, match="disk full"):
+        rs.run_job(priv, job["id"], lane_returning(None), check_ok)
+    saved = rs.load_job(priv, job["id"])
+    assert saved["state"] == "failed"
+    assert saved.get("error")
+    assert seen["failed"] >= 2
+
+
+def test_retry_of_a_final_save_does_not_replace_the_original_exception(priv, monkeypatch):
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+    real = rs._save_job
+
+    def flaky(path, job_dict):
+        if job_dict.get("state") == "proposed":
+            raise OSError("disk full")
+        if job_dict.get("state") == "failed":
+            raise RuntimeError("retry failed")
+        return real(path, job_dict)
+
+    monkeypatch.setattr(rs, "_save_job", flaky)
+    with pytest.raises(OSError, match="disk full"):
+        rs.run_job(priv, job["id"], lane_returning(proposal()), check_ok)

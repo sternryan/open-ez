@@ -217,3 +217,11 @@ def test_nonpositive_gross_is_unknown_not_a_crash():
     ex = [{"name": "negative", "weight_lb": -5000.0, "arm_in": 100.0, "flag": "derived"}]
     m = mx.matrix("x", extras=ex, plants=PLANT, mission=MISSION)
     assert m["unknown_cells"] == m["cell_count"]
+
+
+@pytest.mark.parametrize("flag", [["sourced"], {"kind": "sourced"}])
+def test_non_string_flags_are_unknown(flag):
+    ex = [{"name": "x", "weight_lb": 5.0, "arm_in": 100.0, "flag": flag}]
+    m = mx.matrix("x", extras=ex, plants=PLANT, mission=MISSION)
+    assert m["flag"] == "unknown"
+    assert {c["flag"] for c in m["cells"]} <= {"sourced", "derived", "unknown"}

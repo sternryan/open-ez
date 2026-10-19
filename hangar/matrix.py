@@ -26,7 +26,7 @@ def _worst(flags: list[str]) -> str:
 
 
 def _norm_flag(flag) -> str:
-    if flag in _RANK:
+    if isinstance(flag, str) and flag in _RANK:
         return flag
     return "unknown"
 

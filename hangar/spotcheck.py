@@ -337,6 +337,30 @@ def _atomic_write(path: Path, text: str) -> None:
         raise
 
 
+_REQUIRED_SOURCE_KEYS = ("title", "edition", "obtain", "copy", "page_basis")
+_UNSAFE_REGISTRY = "refusing to edit a flow-style, empty, or comment-only registry"
+
+
+def _flow_sources(content: str) -> bool:
+    for raw in content.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if re.match(r"sources\s*:\s*\{", line):
+            return True
+    return False
+
+
+def _registry_appendable(content: str, data) -> bool:
+    """True when a block-style sources mapping can take one more entry."""
+    if not isinstance(data, dict):
+        return False
+    sources_map = data.get("sources")
+    if not isinstance(sources_map, dict) or not sources_map:
+        return False
+    if _flow_sources(content):
+        return False
+    return True
+
+
 def register_source(registry_path, proposal, today) -> str:
     url = proposal.get("url")
     title = proposal.get("title")
@@ -358,6 +382,8 @@ def register_source(registry_path, proposal, today) -> str:
                 if isinstance(entry, dict) and entry.get("obtain") == url:
                     return sid
         existing_ids = set(sources_map) if isinstance(sources_map, dict) else set()
+        if not _registry_appendable(content, data):
+            raise ValueError(_UNSAFE_REGISTRY)
 
         slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:40]
         if not re.match(r"^[a-z0-9][a-z0-9-]*$", slug):
@@ -384,6 +410,14 @@ def register_source(registry_path, proposal, today) -> str:
         for key, value in entry.items():
             lines.append(f"    {key}: {json.dumps(value)}")
         new_text += "\n".join(lines) + "\n"
+        try:
+            checked = yaml.safe_load(new_text)
+        except Exception as exc:
+            raise ValueError("rewritten registry is not valid YAML") from exc
+        checked_sources = checked.get("sources") if isinstance(checked, dict) else None
+        written = checked_sources.get(final_id) if isinstance(checked_sources, dict) else None
+        if not isinstance(written, dict) or any(key not in written for key in _REQUIRED_SOURCE_KEYS):
+            raise ValueError("rewritten registry is missing the new source")
         _atomic_write(path, new_text)
         return final_id
 
@@ -421,6 +455,10 @@ def apply_patch(data_dir, patch, source_id) -> None:
     val = patch.get("value")
     if not isinstance(val, (int, float)) or isinstance(val, bool) or (isinstance(val, float) and (val != val or val in (float("inf"), float("-inf")))):
         raise ValueError("Invalid value")
+    if not isinstance(source_id, str) or re.fullmatch(r"[a-z0-9][a-z0-9-]*", source_id) is None:
+        raise ValueError("invalid source id")
+    if "note" in patch and not isinstance(patch["note"], str):
+        raise ValueError("note must be a string")
 
     target = Path(data_dir) / filename
     if not target.is_file():
@@ -461,7 +499,7 @@ def apply_patch(data_dir, patch, source_id) -> None:
         tmp = Path(tmp_name)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                yaml.safe_dump(data, handle, sort_keys=False)
+                yaml.safe_dump(data, handle, sort_keys=False, allow_unicode=True)
             os.replace(tmp, target)
         except Exception:
             if tmp.exists():

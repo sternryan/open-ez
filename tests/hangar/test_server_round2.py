@@ -455,3 +455,141 @@ def test_accept_rolls_back_when_a_step_fails(tmp_path, monkeypatch, step):
         sources.REGISTRY = original
         sources.load_registry.cache_clear()
         assert Path("data/sources/registry.yaml").read_bytes() == real_registry
+
+
+def test_accept_preview_failure_logs_the_cause_not_the_body(tmp_path, monkeypatch, capsys):
+    import hangar.briefing_server as briefing_server
+
+    record = base()
+    record["unknowns"] = [_unknown(state="researching")]
+    room = Room(
+        tmp_path, record,
+        lane=lambda brief: dict(PROPOSAL),
+        spot=lambda proposal: {"matched": True},
+    )
+    try:
+        job_id = "demo--coolant-weight--1"
+        _write_job(room.private, _job(job_id, "proposed"))
+
+        def boom(*_args, **_kwargs):
+            raise RuntimeError("preview-broke")
+
+        monkeypatch.setattr(briefing_server, "_preview_source_id", boom)
+        status, body, _ = room.req("POST", "/api/research/resolve", {"job_id": job_id, "outcome": "accept"})
+        rendered = json.dumps(body)
+        assert status == 409
+        assert body["error"] == _ACCEPT_FAILED
+        assert "preview-broke" not in rendered
+        assert "preview-broke" in capsys.readouterr().err
+    finally:
+        room.close()
+
+
+def test_accept_main_failure_logs_the_cause_not_the_body(tmp_path, monkeypatch, capsys):
+    import hangar.briefing_server as briefing_server
+
+    sources, registry, real_registry, original = _registry(tmp_path)
+    data_dir = _plants(tmp_path)
+    record = base()
+    record["unknowns"] = [_unknown(state="researching")]
+    sources.REGISTRY = registry
+    sources.load_registry.cache_clear()
+    try:
+        room = Room(
+            tmp_path, record,
+            lane=lambda brief: dict(PROPOSAL),
+            spot=lambda proposal: {"matched": True},
+            registry=registry, data_dir=data_dir,
+        )
+        try:
+            patch = {"file": "powerplants.yaml", "path": ["rotax-912is", "cg_arm_in"], "value": 80.0}
+            job_id = "demo--coolant-weight--1"
+            _write_job(room.private, _job(job_id, "proposed", patch=patch))
+
+            def boom(*_args, **_kwargs):
+                raise RuntimeError("patch-broke")
+
+            monkeypatch.setattr(briefing_server, "apply_patch", boom)
+            status, body, _ = room.req("POST", "/api/research/resolve", {"job_id": job_id, "outcome": "accept"})
+            rendered = json.dumps(body)
+            assert status == 409
+            assert body["error"] == _ACCEPT_FAILED
+            assert "patch-broke" not in rendered
+            assert "patch-broke" in capsys.readouterr().err
+        finally:
+            room.close()
+    finally:
+        sources.REGISTRY = original
+        sources.load_registry.cache_clear()
+
+
+def test_accept_restore_failure_still_answers_409_and_logs_both(tmp_path, monkeypatch, capsys):
+    import hangar.briefing_server as briefing_server
+
+    sources, registry, real_registry, original = _registry(tmp_path)
+    data_dir = _plants(tmp_path)
+    record = base()
+    record["unknowns"] = [_unknown(state="researching")]
+    sources.REGISTRY = registry
+    sources.load_registry.cache_clear()
+    try:
+        room = Room(
+            tmp_path, record,
+            lane=lambda brief: dict(PROPOSAL),
+            spot=lambda proposal: {"matched": True},
+            registry=registry, data_dir=data_dir,
+        )
+        try:
+            patch = {"file": "powerplants.yaml", "path": ["rotax-912is", "cg_arm_in"], "value": 80.0}
+            job_id = "demo--coolant-weight--1"
+            _write_job(room.private, _job(job_id, "proposed", patch=patch))
+
+            def patch_boom(*_args, **_kwargs):
+                raise RuntimeError("patch-broke")
+
+            def restore_boom(self):
+                raise RuntimeError("restore-broke")
+
+            monkeypatch.setattr(briefing_server, "apply_patch", patch_boom)
+            monkeypatch.setattr(briefing_server._Snap, "restore", restore_boom)
+            status, body, _ = room.req("POST", "/api/research/resolve", {"job_id": job_id, "outcome": "accept"})
+            rendered = json.dumps(body)
+            assert status == 409
+            assert body["error"] == _ACCEPT_FAILED
+            assert "patch-broke" not in rendered
+            assert "restore-broke" not in rendered
+            err = capsys.readouterr().err
+            assert "patch-broke" in err
+            assert "restore-broke" in err
+        finally:
+            room.close()
+    finally:
+        sources.REGISTRY = original
+        sources.load_registry.cache_clear()
+
+
+def test_worker_logs_the_cause_on_stderr_not_in_the_response(tmp_path, monkeypatch, capsys):
+    record = base()
+    record["unknowns"] = [_unknown()]
+
+    def boom(*_args, **_kwargs):
+        raise RuntimeError("worker-broke")
+
+    monkeypatch.setattr(research, "run_job", boom)
+    room = Room(tmp_path, record, lane=lambda brief: None, spot=lambda proposal: None)
+    try:
+        status, body, _ = room.req("POST", "/api/research", {"record_id": "demo", "unknown_id": "coolant-weight"})
+        assert status == 202
+        assert "worker-broke" not in json.dumps(body)
+        job_id = body["job"]["id"]
+
+        def failed():
+            return research.load_job(str(room.private), job_id)["state"] == "failed"
+
+        assert _wait(failed)
+        saved = research.load_job(str(room.private), job_id)
+        assert saved["error"] == "research worker failed"
+        assert "worker-broke" not in saved["error"]
+        assert "worker-broke" in capsys.readouterr().err
+    finally:
+        room.close()
