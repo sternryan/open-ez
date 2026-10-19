@@ -79,3 +79,28 @@ def test_unknown_inputs_propagate():
 def test_unknown_loading_raises():
     with pytest.raises(KeyError):
         score_loading("x", "nope", MISSION, plant())
+
+
+def test_write_scores_scores_loadings_when_the_record_asks(tmp_path):
+    """A record with `scoring: {kind: loadings, engines: [...]}` gets loading scores, generated and idempotent."""
+    import copy, dataclasses, shutil
+    import yaml
+    from hangar.mission import write_scores
+    from hangar.records import DATA_ROOT, dump_record, load_records, validate_all
+
+    root = tmp_path / "hangar"
+    shutil.copytree(DATA_ROOT, root)
+    p = root / "mod-ez" / "decisions" / "propeller.yaml"
+    d = yaml.safe_load(p.read_text())
+    d["scoring"] = {"kind": "loadings", "engines": ["o235-book", "rotax-912is"]}
+    p.write_text(dump_record(d))
+    write_scores(root)
+    got = yaml.safe_load(p.read_text())["mission_score"]
+    assert list(got) == ["o235-book", "rotax-912is"]
+    assert set(got["rotax-912is"]) == {"light_solo", "heavy_solo", "heavy_two"}
+    want = dataclasses.asdict(score_loading("rotax-912is", "heavy_solo"))
+    assert got["rotax-912is"]["heavy_solo"] == yaml.safe_load(yaml.safe_dump(want))
+    before = p.read_text()
+    write_scores(root)
+    assert p.read_text() == before
+    assert validate_all(root) == []
