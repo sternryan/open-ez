@@ -17,18 +17,18 @@ replaces:
 - f23.engine-install
 - f23.cowl-closeout
 book_choice:
-  text: 'The book airplane''s O-235 is air cooled: cylinders are cooled by cowl air, with no radiator, coolant, expansion
-    tank or coolant hoses.'
+  text: The book airplane's O-235 is air cooled by cowl air (engine type; not checked against the owner's manual here).
 options:
 - id: air-cooled-book
   label: Air-cooled engine (book)
   kind: book
   facts:
-  - text: The book engine is the air-cooled Lycoming O-235; it carries no radiator, coolant or oil cooler plumbing
+  - text: The book engine is the air-cooled Lycoming O-235; it has no liquid cooling system
     flag: derived
   - text: The 912 iS needs about 1.5 l of coolant for its liquid-cooled cylinder heads, so this layout does not apply to it
     flag: derived
-  why: 'baseline: nothing to place, and nothing to carry; the 912 iS cannot use it because its cylinder heads are liquid cooled'
+  why: 'baseline: no coolant system to place; the 912 iS does not use it because its cylinder heads are liquid cooled (the
+    maker lists coolant, a radiator and an expansion tank)'
 - id: radiator-nose-duct
   label: Radiator and oil cooler forward, ducted from the nose
   kind: candidate
@@ -46,22 +46,29 @@ options:
     text: The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).
     cite: rotax-im-912i:p1
   - &id005
-    text: The maker lists the cooling air baffle at 0.36 kg (0.79 lb).
+    text: The maker lists a cooling air baffle at 0.36 kg (0.79 lb); the manual does not say whether this is the tractor or
+      the pusher part
     cite: rotax-im-912i:p1
   - &id006
-    text: IM-912 i requires an overflow bottle of approximately 0.5 litres.
-    cite: installation-manual-im-912-i:p1
+    text: The maker lists the overflow bottle at approximately 0.5 l (0.13 US gal).
+    cite: rotax-im-912i:p1
   - &id007
+    text: The maker's hose specification gives an inner diameter of 25 mm for coolant hoses.
+    cite: rotax-im-912i:p1
+  - &id008
+    text: The maker's coolant capacity table lists a 2 m coolant hose with an inner diameter of 18 mm.
+    cite: rotax-im-912i:p1
+  - &id009
     text: SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol
       coolant on the 912 i Series.
     cite: si-912-i-001r7-si-912-016r12:p1
-  - &id008
+  - &id010
     text: SI-PAC-014 Revision 1 states a maximum weight of 0.82 kg for the extra-large oil radiator.
     cite: si-pac-014-revision-1-oil-radiator-sets:p1
   - text: Duct size, drag and the real pusher airflow for a nose radiator on this airframe are not sourced
     flag: unknown
-  why: 'kept: short air path, but the coolant and oil lines run the length of the fuselage and the radiator mass sits far
-    forward, which pushes the CG forward'
+  why: 'kept: judgment: a forward radiator has the easiest air supply, but the coolant and oil lines would run the length
+    of the fuselage and its mass sits forward of the engine, which moves the CG forward (geometry, not sourced)'
 - id: radiator-belly-duct
   label: Radiator and oil cooler in a belly duct under the engine
   kind: candidate
@@ -74,6 +81,8 @@ options:
   - *id006
   - *id007
   - *id008
+  - *id009
+  - *id010
   - text: Duct size, drag and the real pusher airflow for a belly radiator on this airframe are not sourced
     flag: unknown
   why: 'kept: short hoses and the masses stay near the engine, but a belly scoop touches the outer shape and ground clearance'
@@ -89,10 +98,12 @@ options:
   - *id006
   - *id007
   - *id008
+  - *id009
+  - *id010
   - text: Whether the pusher cowl can pass enough air at the radiator, and the duct drag, are not sourced
     flag: unknown
-  why: 'kept: masses sit aft like ballast, but a pusher cowl has little ram air aft of the engine and the airflow path is
-    not sourced'
+  why: 'kept: judgment: radiator and cooler masses aft of the CG act as ballast (geometry); whether a pusher cowl can pass
+    enough air there is not sourced'
 positions: []
 unknowns:
 - id: radiator-position-drag
@@ -104,8 +115,8 @@ unknowns:
   - radiator-aft-duct
   state: open
 - id: coolant-hose-diameter
-  text: 'Coolant hose inner diameter: an older installation manual says 25 mm and the 2020 edition''s coolant table lists
-    18 mm hose'
+  text: 'Coolant hose inner diameter: the 2020 installation manual gives 25 mm in its hose specification and an 18 mm hose
+    in its coolant capacity table'
   how: the current maker installation manual for the engine serial number
   affects:
   - radiator-nose-duct
@@ -116,6 +127,15 @@ unknowns:
   text: Installed mass of coolant, hoses and fittings (the maker lists radiator and cooler masses, not hose or fluid mass
     for a given routing)
   how: weigh the drawn installation; coolant density from the maker's coolant datasheet
+  affects:
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+  state: open
+- id: radiator-height-limits
+  text: The maker's limits on radiator position relative to the pump inlet and on overflow-bottle suction height constrain
+    where the duct options can put the radiator (the values were found in the manual but not checked here)
+  how: the maker's installation manual, cooling system chapter, against the drawn installation
   affects:
   - radiator-nose-duct
   - radiator-belly-duct

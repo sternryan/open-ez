@@ -16,22 +16,23 @@ replaces:
 - f21.plumbing
 - f23.carb-bracket
 book_choice:
-  text: The book airplane feeds a carburetor from its tanks through the plumbing built under the fuel-system steps; there
-    is no pressure regulation and no return line.
+  text: The book airplane's engine is carbureted and its fuel plumbing is built under the fuel-system steps (not checked against
+    the owner's manual here).
 options:
 - id: book-carb-feed
   label: Book carburetor feed
   kind: book
   facts:
-  - text: EASA TCDS E.121 Issue 17 sets 912 iSc Sport fuel pressure at 2.8 to 3.2 bar.
+  - text: EASA TCDS E.121 sets the 912 iSc Sport fuel pressure at 2.8 to 3.2 bar (the TCDS covers the iSc Sport series; the
+      iS Sport shares the injection system)
     cite: easa-tcds-e121:p1
   - text: A carburetor gravity or low-pressure feed does not supply 2.8 to 3.2 bar and has no return line, so the book plumbing
       cannot feed the 912 iS unchanged
     flag: derived
-  why: 'baseline: simple, but it is built for a carburetor and cannot meet the injected engine''s feed pressure or return
-    requirement'
+  why: 'baseline: simple, but built for a carburetor; judgment: it would need a pressurized feed and a return line to suit
+    the injected engine (derived from the maker''s pressure figure)'
 - id: return-to-tank
-  label: Pumped feed with a return line to the wing tank
+  label: Pumped feed with a return line to the strake tank
   kind: candidate
   facts:
   - &id001
@@ -47,20 +48,30 @@ options:
     text: The fine filter mesh size is 8 to 12 micron.
     cite: rotax-im-912i:p1
   - &id005
-    text: Feed, return, and vent lines must not have non-drainable low points.
+    text: Feed, return and vent lines should avoid non-drainable low points
     cite: rotax-im-912i:p1
   - &id006
-    text: The current installation manual requires a vapor-lock-resistant fuel system and states no fuel temperature in degrees.
+    text: The current installation manual requires a vapor-lock-resistant fuel system
     cite: rotax-im-912i:p1
   - &id007
     text: Fuels with more than 10 percent ethanol are not permitted.
     cite: si-912-i-001-r12-selection-of-suitable-o:p1
+  - &id008
+    text: The maker's minimum inner diameter for the fuel return line is 7.5 mm (0.3 in).
+    cite: rotax-im-912i:p1
+  - &id009
+    text: The maker recommends a restricted bypass line between the pump module outlet and the return line to vent air from
+      the fuel system.
+    cite: rotax-im-912i:p1
+  - &id010
+    text: The maker says vapor bubbles in the return line must be efficiently vented out of the fuel system to atmosphere.
+    cite: rotax-im-912i:p1
   - text: The engine side-view callout names separate return connections for tractor and pusher.
     cite: rotax-im-912i:p1
   - text: The routing of a return line from the engine to the strake tanks, its length and pressure drop, are not sourced
     flag: unknown
   why: 'kept: the maker''s architecture, with two pumps and a return connection; the cost is a return line along the full
-    feed run and a return fitting in the tank'
+    feed run and a return fitting in the strake tank'
 - id: return-to-header
   label: Pumped feed with a small header tank and a return line to it
   kind: candidate
@@ -72,13 +83,20 @@ options:
   - *id005
   - *id006
   - *id007
+  - *id008
+  - *id009
+  - *id010
   - text: The engine side-view callout names separate return connections for tractor and pusher.
     cite: rotax-im-912i:p1
-  - text: Whether the maker accepts a header tank in place of a return to the main tank on a pusher, and the header size needed,
-      are not sourced
+  - text: The maker's favourable header-tank layout has a volume of at least 5 l (1.32 US gal).
+    cite: rotax-im-912i:p1
+  - text: The maker says a sump should be integrated into a header tank.
+    cite: rotax-im-912i:p1
+  - text: Whether the maker accepts a header tank return in place of a return to the main tank on a pusher with two strake
+      tanks is not sourced
     flag: unknown
-  why: 'kept: shortens the return run and holds fuel near the pumps, at the cost of a header tank, its vent and its own supply
-    from the wing tanks'
+  why: 'kept: judgment: the maker discusses header tanks (at least 5 l, with a sump and a vent line to the wing tank); this
+    shortens the return run at the cost of a header tank, its vent and its own supply from the strake tanks'
 positions: []
 unknowns:
 - id: fuel-return-routing
@@ -96,8 +114,15 @@ unknowns:
   - return-to-tank
   - return-to-header
   state: open
+- id: tank-selector-return
+  text: Which tank the return line goes to when the airplane draws from one of two strake tanks through a selector
+  how: the maker's installation support and the drawn plumbing
+  affects:
+  - return-to-tank
+  - return-to-header
+  state: open
 - id: header-tank-acceptance
-  text: Whether a header tank return is acceptable to the maker and how large it must be
+  text: Whether a header tank return in place of a main-tank return is acceptable to the maker for a two-tank pusher
   how: ask the maker's installation support; a written statement
   affects:
   - return-to-header

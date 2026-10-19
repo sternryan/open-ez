@@ -24,8 +24,8 @@ replaces:
 - f22.battery-shelf
 - f22.wing-wiring
 book_choice:
-  text: The book airplane has one engine-driven alternator and one battery on a single bus with the engine's own ignition;
-    the engine needs no supply from the airplane to run.
+  text: The book airplane's electrical system is the plans' battery, alternator and panel wiring (steps f22; not checked against
+    the owner's manual here).
 options:
 - id: book-single-alternator
   label: Book single bus, one alternator, one battery
@@ -33,11 +33,12 @@ options:
   facts:
   - text: The engine-management electrical system is isolated from the rest of the aircraft.
     cite: rotax-im-912i:p1
-  - text: The book single-bus system shares grounds and the battery with the engine, which the maker's isolation rules do
-      not allow
+  - text: The book wiring does not provide an isolated engine ground, the engine-management supply path or the ammeter the
+      maker requires, so it cannot be kept unchanged
     flag: derived
-  why: 'baseline: simple and complete for the magneto engine, but it cannot be kept for the 912 iS, whose engine-management
-    electrics must be isolated from the airframe bus'
+  why: 'baseline: judgment: the book wiring was drawn for an engine that needs no electrical supply to run; the 912 iS has
+    its own engine electrics (two lanes, generators, a backup switch) whose ground must be kept separate from the airframe
+    ground'
 - id: ems-isolated-one-battery
   label: Isolated engine bus, one aircraft battery with a backup switch
   kind: candidate
@@ -60,9 +61,9 @@ options:
   - &id006
     text: The battery technical data require at least 350 A cold-cranking amperes at -18 °C (SAE J537).
     cite: rotax-im-912i:p1
-  - text: The 2012 operators manual says loss of both EMS supplies stops the engine, and the backup switch then feeds the
-      EMS from the aircraft battery.
-    cite: operators-manual-om-912-i-part-898740-co:p1
+  - text: If both EMS alternators fail, the 2012 operators manual says to switch on the backup battery switch so the aircraft
+      battery supplies power.
+    cite: rotax-912is-om:p1
   - text: The aircraft manufacturer must provide an ammeter because the EMS does not monitor generator-B charging.
     cite: rotax-im-912i:p1
   - text: The 2020 installation manual requires a slow-blowing 50 A fuse or circuit breaker for the rectifier regulator.
@@ -79,10 +80,11 @@ options:
   - *id004
   - *id005
   - *id006
-  - text: The 2012 operators manual says loss of both EMS supplies stops the engine, and the backup switch then feeds the
-      EMS from the aircraft battery.
-    cite: operators-manual-om-912-i-part-898740-co:p1
-  - text: The mass, size and position of a separate backup battery are choices not sourced
+  - text: If both EMS alternators fail, the 2012 operators manual says to switch on the backup battery switch so the aircraft
+      battery supplies power.
+    cite: rotax-912is-om:p1
+  - text: A separate engine backup battery is the builder's option, not something the maker's text requires; its mass, size
+      and position are not sourced
     flag: derived
   why: 'kept: the engine does not depend on the airframe battery, at the cost of a second battery and its mass and mounting'
 - id: book-battery
@@ -104,7 +106,13 @@ options:
     cite: etx-series-lithium-batteries-etx900-prod:p1
   - text: 15.6 Ah is below the maker's 16 Ah minimum for the aircraft battery, so this battery would need the maker's agreement
     flag: derived
-  why: 'kept: lightest at 4.9 lb, but its 15.6 Ah is just under the maker''s 16 Ah minimum'
+  - text: The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that
+      responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.
+    cite: rotax-im-912i:p1
+  - text: Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked
+      here
+    flag: unknown
+  why: 'kept: light at 4.9 lb, but its 15.6 Ah is just under the maker''s 16 Ah minimum'
 - id: lifepo4-etx680c
   label: Lithium iron phosphate battery, 12.4 Ah class
   kind: candidate
@@ -115,6 +123,12 @@ options:
     cite: earthx-etx680c-product-page:p1
   - text: 12.4 Ah is below the maker's 16 Ah minimum for the aircraft battery
     flag: derived
+  - text: The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that
+      responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.
+    cite: rotax-im-912i:p1
+  - text: Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked
+      here
+    flag: unknown
   why: 'kept: very light at 3.9 lb, but 12.4 Ah is well below the maker''s 16 Ah minimum'
 - id: agm-pc680
   label: Sealed lead-acid (AGM) battery, 16 Ah class
@@ -127,7 +141,12 @@ options:
     cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
   - text: Odyssey lists the ODS-AGM16L (PC680) at 12 V.
     cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
-  why: 'kept: meets the maker''s 16 Ah minimum, at 15.4 lb the heaviest choice'
+  - text: The maker limits the aircraft battery's internal resistance to a maximum of 10 mohm at -18 C.
+    cite: rotax-im-912i:p1
+  - text: Its cold-cranking amps and internal resistance against the maker's limits are not checked here
+    flag: unknown
+  why: 'kept: meets the maker''s 16 Ah figure, at 15.4 lb the heaviest choice; its cold-cranking and internal resistance are
+    not checked here'
 positions: []
 unknowns:
 - id: backup-battery-requirement
@@ -137,6 +156,14 @@ unknowns:
   affects:
   - ems-isolated-one-battery
   - ems-isolated-two-batteries
+  state: open
+- id: battery-start-limits
+  text: Whether a candidate battery meets the maker's cold-cranking (350 A at -18 C) and internal-resistance (10 mohm) limits
+  how: the battery maker's data sheet against the maker's limits
+  affects:
+  - lifepo4-etx900
+  - lifepo4-etx680c
+  - agm-pc680
   state: open
 - id: external-alternator-current
   text: Current available from the external alternator at cruise and the airframe load budget
