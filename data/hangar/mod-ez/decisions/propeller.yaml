@@ -121,7 +121,7 @@ unknowns:
   how: maker installation manual or a noise measurement
 - text: Pusher yaw and pitch effect of a left-turning versus right-turning propeller on this airframe
   how: flight test
-mission_score: {}
+mission_score: null
 decision: null
 history: []
 changes: null
