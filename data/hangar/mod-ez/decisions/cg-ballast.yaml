@@ -1,0 +1,310 @@
+id: cg-ballast
+spot: mod-ez
+title: Centre of gravity with the 912 iS
+status: open
+question: How does the Mod-EZ keep its centre of gravity inside the book envelope now that the 912 iS is lighter than the
+  book engine?
+axes:
+- id: cg_fix
+  options:
+  - book-engine-cg
+  - loading-limit
+  - fixed-aft-ballast
+  - battery-aft
+  - engine-arm-aft
+  - radiator-aft
+coupled_with:
+- powerplant-fuel-resin
+- propeller
+replaces:
+- f23.engine-install
+- f22.battery-shelf
+book_choice:
+  text: 'The book airplane has no ballast: its CG envelope is 97.0 to 103.0 inches and its sample loadings are the book''s
+    own check (light pilot 103.96 printed, which sits aft of the 103.0 limit).'
+  cite: om-1980:p26
+scoring:
+  kind: loadings
+  engines:
+  - o235-book
+  - rotax-912is
+options:
+- id: book-engine-cg
+  label: Book engine and loading (baseline)
+  kind: book
+  facts:
+  - text: 'Calculator output on the book''s own sample loadings (no private weights); landing is with the 30 minute reserve;
+      coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine''s. Book engine,
+      heavy pilot solo (210 lb): landing CG 100.3 in, forward margin +3.3 in; two adults: +3.7 in'
+    cite: om-1980:p28
+  - text: 'Book engine, light pilot (135 lb): CG 104.0 in at takeoff, aft of the 103.0 in limit, as in the book''s own sample'
+    cite: om-1980:p26
+  why: 'baseline: the envelope and loadings the book itself prints; the 912 iS changes where the empty CG sits'
+- id: loading-limit
+  label: No change, publish a loading limit
+  kind: candidate
+  facts:
+  - text: 'Calculator output on the book''s own sample loadings (no private weights); landing is with the 30 minute reserve;
+      coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine''s. 912 iS, heavy
+      pilot solo: landing CG 96.8 in, forward margin -0.2 in (forward of the 97.0 in limit); two adults: +0.9 in; light pilot:
+      +3.3 in'
+    cite: om-1980:p28
+  why: 'kept: costs no weight, but a 210 lb pilot flying solo is outside the envelope, so the airplane would need a minimum-passenger
+    or maximum-front-seat rule; two adults stay inside by only 0.9 in'
+- id: fixed-aft-ballast
+  label: Fixed aft ballast
+  kind: candidate
+  facts:
+  - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
+      coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. 14.6 lb at
+      the engine's CG arm (141.05 in) brings the heavy solo case to +0.5 in; two adults already hold that margin. The ballast
+      arm is an assumption
+    flag: derived
+  - text: With that ballast the heavy solo landing CG is 97.5 in and empty weight rises by the same 14.6 lb, which comes off
+      useful load
+    flag: derived
+  why: 'kept: simple and testable, at a direct cost in useful load; ballast that is not fixed to the structure is a loading
+    error waiting to happen'
+- id: battery-aft
+  label: Move the battery aft
+  kind: candidate
+  facts:
+  - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
+      coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. The ledger
+      carries a 19 lb larger battery at fuselage station 11 in the nose (a derived row); moving it to 141.05 in aft changes
+      the heavy solo margin to +2.6 in and two adults to +3.1 in
+    flag: derived
+  - text: Whether the book airplane carries the larger battery in its 730 lb empty weight (the ledger notes it may carry the
+      small one)
+    flag: unknown
+  why: 'kept: free ballast, because the battery already has to be carried; needs longer cable runs and a firewall-side location,
+    and the saving is only real if the book empty weight includes the large battery'
+- id: engine-arm-aft
+  label: Move the engine installation aft
+  kind: candidate
+  facts:
+  - text: Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve;
+      coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. Moving the
+      engine's installed CG 3.8 in aft of the book arm brings the heavy solo case to +0.5 in
+    flag: derived
+  - text: A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)
+    flag: unknown
+  why: 'kept: no added weight, but it moves the propeller and cowl and touches the outer shape, which the roadmap keeps out
+    of scope; 3.8 in is the size of the problem, not a design'
+- id: radiator-aft
+  label: Put the radiator and coolant aft
+  kind: candidate
+  facts:
+  - text: Coolant, radiator and oil cooler weights for the 912 iS installation
+    flag: unknown
+  - text: Where the radiator can sit on this airframe and its duct drag
+    flag: unknown
+  why: 'kept: the coolant system has to be carried anyway, so where it sits is free ballast; there is no weight or arm to
+    compute until the installation is drawn'
+positions: []
+unknowns:
+- text: Coolant, radiator, oil cooler and exhaust installed weight and arm for the 912 iS (the calculator leaves them out)
+  how: maker installation manual and the drawn installation
+- text: The 912 iS installed CG arm (assumed equal to the book engine's)
+  how: weigh and balance the installation, or compute from the maker flange datum
+- text: Whether the book 730 lb empty weight already includes the large battery
+  how: the builder weight records behind the empty-weight ladder
+- text: Propeller weight and arm change if the propeller record picks a heavier hub
+  how: weights from the maker once the propeller is chosen
+mission_score:
+  o235-book:
+    light_solo:
+      option: o235-book
+      loading: light_solo
+      takeoff_lb:
+        v: 1113.0
+        flag: sourced
+        note: ''
+      takeoff_cg:
+        v: 103.95867026055706
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 890.023
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 103.82305120204758
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: 6.82305120204758
+        flag: derived
+        note: ''
+      in_envelope: false
+      assumptions:
+      - book engine arm by closure method
+      - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - book light pilot sample (pilot 135 lb)
+      worst_flag: derived
+    heavy_solo:
+      option: o235-book
+      loading: heavy_solo
+      takeoff_lb:
+        v: 1098.0
+        flag: derived
+        note: ''
+      takeoff_cg:
+        v: 100.84335154826958
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 965.023
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 100.33947740105675
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: 3.3394774010567545
+        flag: derived
+        note: ''
+      in_envelope: true
+      assumptions:
+      - book engine arm by closure method
+      - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - 'book heavy pilot sample flown solo: pilot 210 lb, no passenger or baggage'
+      worst_flag: derived
+    heavy_two:
+      option: o235-book
+      loading: heavy_two
+      takeoff_lb:
+        v: 1323.0
+        flag: sourced
+        note: ''
+      takeoff_cg:
+        v: 101.06273620559335
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 1190.023
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 100.67864528668774
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: 3.6786452866877397
+        flag: derived
+        note: ''
+      in_envelope: true
+      assumptions:
+      - book engine arm by closure method
+      - O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - 'book heavy loading sample: two adults 210 lb each and baggage'
+      worst_flag: derived
+  rotax-912is:
+    light_solo:
+      option: rotax-912is
+      loading: light_solo
+      takeoff_lb:
+        v: 1036.2
+        flag: derived
+        note: ''
+      takeoff_cg:
+        v: 101.20957344142057
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 808.8205
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 100.28455293850737
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: 3.2845529385073746
+        flag: derived
+        note: ''
+      in_envelope: true
+      assumptions:
+      - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps
+        1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included
+      - assumed same installed CG as the book engine
+      - 16.5 L/h at 75 percent continuous performance, 69 hp
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - book light pilot sample (pilot 135 lb)
+      worst_flag: derived
+    heavy_solo:
+      option: rotax-912is
+      loading: heavy_solo
+      takeoff_lb:
+        v: 1021.2
+        flag: derived
+        note: ''
+      takeoff_cg:
+        v: 97.81958480219349
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 883.8205
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 96.78119284402206
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: -0.21880715597794165
+        flag: derived
+        note: ''
+      in_envelope: false
+      assumptions:
+      - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps
+        1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included
+      - assumed same installed CG as the book engine
+      - 16.5 L/h at 75 percent continuous performance, 69 hp
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - 'book heavy pilot sample flown solo: pilot 210 lb, no passenger or baggage'
+      worst_flag: derived
+    heavy_two:
+      option: rotax-912is
+      loading: heavy_two
+      takeoff_lb:
+        v: 1246.2
+        flag: derived
+        note: ''
+      takeoff_cg:
+        v: 98.59842721874499
+        flag: derived
+        note: ''
+      landing_lb:
+        v: 1108.8205
+        flag: derived
+        note: ''
+      landing_cg:
+        v: 97.86724023410461
+        flag: derived
+        note: ''
+      fwd_margin_in:
+        v: 0.8672402341046137
+        flag: derived
+        note: ''
+      in_envelope: true
+      assumptions:
+      - 63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps
+        1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included
+      - assumed same installed CG as the book engine
+      - 16.5 L/h at 75 percent continuous performance, 69 hp
+      - UL94 density applied to every gasoline option; mogas density is unsourced
+      - 'book heavy loading sample: two adults 210 lb each and baggage'
+      worst_flag: derived
+decision: null
+history: []
+changes: null
+evidence:
+  paper: none
+  material: none
+  outside_review: none
+  flight: none
