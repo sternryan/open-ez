@@ -427,7 +427,9 @@ def write_scores(root: Path) -> int:
             path.write_text(dump_record(rec))
             n += 1
             continue
-        ids = {o["id"] for o in rec.get("options", [])}
+        ids = {o["id"] for o in rec.get("options", []) if isinstance(o, dict)}
+        if not (ids & set(plants)):
+            continue  # no engine options to score (for example the propeller record)
         # write_scores must NOT use private dir: pass mission=load_mission(None)
         rec["mission_score"] = {
             opt: dataclasses.asdict(score(opt, load_mission(None), plants)) for opt in plants if opt in ids
