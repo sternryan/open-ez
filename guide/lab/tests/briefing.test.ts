@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { DecisionRecord, Option } from '../src/hangar/model'
 import type { State } from '../src/hangar/briefingState'
-import { buildDecidePayload, linesFromTurns, renderBriefingHtml } from '../src/hangar/briefing'
+import { buildDecidePayload, linesFromTurns, renderBriefingHtml, renderPilotMargins } from '../src/hangar/briefing'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
   return {
@@ -67,6 +67,7 @@ test('read-only render has no live controls and shows awaiting briefing', () => 
   assert.equal(html.includes('data-test="chat"'), false)
   assert.equal(html.includes('data-test="decide"'), false)
   assert.equal(html.includes('data-test="reopen"'), false)
+  assert.equal(html.includes('data-test="pilot-margins"'), false)
   assert.match(html, /data-test="recommendation"/)
   assert.match(html, /awaiting briefing/)
   assert.match(html, /ul350i/)
@@ -80,6 +81,7 @@ test('read-only render has no live controls and shows awaiting briefing', () => 
   assert.equal(reopened.includes('data-test="chat"'), false)
   assert.equal(reopened.includes('data-test="decide"'), false)
   assert.equal(reopened.includes('data-test="reopen"'), false)
+  assert.equal(reopened.includes('data-test="pilot-margins"'), false)
 })
 
 test('live render has chat, decide, and reopen', () => {
@@ -106,6 +108,7 @@ test('live render has chat, decide, and reopen', () => {
   assert.match(html, /council &lt;b&gt;unavailable&lt;\/b&gt;/)
   assert.equal(html.includes('<i>'), false)
   assert.equal(html.includes('<b>'), false)
+  assert.equal(html.includes('data-test="pilot-margins"'), false)
 })
 
 test('a record title containing script is escaped', () => {
@@ -345,6 +348,58 @@ test('backbone shows each recommended pick, fuel-path consequences, and one engi
   assert.match(block, /UL350i \(ul350i\)/)
   assert.match(block, /fuel_path/)
   assert.match(block, /Mogas E10 \(mogas-e10\)/)
+})
+
+test('renderPilotMargins escapes a label, marks a negative margin out, and uses an en dash for null', () => {
+  const html = renderPilotMargins(
+    rec({
+      options: [
+        { id: 'opt-a', label: '<b>x</b>', kind: 'candidate', facts: [], why: '' },
+        { id: 'plain', label: 'Plain', kind: 'candidate', facts: [], why: '' },
+      ],
+    }),
+    {
+      pilots: [
+        {
+          label: '<b>x</b>',
+          options: [
+            {
+              option: 'opt-a',
+              solo: { takeoff_cg: 100, landing_cg: null, fwd_margin_in: -1.2, in_envelope: false, flag: 'derived' },
+              two_up_with: '<b>x</b>',
+              two_up: { takeoff_cg: 102, landing_cg: 103.4, fwd_margin_in: 0.5, in_envelope: true, flag: 'derived' },
+            },
+            {
+              option: 'not-listed',
+              solo: { takeoff_cg: null, landing_cg: null, fwd_margin_in: null, in_envelope: null, flag: 'unknown' },
+              two_up_with: null,
+              two_up: null,
+            },
+          ],
+        },
+      ],
+    },
+  )
+  assert.equal(html.includes('<b>'), false)
+  assert.equal(html.split('&lt;b&gt;x&lt;/b&gt;').length - 1, 3)
+  assert.equal(html.includes('opt-a'), false)
+  assert.match(html, /<caption>&lt;b&gt;x&lt;\/b&gt;<\/caption>/)
+  assert.match(html, /<th>&lt;b&gt;x&lt;\/b&gt;<\/th>/)
+  assert.match(html, /<th>not-listed<\/th>/)
+  assert.match(html, /<th>Solo margin<\/th>/)
+  assert.match(html, /<th>Solo landing CG<\/th>/)
+  assert.match(html, /<th>Two-up \(with &lt;b&gt;x&lt;\/b&gt;\) margin<\/th>/)
+  assert.match(html, /<th>In\/out of envelope<\/th>/)
+  assert.match(html, /<td class="out">-1\.2 in<\/td>/)
+  assert.match(html, /<td>\+0\.5 in<\/td>/)
+  assert.match(html, /<td class="out">out \/ in<\/td>/)
+  assert.match(html, /<td>\u2013<\/td>/)
+  assert.equal(html.includes('null'), false)
+})
+
+test('renderPilotMargins returns an empty string for null or empty pilots', () => {
+  assert.equal(renderPilotMargins(rec(), null), '')
+  assert.equal(renderPilotMargins(rec(), { pilots: [] }), '')
 })
 
 test('decide selects start on an empty placeholder so a pick is always deliberate', () => {

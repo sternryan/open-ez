@@ -19,6 +19,28 @@ import {
   type TranscriptLine,
 } from './briefingState'
 
+/** One scored loading from `api/pilots`: CG, forward margin, and whether it sits in the envelope. */
+export type PilotMarginRow = {
+  takeoff_cg: number | null
+  landing_cg: number | null
+  fwd_margin_in: number | null
+  in_envelope: boolean | null
+  flag: string
+}
+
+export type PilotMarginOption = {
+  option: string
+  solo: PilotMarginRow
+  two_up_with: string | null
+  two_up: PilotMarginRow | null
+}
+
+export type PilotsResponse = {
+  pilots: { label: string; options: PilotMarginOption[] }[]
+}
+
+const EN_DASH = '\u2013'
+
 function esc(s: unknown): string {
   return String(s ?? '')
     .replaceAll('&', '&amp;')
@@ -185,6 +207,81 @@ function renderMetric(key: string, value: unknown): string {
 function optionLabel(record: DecisionRecord, id: string): string {
   const found = (record.options ?? []).find((o) => o && o.id === id)
   return found?.label || id
+}
+
+function formatMargin(value: number | null): { text: string; out: boolean } {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return { text: EN_DASH, out: false }
+  const rounded = Number(value.toFixed(1))
+  if (rounded > 0) return { text: `+${value.toFixed(1)} in`, out: false }
+  if (rounded < 0) return { text: `${value.toFixed(1)} in`, out: true }
+  return { text: '+0.0 in', out: false }
+}
+
+function formatCg(value: number | null): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return EN_DASH
+  return value.toFixed(1)
+}
+
+function formatEnvelope(value: boolean | null): { text: string; out: boolean } {
+  if (value === true) return { text: 'in', out: false }
+  if (value === false) return { text: 'out', out: true }
+  return { text: EN_DASH, out: false }
+}
+
+function td(text: string, out: boolean): string {
+  return out ? `<td class="out">${esc(text)}</td>` : `<td>${esc(text)}</td>`
+}
+
+function marginCell(margin: number | null, inEnvelope: boolean | null): string {
+  const shown = formatMargin(margin)
+  return td(shown.text, shown.out || inEnvelope === false)
+}
+
+function twoUpLabels(options: PilotMarginOption[]): string[] {
+  const labels: string[] = []
+  for (const opt of options) {
+    if (opt.two_up_with && !labels.includes(opt.two_up_with)) labels.push(opt.two_up_with)
+  }
+  return labels
+}
+
+function twoUpCell(opt: PilotMarginOption, sharedLabel: boolean): string {
+  if (!opt.two_up) return td(EN_DASH, false)
+  const shown = formatMargin(opt.two_up.fwd_margin_in)
+  const out = shown.out || opt.two_up.in_envelope === false
+  if (!sharedLabel && opt.two_up_with) return td(`${shown.text} (with ${opt.two_up_with})`, out)
+  return td(shown.text, out)
+}
+
+function envelopeCell(solo: boolean | null, two: PilotMarginRow | null): string {
+  const left = formatEnvelope(solo)
+  if (!two) return td(left.text, left.out)
+  const right = formatEnvelope(two.in_envelope)
+  return td(`${left.text} / ${right.text}`, left.out || right.out)
+}
+
+/** One table per pilot. An option id uses the record's label when that option exists. Nulls are an en dash. */
+export function renderPilotMargins(record: DecisionRecord, data: PilotsResponse | null): string {
+  if (!data || !Array.isArray(data.pilots) || data.pilots.length === 0) return ''
+  const tables: string[] = []
+  for (const pilot of data.pilots) {
+    if (!pilot || typeof pilot.label !== 'string' || !Array.isArray(pilot.options)) continue
+    const options = pilot.options.filter((opt) => opt && typeof opt.option === 'string' && opt.solo)
+    if (options.length === 0) continue
+    const labels = twoUpLabels(options)
+    const shared = labels.length === 1
+    const twoHead = shared ? `Two-up (with ${labels[0]}) margin` : 'Two-up margin'
+    const rows = options
+      .map((opt) => {
+        const solo = opt.solo
+        return `<tr><th>${esc(optionLabel(record, opt.option))}</th>${marginCell(solo.fwd_margin_in, solo.in_envelope)}${td(formatCg(solo.landing_cg), false)}${twoUpCell(opt, shared)}${envelopeCell(solo.in_envelope, opt.two_up)}</tr>`
+      })
+      .join('')
+    tables.push(
+      `<table><caption>${esc(pilot.label)}</caption><thead><tr><th>Option</th><th>Solo margin</th><th>Solo landing CG</th><th>${esc(twoHead)}</th><th>In/out of envelope</th></tr></thead><tbody>${rows}</tbody></table>`,
+    )
+  }
+  return tables.join('')
 }
 
 function renderScore(record: DecisionRecord, id: string, row: unknown): string {
@@ -519,11 +616,97 @@ let mode: Mode = 'read-only'
 let generation = 0
 let inflight = false
 let bound = false
+/** Record id whose pilot margins were requested this load. Not written anywhere else. */
+let pilotsFor: string | null = null
+/** Rendered fragment only, so a later paint can put the same table back. Weights are not kept. */
+let pilotsHtml = ''
+
+function mountPilotMargins(root: ParentNode): void {
+  if (mode !== 'live' || !pilotsHtml) return
+  const backbone = root.querySelector('details.backbone')
+  if (!backbone) return
+  backbone.querySelector('[data-test="pilot-margins"]')?.remove()
+  const section = document.createElement('section')
+  section.setAttribute('data-test', 'pilot-margins')
+  section.innerHTML = `<h3>CG margins</h3>${pilotsHtml}`
+  backbone.appendChild(section)
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  return null
+}
+
+function asNullableBool(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null
+}
+
+function asMarginRow(value: unknown): PilotMarginRow | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const row = value as Record<string, unknown>
+  if (!('fwd_margin_in' in row) && !('landing_cg' in row) && !('in_envelope' in row) && !('takeoff_cg' in row)) return null
+  return {
+    takeoff_cg: asNullableNumber(row.takeoff_cg),
+    landing_cg: asNullableNumber(row.landing_cg),
+    fwd_margin_in: asNullableNumber(row.fwd_margin_in),
+    in_envelope: asNullableBool(row.in_envelope),
+    flag: typeof row.flag === 'string' ? row.flag : '',
+  }
+}
+
+function asPilotsResponse(body: unknown): PilotsResponse | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null
+  const raw = (body as { pilots?: unknown }).pilots
+  if (!Array.isArray(raw)) return null
+  const pilots: PilotsResponse['pilots'] = []
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue
+    const label = (item as { label?: unknown }).label
+    const options = (item as { options?: unknown }).options
+    if (typeof label !== 'string' || !Array.isArray(options)) continue
+    const parsed: PilotMarginOption[] = []
+    for (const opt of options) {
+      if (!opt || typeof opt !== 'object' || Array.isArray(opt)) continue
+      const id = (opt as { option?: unknown }).option
+      const solo = asMarginRow((opt as { solo?: unknown }).solo)
+      if (typeof id !== 'string' || !id || !solo) continue
+      const withRaw = (opt as { two_up_with?: unknown }).two_up_with
+      const twoRaw = (opt as { two_up?: unknown }).two_up
+      parsed.push({
+        option: id,
+        solo,
+        two_up_with: typeof withRaw === 'string' ? withRaw : null,
+        two_up: twoRaw == null ? null : asMarginRow(twoRaw),
+      })
+    }
+    pilots.push({ label, options: parsed })
+  }
+  return { pilots }
+}
+
+/** One GET per record load. A miss, a non-JSON body, or an empty list leaves the page unchanged. */
+async function loadPilotMargins(id: string, gen: number): Promise<void> {
+  if (mode !== 'live' || !id || pilotsFor === id) return
+  pilotsFor = id
+  try {
+    const res = await fetch(resourceUrl(`api/pilots/${encodeURIComponent(id)}`), { cache: 'no-store' })
+    if (gen !== generation || mode !== 'live' || !record || record.id !== id) return
+    if (!res.ok) return
+    const html = renderPilotMargins(record, asPilotsResponse(await res.json()))
+    if (gen !== generation || mode !== 'live' || !record || record.id !== id || !html) return
+    pilotsHtml = html
+    const root = document.getElementById('briefing')
+    if (root) mountPilotMargins(root)
+  } catch {
+    // Absent on a public site, a network failure, or a non-JSON body.
+  }
+}
 
 function paint(): void {
   const root = document.getElementById('briefing')
   if (!root || !record || !state) return
   root.innerHTML = renderBriefingHtml(record, mode, state)
+  mountPilotMargins(root)
 }
 
 function initialState(recordId: string, nextMode: Mode, status: Status, transcript: TranscriptLine[]): State {
@@ -546,6 +729,8 @@ async function load(): Promise<void> {
   const root = document.getElementById('briefing')
   if (!root) return
   const gen = ++generation
+  pilotsFor = null
+  pilotsHtml = ''
   const id = recordIdFromLocation()
   if (!id) {
     record = null
@@ -581,6 +766,7 @@ async function load(): Promise<void> {
     state = initialState(id, mode, asStatus(next.status), transcript)
     document.title = `${next.title} — Briefing`
     paint()
+    if (mode === 'live') void loadPilotMargins(next.id, gen)
   } catch {
     if (gen !== generation) return
     record = null
