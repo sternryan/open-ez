@@ -1,0 +1,12 @@
+# Loadings are composed from the book's own sample loading rows (data/mass_ledger.yaml `samples`), so they carry no private weights.
+# `from` names a sample; `drop` removes rows (the composed loading is then flagged derived).
+light_solo:
+  from: light_pilot
+  label: "book light pilot sample (pilot 135 lb)"
+heavy_solo:
+  from: heavy_pilot
+  drop: [passenger, baggage]
+  label: "book heavy pilot sample flown solo: pilot 210 lb, no passenger or baggage"
+heavy_two:
+  from: heavy_pilot
+  label: "book heavy loading sample: two adults 210 lb each and baggage"
