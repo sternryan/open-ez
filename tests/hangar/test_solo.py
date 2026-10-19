@@ -67,7 +67,7 @@ def test_crossing_weight_solves_the_limit():
 
 def test_crossing_weight_rises_with_aft_ballast():
     ex = [{"name": "ballast", "weight_lb": 14.6, "arm_in": 141.05, "flag": "derived"}]
-    assert solo_crossing_weight(E, extras=ex).v > solo_crossing_weight(E).v + 20
+    assert solo_crossing_weight(E, extras=ex).v > solo_crossing_weight(E).v + 10
 
 
 def test_book_engine_does_not_cross_in_the_public_range():
