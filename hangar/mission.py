@@ -30,6 +30,19 @@ class MissionScore:
     assumptions: list[str]
     worst_flag: str
 
+@dataclass(frozen=True)
+class LoadingScore:
+    option: str
+    loading: str
+    takeoff_lb: Value
+    takeoff_cg: Value
+    landing_lb: Value
+    landing_cg: Value
+    fwd_margin_in: Value
+    in_envelope: bool | None
+    assumptions: list[str]
+    worst_flag: str
+
 BOOK_WEIGHT_LB = 243
 BOOK_ARM_IN = 141.05
 
@@ -211,6 +224,147 @@ def score(option_id: str, mission: dict = None, plants: dict = None) -> MissionS
         in_envelope=in_env,
         assumptions=assumptions,
         worst_flag=worst_flag
+    )
+
+def load_loadings() -> dict:
+    """Compose loadings from ledger sample rows. Dropping a row flags the result derived."""
+    with open(_DATA / "loadings.yaml", "r") as f:
+        raw = yaml.safe_load(f)
+    samples = load_ledger()["samples"]
+    out = {}
+    for name, entry in raw.items():
+        dropped = entry.get("drop") or []
+        items = {
+            key: weight
+            for key, weight in samples[entry["from"]]["items"].items()
+            if key not in dropped
+        }
+        out[name] = {
+            "items": items,
+            "label": entry["label"],
+            "flag": "derived" if dropped else "sourced",
+        }
+    return out
+
+def _mission_and_plants(mission: dict | None, plants: dict | None) -> tuple[dict, dict]:
+    """Same defaults as score(): private mission override, public powerplants file."""
+    if mission is None:
+        priv = os.environ.get("HANGAR_PRIVATE_DIR")
+        mission = load_mission(Path(priv) if priv else None)
+    if plants is None:
+        with open(_DATA / "powerplants.yaml", "r") as f:
+            plants = yaml.safe_load(f)
+    return mission, plants
+
+def score_loading(
+    option_id: str,
+    loading_id: str,
+    mission: dict | None = None,
+    plants: dict | None = None,
+) -> LoadingScore:
+    mission, plants = _mission_and_plants(mission, plants)
+    plant_raw = plants[option_id]
+    loading = load_loadings()[loading_id]
+
+    value_keys = {"cruise_ktas", "fuel_capacity_gal", "fuel_density_lb_per_gal"}
+    m = {}
+    for key, val in mission.items():
+        m[key] = _to_value(val) if key in value_keys else val
+    plant = {key: _to_value(val) for key, val in plant_raw.items()}
+
+    ledger = load_ledger()
+    env = ledger["envelope"]
+    arms = ledger["loads"]
+    base_lb = float(ledger["empty"]["weight_lb"])
+    base_arm = float(ledger["empty"]["arm_in"])
+    items = loading["items"]
+    loading_flag = loading["flag"]
+
+    inst = plant["installed_lb"]
+    cg_arm = plant["cg_arm_in"]
+    flow = plant["cruise_ff_gph"]
+    density = m["fuel_density_lb_per_gal"]
+    reserve_min = m["reserve_min"]
+
+    def flagged(unknown: bool, *flags: str) -> str:
+        # A None value is unknown. A derived loading is at least derived; unknown still wins.
+        if unknown:
+            return "unknown"
+        return _get_worst_flag([*flags, loading_flag])
+
+    weights_known = inst.v is not None
+    cg_known = weights_known and cg_arm.v is not None
+    burn_known = flow.v is not None and density.v is not None and reserve_min is not None
+
+    if weights_known:
+        empty_lb = base_lb - BOOK_WEIGHT_LB + inst.v
+        takeoff_w = empty_lb + sum(items.values())
+        takeoff_lb = Value(takeoff_w, flagged(False, inst.flag))
+    else:
+        takeoff_w = None
+        takeoff_lb = Value(None, "unknown")
+
+    if cg_known:
+        empty_m = base_lb * base_arm - BOOK_WEIGHT_LB * BOOK_ARM_IN + inst.v * cg_arm.v
+        takeoff_m = empty_m + sum(items[key] * arms[key]["arm_in"] for key in items)
+        takeoff_cg = Value(takeoff_m / takeoff_w, flagged(False, inst.flag, cg_arm.flag))
+    else:
+        takeoff_m = None
+        takeoff_cg = Value(None, "unknown")
+
+    # Unknown fuel flow, density, or reserve blanks landing, the forward margin, and the envelope.
+    if weights_known and burn_known:
+        reserve_lb = flow.v * (reserve_min / 60) * density.v
+        burned = items["fuel"] - reserve_lb
+        landing_w = takeoff_w - burned
+        landing_lb = Value(landing_w, flagged(False, inst.flag, flow.flag, density.flag))
+        if cg_known:
+            landing_m = takeoff_m - burned * arms["fuel"]["arm_in"]
+            landing_cg = Value(
+                landing_m / landing_w,
+                flagged(False, inst.flag, cg_arm.flag, flow.flag, density.flag),
+            )
+        else:
+            landing_cg = Value(None, "unknown")
+    else:
+        landing_lb = Value(None, "unknown")
+        landing_cg = Value(None, "unknown")
+
+    if takeoff_cg.v is not None and landing_cg.v is not None:
+        margin = min(takeoff_cg.v, landing_cg.v) - env["fwd_fs"]
+        fwd_margin = Value(
+            margin, flagged(False, inst.flag, cg_arm.flag, flow.flag, density.flag)
+        )
+    else:
+        fwd_margin = Value(None, "unknown")
+
+    if None not in (takeoff_lb.v, takeoff_cg.v, landing_lb.v, landing_cg.v):
+        inside = in_envelope(takeoff_lb.v, takeoff_cg.v, env) and in_envelope(
+            landing_lb.v, landing_cg.v, env
+        )
+    else:
+        inside = None
+
+    assumptions: list[str] = []
+    for val in (inst, cg_arm, flow, density):
+        if val.flag != "sourced" or val.note:
+            if val.note and val.note not in assumptions:
+                assumptions.append(val.note)
+    if loading["label"] not in assumptions:
+        assumptions.append(loading["label"])
+
+    outputs = (takeoff_lb, takeoff_cg, landing_lb, landing_cg, fwd_margin)
+    return LoadingScore(
+        option=option_id,
+        loading=loading_id,
+        takeoff_lb=takeoff_lb,
+        takeoff_cg=takeoff_cg,
+        landing_lb=landing_lb,
+        landing_cg=landing_cg,
+        fwd_margin_in=fwd_margin,
+        in_envelope=inside,
+        assumptions=assumptions,
+        worst_flag=_get_worst_flag([item.flag for item in outputs]),
     )
 
 def write_scores(root: Path) -> int:
