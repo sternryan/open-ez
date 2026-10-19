@@ -53,7 +53,7 @@ def site(tmp_path_factory):
 
 
 @pytest.fixture()
-def live(tmp_path, site):
+def live(tmp_path, site, monkeypatch):
     records = tmp_path / "records"
     shutil.copytree(ROOT / "data" / "hangar", records)
     registry = tmp_path / "registry.yaml"
@@ -61,6 +61,10 @@ def live(tmp_path, site):
     priv = tmp_path / "private"
     priv.mkdir()
     (priv / "mission.yaml").write_text(yaml.safe_dump(PILOTS))
+    import core.sources as core_sources
+
+    monkeypatch.setattr(core_sources, "REGISTRY", registry)   # citations are validated against the registry the test writes to
+    core_sources.load_registry.cache_clear()
     srv = make_server(site, 0, priv, records_root=records, council=lambda *a, **k: None, research_lane=lane,
                       spotcheck=check, registry_path=registry)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
@@ -73,6 +77,7 @@ def live(tmp_path, site):
         yield {"base": base, "get": get, "records": records, "registry": registry, "priv": priv}
     finally:
         srv.shutdown()
+        core_sources.load_registry.cache_clear()
 
 
 def test_matrix_unknowns_research_and_reopen_flag(live):
