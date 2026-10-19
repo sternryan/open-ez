@@ -53,6 +53,8 @@ export type MatrixOption = {
   public: MatrixDict | null
   private: MatrixDict | null
   error?: string
+  /** True when this candidate cannot be scored yet. Omitted means false. */
+  unscored?: boolean
 }
 
 export type ResearchProposal = {
@@ -200,7 +202,13 @@ function asOption(value: unknown): MatrixOption | null {
     if (!parsed) return null
     privateMatrix = parsed
   }
-  const out: MatrixOption = { option, label: value.label, public: publicMatrix, private: privateMatrix }
+  const out: MatrixOption = {
+    option,
+    label: value.label,
+    public: publicMatrix,
+    private: privateMatrix,
+    unscored: value.unscored === true,
+  }
   if (typeof value.error === 'string' && value.error.trim()) out.error = value.error
   return out
 }
@@ -240,8 +248,9 @@ function asUnknown(value: unknown): MatrixUnknown | null {
   const state = value.state
   if (typeof id !== 'string' || !id.trim()) return null
   if (typeof state !== 'string' || !UNKNOWN_STATES.includes(state as UnknownState)) return null
-  if ('text' in value && value.text !== undefined && typeof value.text !== 'string') return null
-  if ('how' in value && value.how !== undefined && typeof value.how !== 'string') return null
+  // The server sends null when the key is absent. Coerce that to '' so the id stays.
+  if (value.text != null && typeof value.text !== 'string') return null
+  if (value.how != null && typeof value.how !== 'string') return null
   const affects = Array.isArray(value.affects)
     ? value.affects.filter((item): item is string => typeof item === 'string' && item.length > 0)
     : []
@@ -277,6 +286,28 @@ export function asMatrixResponse(body: unknown): MatrixResponse | null {
 export function openUnknownIds(data: MatrixResponse | null): string[] {
   if (!data) return []
   return data.unknowns.filter((item) => item.state === 'open' || item.state === 'researching').map((item) => item.id)
+}
+
+/** Polls issued for one stretch. The next tick is not armed once this many have run. */
+export const MATRIX_POLL_CAP = 150
+
+/**
+ * True while some unknown's newest job is `queued` or `running`.
+ * The attached job is that newest job. A `researching` unknown whose job is `proposed` waits on the owner.
+ */
+export function needsPolling(data: MatrixResponse | null): boolean {
+  if (!data) return false
+  return data.unknowns.some((item) => item.job?.state === 'queued' || item.job?.state === 'running')
+}
+
+/** Another poll may be armed while fewer than {@link MATRIX_POLL_CAP} have run and a job is still in flight. */
+export function shouldPoll(pollsSoFar: number, data: MatrixResponse | null): boolean {
+  return pollsSoFar < MATRIX_POLL_CAP && needsPolling(data)
+}
+
+/** True when the matrix and unknowns markup matches the last paint, so the sections can stay mounted. */
+export function isSamePaint(prev: string, next: string): boolean {
+  return prev === next
 }
 
 function formatInches(value: number | null): { text: string; out: boolean } {
@@ -361,8 +392,12 @@ function renderOption(record: DecisionRecord, opt: MatrixOption): string {
   const title = `<h4>${esc(optionTitle(record, opt))}</h4>`
   let body = ''
   if (!opt.public) {
-    const note = opt.error?.trim() ? opt.error : 'no loading effect'
-    body = `<p>${esc(note)}</p>`
+    if (opt.unscored) {
+      body = '<p class="unknown">not scored yet: no weight or arm is known for this option</p>'
+    } else {
+      const note = opt.error?.trim() ? opt.error : 'no loading effect'
+      body = `<p>${esc(note)}</p>`
+    }
   } else {
     body = `${worstRows(opt.public)}${crossingNotes(opt.public.crossings)}${unknownCount(opt.public)}${cellsDetails(opt.public)}`
   }
@@ -390,14 +425,19 @@ function researchButton(id: string): string {
   return `<button type="button" data-action="research" data-unknown="${esc(id)}">Research this</button>`
 }
 
+function renderProposalLink(url: string, title: string): string {
+  if (/^https?:\/\//i.test(url)) {
+    const text = title.trim() ? title : url
+    return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(text)}</a>`
+  }
+  return esc(url)
+}
+
 function renderProposal(job: ResearchJob, live: boolean): string {
   const parts: string[] = []
   const proposal = job.proposal
   if (proposal?.claim) parts.push(`<p class="claim">${esc(proposal.claim)}</p>`)
-  if (proposal?.url) {
-    const text = proposal.title.trim() ? proposal.title : proposal.url
-    parts.push(`<a href="${esc(proposal.url)}" rel="noopener">${esc(text)}</a>`)
-  }
+  if (proposal?.url) parts.push(renderProposalLink(proposal.url, proposal.title))
   const matched = job.spotcheck?.matched === true
   const verdict = matched ? 'spot-check: matched' : 'spot-check: not matched'
   const detail = job.spotcheck?.detail.trim() ? ` ${esc(job.spotcheck.detail)}` : ''

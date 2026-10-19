@@ -18,7 +18,15 @@ import {
   type Status,
   type TranscriptLine,
 } from './briefingState'
-import { asMatrixResponse, openUnknownIds, renderMatrix, renderUnknowns, type MatrixResponse } from './matrixView'
+import {
+  asMatrixResponse,
+  isSamePaint,
+  openUnknownIds,
+  renderMatrix,
+  renderUnknowns,
+  shouldPoll,
+  type MatrixResponse,
+} from './matrixView'
 
 /** One scored loading from `api/pilots`: CG, forward margin, and whether it sits in the envelope. */
 export type PilotMarginRow = {
@@ -429,6 +437,15 @@ export function buildDecidePayload(
   return { picks, reason }
 }
 
+/** Decide body fields from the form. Spreading the result keeps `acknowledged_unknowns` when the box is checked. */
+export function decidePayloadFor(
+  formData: { get(name: string): unknown },
+  axes: readonly { id: string }[],
+  unknownIds: readonly string[],
+): { picks: Record<string, string>; reason: string; acknowledged_unknowns?: string[] } {
+  return buildDecidePayload(formData, axes, unknownIds)
+}
+
 function renderReopenFlag(record: DecisionRecord): string {
   const flag = record.reopen_flag
   if (!flag || typeof flag !== 'object') return ''
@@ -514,15 +531,24 @@ function failureMessage(status: number, body: unknown): string {
   return bodyError(body) ?? `The briefing service returned ${status}.`
 }
 
-/** A 409 whose error says the unknowns were not acknowledged gets the checkbox hint. */
-export function decideErrorMessage(status: number, body: unknown): string {
+const ACK_BOX_HINT = 'Some loading cells depend on unknown values: tick the box to decide with them open, or research them first'
+const ACK_RELOAD_HINT = 'Some loading cells depend on unknown values; reload the briefing room and try again'
+
+/**
+ * A 409 whose error says the unknowns were not acknowledged names the checkbox when that
+ * box is on the page. Otherwise it asks for a reload. The two-argument form keeps the checkbox hint.
+ */
+export function decideErrorMessage(status: number, body: unknown, ackRendered = true): string {
   if (status === 409) {
     const err = bodyError(body)
-    if (err && err.includes('not acknowledged')) {
-      return 'Some loading cells depend on unknown values: tick the box to decide with them open, or research them first'
-    }
+    if (err && err.includes('not acknowledged')) return ackRendered ? ACK_BOX_HINT : ACK_RELOAD_HINT
   }
   return failureMessage(status, body)
+}
+
+/** A matrix body applies only when it is still the latest request in this page generation. */
+export function matrixLoadIsCurrent(seq: number, latestSeq: number, gen: number, pageGeneration: number): boolean {
+  return seq === latestSeq && gen === pageGeneration
 }
 
 function replyText(body: unknown): string {
@@ -672,9 +698,10 @@ let unknownsHtml = ''
 let pollTimer: number | null = null
 let pollEpoch = 0
 let pollCount = 0
+/** Latest `loadMatrix` request. A slower earlier response must not overwrite a newer one. */
+let matrixSeq = 0
 
 const MATRIX_POLL_MS = 2000
-const MATRIX_POLL_CAP = 150
 
 function mountPilotMargins(root: ParentNode): void {
   if (mode !== 'live' || !pilotsHtml) return
@@ -738,10 +765,6 @@ function clearMatrix(): void {
   unknownsHtml = ''
 }
 
-function hasResearching(data: MatrixResponse | null): boolean {
-  return !!data && data.unknowns.some((item) => item.state === 'researching')
-}
-
 /** Re-read the matrix while a job is in flight. This timer never starts research. */
 function beginPolling(id: string, gen: number): void {
   stopPoll()
@@ -749,15 +772,16 @@ function beginPolling(id: string, gen: number): void {
   const epoch = pollEpoch
   const schedule = (): void => {
     if (epoch !== pollEpoch || gen !== generation) return
-    if (pollCount >= MATRIX_POLL_CAP) return
-    if (!hasResearching(matrixData)) return
     if (!document.getElementById('briefing')) return
+    // Stop on the first tick where nothing is queued or running, and at the poll cap.
+    if (!shouldPoll(pollCount, matrixData)) return
     pollTimer = window.setTimeout(() => {
       pollTimer = null
       void (async () => {
         if (epoch !== pollEpoch || gen !== generation) return
         if (!document.getElementById('briefing')) return
         if (!record || record.id !== id || mode !== 'live') return
+        if (!shouldPoll(pollCount, matrixData)) return
         pollCount += 1
         await loadMatrix(id, gen)
         schedule()
@@ -767,20 +791,29 @@ function beginPolling(id: string, gen: number): void {
   schedule()
 }
 
+function ackBoxRendered(): boolean {
+  return !!document.querySelector('#briefing [data-test="ack-unknowns"] input')
+}
+
 async function loadMatrix(id: string, gen: number): Promise<void> {
   if (mode !== 'live' || !id) return
+  const seq = ++matrixSeq
   try {
     const res = await fetch(resourceUrl(`api/matrix/${encodeURIComponent(id)}`), { cache: 'no-store' })
-    if (gen !== generation || mode !== 'live' || !record || record.id !== id) return
+    if (!matrixLoadIsCurrent(seq, matrixSeq, gen, generation) || mode !== 'live' || !record || record.id !== id) return
     if (!res.ok) return
     const parsed = asMatrixResponse(await res.json())
-    if (gen !== generation || mode !== 'live' || !record || record.id !== id) return
+    if (!matrixLoadIsCurrent(seq, matrixSeq, gen, generation) || mode !== 'live' || !record || record.id !== id) return
+    const nextMatrix = renderMatrix(record, parsed)
+    const nextUnknowns = renderUnknowns(record, parsed, true)
+    const prevPaint = `${matrixHtml}${unknownsHtml}`
+    const nextPaint = `${nextMatrix}${nextUnknowns}`
     matrixData = parsed
-    matrixHtml = renderMatrix(record, parsed)
-    unknownsHtml = renderUnknowns(record, parsed, true)
+    matrixHtml = nextMatrix
+    unknownsHtml = nextUnknowns
     const root = document.getElementById('briefing')
     if (!root) return
-    mountMatrix(root)
+    if (!isSamePaint(prevPaint, nextPaint)) mountMatrix(root)
     mountAck(root)
   } catch {
     // Absent on a public site, a network failure, or a non-JSON body.
@@ -969,20 +1002,14 @@ async function onSubmit(ev: Event): Promise<void> {
       }
     } else if (kind === 'decide') {
       const axes = current.axes ?? []
-      const built = buildDecidePayload(data, axes, openUnknownIds(matrixData))
+      const built = decidePayloadFor(data, axes, openUnknownIds(matrixData))
       const complete = axes.length > 0 && axes.every((axis) => built.picks[axis.id])
       if (!complete || !built.reason || !snapshot.decideEnabled) return
       inflight = true
-      const payload: { record_id: string; picks: Record<string, string>; reason: string; acknowledged_unknowns?: string[] } = {
-        record_id: current.id,
-        picks: built.picks,
-        reason: built.reason,
-      }
-      if (built.acknowledged_unknowns) payload.acknowledged_unknowns = built.acknowledged_unknowns
-      const res = await postJson('api/decide', payload)
+      const res = await postJson('api/decide', { record_id: current.id, ...built })
       if (gen !== generation || !state) return
       if (!res.ok) {
-        state = reduce(state, { type: 'errored', message: decideErrorMessage(res.status, res.body) })
+        state = reduce(state, { type: 'errored', message: decideErrorMessage(res.status, res.body, ackBoxRendered()) })
       } else {
         state = reduce(state, { type: 'decided' })
         const fresh = await refreshRecord(current.id)

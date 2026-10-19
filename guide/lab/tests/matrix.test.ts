@@ -2,8 +2,20 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { DecisionRecord } from '../src/hangar/model'
 import type { State } from '../src/hangar/briefingState'
-import { buildDecidePayload, decideErrorMessage, renderBriefingHtml } from '../src/hangar/briefing'
-import { asMatrixResponse, renderMatrix, renderUnknowns, type MatrixCell, type MatrixResponse } from '../src/hangar/matrixView'
+import { buildDecidePayload, decideErrorMessage, decidePayloadFor, matrixLoadIsCurrent, renderBriefingHtml } from '../src/hangar/briefing'
+import {
+  MATRIX_POLL_CAP,
+  asMatrixResponse,
+  isSamePaint,
+  needsPolling,
+  openUnknownIds,
+  renderMatrix,
+  renderUnknowns,
+  shouldPoll,
+  type MatrixCell,
+  type MatrixResponse,
+  type MatrixUnknown,
+} from '../src/hangar/matrixView'
 
 function rec(over: Partial<DecisionRecord> = {}): DecisionRecord {
   return {
@@ -145,6 +157,39 @@ test('asMatrixResponse keeps a valid body and drops malformed options, cells, an
   assert.deepEqual(asMatrixResponse({ record_id: 7 }), { record_id: '', options: [], unknowns: [] })
 })
 
+test('a null text or how still parses and keeps the unknown id', () => {
+  const parsed = asMatrixResponse({
+    record_id: 'cg-1',
+    options: [],
+    unknowns: [
+      { id: 'u-null', text: null, how: null, state: 'open', affects: ['battery'] },
+      { id: 'u-missing', state: 'researching', affects: [] },
+      { id: 'u-how-null', text: 'arm', how: null, state: 'open', affects: [] },
+      { id: 'u-text-null', text: null, how: 'weigh it', state: 'researching', affects: [] },
+      { id: 'u-bad', text: 4, how: 'look', state: 'open', affects: [] },
+      { id: 'u-sourced', text: null, how: undefined, state: 'sourced', affects: [] },
+    ],
+  })
+  assert.ok(parsed)
+  assert.deepEqual(
+    parsed.unknowns.map((item) => item.id),
+    ['u-null', 'u-missing', 'u-how-null', 'u-text-null', 'u-sourced'],
+  )
+  assert.equal(parsed.unknowns[0].text, '')
+  assert.equal(parsed.unknowns[0].how, '')
+  assert.equal(parsed.unknowns[2].text, 'arm')
+  assert.equal(parsed.unknowns[2].how, '')
+  assert.equal(parsed.unknowns[3].text, '')
+  assert.equal(parsed.unknowns[3].how, 'weigh it')
+  assert.deepEqual(openUnknownIds(parsed), ['u-null', 'u-missing', 'u-how-null', 'u-text-null'])
+  const html = renderUnknowns(record, parsed, true)
+  assert.match(html, /data-unknown="u-null"/)
+  assert.match(html, /data-unknown="u-how-null"/)
+  const room = renderBriefingHtml(rec({ axes: [{ id: 'engine', options: ['battery'] }] }), 'live', base(), parsed)
+  assert.match(room, /name="ack-unknowns"/)
+  assert.match(room, /title="u-null, u-missing, u-how-null, u-text-null"/)
+})
+
 function sampleMatrix(): MatrixResponse {
   const fwd = cell({ id: 'fwd', fwd_margin_in: 2.77, aft_margin_in: 1.2, gross_margin_lb: 40, loading: 'fwd loading' })
   const aft = cell({
@@ -206,6 +251,55 @@ function sampleMatrix(): MatrixResponse {
     unknowns: [],
   }
 }
+
+test('an unscored option with no public matrix is not scored yet', () => {
+  const parsed = asMatrixResponse({
+    record_id: 'cg-1',
+    options: [
+      { option: 'bare', label: 'Bare candidate', public: null, private: null, unscored: true },
+      { option: 'scored', label: 'Scored', public: null, unscored: false },
+      { option: 'plain', label: 'Plain', public: null },
+      { option: 'weird', label: 'Weird', public: null, unscored: 'yes' },
+      {
+        option: 'battery',
+        label: 'Battery aft',
+        unscored: true,
+        public: {
+          engine: 'plant-a',
+          cells: [cell({ loading: 'kept loading' })],
+          cell_count: 1,
+          unknown_cells: 0,
+          flag: 'derived',
+          worst: { fwd: null, aft: null, gross: null },
+          crossings: null,
+        },
+        private: null,
+      },
+    ],
+    unknowns: [],
+  })
+  assert.ok(parsed)
+  assert.equal(parsed.options[0].unscored, true)
+  assert.equal(parsed.options[1].unscored, false)
+  assert.equal(parsed.options[2].unscored, false)
+  assert.equal(parsed.options[3].unscored, false)
+  assert.equal(parsed.options[4].unscored, true)
+  const html = renderMatrix(record, parsed)
+  const bareAt = html.indexOf('Bare candidate')
+  const scoredAt = html.indexOf('>Scored<')
+  const plainAt = html.indexOf('>Plain<')
+  const weirdAt = html.indexOf('>Weird<')
+  const batteryAt = html.indexOf('Battery aft')
+  assert.ok(bareAt >= 0 && scoredAt > bareAt && plainAt > scoredAt && weirdAt > plainAt && batteryAt > weirdAt)
+  const bare = html.slice(bareAt, scoredAt)
+  assert.match(bare, /<p class="unknown">not scored yet: no weight or arm is known for this option<\/p>/)
+  assert.equal(bare.includes('no loading effect'), false)
+  assert.match(html.slice(scoredAt, plainAt), /no loading effect/)
+  assert.match(html.slice(plainAt, weirdAt), /no loading effect/)
+  assert.match(html.slice(weirdAt, batteryAt), /no loading effect/)
+  assert.match(html.slice(batteryAt), /kept loading/)
+  assert.equal(html.slice(batteryAt).includes('not scored yet'), false)
+})
 
 test('renderMatrix shows worst rows, crossings, unknown cells, the private block, and escapes loading text', () => {
   const html = renderMatrix(record, sampleMatrix())
@@ -351,10 +445,10 @@ test('renderUnknowns shows research only for an open live unknown, job state, an
   assert.match(live, /missing-opt/)
   assert.match(live, /Engine arm/)
   assert.match(live, /the sheet says 15 lb/)
-  assert.match(live, /<a href="https:\/\/example\.test\/spec" rel="noopener">Spec sheet<\/a>/)
+  assert.match(live, /<a href="https:\/\/example\.test\/spec" target="_blank" rel="noopener noreferrer">Spec sheet<\/a>/)
   assert.match(live, /spot-check: matched quote found/)
   assert.match(live, /spot-check: not matched value differs/)
-  assert.match(live, /<a href="https:\/\/example\.test\/other" rel="noopener">https:\/\/example\.test\/other<\/a>/)
+  assert.match(live, /<a href="https:\/\/example\.test\/other" target="_blank" rel="noopener noreferrer">https:\/\/example\.test\/other<\/a>/)
   const acceptOk = live.match(/<button type="button" data-action="resolve" data-outcome="accept" data-job="job-ok">/)
   assert.ok(acceptOk)
   const acceptBad = live.match(/<button type="button" data-action="resolve" data-outcome="accept" data-job="job-bad"[^>]*>/)
@@ -372,6 +466,112 @@ test('renderUnknowns shows research only for an open live unknown, job state, an
   assert.match(readOnly, /spot-check: matched/)
   assert.equal(readOnly.includes('<button'), false)
   assert.equal(renderUnknowns(record, null, true), '')
+})
+
+function proposalUnknown(url: string, title = 'Click'): MatrixResponse {
+  return {
+    record_id: 'cg-ballast',
+    options: [],
+    unknowns: [
+      {
+        id: 'u-link',
+        text: 'gap',
+        how: 'look',
+        state: 'researching',
+        affects: [],
+        job: {
+          id: 'job-link',
+          state: 'proposed',
+          error: null,
+          proposal: { claim: 'a claim', url, title },
+          spotcheck: { matched: false, detail: '' },
+        },
+      },
+    ],
+  }
+}
+
+function polledUnknown(id: string, state: MatrixUnknown['state'], jobState: string | null): MatrixUnknown {
+  return {
+    id,
+    text: 'gap',
+    how: 'look',
+    state,
+    affects: [],
+    job: jobState ? { id: `job-${id}`, state: jobState, error: null, proposal: null, spotcheck: null } : null,
+  }
+}
+
+function polled(unknowns: MatrixUnknown[]): MatrixResponse {
+  return { record_id: 'cg-ballast', options: [], unknowns }
+}
+
+test('needsPolling follows the newest job, and the paint and poll cap are pure', () => {
+  assert.equal(MATRIX_POLL_CAP, 150)
+  assert.equal(needsPolling(null), false)
+  assert.equal(needsPolling(polled([])), false)
+  assert.equal(needsPolling(polled([polledUnknown('u-open', 'open', null)])), false)
+  assert.equal(needsPolling(polled([polledUnknown('u-prop', 'researching', 'proposed')])), false)
+  assert.equal(needsPolling(polled([polledUnknown('u-fail', 'researching', 'failed')])), false)
+  assert.equal(needsPolling(polled([polledUnknown('u-none', 'researching', null)])), false)
+  assert.equal(needsPolling(polled([polledUnknown('u-q', 'researching', 'queued')])), true)
+  assert.equal(needsPolling(polled([polledUnknown('u-r', 'open', 'running')])), true)
+  assert.equal(
+    needsPolling(polled([polledUnknown('u-prop', 'researching', 'proposed'), polledUnknown('u-r', 'researching', 'running')])),
+    true,
+  )
+  assert.equal(shouldPoll(0, polled([polledUnknown('u-q', 'researching', 'queued')])), true)
+  assert.equal(shouldPoll(MATRIX_POLL_CAP - 1, polled([polledUnknown('u-r', 'researching', 'running')])), true)
+  assert.equal(shouldPoll(MATRIX_POLL_CAP, polled([polledUnknown('u-r', 'researching', 'running')])), false)
+  assert.equal(shouldPoll(MATRIX_POLL_CAP + 1, polled([polledUnknown('u-q', 'researching', 'queued')])), false)
+  assert.equal(shouldPoll(0, polled([polledUnknown('u-prop', 'researching', 'proposed')])), false)
+  assert.equal(shouldPoll(0, null), false)
+  assert.equal(isSamePaint('same', 'same'), true)
+  assert.equal(isSamePaint('', ''), true)
+  assert.equal(isSamePaint('<section>a</section>', '<section>b</section>'), false)
+})
+
+test('a proposal url becomes a link only for http(s)', () => {
+  const safe = renderUnknowns(record, proposalUnknown('HTTPS://example.test/Spec'), true)
+  assert.match(safe, /<a href="HTTPS:\/\/example\.test\/Spec" target="_blank" rel="noopener noreferrer">Click<\/a>/)
+  const http = renderUnknowns(record, proposalUnknown('http://example.test/a', ''), true)
+  assert.match(http, /<a href="http:\/\/example\.test\/a" target="_blank" rel="noopener noreferrer">http:\/\/example\.test\/a<\/a>/)
+
+  const unsafe = [
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:msgbox(1)',
+    'Javascript:alert(1)',
+  ]
+  for (const url of unsafe) {
+    const html = renderUnknowns(record, proposalUnknown(url), true)
+    assert.equal(html.includes('href='), false, url)
+    assert.equal(html.includes('<a '), false, url)
+    assert.equal(html.includes('<script'), false, url)
+    assert.ok(html.includes(url.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')), url)
+  }
+})
+
+test('decidePayloadFor keeps acknowledged unknowns exactly when the box is checked', () => {
+  const ids = openUnknownIds(unknownsResponse())
+  assert.deepEqual(ids, ['u-open', 'u-run', 'u-proposed', 'u-miss', 'u-failed'])
+  const axes = [{ id: 'engine' }]
+  const fields: Record<string, unknown> = {
+    'pick-engine': 'battery',
+    reason: ' because ',
+    'ack-unknowns': 'on',
+  }
+  const get = (name: string) => (Object.hasOwn(fields, name) ? fields[name] : null)
+  const checked = decidePayloadFor({ get }, axes, ids)
+  assert.deepEqual(checked.picks, { engine: 'battery' })
+  assert.equal(checked.reason, 'because')
+  assert.deepEqual(checked.acknowledged_unknowns, ids)
+
+  fields['ack-unknowns'] = null
+  const unchecked = decidePayloadFor({ get }, axes, ids)
+  assert.equal(Object.hasOwn(unchecked, 'acknowledged_unknowns'), false)
+  assert.deepEqual(unchecked.picks, { engine: 'battery' })
+  assert.equal(unchecked.reason, 'because')
 })
 
 test('buildDecidePayload adds acknowledged unknowns only when the box is checked', () => {
@@ -404,6 +604,25 @@ test('a decide 409 that was not acknowledged explains the checkbox', () => {
   )
   assert.equal(decideErrorMessage(409, { error: 'already decided' }), 'already decided')
   assert.equal(decideErrorMessage(500, { error: 'unknown cells not acknowledged' }), 'unknown cells not acknowledged')
+})
+
+test('a slower matrix response is stale once a newer request or generation is current', () => {
+  assert.equal(matrixLoadIsCurrent(1, 1, 3, 3), true)
+  assert.equal(matrixLoadIsCurrent(1, 2, 3, 3), false)
+  assert.equal(matrixLoadIsCurrent(2, 2, 3, 4), false)
+  assert.equal(matrixLoadIsCurrent(2, 2, 4, 4), true)
+})
+
+test('a 409 for unacknowledged unknowns mentions the box only when it is rendered', () => {
+  const body = { error: 'unknown cells not acknowledged', unknowns: ['u-open'] }
+  assert.equal(
+    decideErrorMessage(409, body, true),
+    'Some loading cells depend on unknown values: tick the box to decide with them open, or research them first',
+  )
+  assert.equal(
+    decideErrorMessage(409, body, false),
+    'Some loading cells depend on unknown values; reload the briefing room and try again',
+  )
 })
 
 test('the decide form lists open unknowns and the reopen flag banner sits above reopen', () => {
@@ -440,6 +659,34 @@ test('the decide form lists open unknowns and the reopen flag banner sits above 
   assert.equal(readOnly.includes('ack-unknowns'), false)
   assert.equal(readOnly.includes('data-test="matrix"'), false)
   assert.equal(readOnly.includes('data-test="unknowns"'), false)
+})
+
+test('read-only mode shows the reopen-flag banner only when the record carries one', () => {
+  const flagged = renderBriefingHtml(
+    rec({
+      status: 'decided',
+      decision: { picks: { engine: 'battery' }, date: '2026-10-19', reason: 'settled' },
+      reopen_flag: { date: '2026-10-19', reason: 'digest moved', unknowns: ['u-open', 'u-run'] },
+    }),
+    'read-only',
+    base({ mode: 'read-only', status: 'decided' }),
+  )
+  assert.match(flagged, /data-test="reopen-flag"/)
+  assert.match(
+    flagged,
+    /A sourced value changed the loading matrix after this decision \(unknowns: u-open, u-run\)\. Reopen it in the briefing room\./,
+  )
+  assert.equal(flagged.includes('data-test="reopen"'), false)
+  assert.equal(flagged.includes('data-test="decide"'), false)
+
+  const absent = renderBriefingHtml(rec({ status: 'decided' }), 'read-only', base({ mode: 'read-only', status: 'decided' }))
+  assert.equal(absent.includes('data-test="reopen-flag"'), false)
+  const nulled = renderBriefingHtml(
+    rec({ status: 'decided', reopen_flag: null }),
+    'read-only',
+    base({ mode: 'read-only', status: 'decided' }),
+  )
+  assert.equal(nulled.includes('data-test="reopen-flag"'), false)
 })
 
 test('a structured unknown still renders its text first in the skin', () => {
