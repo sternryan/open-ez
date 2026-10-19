@@ -1,0 +1,121 @@
+id: fuel-system
+spot: mod-ez
+title: Fuel system for the 912 iS
+status: open
+question: 'How is fuel delivered to the 912 iS: pressure, return line, filtering and vapor-lock protection on a pusher?'
+axes:
+- id: fuel_loop
+  options:
+  - book-carb-feed
+  - return-to-tank
+  - return-to-header
+coupled_with:
+- powerplant-fuel-resin
+- electrical
+replaces:
+- f21.plumbing
+- f23.carb-bracket
+book_choice:
+  text: The book airplane feeds a carburetor from its tanks through the plumbing built under the fuel-system steps; there
+    is no pressure regulation and no return line.
+options:
+- id: book-carb-feed
+  label: Book carburetor feed
+  kind: book
+  facts:
+  - text: EASA TCDS E.121 Issue 17 sets 912 iSc Sport fuel pressure at 2.8 to 3.2 bar.
+    cite: easa-tcds-e121:p1
+  - text: A carburetor gravity or low-pressure feed does not supply 2.8 to 3.2 bar and has no return line, so the book plumbing
+      cannot feed the 912 iS unchanged
+    flag: derived
+  why: 'baseline: simple, but it is built for a carburetor and cannot meet the injected engine''s feed pressure or return
+    requirement'
+- id: return-to-tank
+  label: Pumped feed with a return line to the wing tank
+  kind: candidate
+  facts:
+  - &id001
+    text: EASA TCDS E.121 Issue 17 sets 912 iSc Sport fuel pressure at 2.8 to 3.2 bar.
+    cite: easa-tcds-e121:p1
+  - &id002
+    text: Two electric fuel pumps are connected in series with bypass valves, and the engine runs on either or both.
+    cite: rotax-im-912i:p1
+  - &id003
+    text: A coarse filter of 50 to 67 micron is required between the tank and the fuel pumps.
+    cite: rotax-im-912i:p1
+  - &id004
+    text: The fine filter mesh size is 8 to 12 micron.
+    cite: rotax-im-912i:p1
+  - &id005
+    text: Feed, return, and vent lines must not have non-drainable low points.
+    cite: rotax-im-912i:p1
+  - &id006
+    text: The current installation manual requires a vapor-lock-resistant fuel system and states no fuel temperature in degrees.
+    cite: rotax-im-912i:p1
+  - &id007
+    text: Fuels with more than 10 percent ethanol are not permitted.
+    cite: si-912-i-001-r12-selection-of-suitable-o:p1
+  - text: The engine side-view callout names separate return connections for tractor and pusher.
+    cite: rotax-im-912i:p1
+  - text: The routing of a return line from the engine to the strake tanks, its length and pressure drop, are not sourced
+    flag: unknown
+  why: 'kept: the maker''s architecture, with two pumps and a return connection; the cost is a return line along the full
+    feed run and a return fitting in the tank'
+- id: return-to-header
+  label: Pumped feed with a small header tank and a return line to it
+  kind: candidate
+  facts:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - text: The engine side-view callout names separate return connections for tractor and pusher.
+    cite: rotax-im-912i:p1
+  - text: Whether the maker accepts a header tank in place of a return to the main tank on a pusher, and the header size needed,
+      are not sourced
+    flag: unknown
+  why: 'kept: shortens the return run and holds fuel near the pumps, at the cost of a header tank, its vent and its own supply
+    from the wing tanks'
+positions: []
+unknowns:
+- id: fuel-return-routing
+  text: 'Return line routing from a pusher engine to the strake tanks: length, fittings, pressure drop, venting'
+  how: the drawn installation and the maker's return line limits
+  affects:
+  - return-to-tank
+  - return-to-header
+  state: open
+- id: fuel-temperature-limit
+  text: 'Fuel temperature limit for vapor-lock protection: an older installation manual limited fuel-line temperature to 45
+    C and the 2020 edition states none'
+  how: the maker's current installation manual and a hot-soak ground test with the chosen fuel
+  affects:
+  - return-to-tank
+  - return-to-header
+  state: open
+- id: header-tank-acceptance
+  text: Whether a header tank return is acceptable to the maker and how large it must be
+  how: ask the maker's installation support; a written statement
+  affects:
+  - return-to-header
+  state: open
+- id: fuel-pump-power-lanes
+  text: Which electrical supply feeds each fuel pump in the Mod-EZ wiring (the electrical record decides the supply)
+  how: the electrical record's decision and the maker's wiring diagram
+  affects:
+  - return-to-tank
+  - return-to-header
+  - book-carb-feed
+  state: open
+mission_score: null
+decision: null
+history: []
+changes: null
+evidence:
+  paper: none
+  material: none
+  outside_review: none
+  flight: none

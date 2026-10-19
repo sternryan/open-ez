@@ -208,7 +208,7 @@ unknowns:
   - battery-aft
   - engine-arm-aft
   - radiator-aft
-  state: open
+  state: researching
 - id: installed-cg-arm
   text: The 912 iS installed CG arm (assumed equal to the book engine's)
   how: weigh and balance the installation, or compute from the maker flange datum
@@ -218,7 +218,7 @@ unknowns:
   - battery-aft
   - engine-arm-aft
   - radiator-aft
-  state: open
+  state: researching
 - id: large-battery-included
   text: Whether the book 730 lb empty weight already includes the large battery
   how: the builder weight records behind the empty-weight ladder
@@ -241,7 +241,7 @@ unknowns:
   - fixed-aft-ballast
   - battery-aft
   - engine-arm-aft
-  state: open
+  state: researching
 mission_score:
   o235-book:
     light_solo:

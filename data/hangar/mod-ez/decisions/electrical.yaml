@@ -1,0 +1,171 @@
+id: electrical
+spot: mod-ez
+title: Electrical system for the 912 iS
+status: open
+question: How is the 912 iS powered and charged, and what in the book panel, wing wiring and battery shelf has to change?
+axes:
+- id: ems_supply
+  options:
+  - book-single-alternator
+  - ems-isolated-one-battery
+  - ems-isolated-two-batteries
+- id: battery
+  options:
+  - book-battery
+  - lifepo4-etx900
+  - lifepo4-etx680c
+  - agm-pc680
+coupled_with:
+- powerplant-fuel-resin
+- cg-ballast
+- fuel-system
+replaces:
+- f22.panel-wiring
+- f22.battery-shelf
+- f22.wing-wiring
+book_choice:
+  text: The book airplane has one engine-driven alternator and one battery on a single bus with the engine's own ignition;
+    the engine needs no supply from the airplane to run.
+options:
+- id: book-single-alternator
+  label: Book single bus, one alternator, one battery
+  kind: book
+  facts:
+  - text: The engine-management electrical system is isolated from the rest of the aircraft.
+    cite: rotax-im-912i:p1
+  - text: The book single-bus system shares grounds and the battery with the engine, which the maker's isolation rules do
+      not allow
+    flag: derived
+  why: 'baseline: simple and complete for the magneto engine, but it cannot be kept for the 912 iS, whose engine-management
+    electrics must be isolated from the airframe bus'
+- id: ems-isolated-one-battery
+  label: Isolated engine bus, one aircraft battery with a backup switch
+  kind: candidate
+  facts:
+  - &id001
+    text: The engine-management electrical system is isolated from the rest of the aircraft.
+    cite: rotax-im-912i:p1
+  - &id002
+    text: Airframe ground and EMS ground must not be interconnected.
+    cite: rotax-im-912i:p1
+  - &id003
+    text: Lane A and Lane B are two ECU modules, each able to control the engine, and both are on in error-free operation.
+    cite: rotax-im-912i:p1
+  - &id004
+    text: A generator feeds both lanes together. Generator A does not feed Lane A, and generator B does not feed Lane B.
+    cite: rotax-im-912i:p1
+  - &id005
+    text: The aircraft battery must be at least 16 Ah and must hold at least 9 V on the ECU bus during start-up.
+    cite: rotax-im-912i:p1
+  - &id006
+    text: The battery technical data require at least 350 A cold-cranking amperes at -18 °C (SAE J537).
+    cite: rotax-im-912i:p1
+  - text: The 2012 operators manual says loss of both EMS supplies stops the engine, and the backup switch then feeds the
+      EMS from the aircraft battery.
+    cite: operators-manual-om-912-i-part-898740-co:p1
+  - text: The aircraft manufacturer must provide an ammeter because the EMS does not monitor generator-B charging.
+    cite: rotax-im-912i:p1
+  - text: The 2020 installation manual requires a slow-blowing 50 A fuse or circuit breaker for the rectifier regulator.
+    cite: rotax-im-912i:p1
+  why: 'kept: one battery to carry, fed through the maker''s backup switch when both engine generators fail; the battery must
+    meet the maker''s minimum'
+- id: ems-isolated-two-batteries
+  label: Isolated engine bus with its own backup battery
+  kind: candidate
+  facts:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - text: The 2012 operators manual says loss of both EMS supplies stops the engine, and the backup switch then feeds the
+      EMS from the aircraft battery.
+    cite: operators-manual-om-912-i-part-898740-co:p1
+  - text: The mass, size and position of a separate backup battery are choices not sourced
+    flag: derived
+  why: 'kept: the engine does not depend on the airframe battery, at the cost of a second battery and its mass and mounting'
+- id: book-battery
+  label: Battery of the book airplane
+  kind: book
+  facts:
+  - text: Which battery the book empty weight carries (the mass ledger notes it may be the small one) is not sourced
+    flag: unknown
+  why: 'baseline: the mass the book empty weight may or may not already include; not sourced'
+- id: lifepo4-etx900
+  label: Lithium iron phosphate battery, 15.6 Ah class
+  kind: candidate
+  facts:
+  - text: The EarthX ETX900 product-spec PDF lists weight of 4.9 lb (2.2 kg).
+    cite: etx-series-lithium-batteries-etx900-prod:p1
+  - text: The EarthX ETX900 product-spec PDF lists capacity of 15.6 Ah.
+    cite: etx-series-lithium-batteries-etx900-prod:p1
+  - text: The EarthX ETX900 product-spec PDF lists dimensions 6.5 x 3.1 x 6.6 in (166 x 79 x 168 mm).
+    cite: etx-series-lithium-batteries-etx900-prod:p1
+  - text: 15.6 Ah is below the maker's 16 Ah minimum for the aircraft battery, so this battery would need the maker's agreement
+    flag: derived
+  why: 'kept: lightest at 4.9 lb, but its 15.6 Ah is just under the maker''s 16 Ah minimum'
+- id: lifepo4-etx680c
+  label: Lithium iron phosphate battery, 12.4 Ah class
+  kind: candidate
+  facts:
+  - text: EarthX lists the ETX680C mass as 3.9 lb (1.8 kg) at 13.2 V.
+    cite: earthx-etx680c-product-page:p1
+  - text: EarthX ETX680C is rated 12.4 Ah at the 1C rate, in a 5.9 x 3.4 x 4.5 in LiFePO4 case.
+    cite: earthx-etx680c-product-page:p1
+  - text: 12.4 Ah is below the maker's 16 Ah minimum for the aircraft battery
+    flag: derived
+  why: 'kept: very light at 3.9 lb, but 12.4 Ah is well below the maker''s 16 Ah minimum'
+- id: agm-pc680
+  label: Sealed lead-acid (AGM) battery, 16 Ah class
+  kind: candidate
+  facts:
+  - text: Odyssey lists the PC680 at 16 Ah on both the 20-hour and 10-hour rates.
+    cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
+  - text: Odyssey lists the PC680 at 15.4 lb, 7.2 in long, 3 in wide, 6.4 in high including terminals, and 6.6 in container
+      height.
+    cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
+  - text: Odyssey lists the ODS-AGM16L (PC680) at 12 V.
+    cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
+  why: 'kept: meets the maker''s 16 Ah minimum, at 15.4 lb the heaviest choice'
+positions: []
+unknowns:
+- id: backup-battery-requirement
+  text: 'The current maker requirement for the backup battery (capacity, when it is mandatory): only the 2012 operators manual
+    wording was found'
+  how: the maker's current installation and operators manuals
+  affects:
+  - ems-isolated-one-battery
+  - ems-isolated-two-batteries
+  state: open
+- id: external-alternator-current
+  text: Current available from the external alternator at cruise and the airframe load budget
+  how: the maker's alternator data and the builder's load list
+  affects:
+  - ems-isolated-one-battery
+  - ems-isolated-two-batteries
+  state: open
+- id: book-wiring-reuse
+  text: Which book panel and wing wiring (wire sizes, breakers, switches) can be kept for the airframe loads
+  how: a circuit-by-circuit review against the maker's wiring diagram and the book wiring steps
+  affects:
+  - ems-isolated-one-battery
+  - ems-isolated-two-batteries
+  state: open
+- id: battery-location-arm
+  text: Where the battery is mounted and its arm (it moves the CG; the cg-ballast record's battery option depends on it)
+  how: the drawn installation and a weighing
+  affects:
+  - lifepo4-etx900
+  - lifepo4-etx680c
+  - agm-pc680
+  state: open
+mission_score: null
+decision: null
+history: []
+changes: null
+evidence:
+  paper: none
+  material: none
+  outside_review: none
+  flight: none

@@ -1,0 +1,140 @@
+id: cooling
+spot: mod-ez
+title: Engine cooling for the 912 iS
+status: open
+question: How is the 912 iS cooled in the Mod-EZ, and where do the radiator, oil cooler and coolant go?
+axes:
+- id: cooling_layout
+  options:
+  - air-cooled-book
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+coupled_with:
+- powerplant-fuel-resin
+- cg-ballast
+replaces:
+- f23.engine-install
+- f23.cowl-closeout
+book_choice:
+  text: 'The book airplane''s O-235 is air cooled: cylinders are cooled by cowl air, with no radiator, coolant, expansion
+    tank or coolant hoses.'
+options:
+- id: air-cooled-book
+  label: Air-cooled engine (book)
+  kind: book
+  facts:
+  - text: The book engine is the air-cooled Lycoming O-235; it carries no radiator, coolant or oil cooler plumbing
+    flag: derived
+  - text: The 912 iS needs about 1.5 l of coolant for its liquid-cooled cylinder heads, so this layout does not apply to it
+    flag: derived
+  why: 'baseline: nothing to place, and nothing to carry; the 912 iS cannot use it because its cylinder heads are liquid cooled'
+- id: radiator-nose-duct
+  label: Radiator and oil cooler forward, ducted from the nose
+  kind: candidate
+  facts:
+  - &id001
+    text: The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine
+    cite: rotax-im-912i:p1
+  - &id002
+    text: The maker lists the oil radiator at 1.0 kg (2.2 lb).
+    cite: rotax-im-912i:p1
+  - &id003
+    text: The maker lists the oil cooler at 0.6 kg (1.32 lb).
+    cite: rotax-im-912i:p1
+  - &id004
+    text: The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).
+    cite: rotax-im-912i:p1
+  - &id005
+    text: The maker lists the cooling air baffle at 0.36 kg (0.79 lb).
+    cite: rotax-im-912i:p1
+  - &id006
+    text: IM-912 i requires an overflow bottle of approximately 0.5 litres.
+    cite: installation-manual-im-912-i:p1
+  - &id007
+    text: SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol
+      coolant on the 912 i Series.
+    cite: si-912-i-001r7-si-912-016r12:p1
+  - &id008
+    text: SI-PAC-014 Revision 1 states a maximum weight of 0.82 kg for the extra-large oil radiator.
+    cite: si-pac-014-revision-1-oil-radiator-sets:p1
+  - text: Duct size, drag and the real pusher airflow for a nose radiator on this airframe are not sourced
+    flag: unknown
+  why: 'kept: short air path, but the coolant and oil lines run the length of the fuselage and the radiator mass sits far
+    forward, which pushes the CG forward'
+- id: radiator-belly-duct
+  label: Radiator and oil cooler in a belly duct under the engine
+  kind: candidate
+  facts:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - text: Duct size, drag and the real pusher airflow for a belly radiator on this airframe are not sourced
+    flag: unknown
+  why: 'kept: short hoses and the masses stay near the engine, but a belly scoop touches the outer shape and ground clearance'
+- id: radiator-aft-duct
+  label: Radiator and oil cooler aft of the engine in the cowl
+  kind: candidate
+  facts:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - text: Whether the pusher cowl can pass enough air at the radiator, and the duct drag, are not sourced
+    flag: unknown
+  why: 'kept: masses sit aft like ballast, but a pusher cowl has little ram air aft of the engine and the airflow path is
+    not sourced'
+positions: []
+unknowns:
+- id: radiator-position-drag
+  text: Radiator position, duct size and drag for the 912 iS on this airframe (no published pusher installation found)
+  how: the drawn installation and a ground cooling test
+  affects:
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+  state: open
+- id: coolant-hose-diameter
+  text: 'Coolant hose inner diameter: an older installation manual says 25 mm and the 2020 edition''s coolant table lists
+    18 mm hose'
+  how: the current maker installation manual for the engine serial number
+  affects:
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+  state: open
+- id: coolant-installed-mass
+  text: Installed mass of coolant, hoses and fittings (the maker lists radiator and cooler masses, not hose or fluid mass
+    for a given routing)
+  how: weigh the drawn installation; coolant density from the maker's coolant datasheet
+  affects:
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+  state: open
+- id: pusher-cooling-air-baffle
+  text: Mass and fit of the pusher cylinder cooling-air baffle parts (listed without mass)
+  how: maker parts catalogue and the supplier
+  affects:
+  - radiator-nose-duct
+  - radiator-belly-duct
+  - radiator-aft-duct
+  state: open
+mission_score: null
+decision: null
+history: []
+changes: null
+evidence:
+  paper: none
+  material: none
+  outside_review: none
+  flight: none
