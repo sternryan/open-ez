@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import time
 import threading
 import urllib.request
 from pathlib import Path
@@ -21,6 +22,15 @@ from hangar.briefing_server import make_server
 ROOT = Path(__file__).resolve().parents[2]
 GL = ["--use-gl=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
 PILOTS = {"pilots": [{"label": "Pat", "lb": 133.37}, {"label": "Sam", "lb": 187.91}]}
+
+
+def wait_until(cond, timeout=20.0):
+    end = time.time() + timeout
+    while time.time() < end:
+        if cond():
+            return
+        time.sleep(0.25)
+    raise AssertionError("condition not met in time")
 
 
 def lane(brief):
@@ -102,7 +112,7 @@ def test_matrix_unknowns_research_and_reopen_flag(live):
         pg.fill('textarea[name="reason"]', "smoke reason")
         pg.check('input[name="ack-unknowns"]')
         pg.click('form[data-test="decide"] button[type="submit"]')
-        pg.wait_for_function("fetch('api/records').then(r => r.json()).then(j => j['cg-ballast'].status === 'decided')", timeout=20000)
+        wait_until(lambda: get("api/records")["cg-ballast"]["status"] == "decided")
         rec = get("api/records")["cg-ballast"]
         assert rec["decision"]["picks"] == {"cg_fix": "loading-limit"}
         assert "installed-cg-arm" in rec["decision"]["over_unknowns"]
@@ -112,9 +122,8 @@ def test_matrix_unknowns_research_and_reopen_flag(live):
         pg.reload()
         pg.wait_for_selector('[data-action="resolve"][data-outcome="accept"]', state="visible", timeout=20000)
         pg.click('[data-action="resolve"][data-outcome="accept"]')
-        pg.wait_for_function(
-            "fetch('api/records').then(r => r.json()).then(j => j['cg-ballast'].unknowns.some(u => u.id === 'installed-cg-arm' && u.state === 'sourced'))",
-            timeout=20000)
+        wait_until(lambda: any(u.get("id") == "installed-cg-arm" and u.get("state") == "sourced"
+                               for u in get("api/records")["cg-ballast"]["unknowns"]))
         rec = get("api/records")["cg-ballast"]
         assert rec["status"] == "decided" and rec["decision"]["picks"] == {"cg_fix": "loading-limit"}
         assert rec["reopen_flag"] and "installed-cg-arm" in rec["reopen_flag"]["unknowns"]
