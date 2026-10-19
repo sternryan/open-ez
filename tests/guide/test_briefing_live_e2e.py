@@ -134,6 +134,7 @@ def test_matrix_unknowns_research_and_reopen_flag(live):
         pg.click('[data-action="resolve"][data-outcome="accept"]')
         wait_until(lambda: any(u.get("id") == "installed-cg-arm" and u.get("state") == "sourced"
                                for u in get("api/records")["cg-ballast"]["unknowns"]))
+        wait_until(lambda: get("api/records")["cg-ballast"].get("reopen_flag"))   # re-score and flag follow the record write
         rec = get("api/records")["cg-ballast"]
         assert rec["status"] == "decided" and rec["decision"]["picks"] == {"cg_fix": "loading-limit"}
         assert rec["reopen_flag"] and "installed-cg-arm" in rec["reopen_flag"]["unknowns"]
