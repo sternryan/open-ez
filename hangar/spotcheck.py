@@ -499,7 +499,7 @@ def apply_patch(data_dir, patch, source_id) -> None:
         tmp = Path(tmp_name)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                yaml.safe_dump(data, handle, sort_keys=False, allow_unicode=True)
+                yaml.safe_dump(data, handle, sort_keys=False, allow_unicode=True, width=120)
             os.replace(tmp, target)
         except Exception:
             if tmp.exists():

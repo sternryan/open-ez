@@ -527,3 +527,17 @@ def test_apply_patch_dumps_unicode_as_characters(tmp_path):
 def test_data_lock_files_are_gitignored():
     text = Path(".gitignore").read_text(encoding="utf-8")
     assert "data/**/*.lock" in text
+
+
+def test_apply_patch_on_the_real_data_changes_only_the_patched_entry(tmp_path):
+    import difflib
+    import shutil
+    for name in ("powerplants.yaml", "mission.yaml"):
+        shutil.copy(Path("data/hangar/mod-ez") / name, tmp_path / name)
+    before = (tmp_path / "powerplants.yaml").read_text()
+    sc.apply_patch(tmp_path, {"file": "powerplants.yaml", "path": ["rotax-912is", "cg_arm_in"], "value": 139.2,
+                              "note": "weighed on the maker jig"}, "rotax-sheet")
+    after = (tmp_path / "powerplants.yaml").read_text()
+    changed = [l for l in difflib.unified_diff(before.splitlines(), after.splitlines(), lineterm="")
+               if l[:1] in "+-" and l[:3] not in ("+++", "---")]
+    assert 0 < len(changed) <= 8, "\n".join(changed)   # the entry's own lines, no reflow of the rest of the file
