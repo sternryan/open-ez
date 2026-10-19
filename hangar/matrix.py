@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import yaml
@@ -21,7 +22,40 @@ _SCAN_STEP = 0.5
 
 
 def _worst(flags: list[str]) -> str:
-    return max(flags, key=lambda flag: _RANK.get(flag, 1))
+    return max(flags, key=lambda flag: _RANK[flag])
+
+
+def _norm_flag(flag) -> str:
+    if flag in _RANK:
+        return flag
+    return "unknown"
+
+
+def _finite(value):
+    """A real finite number, or None when the input cannot be used in the matrix."""
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        number = float(value)
+    elif isinstance(value, str):
+        try:
+            number = float(value)
+        except ValueError:
+            return None
+    else:
+        return None
+    if not math.isfinite(number):
+        return None
+    return number
+
+
+def _mission_value(mission, key: str):
+    if not isinstance(mission, dict) or key not in mission:
+        return _to_value({"v": None, "flag": "unknown"})
+    try:
+        return _to_value(mission[key])
+    except Exception:
+        return _to_value({"v": None, "flag": "unknown"})
 
 
 def public_occupancies() -> list[dict]:
@@ -65,13 +99,22 @@ def _prepare(engine: str, extras, plants, mission) -> dict:
     inst = _to_value(plant["installed_lb"])
     cg_arm = _to_value(plant["cg_arm_in"])
     flow = _to_value(plant["cruise_ff_gph"])
-    density = _to_value(mission["fuel_density_lb_per_gal"])
-    cap = _to_value(mission["fuel_capacity_gal"])
-    cruise = _to_value(mission["cruise_ktas"])
+    density = _mission_value(mission, "fuel_density_lb_per_gal")
+    cap = _mission_value(mission, "fuel_capacity_gal")
+    cruise = _mission_value(mission, "cruise_ktas")
+    leg_nm = _finite(mission.get("leg_nm")) if isinstance(mission, dict) else None
+    reserve_min = _finite(mission.get("reserve_min")) if isinstance(mission, dict) else None
+    inst_v = _finite(inst.v)
+    cg_v = _finite(cg_arm.v)
+    flow_v = _finite(flow.v)
+    density_v = _finite(density.v)
+    cap_v = _finite(cap.v)
+    cruise_v = _finite(cruise.v)
     missing = any(e.get("weight_lb") is None or e.get("arm_in") is None for e in extras)
-    unknown = missing or any(
-        value is None for value in (inst.v, cg_arm.v, flow.v, density.v, cap.v, cruise.v)
-    )
+    numbers = (inst_v, cg_v, flow_v, density_v, cap_v, cruise_v, leg_nm, reserve_min)
+    unknown = missing or any(value is None for value in numbers)
+    if not unknown and (cruise_v <= 0.0 or density_v < 0.0 or cap_v < 0.0 or flow_v < 0.0):
+        unknown = True
     ledger = load_ledger()
     loads = ledger["loads"]
     ctx = {
@@ -92,19 +135,19 @@ def _prepare(engine: str, extras, plants, mission) -> dict:
     }
     if unknown:
         return ctx
-    flags = [inst.flag, cg_arm.flag, flow.flag, density.flag, cap.flag, cruise.flag]
-    flags.extend(e.get("flag", "derived") for e in extras)
+    flags = [_norm_flag(flag) for flag in (inst.flag, cg_arm.flag, flow.flag, density.flag, cap.flag, cruise.flag)]
+    flags.extend(_norm_flag(e.get("flag", "derived")) for e in extras)
     ctx["flag"] = _worst([*flags, "derived"])
     extra_w = sum(float(e["weight_lb"]) for e in extras)
     extra_m = sum(float(e["weight_lb"]) * float(e["arm_in"]) for e in extras)
     base_w = float(ledger["empty"]["weight_lb"])
     base_arm = float(ledger["empty"]["arm_in"])
-    ctx["empty_w"] = base_w - _BOOK_LB + float(inst.v) + extra_w
-    ctx["empty_m"] = base_w * base_arm - _BOOK_LB * _BOOK_ARM + float(inst.v) * float(cg_arm.v) + extra_m
-    leg = float(flow.v) * (float(mission["leg_nm"]) / float(cruise.v)) * float(density.v)
-    reserve = float(flow.v) * (float(mission["reserve_min"]) / 60.0) * float(density.v)
+    ctx["empty_w"] = base_w - _BOOK_LB + inst_v + extra_w
+    ctx["empty_m"] = base_w * base_arm - _BOOK_LB * _BOOK_ARM + inst_v * cg_v + extra_m
+    leg = flow_v * (leg_nm / cruise_v) * density_v
+    reserve = flow_v * (reserve_min / 60.0) * density_v
     takeoff = {
-        "full": float(cap.v) * float(density.v),
+        "full": cap_v * density_v,
         "mission": leg + reserve,
         "reserve": reserve,
     }
@@ -115,6 +158,9 @@ def _prepare(engine: str, extras, plants, mission) -> dict:
 def _score(ctx: dict, front: float, rear: float, bag_lb: float, fuel: str, state: str):
     fuel_lb = ctx["fuels"][fuel][state]
     gross = ctx["empty_w"] + ctx["oil"] + front + rear + bag_lb + fuel_lb
+    # A non-positive gross has no centre of gravity; callers mark the cell unknown.
+    if gross <= 0.0:
+        return None
     moment = (
         ctx["empty_m"]
         + ctx["oil"] * ctx["oil_arm"]
@@ -150,9 +196,10 @@ def _cell(ctx: dict, occ: dict, bag: dict, fuel: str, state: str) -> dict:
     }
     if ctx["unknown"]:
         return row
-    fuel_lb, gross, cg, fwd, aft, room = _score(
-        ctx, float(occ["front_lb"]), float(occ["rear_lb"]), float(bag["lb"]), fuel, state
-    )
+    scored = _score(ctx, float(occ["front_lb"]), float(occ["rear_lb"]), float(bag["lb"]), fuel, state)
+    if scored is None:
+        return row
+    fuel_lb, gross, cg, fwd, aft, room = scored
     row.update(
         {
             "fuel_lb": fuel_lb,
@@ -188,7 +235,7 @@ def _assemble(engine: str, ctx: dict, occupancies, bags) -> dict:
         "engine": engine,
         "cells": cells,
         "cell_count": len(cells),
-        "unknown_cells": sum(cell["cg_in"] is None for cell in cells),
+        "unknown_cells": sum(cell["flag"] == "unknown" for cell in cells),
         "flag": _worst(flags) if flags else "sourced",
         "worst": {limit: _pick(cells, _FIELDS[limit]) for limit in _LIMITS},
     }
@@ -211,12 +258,14 @@ def solo_limit_margin(engine, pilot_lb, limit, extras, plants, mission):
     return min(cell[_FIELDS[limit]] for cell in made["cells"])
 
 
-def _mins(ctx: dict, pilot: float, bags) -> list[float]:
+def _mins(ctx: dict, pilot: float, bags):
     totals = [None, None, None]
     for bag in bags:
         for fuel in _FUELS:
             for state in _STATES:
                 scored = _score(ctx, float(pilot), 0.0, float(bag["lb"]), fuel, state)
+                if scored is None:
+                    return None
                 for index in range(3):
                     value = scored[3 + index]
                     if totals[index] is None or value < totals[index]:
@@ -247,10 +296,14 @@ def _note(above, below, bad: bool) -> str:
     return "; ".join(parts)
 
 
+def _unknown_crossings() -> dict:
+    blank = {"fails_above_lb": None, "fails_below_lb": None, "note": "inputs unknown"}
+    return {limit: dict(blank) for limit in _LIMITS}
+
+
 def _crossings(ctx: dict) -> dict:
     if ctx["unknown"]:
-        blank = {"fails_above_lb": None, "fails_below_lb": None, "note": "inputs unknown"}
-        return {limit: dict(blank) for limit in _LIMITS}
+        return _unknown_crossings()
     count = int(round((_SCAN_HI - _SCAN_LO) / _SCAN_STEP))
     weights = [_SCAN_LO + index * _SCAN_STEP for index in range(count + 1)]
     bags = public_bags()
@@ -258,10 +311,14 @@ def _crossings(ctx: dict) -> dict:
     below = [None, None, None]
     prev_w = weights[0]
     prev = _mins(ctx, prev_w, bags)
+    if prev is None:
+        return _unknown_crossings()
     prev_bad = [value < 0.0 for value in prev]
     any_bad = list(prev_bad)
     for weight in weights[1:]:
         current = _mins(ctx, weight, bags)
+        if current is None:
+            return _unknown_crossings()
         for index in range(3):
             bad = current[index] < 0.0
             any_bad[index] = any_bad[index] or bad

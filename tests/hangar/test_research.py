@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -208,3 +210,207 @@ def test_default_lane_sends_the_public_brief_and_parses_json(monkeypatch):
         assert word in system
     with pytest.raises(rs.ResearchUnavailable):
         rs.default_lane("x", post=lambda p, h: {"choices": [{"message": {"content": "no json at all"}}]})
+
+
+# ---- review: public gate, job ids, exclusive run, failures ----
+
+def test_broken_mission_yaml_fails_closed(tmp_path):
+    private = tmp_path / "private"
+    private.mkdir()
+    (private / "mission.yaml").write_text("pilots: [\n  {label: Pat Quillfeather, lb: 133.37\n")
+    with pytest.raises(ValueError):
+        rs.assert_public("nothing private here", private)
+
+
+def test_normalized_labels_weights_and_other_mission_strings(tmp_path):
+    private = tmp_path / "private"
+    private.mkdir()
+    payload = {
+        "pilots": [
+            {"label": "Bo", "lb": 133.37},
+            {"label": "Pat\u00a0Quillfeather", "lb": "180"},
+        ],
+        "bags_lb": {"nose": 31.43},
+        "owner_note": "violet-hangar-token",
+    }
+    (private / "mission.yaml").write_text(yaml.safe_dump(payload))
+    rs.assert_public("The engine weighs 166.2 lb", private)
+    rs.assert_public("1133.375 is a different number", private)
+    rs.assert_public("European 133,37 stays", private)
+    rs.assert_public("Bobby is not the label", private)
+    leaks = [
+        "pilot 133.370 lb",
+        "mass 1.3337e2 lb",
+        "mass 1.3337E2 lb",
+        "pilot 180.0 lb",
+        "pilot 180.000 lb",
+        "pilot 1.80e2 lb",
+        "pilot 0180 lb",
+        "bag 31.430 lb",
+        "note violet-hangar-token end",
+        "crew Bo today",
+        "name Pat Quillfeather end",
+        "name Pat\nQuillfeather end",
+        "name Pat\u00a0Quillfeather end",
+        "name Pat Quill\u200bfeather end",
+    ]
+    for leak in leaks:
+        with pytest.raises(ValueError):
+            rs.assert_public(leak, private)
+
+
+def test_record_decision_history_and_position_strings_are_private(priv):
+    record = rec_with_unknowns()
+    rs.assert_public("The engine weighs 166.2 lb", priv, record=record)
+    for leak in ("because PRIVATE-REASON-TEXT today", record.positions[0]["reasoning"]):
+        with pytest.raises(ValueError):
+            rs.assert_public(leak, priv, record=record)
+
+
+def test_queue_refuses_a_brief_that_repeats_decision_text(priv):
+    record = rec_with_unknowns()
+    record.unknowns[0]["text"] = "See PRIVATE-REASON-TEXT before weighing"
+    with pytest.raises(ValueError):
+        rs.queue_job(priv, record, "u-coolant")
+    assert rs.list_jobs(priv) == []
+
+
+def test_unsafe_unknown_ids_are_rejected_and_do_not_collide(priv):
+    record = rec_with_unknowns()
+    for unsafe in ("u/cool", "u..cool", "u cool", "../u-cool"):
+        record.unknowns[0]["id"] = unsafe
+        with pytest.raises(ValueError):
+            rs.queue_job(priv, record, unsafe)
+    research = priv / "research"
+    assert not research.exists() or list(research.glob("*.json")) == []
+    record.unknowns[0]["id"] = "u-cool"
+    job = rs.queue_job(priv, record, "u-cool")
+    assert rs.load_job(priv, job["id"])["unknown_id"] == "u-cool"
+    record.unknowns[0]["id"] = "u/cool"
+    with pytest.raises(ValueError):
+        rs.queue_job(priv, record, "u/cool")
+    assert json.loads((priv / "research" / f"{job['id']}.json").read_text())["unknown_id"] == "u-cool"
+    with pytest.raises(KeyError):
+        rs.load_job(priv, "cg-ballast--u..cool--1")
+    with pytest.raises(KeyError):
+        rs.load_job(priv, "not a safe id")
+
+
+def test_run_job_locks_the_queued_to_running_transition(priv):
+    import fcntl
+
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+    lock_path = priv / "research" / f"{job['id']}.json.lock"
+    entered = threading.Event()
+
+    def lane(brief):
+        entered.set()
+        return proposal()
+
+    with open(lock_path, "a+") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        errors = []
+
+        def go():
+            try:
+                rs.run_job(priv, job["id"], lane, check_ok)
+            except Exception as exc:
+                errors.append(exc)
+
+        thread = threading.Thread(target=go)
+        thread.start()
+        time.sleep(0.2)
+        assert not entered.is_set()
+        on_disk = json.loads((priv / "research" / f"{job['id']}.json").read_text())
+        assert on_disk["state"] == "queued"
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    thread.join(timeout=5)
+    assert errors == [] and entered.is_set()
+    assert rs.load_job(priv, job["id"])["state"] == "proposed"
+
+
+def test_overlapping_run_job_calls_the_lane_once(priv):
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    def lane(brief):
+        calls.append(1)
+        started.set()
+        assert release.wait(timeout=3)
+        return proposal()
+
+    errors = []
+
+    def go():
+        try:
+            rs.run_job(priv, job["id"], lane, check_ok)
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=go), threading.Thread(target=go)]
+    for thread in threads:
+        thread.start()
+    assert started.wait(timeout=3)
+    for _ in range(50):
+        if errors:
+            break
+        time.sleep(0.02)
+    release.set()
+    for thread in threads:
+        thread.join(timeout=5)
+    assert calls == [1]
+    assert len(errors) == 1 and isinstance(errors[0], ValueError)
+
+
+def test_keyboard_interrupt_leaves_the_job_failed(priv):
+    record = rec_with_unknowns()
+    job = rs.queue_job(priv, record, "u-coolant")
+
+    def lane(brief):
+        raise KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        rs.run_job(priv, job["id"], lane, check_ok)
+    assert rs.load_job(priv, job["id"])["state"] == "failed"
+    again = rs.queue_job(priv, record, "u-coolant")
+    assert again["id"] != job["id"] and again["state"] == "queued"
+
+
+def test_spotcheck_base_exception_leaves_the_job_failed(priv):
+    job = rs.queue_job(priv, rec_with_unknowns(), "u-coolant")
+
+    def check(proposal_):
+        raise KeyboardInterrupt()
+
+    with pytest.raises(KeyboardInterrupt):
+        rs.run_job(priv, job["id"], lane_returning(proposal()), check)
+    assert rs.load_job(priv, job["id"])["state"] == "failed"
+
+
+def test_default_lane_passes_timeout_to_urlopen(monkeypatch):
+    monkeypatch.setenv("HANGAR_RESEARCH_URL", "http://lane.invalid/v1/chat/completions")
+    monkeypatch.setenv("HANGAR_RESEARCH_MODEL", "some-model")
+    monkeypatch.delenv("HANGAR_RESEARCH_KEY", raising=False)
+    seen = {}
+
+    def fake_urlopen(req, timeout=None, **kwargs):
+        seen["timeout"] = timeout
+
+        class Resp:
+            def read(self):
+                body = {"choices": [{"message": {"content": json.dumps(proposal())}}]}
+                return json.dumps(body).encode()
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+        return Resp()
+
+    monkeypatch.setattr(rs.urllib.request, "urlopen", fake_urlopen)
+    got = rs.default_lane("brief", timeout_s=7)
+    assert got["value"] == 4.1 and seen["timeout"] == 7

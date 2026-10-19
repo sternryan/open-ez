@@ -12,6 +12,10 @@ from hangar.mission import apply_effect, load_mission
 
 _LIMITS = ("fwd", "aft", "gross")
 _FIELDS = {"fwd": "fwd_margin_in", "aft": "aft_margin_in", "gross": "gross_margin_lb"}
+_MAX_PILOTS = 8
+_MAX_BAGS = 6
+_LABEL_CHARS = 40
+_OCCUPANCY_CHARS = 60
 
 
 def _real(value):
@@ -23,21 +27,34 @@ def _real(value):
     return number
 
 
+def _one_line(text, limit: int) -> str:
+    flat = str(text).replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+    flat = " ".join(flat.split())
+    if len(flat) > limit:
+        flat = flat[:limit].rstrip()
+    return flat
+
+
 def _pilots(rows) -> list[tuple[str, float]]:
     if not isinstance(rows, list):
         return []
     found = []
     seen: dict[str, int] = {}
     for index, row in enumerate(rows):
+        if len(found) >= _MAX_PILOTS:
+            break
         if not isinstance(row, dict):
             continue
         weight = _real(row.get("lb"))
         if weight is None or not 30.0 <= weight <= 500.0:
             continue
-        label = str(row.get("label", f"pilot {index + 1}"))
+        fallback = f"pilot {index + 1}"
+        label = _one_line(row.get("label", fallback), _LABEL_CHARS) or _one_line(fallback, _LABEL_CHARS)
         seen[label] = seen.get(label, 0) + 1
         if seen[label] > 1:
-            label = f"{label} ({seen[label]})"
+            suffix = f" ({seen[label]})"
+            room = _LABEL_CHARS - len(suffix)
+            label = f"{label[:room].rstrip()}{suffix}" if room > 0 else suffix[:_LABEL_CHARS]
         found.append((label, weight))
     return found
 
@@ -54,6 +71,8 @@ def _bags(data: dict) -> list[dict]:
             weight = _real(item)
             if weight is None or weight < 0.0:
                 continue
+            if len(chosen) >= _MAX_BAGS:
+                break
             number += 1
             chosen.append({"id": f"bag{number}", "label": f"bag {number}", "lb": weight})
     else:
@@ -65,13 +84,17 @@ def _bags(data: dict) -> list[dict]:
     return [none, *chosen]
 
 
+def _words(text: str) -> str:
+    return _one_line(text, _OCCUPANCY_CHARS)
+
+
 def _occupancies(pilots: list[tuple[str, float]]) -> list[dict]:
     rows = []
     for index, (label, weight) in enumerate(pilots):
         rows.append(
             {
                 "id": f"solo-{index}",
-                "words": f"{label} solo",
+                "words": _words(f"{label} solo"),
                 "front_lb": weight,
                 "rear_lb": 0.0,
             }
@@ -83,7 +106,7 @@ def _occupancies(pilots: list[tuple[str, float]]) -> list[dict]:
             rows.append(
                 {
                     "id": f"two-{left}-{right}",
-                    "words": f"{front_label} front, {rear_label} rear",
+                    "words": _words(f"{front_label} front, {rear_label} rear"),
                     "front_lb": front_lb,
                     "rear_lb": rear_lb,
                 }
@@ -136,7 +159,12 @@ def matrix_digest(effect) -> str:
 def _slot(worst, field: str, prec: int, unit: str) -> tuple[str, str]:
     if worst is None:
         return "unknown", "unknown"
-    return f"{worst[field]:+.{prec}f} {unit}", worst["loading"]
+    value = worst[field]
+    if value < 0:
+        text = f"{abs(value):.{prec}f} {unit} outside"
+    else:
+        text = f"{value:+.{prec}f} {unit}"
+    return text, worst["loading"]
 
 
 def matrix_text(m: dict) -> str:

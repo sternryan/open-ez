@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import copy
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -199,3 +201,269 @@ def test_apply_patch_can_target_mission_values(tmp_path):
     (tmp_path / "mission.yaml").write_text(yaml.safe_dump({"leg_nm": 300, "cruise_ktas": {"v": 150, "flag": "derived", "note": "n"}}, sort_keys=False))
     sc.apply_patch(tmp_path, {"file": "mission.yaml", "path": ["cruise_ktas"], "value": 148.0, "note": "flight test"}, "src")
     assert yaml.safe_load((tmp_path / "mission.yaml").read_text())["cruise_ktas"]["v"] == 148.0
+
+
+# ---- review: fetch policy, number tokens, atomic registry and patch writes ----
+
+_FORBIDDEN_URLS = [
+    "http://foo.localhost/secret",
+    "http://0x7f.1/",
+    "http://2130706433/",
+    "http://0177.0.0.1/",
+    "http://127.1/",
+    "http://a@127.0.0.1/",
+    "http://a@0x7f.1/",
+    "http://[::ffff:127.0.0.1]/",
+    "http://[::ffff:7f00:1]/",
+    "http://100.64.0.1/",
+    "http://[fec0::1]/",
+    "ftp://127.0.0.1/secret",
+]
+
+
+@pytest.mark.parametrize("url", _FORBIDDEN_URLS)
+def test_name_and_literal_policy_runs_before_an_injected_fetch(url):
+    calls = []
+    r = sc.spotcheck_url(prop(url=url), fetch=fetch_of(PAGE, calls))
+    assert calls == [] and r["fetched"] is False and r["matched"] is False and "refused" in r["detail"]
+
+
+def test_injected_fetch_skips_dns_for_a_public_name():
+    resolved = []
+    calls = []
+
+    def resolver(host):
+        resolved.append(host)
+        return ["127.0.0.1"]
+
+    r = sc.spotcheck_url(prop(), fetch=fetch_of(PAGE, calls), resolver=resolver)
+    assert r["matched"] is True and calls == ["https://example.org/engine.html"] and resolved == []
+
+
+def test_rebind_connects_only_to_the_approved_address():
+    lookups = []
+
+    def resolver(host):
+        lookups.append(host)
+        return ["1.1.1.1"] if len(lookups) == 1 else ["127.0.0.1"]
+
+    seen = []
+
+    def transport(url, address, timeout):
+        seen.append((url, address, timeout))
+        if address == "127.0.0.1":
+            return 200, {}, PAGE
+        return 200, {}, "<html><body>public page without the quote</body></html>"
+
+    r = sc.spotcheck_url(prop(), resolver=resolver, transport=transport, timeout=9)
+    assert lookups == ["example.org"]
+    assert seen == [("https://example.org/engine.html", "1.1.1.1", 9)]
+    assert r["fetched"] is True and r["quote_found"] is False and r["matched"] is False
+
+
+def test_every_resolved_address_must_be_global():
+    seen = []
+
+    def transport(url, address, timeout):
+        seen.append(address)
+        return 200, {}, PAGE
+
+    r = sc.spotcheck_url(prop(), resolver=lambda host: ["1.1.1.1", "127.0.0.1"], transport=transport)
+    assert seen == [] and r["fetched"] is False and "refused" in r["detail"]
+
+
+@pytest.mark.parametrize("address", ["100.64.0.1", "fec0::1", "::ffff:10.1.2.3", "::ffff:7f00:1", "224.0.0.1", "0.0.0.0"])
+def test_resolver_refuses_non_global_and_special_ranges(address):
+    seen = []
+
+    def transport(url, address_used, timeout):
+        seen.append(address_used)
+        return 200, {}, PAGE
+
+    r = sc.spotcheck_url(prop(), resolver=lambda host: [address], transport=transport)
+    assert seen == [] and r["fetched"] is False and "refused" in r["detail"]
+
+
+@pytest.mark.parametrize("location", _FORBIDDEN_URLS)
+def test_redirects_rerun_the_policy_and_do_not_follow_automatically(location):
+    seen = []
+
+    def transport(url, address, timeout):
+        seen.append((url, address))
+        return 302, {"Location": location}, b""
+
+    r = sc.spotcheck_url(prop(), resolver=lambda host: ["1.1.1.1"], transport=transport)
+    assert seen == [("https://example.org/engine.html", "1.1.1.1")]
+    assert r["fetched"] is False and r["matched"] is False and "refused" in r["detail"]
+
+
+def test_a_public_redirect_is_followed_and_pinned_again():
+    seen = []
+
+    def resolver(host):
+        return {"example.org": ["1.1.1.1"], "cdn.example": ["8.8.8.8"]}[host]
+
+    def transport(url, address, timeout):
+        seen.append((url, address))
+        if url.startswith("https://example.org/"):
+            return 302, {"Location": "https://cdn.example/sheet"}, b""
+        return 200, {}, PAGE
+
+    r = sc.spotcheck_url(prop(), resolver=resolver, transport=transport)
+    assert r["matched"] is True and r["quote_found"] is True
+    assert seen == [
+        ("https://example.org/engine.html", "1.1.1.1"),
+        ("https://cdn.example/sheet", "8.8.8.8"),
+    ]
+
+
+def test_at_most_three_redirects():
+    seen = []
+
+    def transport(url, address, timeout):
+        seen.append(url)
+        return 302, {"Location": f"https://example.org/hop{len(seen)}"}, b""
+
+    r = sc.spotcheck_url(prop(), resolver=lambda host: ["1.1.1.1"], transport=transport)
+    assert r["fetched"] is False and "refused" in r["detail"]
+    assert len(seen) == 4
+
+
+@pytest.mark.parametrize("page", [
+    "<script>installed weight is 75.4 kg (166.2 lb)</script > tail",
+    "<script type='text/javascript'>installed weight is 75.4 kg (166.2 lb)</script foo=1> tail",
+    "<script>installed weight is 75.4 kg (166.2 lb)",
+    "<STYLE>installed weight is 75.4 kg (166.2 lb)</STYLE > tail",
+    "<style>installed weight is 75.4 kg (166.2 lb)",
+])
+def test_script_and_style_run_to_a_real_closer_or_end_of_input(page):
+    r = sc.spotcheck_url(prop(), fetch=fetch_of(page))
+    assert r["fetched"] is True and r["quote_found"] is False and r["matched"] is False
+
+
+def test_value_preceded_by_a_thousands_group_is_the_same_number():
+    page = "<p>see 3 150 and also 3,150 units</p>"
+    r = sc.spotcheck_url(prop(value=150, quote="see 3 150"), fetch=fetch_of(page))
+    assert r["quote_found"] is True and r["value_found"] is False and r["matched"] is False
+
+
+@pytest.mark.parametrize("spelling", ["1,000,000", "1 000 000"])
+def test_grouped_candidates_cover_every_group_of_three(spelling):
+    page = f"<p>cost {spelling} units</p>"
+    r = sc.spotcheck_url(prop(value=1000000, quote=f"cost {spelling} units"), fetch=fetch_of(page))
+    assert r["value_found"] is True and r["matched"] is True
+
+
+def test_register_source_disk_full_leaves_the_old_file(tmp_path, monkeypatch):
+    p = registry(tmp_path)
+    before = p.read_bytes()
+
+    def boom(handle, text):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(sc, "_emit", boom, raising=False)
+    with pytest.raises(OSError):
+        sc.register_source(p, prop(title="Weird title pwn yes"), today="2026-10-19")
+    assert p.read_bytes() == before
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_concurrent_register_of_the_same_url_writes_one_entry(tmp_path):
+    p = registry(tmp_path)
+    ids = []
+    errors = []
+    barrier = threading.Barrier(8)
+
+    def work():
+        try:
+            barrier.wait(timeout=5)
+            ids.append(sc.register_source(p, prop(), today="2026-10-19"))
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=work) for _ in range(8)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=5)
+    assert errors == []
+    assert len(set(ids)) == 1
+    text = p.read_text()
+    assert text.count(f"\n  {ids[0]}:\n") == 1
+    assert len(yaml.safe_load(text)["sources"]) == 2
+
+
+def test_apply_patch_alias_changes_only_the_named_entry(tmp_path):
+    target = tmp_path / "powerplants.yaml"
+    target.write_text(
+        "rotax-912is:\n"
+        "  installed_lb: &shared\n"
+        "    v: 166.2\n"
+        "    flag: derived\n"
+        "    note: weighed\n"
+        "  cg_arm_in: *shared\n"
+    )
+    sc.apply_patch(tmp_path, PATCH, "rotax-sheet")
+    data = yaml.safe_load(target.read_text())["rotax-912is"]
+    assert data["cg_arm_in"]["v"] == 139.2
+    assert data["cg_arm_in"]["flag"] == "sourced"
+    assert data["cg_arm_in"]["cite"] == "rotax-sheet:p1"
+    assert data["installed_lb"] == {"v": 166.2, "flag": "derived", "note": "weighed"}
+
+
+def test_apply_patch_holds_a_lock_and_concurrent_patches_both_land(tmp_path):
+    import fcntl
+
+    target = powerplants(tmp_path)
+    lock_path = tmp_path / "powerplants.yaml.lock"
+    before = target.read_text()
+    with open(lock_path, "a+") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        finished = threading.Event()
+        errors = []
+
+        def go():
+            try:
+                sc.apply_patch(tmp_path, PATCH, "rotax-sheet")
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                finished.set()
+
+        thread = threading.Thread(target=go)
+        thread.start()
+        time.sleep(0.2)
+        assert target.read_text() == before
+        assert not finished.is_set()
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    thread.join(timeout=5)
+    assert errors == []
+    assert yaml.safe_load(target.read_text())["rotax-912is"]["cg_arm_in"]["v"] == 139.2
+
+    barrier = threading.Barrier(2)
+    errors = []
+
+    def patch(key, value):
+        try:
+            barrier.wait(timeout=5)
+            sc.apply_patch(
+                tmp_path,
+                {**PATCH, "path": ["rotax-912is", key], "value": value},
+                "rotax-sheet",
+            )
+        except Exception as exc:
+            errors.append(exc)
+
+    threads = [
+        threading.Thread(target=patch, args=("cg_arm_in", 139.2)),
+        threading.Thread(target=patch, args=("installed_lb", 170.0)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=5)
+    assert errors == [] and not any(isinstance(item, FileNotFoundError) for item in errors)
+    saved = yaml.safe_load(target.read_text())["rotax-912is"]
+    assert saved["cg_arm_in"]["v"] == 139.2
+    assert saved["installed_lb"]["v"] == 170.0
+    assert not (tmp_path / "powerplants.yaml.tmp").exists()

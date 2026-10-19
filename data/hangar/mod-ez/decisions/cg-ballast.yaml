@@ -48,10 +48,10 @@ options:
     cite: om-1980:p26
   - text: 'Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and
       reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: +2.8 in (solo 220 lb, light overnight
-      bag, mission fuel, landing). Aft limit worst: -1.6 in (solo 120 lb, no baggage, mission fuel, landing). Gross worst:
-      -173 lb (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo
-      pilots break the limit above 292 lb; aft: lighter solo pilots break the limit below 161 lb; gross: heavier solo pilots
-      break the limit above 267 lb.'
+      bag, mission fuel, landing). Aft limit worst: 1.6 in outside (solo 120 lb, no baggage, mission fuel, landing). Gross
+      worst: 173 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward:
+      heavier solo pilots break the limit above 292 lb; aft: lighter solo pilots break the limit below 161 lb; gross: heavier
+      solo pilots break the limit above 267 lb.'
     flag: derived
     computed: matrix
   why: 'baseline: the envelope and loadings the book itself prints; the 912 iS changes where the empty CG sits'
@@ -72,11 +72,11 @@ options:
     flag: derived
     computed: solo-range
   - text: 'Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and
-      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: -0.7 in (solo 220 lb, light overnight
+      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.7 in outside (solo 220 lb, light overnight
       bag, mission fuel, landing). Aft limit worst: +0.8 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff).
-      Gross worst: -96 lb (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward:
-      heavier solo pilots break the limit above 202 lb; aft: lighter solo pilots break the limit below 95 lb; gross: heavier
-      solo pilots break the limit above 344 lb.'
+      Gross worst: 96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots
+      forward: heavier solo pilots break the limit above 202 lb; aft: lighter solo pilots break the limit below 95 lb; gross:
+      heavier solo pilots break the limit above 344 lb.'
     flag: derived
     computed: matrix
   why: 'kept: costs no weight, but a heavy pilot flying solo is outside the envelope (see the solo crossing weight), so the
@@ -108,11 +108,11 @@ options:
       useful load
     flag: derived
   - text: 'Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and
-      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: -0.0 in (solo 220 lb, light overnight
+      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.0 in outside (solo 220 lb, light overnight
       bag, mission fuel, landing). Aft limit worst: +0.4 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff).
-      Gross worst: -111 lb (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward:
-      heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 108 lb; gross: heavier
-      solo pilots break the limit above 329 lb.'
+      Gross worst: 111 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots
+      forward: heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 108 lb; gross:
+      heavier solo pilots break the limit above 329 lb.'
     flag: derived
     computed: matrix
   why: 'kept: simple and testable, at a direct cost in useful load; ballast that is not fixed to the structure is a loading
@@ -149,10 +149,10 @@ options:
     flag: unknown
   - text: 'Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and
       reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: +2.0 in (solo 220 lb, light overnight
-      bag, mission fuel, landing). Aft limit worst: -1.3 in (solo 120 lb, no baggage, full fuel, takeoff). Gross worst: -96
-      lb (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots
-      break the limit above 267 lb; aft: lighter solo pilots break the limit below 151 lb; gross: heavier solo pilots break
-      the limit above 344 lb.'
+      bag, mission fuel, landing). Aft limit worst: 1.3 in outside (solo 120 lb, no baggage, full fuel, takeoff). Gross worst:
+      96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier
+      solo pilots break the limit above 267 lb; aft: lighter solo pilots break the limit below 151 lb; gross: heavier solo
+      pilots break the limit above 344 lb.'
     flag: derived
     computed: matrix
   why: 'kept: ballast that is already carried, but it pushes the light pilot case toward or past the aft limit (see the aft
@@ -178,11 +178,11 @@ options:
   - text: A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)
     flag: unknown
   - text: 'Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and
-      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: -0.0 in (solo 220 lb, light overnight
+      reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.0 in outside (solo 220 lb, light overnight
       bag, mission fuel, landing). Aft limit worst: +0.4 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff).
-      Gross worst: -96 lb (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward:
-      heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 109 lb; gross: heavier
-      solo pilots break the limit above 344 lb.'
+      Gross worst: 96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots
+      forward: heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 109 lb; gross:
+      heavier solo pilots break the limit above 344 lb.'
     flag: derived
     computed: matrix
   why: 'kept: no added weight, but it moves the propeller and cowl and touches the outer shape, which the roadmap keeps out
