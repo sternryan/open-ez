@@ -148,6 +148,14 @@ def test_real_records_give_every_unknown_an_id(tmp_path):
         assert needle in blob
 
 
+def test_radiator_aft_is_a_candidate_with_no_effect():
+    """The mass record's unscored option. The decide gate has to see it; a later effect would retire this."""
+    rec = load_records()["cg-ballast"]
+    opt = next(item for item in rec.options if item["id"] == "radiator-aft")
+    assert opt["kind"] == "candidate"
+    assert not isinstance(opt.get("effect"), dict)
+
+
 def test_cg_ballast_matrix_facts_match_the_generator():
     """Each option that has an effect carries one generated matrix fact. A hand-written sentence fails this."""
     rec = load_records()["cg-ballast"]

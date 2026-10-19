@@ -308,6 +308,17 @@ def run_job(private_dir: str, job_id: str, lane_fn, spotcheck_fn) -> dict:
                 job["error"] = "interrupted"
             _save_job(path, job)
 
+def abandon_job(private_dir: str, job_id: str, error: str) -> dict:
+    """Fail a queued or running job. Finished jobs are left untouched. The write is atomic."""
+    job = load_job(private_dir, job_id)
+    if job.get("state") not in ("queued", "running"):
+        return job
+    job["state"] = "failed"
+    job["error"] = error
+    _save_job(Path(private_dir) / "research" / f"{job_id}.json", job)
+    return job
+
+
 def finish_job(private_dir: str, job_id: str, state: str, note: str | None = None) -> dict:
     if state not in ("accepted", "dismissed"):
         raise ValueError(f"Invalid state: {state}")

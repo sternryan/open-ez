@@ -2,8 +2,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import dataclasses
-import yaml
 import os
+import sys
+import tempfile
+import yaml
 from hangar.records import dump_record
 from core.ledger import load_ledger, in_envelope
 
@@ -579,45 +581,75 @@ def ballast_for_margin(
     return Value(hi, "derived", f"solved on the loading score, ballast arm {arm_in} in")
 
 
-def write_scores(root: Path) -> int:
+# Records skipped on the last write_scores call. The CLI prints these.
+last_errors: list[str] = []
+
+
+def _replace_text(path: Path, text: str) -> None:
+    fd, name = tempfile.mkstemp(prefix=".score-", suffix=".tmp", dir=path.parent)
+    tmp = Path(name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
+
+
+def _score_file(path: Path, plants: dict) -> bool:
+    rec = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(rec, dict) or "mission_score" not in rec:
+        return False
     from hangar.matrix import matrix_for_effect
     from hangar.matrix_extra import matrix_text
 
-    with open(_DATA / "powerplants.yaml", "r") as f:
-        plants = yaml.safe_load(f)
-    n = 0
-    for path in sorted(Path(root).glob("*/decisions/*.yaml")):
-        rec = yaml.safe_load(path.read_text())
-        if "mission_score" not in rec:
-            continue
-        for opt in rec.get("options") or []:
-            if isinstance(opt, dict) and isinstance(opt.get("effect"), dict):
-                for fact in opt.get("facts") or []:
-                    if isinstance(fact, dict) and fact.get("computed") == "solo-range":
-                        fact["text"] = solo_range_text(opt["effect"])
-                    elif isinstance(fact, dict) and fact.get("computed") == "matrix":
-                        fact["text"] = matrix_text(matrix_for_effect(opt["effect"]))
-        scoring = rec.get("scoring")
-        if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
-            rec["mission_score"] = {
-                eng: {
-                    ld: dataclasses.asdict(score_loading(eng, ld, load_mission(None), plants))
-                    for ld in load_loadings()
-                }
-                for eng in scoring.get("engines", [])
+    for opt in rec.get("options") or []:
+        if isinstance(opt, dict) and isinstance(opt.get("effect"), dict):
+            for fact in opt.get("facts") or []:
+                if isinstance(fact, dict) and fact.get("computed") == "solo-range":
+                    fact["text"] = solo_range_text(opt["effect"])
+                elif isinstance(fact, dict) and fact.get("computed") == "matrix":
+                    fact["text"] = matrix_text(matrix_for_effect(opt["effect"]))
+    scoring = rec.get("scoring")
+    if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
+        rec["mission_score"] = {
+            eng: {
+                ld: dataclasses.asdict(score_loading(eng, ld, load_mission(None), plants))
+                for ld in load_loadings()
             }
-            path.write_text(dump_record(rec))
-            n += 1
-            continue
+            for eng in scoring.get("engines", [])
+        }
+    else:
         ids = {o["id"] for o in rec.get("options", []) if isinstance(o, dict)}
         if not (ids & set(plants)):
-            continue  # no engine options to score (for example the propeller record)
+            return False  # no engine options to score (for example the propeller record)
         # write_scores must NOT use private dir: pass mission=load_mission(None)
         rec["mission_score"] = {
             opt: dataclasses.asdict(score(opt, load_mission(None), plants)) for opt in plants if opt in ids
         }
-        path.write_text(dump_record(rec))
-        n += 1
+    text = dump_record(rec)
+    if path.read_text(encoding="utf-8") != text:
+        _replace_text(path, text)
+    return True
+
+
+def write_scores(root: Path) -> int:
+    """Recompute mission scores. One bad record is skipped; unchanged files are not rewritten."""
+    global last_errors
+    last_errors = []
+    with open(_DATA / "powerplants.yaml", "r") as f:
+        plants = yaml.safe_load(f)
+    n = 0
+    for path in sorted(Path(root).glob("*/decisions/*.yaml")):
+        try:
+            if _score_file(path, plants):
+                n += 1
+        except Exception:
+            last_errors.append(f"skipped {path.stem}")
     return n
 
 def main(argv: list[str] | None = None) -> int:
@@ -628,12 +660,14 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if not args.write_scores:
         ap.error("nothing to do; pass --write-scores")
-    from hangar.reopen import flag_reopen
+    from hangar import reopen as reopen_mod
 
     count = write_scores(args.root)
-    flagged = flag_reopen(args.root)
+    flagged = reopen_mod.flag_reopen(args.root)
     print(f"scores written for {count} record(s)")
     print("flagged: " + " ".join(flagged))
+    for line in list(last_errors) + list(reopen_mod.last_errors):
+        print(line, file=sys.stderr)
     return 0
 
 if __name__ == "__main__":

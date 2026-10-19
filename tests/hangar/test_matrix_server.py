@@ -411,9 +411,143 @@ def test_decide_409_when_unknown_cells_are_not_acknowledged(tmp_path):
         room.close()
 
 
+def _bare_option(oid: str, kind: str, effect=None) -> dict:
+    opt = {
+        "id": oid,
+        "label": oid,
+        "kind": kind,
+        "facts": [{"text": "a fact", "cite": "om-1980:p4"}],
+        "why": "kept",
+    }
+    if effect is not None:
+        opt["effect"] = effect
+    return opt
+
+
+def test_unscored_option_is_an_unknown_matrix_for_the_gate(tmp_path):
+    """A candidate with no effect is unscored. Dropped options are not. Deleting the check lets this decide."""
+    record = base()
+    record["scoring"] = {"kind": "loadings", "engines": ["rotax-912is"]}
+    record["options"][0]["effect"] = {"engine": "rotax-912is"}
+    record["options"][1]["effect"] = {"engine": "rotax-912is"}
+    record["options"].append(_bare_option("radiator-aft", "candidate"))
+    record["options"].append(_bare_option("gone", "dropped"))
+    record["options"].append(_bare_option("bad", "candidate", {"engine": "no-such-engine"}))
+    record["unknowns"] = [
+        _unknown("coolant-weight", "open"),
+        _unknown("arm-known", "sourced") | {"source": "om-1980"},
+    ]
+    assert matrix_for_effect({"engine": "rotax-912is"})["unknown_cells"] == 0
+    room = Room(tmp_path, record)
+    try:
+        before = room.file.read_bytes()
+        status, body, headers = room.req("GET", "/api/matrix/demo")
+        assert status == 200 and headers.get("cache-control") == "no-store"
+        by = {row["option"]: row for row in body["options"]}
+        assert by["radiator-aft"] == {
+            "option": "radiator-aft",
+            "label": "radiator-aft",
+            "public": None,
+            "private": None,
+            "unscored": True,
+        }
+        assert by["gone"]["public"] is None and by["gone"].get("unscored") is not True
+        assert by["bad"]["public"] is None and by["bad"]["error"] == "bad effect"
+        assert "unscored" not in by["alt"]
+
+        status, body, _ = room.req("POST", "/api/decide", {
+            "record_id": "demo", "picks": {"engine": "alt"}, "reason": "lighter",
+        })
+        assert status == 409
+        assert body["error"] == "unknown cells not acknowledged"
+        assert body["unknowns"] == ["coolant-weight"]
+        assert body["unscored"] == ["radiator-aft", "bad"]
+        assert room.file.read_bytes() == before
+
+        status, body, _ = room.req("POST", "/api/decide", {
+            "record_id": "demo", "picks": {"engine": "alt"}, "reason": "lighter",
+            "acknowledged_unknowns": ["coolant-weight"],
+        })
+        # the bad effect is acknowledged as an unknown matrix, then scoring it must not 500
+        assert status == 409
+        assert body == {"error": "an option's loading effect could not be scored"}
+        assert room.file.read_bytes() == before
+    finally:
+        room.close()
+
+
+def test_real_cg_ballast_cannot_be_decided_while_radiator_aft_is_unscored(tmp_path):
+    """radiator-aft has no effect, so the mass record's open unknowns must be acknowledged."""
+    record = yaml.safe_load(Path("data/hangar/mod-ez/decisions/cg-ballast.yaml").read_text())
+    room = Room(tmp_path, record)
+    try:
+        # coupled_with names the other two Mod-EZ records; decide re-validates the set
+        src = Path("data/hangar/mod-ez/decisions")
+        for name in ("powerplant-fuel-resin.yaml", "propeller.yaml"):
+            (room.file.parent / name).write_bytes((src / name).read_bytes())
+        before = room.file.read_bytes()
+        status, body, _ = room.req("GET", "/api/matrix/cg-ballast")
+        assert status == 200
+        radiator = next(row for row in body["options"] if row["option"] == "radiator-aft")
+        assert radiator["public"] is None and radiator["private"] is None and radiator["unscored"] is True
+
+        status, body, _ = room.req("POST", "/api/decide", {
+            "record_id": "cg-ballast",
+            "picks": {"cg_fix": "loading-limit"},
+            "reason": "accounted for on the matrix",
+        })
+        assert status == 409
+        assert body["error"] == "unknown cells not acknowledged"
+        assert body["unscored"] == ["radiator-aft"]
+        open_ids = [
+            "radiator-coolant-weight",
+            "installed-cg-arm",
+            "large-battery-included",
+            "owners-own-margins",
+            "propeller-weight-arm",
+        ]
+        assert body["unknowns"] == open_ids
+        assert room.file.read_bytes() == before
+
+        status, body, _ = room.req("POST", "/api/decide", {
+            "record_id": "cg-ballast",
+            "picks": {"cg_fix": "loading-limit"},
+            "reason": "accounted for on the matrix",
+            "acknowledged_unknowns": open_ids,
+        })
+        assert status == 200
+        got = yaml.safe_load(room.file.read_text())
+        assert got["status"] == "decided"
+        assert "radiator-aft" not in got["decision"]["matrix_digest"]
+        assert got["decision"]["over_unknowns"] == open_ids
+    finally:
+        room.close()
+
+
+def test_decide_bad_effect_alone_is_409_and_writes_nothing(tmp_path):
+    record = base()
+    record["scoring"] = {"kind": "loadings", "engines": ["rotax-912is"]}
+    record["options"][0]["effect"] = {"engine": "rotax-912is"}
+    record["options"][1]["effect"] = {"engine": "no-such-engine"}
+    room = Room(tmp_path, record)
+    try:
+        before = room.file.read_bytes()
+        status, body, _ = room.req("POST", "/api/decide", {
+            "record_id": "demo", "picks": {"engine": "alt"}, "reason": "lighter",
+        })
+        assert status == 409
+        assert body == {"error": "an option's loading effect could not be scored"}
+        assert "Traceback" not in json.dumps(body)
+        assert room.file.read_bytes() == before
+    finally:
+        room.close()
+
+
 def test_decide_without_unknown_cells_stores_digest_and_open_ids(tmp_path):
     record = base()
     record["scoring"] = {"kind": "loadings", "engines": ["rotax-912is"]}
+    # The book option needs an effect too: a loadings option with none is unscored and the gate would fire.
+    record["options"][0]["effect"] = {"engine": "rotax-912is"}
     record["options"][1]["effect"] = {"engine": "rotax-912is"}
     record["unknowns"] = [
         _unknown("coolant-weight", "open"),
@@ -429,7 +563,10 @@ def test_decide_without_unknown_cells_stores_digest_and_open_ids(tmp_path):
         assert status == 200
         got = yaml.safe_load(room.file.read_text())
         assert got["decision"]["over_unknowns"] == ["coolant-weight"]
-        assert got["decision"]["matrix_digest"] == {"alt": matrix_digest({"engine": "rotax-912is"})}
+        assert got["decision"]["matrix_digest"] == {
+            "book": matrix_digest({"engine": "rotax-912is"}),
+            "alt": matrix_digest({"engine": "rotax-912is"}),
+        }
     finally:
         room.close()
 

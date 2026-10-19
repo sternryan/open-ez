@@ -33,6 +33,10 @@ from hangar.records import DATA_ROOT, dump_record, load_record, load_records, va
 from hangar.reopen import flag_reopen
 from hangar.spotcheck import apply_patch, register_source, spotcheck_url
 
+_ACCEPT_FAILED = "accept failed"
+_WORKER_FAILED = "research worker failed"
+_SCORE_FAILED = "an option's loading effect could not be scored"
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _LOOPBACK = "127.0.0.1"
 
@@ -192,20 +196,178 @@ def _open_unknown_ids(data: dict[str, Any]) -> list[str]:
     return [row["id"] for row in _id_unknowns(data) if row.get("state") in ("open", "researching")]
 
 
-def _loadings_need_acknowledgement(data: dict[str, Any]) -> bool:
+def _loadings_record(data: dict[str, Any]) -> bool:
     scoring = data.get("scoring")
-    if not isinstance(scoring, dict) or scoring.get("kind") != "loadings":
-        return False
+    return isinstance(scoring, dict) and scoring.get("kind") == "loadings"
+
+
+def _counted_option(opt: dict[str, Any]) -> bool:
+    """Book and candidate options are scored. Dropped and unavailable are not."""
+    return opt.get("kind") in ("book", "candidate")
+
+
+def _unscored_ids(data: dict[str, Any]) -> list[str]:
+    """A loadings option with no effect, or an effect that will not score, is an unknown matrix."""
+    if not _loadings_record(data):
+        return []
+    found: list[str] = []
     for opt in data.get("options") or []:
-        if not isinstance(opt, dict) or not isinstance(opt.get("effect"), dict):
+        if not isinstance(opt, dict) or not _counted_option(opt):
+            continue
+        oid = opt.get("id")
+        if not isinstance(oid, str):
+            continue
+        effect = opt.get("effect")
+        if not isinstance(effect, dict):
+            found.append(oid)
             continue
         try:
-            made = matrix_for_effect(opt["effect"])
+            matrix_for_effect(effect)
         except Exception:
-            return True
+            found.append(oid)
+    return found
+
+
+def _matrix_has_unknown_cells(data: dict[str, Any]) -> bool:
+    if not _loadings_record(data):
+        return False
+    for opt in data.get("options") or []:
+        if not isinstance(opt, dict) or opt.get("kind") in ("dropped", "unavailable"):
+            continue
+        effect = opt.get("effect")
+        if not isinstance(effect, dict):
+            continue
+        try:
+            made = matrix_for_effect(effect)
+        except Exception:
+            continue
         if made.get("unknown_cells", 0):
             return True
     return False
+
+
+def _other_than_new_source(errors: list[str], source_id: str) -> list[str]:
+    needle = f"unknown source id {source_id!r}"
+    return [item for item in errors if needle not in item]
+
+
+def _validation_errors(data: dict[str, Any], graph: Any, records_root: Path) -> list[str]:
+    """Dry-run the record validator. The destination file is not touched."""
+    fd, name = tempfile.mkstemp(prefix=".record-", suffix=".yaml")
+    tmp = Path(name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(dump_record(_normalize(data)))
+        try:
+            rec = load_record(tmp)
+        except ValueError as exc:
+            return [str(exc)]
+        ids: set[str] = set()
+        for path in Path(records_root).glob("*/decisions/*.yaml"):
+            try:
+                loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, yaml.YAMLError):
+                continue
+            if isinstance(loaded, dict) and isinstance(loaded.get("id"), str):
+                ids.add(loaded["id"])
+        ids.add(rec.id)
+        return list(validate(rec, graph, ids))
+    finally:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass
+
+
+def _preview_source_id(registry: Path, proposal: dict[str, Any], today: str) -> str:
+    """The id register_source would assign, written only to a throwaway copy of the registry."""
+    fd, name = tempfile.mkstemp(prefix=".registry-", suffix=".yaml")
+    os.close(fd)
+    tmp = Path(name)
+    lock = tmp.with_name(tmp.name + ".lock")
+    try:
+        tmp.write_bytes(registry.read_bytes())
+        return register_source(tmp, proposal, today)
+    finally:
+        for item in (tmp, lock):
+            try:
+                if item.exists():
+                    item.unlink()
+            except OSError:
+                pass
+
+
+class _Snap:
+    """Bytes of the files an accept may change, so a later failure can put them back."""
+
+    def __init__(self) -> None:
+        self.files: dict[Path, bytes | None] = {}
+        self.roots: list[Path] = []
+
+    def keep(self, path: Path) -> None:
+        path = Path(path)
+        try:
+            key = path.resolve()
+        except OSError:
+            key = path
+        if key in self.files:
+            return
+        self.files[key] = path.read_bytes() if path.is_file() else None
+
+    def keep_tree(self, root: Path) -> None:
+        root = Path(root)
+        try:
+            key = root.resolve()
+        except OSError:
+            key = root
+        self.roots.append(key)
+        if not root.exists():
+            return
+        for path in root.rglob("*"):
+            if path.is_file():
+                self.keep(path)
+
+    def restore(self) -> None:
+        for path, data in self.files.items():
+            if data is None:
+                try:
+                    if path.is_file():
+                        path.unlink()
+                except OSError:
+                    pass
+                continue
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        for root in self.roots:
+            if not root.exists():
+                continue
+            for path in list(root.rglob("*")):
+                if path.is_file() and path.resolve() not in self.files:
+                    try:
+                        path.unlink()
+                    except OSError:
+                        pass
+
+
+def _patch_target(server: BriefingServer, data: dict[str, Any], proposal: dict[str, Any]) -> Path | None:
+    patch = proposal.get("patch")
+    if not isinstance(patch, dict):
+        return None
+    filename = patch.get("file")
+    if filename not in ("powerplants.yaml", "mission.yaml"):
+        return None
+    data_dir = server.data_dir
+    if data_dir is None:
+        data_dir = Path(server.records_root) / str(data.get("spot") or "")
+    return Path(data_dir) / str(filename)
+
+
+def _log_skips() -> None:
+    from hangar import mission as mission_mod
+    from hangar import reopen as reopen_mod
+
+    for line in list(mission_mod.last_errors) + list(reopen_mod.last_errors):
+        print(line, file=sys.stderr)
 
 
 def _find_unknown(data: dict[str, Any], unknown_id: object) -> dict[str, Any] | None:
@@ -226,19 +388,10 @@ def _newest_job(jobs: list[dict[str, Any]], unknown_id: object) -> dict[str, Any
     return max(matched, key=lambda job: (str(job.get("created") or ""), str(job.get("id") or "")))
 
 
-def _research_worker(server: BriefingServer, path: Path, unknown_id: str, job_id: str) -> None:
-    """Run one queued job. A failure puts the unknown back to open. Nothing else starts jobs."""
-    try:
-        job = research.run_job(str(server.private_dir), job_id, server.research_lane, server.spotcheck)
-    except Exception:
-        return
-    if not isinstance(job, dict) or job.get("state") != "failed":
-        return
+def _reopen_unknown(server: BriefingServer, path: Path, unknown_id: str) -> None:
+    """Put a researching unknown back to open. Raises if the record cannot be written."""
     with server.write_lock:
-        try:
-            data = _read_mapping(path)
-        except (OSError, ValueError, yaml.YAMLError):
-            return
+        data = _read_mapping(path)
         changed = False
         for row in data.get("unknowns") or []:
             if isinstance(row, dict) and row.get("id") == unknown_id and row.get("state") == "researching":
@@ -246,10 +399,113 @@ def _research_worker(server: BriefingServer, path: Path, unknown_id: str, job_id
                 changed = True
         if not changed:
             return
-        try:
-            _atomic_write(path, data, server.graph, server.records_root)
-        except Exception:
+        errors = _atomic_write(path, data, server.graph, server.records_root)
+        if errors:
+            raise ValueError("record rejected")
+
+
+def _research_worker(server: BriefingServer, path: Path, unknown_id: str, job_id: str) -> None:
+    """Run one queued job. Any failure abandons the job and puts the unknown back to open."""
+    try:
+        job = research.run_job(str(server.private_dir), job_id, server.research_lane, server.spotcheck)
+        if not isinstance(job, dict) or job.get("state") != "failed":
             return
+        _reopen_unknown(server, path, unknown_id)
+    except Exception:
+        try:
+            research.abandon_job(str(server.private_dir), job_id, _WORKER_FAILED)
+        except Exception:
+            pass
+        try:
+            _reopen_unknown(server, path, unknown_id)
+        except Exception:
+            print("research worker could not reopen the unknown", file=sys.stderr)
+
+
+def _recover_research(private_dir: Path, records_root: Path, graph: Any) -> None:
+    """Abandon queued and running jobs left behind by a dead process, and reopen their unknowns."""
+    try:
+        jobs = research.list_jobs(str(private_dir))
+    except Exception:
+        return
+    reopen_ids: dict[str, set[str]] = {}
+    for job in jobs:
+        if not isinstance(job, dict) or job.get("state") not in ("queued", "running"):
+            continue
+        job_id = job.get("id")
+        if not isinstance(job_id, str):
+            continue
+        try:
+            research.abandon_job(str(private_dir), job_id, "server restarted")
+        except Exception:
+            continue
+        record_id = job.get("record_id")
+        unknown_id = job.get("unknown_id")
+        if isinstance(record_id, str) and isinstance(unknown_id, str):
+            reopen_ids.setdefault(record_id, set()).add(unknown_id)
+    if not reopen_ids:
+        return
+    for path in sorted(Path(records_root).glob("*/decisions/*.yaml")):
+        try:
+            data = _read_mapping(path)
+        except Exception:
+            continue
+        record_id = data.get("id")
+        if not isinstance(record_id, str) or record_id not in reopen_ids:
+            continue
+        wanted = reopen_ids[record_id]
+        changed = False
+        for row in data.get("unknowns") or []:
+            if isinstance(row, dict) and row.get("id") in wanted and row.get("state") == "researching":
+                row["state"] = "open"
+                changed = True
+        if not changed:
+            continue
+        try:
+            _atomic_write(path, data, graph, records_root)
+        except Exception:
+            continue
+
+
+def _dismiss_job(private_dir: str, job_id: str) -> dict:
+    """Dismiss a proposed or failed job. Accept stays on the proposed-only path."""
+    job = research.load_job(private_dir, job_id)
+    state = job.get("state")
+    if state == "proposed":
+        return research.finish_job(private_dir, job_id, "dismissed")
+    if state != "failed":
+        raise ValueError(f"Job {job_id} is {state}, not proposed")
+    job["state"] = "dismissed"
+    job["note"] = None
+    research._save_job(Path(private_dir) / "research" / f"{job_id}.json", job)
+    return job
+
+
+def _drop_new_jobs(private_dir: Path, before: set[str]) -> None:
+    folder = Path(private_dir) / "research"
+    if not folder.is_dir():
+        return
+    for path in folder.glob("*.json"):
+        if path.name not in before:
+            try:
+                path.unlink()
+            except OSError:
+                pass
+
+
+def _restore_bytes(path: Path, payload: bytes) -> None:
+    fd, name = tempfile.mkstemp(prefix=".record-", suffix=".tmp", dir=path.parent)
+    tmp = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(payload)
+        os.replace(tmp, path)
+    finally:
+        if tmp.exists():
+            try:
+                tmp.unlink()
+            except OSError:
+                pass
 
 
 def _refuse_private_dir(private_dir: Path, site: Path | None = None) -> None:
@@ -601,14 +857,21 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                     self._send_json(400, {"error": "decision rejected"})
                     return
 
-            if _loadings_need_acknowledgement(data):
+            unscored = _unscored_ids(data)
+            if unscored or _matrix_has_unknown_cells(data):
                 required = _open_unknown_ids(data)
                 acknowledged = body.get("acknowledged_unknowns")
                 if not isinstance(acknowledged, list):
                     acknowledged = []
                 missing = [item for item in required if item not in acknowledged]
                 if missing:
-                    self._send_json(409, {"error": "unknown cells not acknowledged", "unknowns": missing})
+                    payload: dict[str, Any] = {
+                        "error": "unknown cells not acknowledged",
+                        "unknowns": missing,
+                    }
+                    if unscored:
+                        payload["unscored"] = unscored
+                    self._send_json(409, payload)
                     return
 
             # Success
@@ -622,9 +885,18 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             scoring = data.get("scoring")
             if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
                 digest: dict[str, str] = {}
-                for opt in data.get("options") or []:
-                    if isinstance(opt, dict) and isinstance(opt.get("effect"), dict) and isinstance(opt.get("id"), str):
-                        digest[opt["id"]] = matrix_digest(opt["effect"])
+                try:
+                    for opt in data.get("options") or []:
+                        if (
+                            isinstance(opt, dict)
+                            and isinstance(opt.get("effect"), dict)
+                            and isinstance(opt.get("id"), str)
+                            and opt.get("kind") not in ("dropped", "unavailable")
+                        ):
+                            digest[opt["id"]] = matrix_digest(opt["effect"])
+                except Exception:
+                    self._send_json(409, {"error": _SCORE_FAILED})
+                    return
                 decision["matrix_digest"] = digest
             updated["decision"] = decision
             
@@ -678,6 +950,7 @@ class BriefingHandler(SimpleHTTPRequestHandler):
             return
         data = _read_mapping(path)
         jobs = research.list_jobs(str(self.server.private_dir), record_id)
+        loadings = _loadings_record(data)
         options = []
         for opt in data.get("options") or []:
             if not isinstance(opt, dict):
@@ -689,7 +962,9 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                 "private": None,
             }
             effect = opt.get("effect")
-            if isinstance(effect, dict):
+            if loadings and _counted_option(opt) and not isinstance(effect, dict):
+                entry["unscored"] = True
+            elif isinstance(effect, dict):
                 try:
                     entry["public"] = matrix_for_effect(effect)
                 except Exception:
@@ -739,18 +1014,29 @@ class BriefingHandler(SimpleHTTPRequestHandler):
                 self._send_json(400, {"error": "unknown is not open"})
                 return
             rec = load_record(path)
+            original = path.read_bytes()
+            unknown["state"] = "researching"
+            if self._commit(path, data):
+                return
+            research_dir = Path(self.server.private_dir) / "research"
+            before_jobs = {item.name for item in research_dir.glob("*.json")} if research_dir.is_dir() else set()
+
+            def _undo(code: int, error: str) -> None:
+                _restore_bytes(path, original)
+                _drop_new_jobs(Path(self.server.private_dir), before_jobs)
+                self._send_json(code, {"error": error})
+
             try:
                 job = research.queue_job(str(self.server.private_dir), rec, unknown_id)
             except KeyError as exc:
-                self._send_json(400, {"error": str(exc)})
+                _undo(400, str(exc))
                 return
             except ValueError as exc:
                 text = str(exc)
-                code = 409 if "already" in text else 400
-                self._send_json(code, {"error": text})
+                _undo(409 if "already" in text else 400, text)
                 return
-            unknown["state"] = "researching"
-            if self._commit(path, data):
+            except Exception:
+                _undo(409, "research could not be queued")
                 return
         threading.Thread(
             target=_research_worker,
@@ -786,56 +1072,80 @@ class BriefingHandler(SimpleHTTPRequestHandler):
         from core.sources import load_registry
         from hangar.mission import write_scores
 
-        spot = job.get("spotcheck")
-        if job.get("state") != "proposed" or not (isinstance(spot, dict) and spot.get("matched") is True):
-            reason = "job is not proposed" if job.get("state") != "proposed" else "spot-check did not match"
-            self._send_json(409, {"error": reason})
-            return
-        proposal = job.get("proposal")
-        if not isinstance(proposal, dict):
-            self._send_json(409, {"error": "job has no proposal"})
-            return
-        registry = Path(self.server.registry_path)
-        before = registry.read_text(encoding="utf-8")
-        try:
-            source_id = register_source(registry, proposal, date.today().isoformat())
-            load_registry.cache_clear()
-            patch = proposal.get("patch")
-            if patch is not None:
-                current = _read_mapping(path)
-                data_dir = self.server.data_dir
-                if data_dir is None:
-                    data_dir = self.server.records_root / str(current.get("spot") or "")
-                apply_patch(data_dir, patch, source_id)
-        except Exception as exc:
-            if registry.exists() and registry.read_text(encoding="utf-8") != before:
-                registry.write_text(before, encoding="utf-8")
-            load_registry.cache_clear()
-            self._send_json(409, {"error": str(exc)})
-            return
         with self.server.write_lock:
-            data = _read_mapping(path)
-            unknown = _find_unknown(data, job.get("unknown_id"))
-            if unknown is None:
-                self._send_json(400, {"error": "unknown unknown"})
-                return
-            unknown["state"] = "sourced"
-            unknown["source"] = source_id
-            if self._commit(path, data):
-                return
             try:
-                finished = research.finish_job(str(self.server.private_dir), job["id"], "accepted")
-            except (KeyError, ValueError) as exc:
-                self._send_json(409, {"error": str(exc)})
+                job = research.load_job(str(self.server.private_dir), job["id"])
+            except KeyError:
+                self._send_json(404, {"error": "unknown job"})
                 return
-            write_scores(self.server.records_root)
-            reopened = flag_reopen(self.server.records_root)
+            spot = job.get("spotcheck")
+            if job.get("state") != "proposed" or not (isinstance(spot, dict) and spot.get("matched") is True):
+                reason = "job is not proposed" if job.get("state") != "proposed" else "spot-check did not match"
+                self._send_json(409, {"error": reason})
+                return
+            proposal = job.get("proposal")
+            if not isinstance(proposal, dict):
+                self._send_json(409, {"error": "job has no proposal"})
+                return
+            registry = Path(self.server.registry_path)
+            today = date.today().isoformat()
+            try:
+                source_id = _preview_source_id(registry, proposal, today)
+                data = _read_mapping(path)
+                updated = copy.deepcopy(data)
+                unknown = _find_unknown(updated, job.get("unknown_id"))
+                if unknown is None:
+                    self._send_json(409, {"error": _ACCEPT_FAILED})
+                    return
+                unknown["state"] = "sourced"
+                unknown["source"] = source_id
+                if _other_than_new_source(
+                    _validation_errors(updated, self.server.graph, self.server.records_root), source_id
+                ):
+                    self._send_json(409, {"error": _ACCEPT_FAILED})
+                    return
+            except Exception:
+                self._send_json(409, {"error": _ACCEPT_FAILED})
+                return
+
+            snap = _Snap()
+            snap.keep(registry)
+            target = _patch_target(self.server, data, proposal)
+            if target is not None:
+                snap.keep(target)
+            snap.keep(Path(self.server.private_dir) / "research" / f"{job['id']}.json")
+            snap.keep_tree(self.server.records_root)
+            try:
+                source_id = register_source(registry, proposal, today)
+                load_registry.cache_clear()
+                unknown["source"] = source_id
+                if _validation_errors(updated, self.server.graph, self.server.records_root):
+                    raise RuntimeError("record rejected")
+                patch = proposal.get("patch")
+                if patch is not None:
+                    data_dir = self.server.data_dir
+                    if data_dir is None:
+                        data_dir = self.server.records_root / str(data.get("spot") or "")
+                    apply_patch(data_dir, patch, source_id)
+                errors = _atomic_write(path, updated, self.server.graph, self.server.records_root)
+                if errors:
+                    raise RuntimeError("record rejected")
+                finished = research.finish_job(str(self.server.private_dir), job["id"], "accepted")
+                write_scores(self.server.records_root)
+                reopened = flag_reopen(self.server.records_root)
+                _log_skips()
+            except Exception:
+                snap.restore()
+                load_registry.cache_clear()
+                self._send_json(409, {"error": _ACCEPT_FAILED})
+                return
         self._send_json(200, {"ok": True, "job": finished, "reopened": reopened})
 
     def _close_research(self, path: Path, job: dict[str, Any], unknown_state: str) -> None:
         with self.server.write_lock:
             try:
-                finished = research.finish_job(str(self.server.private_dir), job["id"], "dismissed")
+                fresh = research.load_job(str(self.server.private_dir), job["id"])
+                finished = _dismiss_job(str(self.server.private_dir), fresh["id"])
             except (KeyError, ValueError) as exc:
                 self._send_json(409, {"error": str(exc)})
                 return
@@ -882,6 +1192,7 @@ def make_server(
         _REPO_ROOT / "data" / "sources" / "registry.yaml" if registry_path is None else Path(registry_path)
     )
     server.data_dir = None if data_dir is None else Path(data_dir)
+    _recover_research(Path(private_dir), Path(records_root), graph)
     return server
 
 
