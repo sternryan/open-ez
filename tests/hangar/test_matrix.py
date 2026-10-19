@@ -181,3 +181,39 @@ def test_public_matrix_ignores_the_private_directory(tmp_path, monkeypatch):
     (tmp_path / "mission.yaml").write_text(yaml.safe_dump({"pilots": [{"label": "Pat", "lb": 133}], "bags_lb": 31, "leg_nm": 100}))
     monkeypatch.setenv("HANGAR_PRIVATE_DIR", str(tmp_path))
     assert json.dumps(mx.matrix(E), sort_keys=True) == base
+
+
+# --- review round 1: hostile mission data and flag handling ---------------------------------------------------------
+
+@pytest.mark.parametrize("patch", [
+    {"leg_nm": None}, {"reserve_min": None}, {"leg_nm": "abc"}, {"cruise_ktas": V(0)}, {"cruise_ktas": V("fast")},
+    {"fuel_density_lb_per_gal": V(-1.0)},
+])
+def test_odd_mission_values_make_unknown_cells_not_exceptions(patch):
+    m = mx.matrix("x", plants=PLANT, mission={**MISSION, **patch})
+    assert m["unknown_cells"] == m["cell_count"] and m["flag"] == "unknown"
+
+
+@pytest.mark.parametrize("key", ["leg_nm", "reserve_min", "fuel_capacity_gal", "cruise_ktas", "fuel_density_lb_per_gal"])
+def test_missing_mission_keys_make_unknown_cells(key):
+    mission_ = {k: v for k, v in MISSION.items() if k != key}
+    m = mx.matrix("x", plants=PLANT, mission=mission_)
+    assert m["unknown_cells"] == m["cell_count"]
+
+
+def test_unknown_cells_counts_flagged_cells_too():
+    ex = [{"name": "x", "weight_lb": 5.0, "arm_in": 100.0, "flag": "unknown"}]
+    m = mx.matrix("x", extras=ex, plants=PLANT, mission=MISSION)
+    assert m["flag"] == "unknown" and m["unknown_cells"] == m["cell_count"]
+
+
+def test_unrecognised_flags_are_not_passed_through():
+    ex = [{"name": "x", "weight_lb": 5.0, "arm_in": 100.0, "flag": "bogus"}]
+    m = mx.matrix("x", extras=ex, plants=PLANT, mission=MISSION)
+    assert {c["flag"] for c in m["cells"]} <= {"sourced", "derived", "unknown"}
+
+
+def test_nonpositive_gross_is_unknown_not_a_crash():
+    ex = [{"name": "negative", "weight_lb": -5000.0, "arm_in": 100.0, "flag": "derived"}]
+    m = mx.matrix("x", extras=ex, plants=PLANT, mission=MISSION)
+    assert m["unknown_cells"] == m["cell_count"]

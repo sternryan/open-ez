@@ -36,7 +36,10 @@ def test_matrix_digest_is_stable_and_follows_the_numbers():
 def test_matrix_text_names_the_worst_cells_and_crossings():
     t = mxe.matrix_text(public(option_effects()["battery-aft"]))
     assert "aft" in t and "forward" in t and "gross" in t
-    assert "-1.3 in" in t or "-1.26" in t
+    assert "1.3 in outside" in t          # a negative margin reads as outside the limit, never as a bare minus sign
+    assert "96 lb outside" in t           # gross: 96.44 lb over
+    assert "+2.0 in" in t                 # the forward worst of battery-aft is a positive margin
+    assert "-1." not in t
     assert "151" in t  # the aft crossing weight
     assert "no owner weights" in t
 
@@ -96,3 +99,20 @@ def test_private_bags_default_to_none_and_the_public_light_bag(tmp_path):
     m = mxe.private_matrix(option_effects()["loading-limit"], d)
     assert m["cell_count"] == 1 * 2 * 3 * 2
     assert {c["bag_label"] for c in m["cells"]} == {"no bag", "light overnight bag"}
+
+
+def test_private_inputs_are_capped(tmp_path):
+    pilots = [{"label": f"P{i}", "lb": 100 + i} for i in range(40)]
+    d = write_private(tmp_path, {"pilots": pilots, "bags_lb": list(range(1, 40))})
+    m = mxe.private_matrix(option_effects()["loading-limit"], d)
+    # at most 8 pilots (8 solos + 56 ordered pairs) and at most 6 private bags plus the empty one
+    assert m["cell_count"] <= (8 + 56) * 7 * 3 * 2
+    assert not any(c["occupancy_label"].startswith("P8") for c in m["cells"])
+
+
+def test_private_labels_are_single_line_and_short(tmp_path):
+    d = write_private(tmp_path, {"pilots": [{"label": "A" * 500 + "\nsecond line", "lb": 150.5}]})
+    m = mxe.private_matrix(option_effects()["loading-limit"], d)
+    for c in m["cells"]:
+        assert "\n" not in c["occupancy_label"] and len(c["occupancy_label"]) <= 60
+        assert "\n" not in c["loading"]
