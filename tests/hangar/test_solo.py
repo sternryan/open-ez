@@ -230,3 +230,34 @@ def test_empty_or_list_private_file_is_just_no_pilots(tmp_path, monkeypatch):
         (tmp_path / "mission.yaml").write_text(text)
         monkeypatch.setenv("HANGAR_PRIVATE_DIR", str(tmp_path))
         assert mission.score_pilots(E) == []
+
+
+def test_write_scores_regenerates_the_solo_range_facts(tmp_path):
+    """The solo-range fact of each fix is computed by the scores CLI: a tampered or stale text is rewritten, never trusted."""
+    import shutil
+    from hangar.records import DATA_ROOT, load_records
+
+    root = tmp_path / "hangar"
+    shutil.copytree(DATA_ROOT, root)
+    p = root / "mod-ez" / "decisions" / "cg-ballast.yaml"
+    rec = yaml.safe_load(p.read_text())
+    want = {}
+    for o in rec["options"]:
+        for f in o["facts"]:
+            if f.get("computed") == "solo-range":
+                want[o["id"]] = f["text"]
+                f["text"] = "typed by hand: 999 lb"
+    assert set(want) == {"book-engine-cg", "loading-limit", "fixed-aft-ballast", "battery-aft", "engine-arm-aft"}
+    from hangar.records import dump_record
+    p.write_text(dump_record(rec))
+    mission.write_scores(root)
+    got = {o["id"]: next(f["text"] for f in o["facts"] if f.get("computed") == "solo-range")
+           for o in load_records(root)["cg-ballast"].options if o["id"] in want}
+    assert got == want
+    mission.write_scores(root)  # idempotent
+    assert {o["id"]: next(f["text"] for f in o["facts"] if f.get("computed") == "solo-range")
+            for o in load_records(root)["cg-ballast"].options if o["id"] in want} == want
+    # the fix that adds ballast moves the crossing weight
+    c0 = solo_crossing_weight(E).v
+    c1 = solo_crossing_weight(E, extras=[{"name": "ballast", "weight_lb": 14.6, "arm_in": 141.05, "flag": "derived"}]).v
+    assert f"{c0:.0f} lb" in want["loading-limit"] and f"{c1:.0f} lb" in want["fixed-aft-ballast"] and c1 > c0

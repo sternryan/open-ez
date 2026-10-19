@@ -43,6 +43,7 @@ options:
       limit: 292 lb. Landing margin at 120 lb +7.3 in, 160 lb +5.4 in, 200 lb +3.6 in, 220 lb +2.8 in. Public weight range,
       no owner weights'
     flag: derived
+    computed: solo-range
   - text: 'Book engine, light pilot (135 lb): CG 104.0 in at takeoff, aft of the 103.0 in limit, as in the book''s own sample'
     cite: om-1980:p26
   why: 'baseline: the envelope and loadings the book itself prints; the 912 iS changes where the empty CG sits'
@@ -61,6 +62,7 @@ options:
       limit: 202 lb. Landing margin at 120 lb +3.9 in, 160 lb +1.9 in, 200 lb +0.1 in, 220 lb -0.7 in. Public weight range,
       no owner weights'
     flag: derived
+    computed: solo-range
   why: 'kept: costs no weight, but a heavy pilot flying solo is outside the envelope (see the solo crossing weight), so the
     airplane would need a maximum-front-seat-weight or minimum-passenger rule; two adults stay inside by only 0.9 in'
 - id: fixed-aft-ballast
@@ -85,6 +87,7 @@ options:
       limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range,
       no owner weights'
     flag: derived
+    computed: solo-range
   - text: With that ballast the heavy solo landing CG is 97.5 in and empty weight rises by the same 14.6 lb, which comes off
       useful load
     flag: derived
@@ -116,6 +119,7 @@ options:
       limit: 267 lb. Landing margin at 120 lb +6.9 in, 160 lb +4.8 in, 200 lb +2.9 in, 220 lb +2.0 in. Public weight range,
       no owner weights'
     flag: derived
+    computed: solo-range
   - text: Whether the book airplane carries the larger battery in its 730 lb empty weight (the ledger notes it may carry the
       small one); if it carries the small one the figures above are an upper bound
     flag: unknown
@@ -138,6 +142,7 @@ options:
       limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range,
       no owner weights'
     flag: derived
+    computed: solo-range
   - text: A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)
     flag: unknown
   why: 'kept: no added weight, but it moves the propeller and cowl and touches the outer shape, which the roadmap keeps out

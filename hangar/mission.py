@@ -526,6 +526,26 @@ def apply_effect(effect: dict | None, plants: dict | None = None) -> tuple[str, 
     return engine, list(effect.get("extras") or []), plants
 
 
+def solo_range_text(effect: dict | None) -> str:
+    """The sentence the record states for a fix: crossing weight at the forward limit and landing margins across the public range."""
+    engine, extras, plants = apply_effect(effect)
+    fwd = load_ledger()["envelope"]["fwd_fs"]
+    c = solo_crossing_weight(engine, extras=extras, plants=plants)
+    rows = {r["pilot_lb"]: r for r in solo_table(engine, extras=extras, plants=plants)}
+    pts = ", ".join(
+        f"{lb} lb {rows[lb]['fwd_margin_in']:+.1f} in" if rows[lb]["fwd_margin_in"] is not None else f"{lb} lb unknown"
+        for lb in (120, 160, 200, 220)
+    )
+    if c.v is not None:
+        head = f"solo pilot weight at the {fwd} in forward limit: {c.v:.0f} lb"
+    elif "no crossing" in c.note:
+        head = f"solo pilot weight at the {fwd} in forward limit: none in the 120 to 220 lb range (no crossing up to 400 lb)"
+    else:
+        head = f"solo pilot weight at the {fwd} in forward limit: unknown ({c.note})"
+    return (f"Solo, rear seat empty, mission fuel and baggage, reserve only at landing; {head}. "
+            f"Landing margin at {pts}. Public weight range, no owner weights")
+
+
 def ballast_for_margin(
     option_id: str,
     loading_id: str,
@@ -567,6 +587,11 @@ def write_scores(root: Path) -> int:
         rec = yaml.safe_load(path.read_text())
         if "mission_score" not in rec:
             continue
+        for opt in rec.get("options") or []:
+            if isinstance(opt, dict) and isinstance(opt.get("effect"), dict):
+                for fact in opt.get("facts") or []:
+                    if isinstance(fact, dict) and fact.get("computed") == "solo-range":
+                        fact["text"] = solo_range_text(opt["effect"])
         scoring = rec.get("scoring")
         if isinstance(scoring, dict) and scoring.get("kind") == "loadings":
             rec["mission_score"] = {
