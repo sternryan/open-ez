@@ -8880,7 +8880,7 @@ def test_public_briefing_room_is_read_only(public_briefing_site):
             pg.goto(url + "briefing.html#powerplant-fuel-resin")
             pg.wait_for_selector('[data-test="recommendation"]')
             assert pg.locator('[data-test="recommendation"]').is_visible()
-            assert pg.get_by_text("awaiting briefing", exact=True).is_visible()
+            assert pg.get_by_text("decided in briefing 1", exact=True).is_visible()  # the owner closed the record (2026-10-18)
             assert pg.locator('[data-test="chat"]').count() == 0
             assert pg.locator('[data-test="decide"]').count() == 0
             assert pg.locator('[data-test="reopen"]').count() == 0
