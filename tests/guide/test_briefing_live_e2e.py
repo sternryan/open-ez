@@ -56,6 +56,9 @@ def site(tmp_path_factory):
 def live(tmp_path, site, monkeypatch):
     records = tmp_path / "records"
     shutil.copytree(ROOT / "data" / "hangar", records)
+    # The flow under test starts from open unknowns; the real record may already have some researching.
+    cg = records / "mod-ez" / "decisions" / "cg-ballast.yaml"
+    cg.write_text(cg.read_text().replace("  state: researching\n", "  state: open\n"))
     registry = tmp_path / "registry.yaml"
     shutil.copy(ROOT / "data" / "sources" / "registry.yaml", registry)
     priv = tmp_path / "private"
