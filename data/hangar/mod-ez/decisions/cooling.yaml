@@ -34,30 +34,32 @@ options:
   kind: candidate
   facts:
   - &id001
-    text: The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine
-    cite: rotax-im-912i:p1
+    text: The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine (base engine on p96,
+      radiator on p97)
+    cite: rotax-im-912i:p97
   - &id002
     text: The maker lists the oil radiator at 1.0 kg (2.2 lb).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p96
   - &id003
     text: The maker lists the oil cooler at 0.6 kg (1.32 lb).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p96
   - &id004
     text: The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p138
   - &id005
     text: The maker lists a cooling air baffle at 0.36 kg (0.79 lb); the manual does not say whether this is the tractor or
       the pusher part
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p96
   - &id006
     text: The maker lists the overflow bottle at approximately 0.5 l (0.13 US gal).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p136
   - &id007
-    text: The maker's hose specification gives an inner diameter of 25 mm for coolant hoses.
-    cite: rotax-im-912i:p1
+    text: The maker says an aluminium tube with a 25 mm (1 in) inner diameter can be used instead of longer coolant hoses,
+      and lists inner diameter 25 mm in that tube's specification.
+    cite: rotax-im-912i:p132
   - &id008
     text: The maker's coolant capacity table lists a 2 m coolant hose with an inner diameter of 18 mm.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p138
   - &id009
     text: SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol
       coolant on the 912 i Series.
@@ -115,8 +117,8 @@ unknowns:
   - radiator-aft-duct
   state: open
 - id: coolant-hose-diameter
-  text: 'Coolant hose inner diameter: the 2020 installation manual gives 25 mm in its hose specification and an 18 mm hose
-    in its coolant capacity table'
+  text: 'Coolant hose inner diameter: the 2020 installation manual gives 25 mm for the aluminium tube that can replace longer
+    hoses (p132) and an 18 mm hose in its coolant capacity table (p138)'
   how: the current maker installation manual for the engine serial number
   affects:
   - radiator-nose-duct

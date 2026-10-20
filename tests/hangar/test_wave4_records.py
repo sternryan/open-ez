@@ -73,3 +73,34 @@ def test_staged_cg_ballast_unknowns_are_researching_not_sourced():
     for uid in ("installed-cg-arm", "radiator-coolant-weight", "propeller-weight-arm"):
         assert states[uid] == "researching"
     assert states["owners-own-margins"] == "open"
+
+
+def test_shared_battery_versus_ground_isolation_is_an_open_unknown():
+    r = rec("electrical")
+    by = {o["id"]: o for o in r["options"]}
+    ground = [f for f in by["ems-isolated-one-battery"]["facts"] if "must not be interconnected" in f["text"]]
+    assert ground, "the one-battery option cites the ground-isolation rule"
+    u = {u["id"]: u for u in r["unknowns"]}["shared-battery-ground-isolation"]
+    assert u["state"] == "open" and "ems-isolated-one-battery" in u["affects"]
+    assert "ems-isolated-two-batteries" not in u["affects"]
+
+
+# physical PDF pages of the installation manual that the new records rest on
+IM_PAGES = {"p51", "p52", "p53", "p55", "p57", "p60", "p64", "p96", "p97", "p104", "p108", "p115", "p132", "p136", "p138"}
+
+
+@pytest.mark.parametrize("name", NEW)
+def test_installation_manual_citations_name_a_physical_page_not_p1(name):
+    n = 0
+    for o in rec(name)["options"]:
+        for f in o.get("facts", []):
+            if f.get("cite", "").startswith("rotax-im-912i:"):
+                sid, page = parse_citation(f["cite"])
+                assert f"p{page}" in IM_PAGES, f["cite"]
+                n += 1
+    assert n >= 1
+
+
+def test_the_installation_manual_registry_note_describes_physical_pages():
+    note = load_registry()["rotax-im-912i"]["note"]
+    assert "physical" in note and "cite p1" not in note

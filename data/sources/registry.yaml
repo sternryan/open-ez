@@ -345,7 +345,7 @@ sources:
     obtain: https://www.rotax-owner.com/pdf/IM_912_iSeries_ED2_R1.pdf
     copy: transcription
     page_basis: pdf
-    note: "a single document or web page, cite p1; read and noted, never stored in the repo."
+    note: "200-page PDF; cite the physical PDF page, one-based (not the chapter page label, which restarts in each chapter). Pages used: 24-00-00 electrical power p51-p64, 72-00-00 technical data p96-p97, 73-00-00 fuel system p104-p115, 75-00-00 cooling p132-p138. Read and noted, never stored in the repo."
   mt-mtv34:
     title: "MT-Propeller product page, UL/LSA propellers (MTV-33 and MTV-34)"
     edition: "web page read 2026-10-18; two or three blade hydraulic constant speed or ground adjustable composite propeller for the Rotax 912/914 series, MTV-34 also for the 915 iS; 3-blade 9 kg (19.8 lb) plus governor 1 kg; EASA certified"

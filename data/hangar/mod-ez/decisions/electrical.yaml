@@ -32,7 +32,7 @@ options:
   kind: book
   facts:
   - text: The engine-management electrical system is isolated from the rest of the aircraft.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p53
   - text: The book wiring does not provide an isolated engine ground, the engine-management supply path or the ammeter the
       maker requires, so it cannot be kept unchanged
     flag: derived
@@ -45,29 +45,30 @@ options:
   facts:
   - &id001
     text: The engine-management electrical system is isolated from the rest of the aircraft.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p53
   - &id002
     text: Airframe ground and EMS ground must not be interconnected.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p55
   - &id003
-    text: Lane A and Lane B are two ECU modules, each able to control the engine, and both are on in error-free operation.
-    cite: rotax-im-912i:p1
+    text: The fuse box has separate plug connections X1 (LANE A) and X2 (LANE B), which ensure power distribution to the EMS.
+    cite: rotax-im-912i:p60
   - &id004
-    text: A generator feeds both lanes together. Generator A does not feed Lane A, and generator B does not feed Lane B.
-    cite: rotax-im-912i:p1
+    text: Generator A (14.2 V/16 A) supplies the EMS after the system check and generator B (14.2 V/30 A) supplies the aircraft
+      instruments and charges the battery.
+    cite: rotax-im-912i:p57
   - &id005
     text: The aircraft battery must be at least 16 Ah and must hold at least 9 V on the ECU bus during start-up.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p52
   - &id006
     text: The battery technical data require at least 350 A cold-cranking amperes at -18 °C (SAE J537).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p52
   - text: If both EMS alternators fail, the 2012 operators manual says to switch on the backup battery switch so the aircraft
       battery supplies power.
     cite: rotax-912is-om:p1
   - text: The aircraft manufacturer must provide an ammeter because the EMS does not monitor generator-B charging.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p57
   - text: The 2020 installation manual requires a slow-blowing 50 A fuse or circuit breaker for the rectifier regulator.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p64
   why: 'kept: one battery to carry, fed through the maker''s backup switch when both engine generators fail; the battery must
     meet the maker''s minimum'
 - id: ems-isolated-two-batteries
@@ -104,11 +105,15 @@ options:
     cite: etx-series-lithium-batteries-etx900-prod:p1
   - text: The EarthX ETX900 product-spec PDF lists dimensions 6.5 x 3.1 x 6.6 in (166 x 79 x 168 mm).
     cite: etx-series-lithium-batteries-etx900-prod:p1
-  - text: 15.6 Ah is below the maker's 16 Ah minimum for the aircraft battery, so this battery would need the maker's agreement
+  - text: 15.6 Ah is below the maker's 16 Ah minimum for the aircraft battery; the maker's note leaves a lower-capacity choice
+      to the aircraft manufacturer, so maker agreement is not stated as required
     flag: derived
+  - text: The maker's note says the choice of a lower-capacity battery is up to the aircraft manufacturer, and that extra
+      electrical loads affect battery performance during starting.
+    cite: rotax-im-912i:p52
   - text: The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that
       responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p51
   - text: Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked
       here
     flag: unknown
@@ -121,11 +126,15 @@ options:
     cite: earthx-etx680c-product-page:p1
   - text: EarthX ETX680C is rated 12.4 Ah at the 1C rate, in a 5.9 x 3.4 x 4.5 in LiFePO4 case.
     cite: earthx-etx680c-product-page:p1
-  - text: 12.4 Ah is below the maker's 16 Ah minimum for the aircraft battery
+  - text: 12.4 Ah is below the maker's 16 Ah minimum for the aircraft battery; the maker's note leaves a lower-capacity choice
+      to the aircraft manufacturer
     flag: derived
+  - text: The maker's note says the choice of a lower-capacity battery is up to the aircraft manufacturer, and that extra
+      electrical loads affect battery performance during starting.
+    cite: rotax-im-912i:p52
   - text: The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that
       responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p51
   - text: Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked
       here
     flag: unknown
@@ -142,7 +151,7 @@ options:
   - text: Odyssey lists the ODS-AGM16L (PC680) at 12 V.
     cite: ods-agm16l-pc680-odyssey-extreme-series-:p1
   - text: The maker limits the aircraft battery's internal resistance to a maximum of 10 mohm at -18 C.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p52
   - text: Its cold-cranking amps and internal resistance against the maker's limits are not checked here
     flag: unknown
   why: 'kept: meets the maker''s 16 Ah figure, at 15.4 lb the heaviest choice; its cold-cranking and internal resistance are
@@ -164,6 +173,13 @@ unknowns:
   - lifepo4-etx900
   - lifepo4-etx680c
   - agm-pc680
+  state: open
+- id: shared-battery-ground-isolation
+  text: Whether one aircraft battery shared by the airframe and the engine-management supply can satisfy the maker's rule
+    that airframe ground and EMS ground must not be interconnected (how the battery negative and the backup switch are wired)
+  how: the maker's wiring diagram and installation support, against the drawn grounding scheme
+  affects:
+  - ems-isolated-one-battery
   state: open
 - id: external-alternator-current
   text: Current available from the external alternator at cruise and the airframe load budget

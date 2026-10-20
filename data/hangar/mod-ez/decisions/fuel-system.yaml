@@ -40,34 +40,39 @@ options:
     cite: easa-tcds-e121:p1
   - &id002
     text: Two electric fuel pumps are connected in series with bypass valves, and the engine runs on either or both.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p104
   - &id003
-    text: A coarse filter of 50 to 67 micron is required between the tank and the fuel pumps.
-    cite: rotax-im-912i:p1
+    text: The coarse and fine filter mesh sizes (previously recorded as 50 to 67 micron and 8 to 12 micron) were not found
+      on the installation manual pages checked; page unresolved
+    flag: unknown
   - &id004
-    text: The fine filter mesh size is 8 to 12 micron.
-    cite: rotax-im-912i:p1
+    text: 'Fine filter requirement: see the coarse filter entry; page unresolved'
+    flag: unknown
   - &id005
-    text: Feed, return and vent lines should avoid non-drainable low points
-    cite: rotax-im-912i:p1
+    text: The non-drainable low point guidance for feed, return and vent lines was not found on the installation manual pages
+      checked; page unresolved
+    flag: unknown
   - &id006
-    text: The current installation manual requires a vapor-lock-resistant fuel system
-    cite: rotax-im-912i:p1
+    text: The maker says fuel lines on the suction side of the fuel pump must be insulated against heat in the engine compartment
+      and routed away from hot engine components, for prevention of vapor locks.
+    cite: rotax-im-912i:p108
   - &id007
     text: Fuels with more than 10 percent ethanol are not permitted.
     cite: si-912-i-001-r12-selection-of-suitable-o:p1
   - &id008
     text: The maker's minimum inner diameter for the fuel return line is 7.5 mm (0.3 in).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p108
   - &id009
     text: The maker recommends a restricted bypass line between the pump module outlet and the return line to vent air from
       the fuel system.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p108
   - &id010
-    text: The maker says vapor bubbles in the return line must be efficiently vented out of the fuel system to atmosphere.
-    cite: rotax-im-912i:p1
-  - text: The engine side-view callout names separate return connections for tractor and pusher.
-    cite: rotax-im-912i:p1
+    text: The statement that vapor bubbles in the return line must be vented to atmosphere was not found on the installation
+      manual pages checked; page unresolved
+    flag: unknown
+  - text: The engine side-view callout naming separate tractor and pusher return connections was not found on the installation
+      manual pages checked; page unresolved
+    flag: unknown
   - text: The routing of a return line from the engine to the strake tanks, its length and pressure drop, are not sourced
     flag: unknown
   why: 'kept: the maker''s architecture, with two pumps and a return connection; the cost is a return line along the full
@@ -86,12 +91,13 @@ options:
   - *id008
   - *id009
   - *id010
-  - text: The engine side-view callout names separate return connections for tractor and pusher.
-    cite: rotax-im-912i:p1
+  - text: The engine side-view callout naming separate tractor and pusher return connections was not found on the installation
+      manual pages checked; page unresolved
+    flag: unknown
   - text: The maker's favourable header-tank layout has a volume of at least 5 l (1.32 US gal).
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p115
   - text: The maker says a sump should be integrated into a header tank.
-    cite: rotax-im-912i:p1
+    cite: rotax-im-912i:p115
   - text: Whether the maker accepts a header tank return in place of a return to the main tank on a pusher with two strake
       tanks is not sourced
     flag: unknown
