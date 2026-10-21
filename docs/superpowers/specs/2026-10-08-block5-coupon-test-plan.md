@@ -492,7 +492,148 @@ tighter. A member or shop oven would need the same survey.
   need a new sizing-rule row, since the rule allows only the plain-weave set.
 - **Hot/wet conditions:** they replace the 0.8 knockdown with data.
 
-## 12. Needs Ryan
+## 12. UL94 fuel immersion (tank interior resin)
+
+Status: draft addition, 2026-10-20. Paper only: nothing is bought, booked, or cured from this section. These specimens sit outside the section 4 totals and outside the 18 record panels.
+
+### Purpose
+
+This section closes the open tank-resin question for UL94. The build keeps one laminating resin, MGS L285 with hardener 287, on the fuel-wetted strake interior and on the aft side skins, and the engine is a Rotax 912 iS on ethanol-free UL94. No immersion opened for this note clears that resin in UL94, and none shows that a replacement is required (`docs/research/2026-10-20-ul94-tank-resin.md`, 20 October 2026). The comparison resin is E-Z 10A with E-Z 87B. The result is a keep-or-change rule for those wetted layups. It is written below, before any panel is laid. Ethanol-blend mogas is outside this section.
+
+### Methods opened, and the one this test uses
+
+The record exposure is the finished-laminate soak in PAFI-MTP-002 §19.3: 28 days, room temperature, in the candidate fuel and in high-aromatic 100LL. The tank is a cured BID laminate, so that is the article under test. The neat-resin screen in §19.1 is a different article (no cloth, 5 days, 60 °C). It is described in the table so the choice is visible. It is not run.
+
+D543, D570, and D5229 were opened because they are the general immersion and absorption methods. None of them prints a pass limit for avgas in a wet-layup tank. SAE J1681 is named by D543 and was not opened. No MIL method for a composite tank laminate was opened. ISO 175 is named by D543-21 and was not opened.
+
+| method | what was opened | specimen | exposure | measures | pass limit |
+|---|---|---|---|---|---|
+| ASTM D543-21, practices for chemical resistance of plastics, including laminates | ASTM product page, scope and §4. PDF text through the first sentence of Procedure I, §11.1. The rest of the 8-page PDF did not come through. Duration in the -21 text is UNCONFIRMED. | At least 3 per material, reagent, time, and strain (§9.1). Weight and dimensions: molded disk 50.80 mm diameter by 3.175 mm, or a sheet bar 76.20 by 25.40 mm by the sheet thickness (§9.1.1.1, §9.1.2.1). | Condition at least 40 h at 23 ± 2 °C and 50 ± 10 % RH (§10.1). Immersion is the procedure when the part is a container (§1.2). §4.1 calls the duration, the temperature, and the reported properties arbitrary. | Weight, dimensions, appearance, colour, strength, other mechanical properties (§1.2). Laminates: thickness at the centre and at the edges when the edge swells (§11.1, sentence opened). | None in the opened sections. |
+| ASTM D543-06, same title, older edition | A copy not hosted by ASTM, procedures opened. | Same family of practices. At least three specimens in the -21 text above. | Procedure I: 7 days (168 h) in the standard laboratory atmosphere, specimen suspended, reagent stirred every 24 h. Other times, if agreed: 24 h, 72 h, then 4-week steps. Practice B, if used: 7 days at room temperature, or 3 days at elevated temperature, unless agreed otherwise. | Procedure II: mechanical properties of immersed and unexposed specimens from the same lot, tested immediately after removal. Tensile is the usual property. Flexure is allowed when surface attack matters. | None printed in the opened procedures. |
+| ASTM D570-22, water absorption of plastics | iTeh sample, approved 1 September 2022, published September 2022. Procedures after the start of the 24 h immersion were past the sample. Those later procedures are UNCONFIRMED. | Three specimens (§7.1). Molded disk 50.8 mm by 3.2 mm. Sheet bar 76.2 by 25.4 mm by the thickness. | Distilled water, 23 ± 1 °C, 24 h, specimen on edge and fully immersed (§8.1, opened). This method is water. | Weight to 0.001 g after wiping. The significance section also names dimensions, appearance, and strength as reasons for the test. | None in the opened text. |
+| ASTM D5229/D5229M-12, moisture absorption and equilibrium conditioning of polymer-matrix composites | Full text opened, approved 1 February 2012, published June 2012. ASTM D5229-20 was not opened. Identity with the 2020 edition is UNCONFIRMED. | Mass at least 5.0 g (§8.2.2). No minimum thickness. Procedure A uses a thin coupon and a thick coupon; three replicates are recommended. Procedures B–E weigh at least three specimens or three travelers. | Includes a non-water fluid, to equilibrium (Procedure BFEP) or for a fixed time (Procedure BFFF). Table 3 prints no default temperature for those two fluid procedures. | Average moisture content from successive masses. Effective equilibrium: change under 0.020 % across each of two consecutive reference periods, and the mass-versus-square-root-of-time plot agrees (§10.2). | None. The 0.020 % figure is the equilibrium definition, not a fuel pass limit. |
+| PAFI-MTP-002 Rev 0, 15 May 2024, FAA PAFI materials test plan | Public PDF text opened for the preface, §1, objective 16, §19, §23.8, and Appendix I. | Neat resin: at least 3, five preferred; size set by the Tg instrument; a separate about 1 in square piece for weight and density (§19.1.2). Finished laminate, per fluid: five tensile, five short-beam, five V-notch, five lap-shear where adhesives are in the matrix, plus five unexposed of each (§19.2.14 to §19.2.17). Travelers 1 by 3 in, three per exposure recommended (§19.2.13). | Neat resin, §19.1.3: 5 days at 60 °C in Reference Fuel B, high-aromatic 100LL, the candidate fuel, and air. Finished laminate, §19.3: 28 days, room temperature, specimens suspended, jars topped up, no fuel exchange. §19.3 prints no numeric room-temperature band. | Neat: weight, density, Tg, visual (§19.1.4). Finished: dimensions, hardness, density, visual, tensile, short-beam, V-notch (§19.2 and objective 16). Objective 16 names weight gain, tensile, elongation, and break strength. | §23.8.1, neat resin: a property change that is statistically different and greater than 10 % from the 100LL set is a fail. §23.8.2, finished composite: the same 10 % test on median hardness, tensile, elongation, V-notch, or short-beam. Objective 16: those changes no greater than with 100LL. §23.8 does not name the statistical test. |
+| ASTM D471, rubber in liquids, as cited by PAFI | PAFI §12.1.1 states Reference Fuel B as 70 vol % isooctane and 30 vol % toluene, and points at Table 4 of D471 revision 16a. That 16a table was not opened. D471-98e1 was opened; there the same blend is Table 3. Whether 16a moved the table is UNCONFIRMED. | A rubber method. PAFI uses the fuel, not the rubber coupon, for the resin screen. | PAFI puts Reference Fuel B in the neat-resin screen (§19.1.1), not in the §19.2.1 finished-laminate materials list. | PAFI also cites D471 for density change on the resin screen. | The rubber limits in D471 were not used. |
+| SAE J1681 | Named in D543-21 §2.5 as gasoline, alcohol, and diesel surrogates for materials testing. The SAE text was not opened. Specimen size, duration, and any pass limit are UNCONFIRMED. | | | | |
+| MIL | D543-21 §2.2 lists military fluids as reagents, including MIL-G-5572 aviation gasoline. No MIL immersion method for a composite tank laminate was opened. | | | | |
+| ISO 175 | Named in D543-21 Note 2. The ISO text was not opened. D543-21 says the technical content differs, so the results cannot be compared directly. | | | | |
+
+High-aromatic 100LL, for every PAFI comparison in this section, is the fuel in PAFI §1: 15 % toluene by volume, minus 0 % plus 3 %, measured by ASTM D3606, with the other ASTM D910 Table 1 properties met. Pump 100LL is a different fuel. The test does not start on pump 100LL.
+
+### Resins and laminate
+
+Both panels are the build's BID, style 7725, eight plies at 0, warp along the 600 mm side. The bag, the 20 inHg vacuum, the leak check, and the shop log are section 3. The fuel coupons then describe the same process as the build. One panel per resin. One cure batch per resin. Section 4's two-batch sample is for lamina allowables. It is not applied here. That is an unsourced captain choice.
+
+| item | MGS panel | E-Z panel | source |
+|---|---|---|---|
+| Resin | MGS L285 with hardener 287, 100:40 ± 2 by weight | E-Z 10A with E-Z 87B, 100:44 by weight | MGS: this plan, section 3. E-Z: Endurance bulletin, revised August 2007, as read in `docs/research/2026-10-20-ul94-tank-resin.md`; the bulletin prints no mix tolerance |
+| Room cure | 24 h at 20 °C or above, under vacuum | 3 days at 25 °C, supported. The panel is held at 23 to 27 °C for those 3 days | MGS: section 3. E-Z duration and 25 °C: the same bulletin. The ±2 °C band is an unsourced captain choice |
+| Post-cure | 15 h at 80 °C, ramp and cool-down as section 3 | 4 h at 66 °C (150 °F). Ramp and cool-down use the section 3 rates, 10 °C/h or slower. Hold 63 to 69 °C | MGS: section 3. E-Z time and temperature: the bulletin, which also says the post-cure is unsupported. The ramp and the 63 to 69 °C band are unsourced captain choices. The bulletin does not tie this 4 h schedule to the 196 °F Tg column |
+| Support | Flat on an aluminium caul, unrestrained | Same caul, unrestrained. The bulletin's word is unsupported | Caul: section 3. Using it for E-Z is an unsourced captain choice so the panel stays flat |
+| Panel | `B5-BID-UL-MGS`, 600 × 300 mm | `B5-BID-UL-EZ`, 600 × 300 mm | Size matches the section 3 tension panel, so the bag and the oven survey cover it. One panel, rather than a PT in each of two batches, is an unsourced captain choice |
+| Mixing temperature | Section 3 shop, 20 to 30 °C | Bulletin: material temperature not below 65 °F (18 °C) at mixing. The section 3 shop satisfies that floor | Bulletin, via `docs/research/2026-10-20-ul94-tank-resin.md` |
+
+PAFI Appendix I lists EZ10A with EZ87B, and L285 with H287 and with H285. Its table calls H287 a fast cure and H285 a slow cure. Section 3 of this plan has the opposite gel times (H287 about 5 to 6 h, H285 about 2 to 3 h, 1 mm film, 20 to 25 °C). This section does not use PAFI's speed names. The hardener on the MGS panel is 287, because that is the build hardener.
+
+The green highlighting in Appendix I was not visible in the text extract. Which rows are green is UNCONFIRMED. The prose that requires finished-composite testing names L285 with H285 twice, Hexion 8014 with TETA, and Derakane 470-350 (§19.1.4). It does not, in that sentence, name H287.
+
+### Exposure
+
+| item | value | source |
+|---|---|---|
+| Fluids | UL94, as the candidate fuel. High-aromatic 100LL, as §1 defines it. Air, the unexposed set, stored in the same cabinet | §19.1.3 puts air with the neat-resin fluids. §19.2.14 requires an unexposed baseline for the finished-laminate properties. Both are used here |
+| Reference Fuel B | Not in this exposure | §19.1.1 includes it for neat resin. §19.2.1 does not list it for the finished laminate |
+| Duration | 28 days | §19.3. Objective 16 states the same 28 days at ambient for the composite matrices |
+| Temperature | 23 ± 2 °C, logged at least daily | §19.3 says room temperature and prints no band. The band is D543-21 §10.2, adopted because the PAFI sentence has no number. Adopting it is an unsourced captain choice |
+| Jars | One resin per jar. Tensile, short-beam, and traveler coupons of that resin may share the jar. Specimens suspended, not piled on the glass. Fill to one marked level. Top up with the same fuel. No fuel change | §19.3 |
+| Cabinet | Flammables cabinet. Fuel kept out of sunlight | §19.3 for the cabinet. §1 tells the lab to limit light on 100LL because lead can precipitate. The same dark storage is used for the UL94 jars. Extending that sentence to UL94 is an unsourced captain choice |
+| Rinse | Blot with a lint-free cloth. No solvent rinse | §19.4 says to repeat the pre-exposure measurements. A solvent rinse is printed for hoses, not for §19.4. Skipping it is an unsourced captain choice |
+| Clock | This is a fixed 28-day exposure, not a D5229 equilibrium stop | §19.3. D5229 §10.2 would hold the coupons until the mass change stayed under 0.020 %. That is a different test |
+
+Condition the cut specimens at least 40 h at 23 ± 2 °C and 50 ± 5 % RH before the first weighing. That is the section 5 conditioning. D543-21 §10.1 allows 50 ± 10 % RH. The tighter band is the one already written for the other coupons.
+
+### Measures
+
+Travelers, tensile coupons, and short-beam coupons are three separate sets. A traveler is not loaded.
+
+| set | size | measured | source |
+|---|---|---|---|
+| Traveler, `W` | 25 by 76 mm (PAFI's 1 by 3 in) | Mass to 0.001 g. Length and width. Thickness at the centre and at one edge. Photograph, both faces, before and after, with the specimen id in the frame | Size: §19.2.13. Edge thickness: D543-21 §11.1, for laminates. The 0.001 g place is D570-22's opened weighing place, used here for a fuel mass. The traveler must weigh at least 5.0 g or it is lengthened until it does (D5229 §8.2.2) |
+| Tensile, `T` | 254 by 25.4 mm, tabs at test time | Tensile strength and elongation at break. Strain on every coupon. Modulus is recorded and is not a gate | PAFI §19.2.14 prints 2.54 cm by 25.4 cm. Objective 16 names tensile, elongation, and break strength. Section 5's 250 by 25 mm lamina coupon is a different population and is not pooled with these |
+| Short-beam, `S` | 38 by 13 mm (PAFI's 1.5 by 0.5 in) | Short-beam strength | §19.2.15. The span, the nose radius, and the rate inside ASTM D2344 were not read. Strips are not cut until D2344 is in hand. Same rule as the NOT READ cells in section 5 |
+
+Hardness (PAFI cites ASTM D2583) and V-notch shear (ASTM D5379) are in §23.8.2. Those two standards were not opened. They are not gates in this section. A keep closes mass, tensile strength, elongation, short-beam strength, and appearance only.
+
+Tabs. Emery cloth in the grips, fitted when the specimen is mounted, which is the section 5 option for BID fabric. Bonded tabs are not used on the soaked set, so the coupon can be broken immediately after blotting. Immediate testing is D543-06 Procedure II. Choosing emery cloth so that "immediately" can be met is an unsourced captain choice. A grip failure or a failure inside one width of the grip is invalid, as in section 4, and the spare replaces it.
+
+Weigh and measure every traveler within 5 minutes of blotting. The 5 minutes are an unsourced captain choice. D543-06 says to weigh immediately and prints no minute limit. Break the strength coupons the same day, after blotting.
+
+Ids. `B5-BID-UL-<MGS|EZ>-<UL94|100LL|AIR>-<T|S|W><n>`. Example: `B5-BID-UL-MGS-UL94-T3`.
+
+### Counts
+
+Five valid results per strength cell is the PAFI minimum (§19.2.14, §19.2.15). Three travelers per fluid is the §19.2.13 recommendation.
+
+| per resin | cut | tested | note |
+|---|---|---|---|
+| Tensile, three fluids | 18 (6 per fluid) | 15 (5 per fluid) | 1 spare per fluid |
+| Short-beam, three fluids | 18 | 15 | 1 spare per fluid |
+| Travelers, three fluids | 9 | 9 | no spare |
+
+Two resins: 72 strength coupons cut, 60 tested, 18 travelers, 2 panels. A strength cell with fewer than five valid results is remade before the decision. A traveler that is dropped or chipped is replaced from the same panel's leftover if the leftover was cut and conditioned with the set. Otherwise that fluid's traveler set is remade.
+
+Report, per cell: n, median, minimum, maximum, and the mass change of each traveler as a percent of its own conditioned mass. Means are reported beside the medians. The decision uses medians, because §23.8.2 says median.
+
+### Decision rule
+
+This rule is fixed before the first panel is laid. It is not revised after a result is seen.
+
+Score each resin on its own. The UL94 set is compared with that resin's high-aromatic 100LL set, and each fuel set is compared with that resin's unexposed set.
+
+A numeric row fails when both of the following are true. The absolute gap between the UL94 median and the 100LL median is greater than 10 % of the absolute value of the 100LL median. The two ranges do not overlap. The 10 % is §23.8.2 for tensile strength, elongation, and short-beam, and §23.8.1 for weight on neat resin. Using that 10 % on a laminate traveler's mass change is an unsourced captain choice. Objective 16 says the weight gain shall be no greater than with 100LL and prints no percent. Requiring a non-overlapping range is an unsourced captain choice standing in for the words "statistically different," because §23.8 names no test.
+
+If the median gap exceeds 10 % and the ranges overlap, that cell is repeated once, on a new panel of the same resin and the same cure schedule. A second overlap fails the row. The one repeat is an unsourced captain choice.
+
+If the 100LL median mass change lies within 0.020 percentage points of zero, the mass row uses 0.020 percentage points in place of that median as the denominator. The 0.020 figure is the D5229 §10.2 equilibrium criterion. Using it as a floor, so the ratio is defined, is an unsourced captain choice.
+
+A tensile, elongation, or short-beam row also fails when either the UL94 median or the 100LL median is below 90 % of that resin's unexposed median. The 90 % is an unsourced captain choice. It applies the same 10 % figure against the air set. §23.8 compares the candidate fuel with 100LL and does not print a retained fraction against air for the finished laminate.
+
+Appearance fails when a UL94 specimen shows a crack, a blister, or a ply separation, and no 100LL specimen of that resin shows the same feature. That sentence is an unsourced captain choice. §19.4 requires the inspection and prints no visual limit for composites.
+
+**Keep MGS L285/H287, including the fuel-wetted strake interior and the aft side skins, only if every MGS row passes.**
+
+E-Z is scored on the same rows. It does not have to beat MGS. A passing MGS stays the one resin even when E-Z takes up less fuel.
+
+If MGS fails a row and E-Z passes every row, the fuel-wetted layups are E-Z 10A/87B on the cure in this section, and the unwetted structure stays MGS. Limiting the change to the wetted layups is an unsourced captain choice.
+
+If both resins fail, this test has not cleared a bare tank interior. It does not choose a lining or a third resin.
+
+### Test fuel
+
+UL94 for the jars comes from Swift Fuels. The opened FAQ, page undated, retrieved 20 October 2026, says UL94 is ASTM D7547 avgas with a 94-plus motor octane number, without tetraethyl lead, and calls it ethanol-free. The same FAQ says UL94 has been produced and sold solely by Swift from its Indiana facility since 2015, and that an airfield buys it by Swift's order form. Swift then quotes and arranges shipping. UL94 is stored in an airport tank independently from 100LL. The order-form URL returned a loading shell and no form fields, so the form itself is UNCONFIRMED: `https://www.swiftfuelsavgas.com/order-form`. The FAQ is `https://www.swiftfuelsavgas.com/faq`, heading "How can my airfield buy UL94 Unleaded Avgas?" and the heading "What is UL94 Unleaded Avgas?".
+
+No page opened here sells a laboratory bottle of UL94. Drawing the soak fuel from a retail Swift or Avfuel UL94 tank, and keeping the ticket that identifies the fuel as ASTM D7547 UL94, is an unsourced captain choice. Avfuel's unleaded-avgas page, retrieved 20 October 2026, describes UL94 as Swift's ASTM D7547 fuel and prints no aromatic content: `https://www.avfuel.com/unleaded-avgas/`.
+
+Aromatic content. Swift's one-page letter, Chris D'Acosta, hosted by AVweb, written on or after Lycoming's 12 April 2024 release, says moderate toluene use in UL94 is typically 10 to 20 %. The letter also quotes language it attributes to ASTM D7547: no explicit aromatic maximum, toluene limited to about 24 % by heating value, xylenes not higher than 10 %, total aromatics above 25 % extremely unlikely. That quotation was not checked against an opened D7547 appendix. The attribution is UNCONFIRMED. The words were read as Swift's letter: `https://avweb.com/wp-content/uploads/2024/04/swift-response.pdf`. The letter is a composition note. It is not a pass limit for these coupons. D7547 itself was not re-opened for this section.
+
+The high-aromatic 100LL is bought to the §1 blend, with a certificate that shows the toluene result by D3606. If that certificate cannot be had, the panels wait.
+
+### Sources
+
+| item | title | date | section | URL |
+|---|---|---|---|---|
+| PAFI plan | PAFI Materials Compatibility Test Plan, PAFI-MTP-002 Rev 0 | 15 May 2024 | Preface, §1, objective 16, §19, §23.8, Appendix I | https://flyeagle.org/wp-content/uploads/2024/05/PAFI-MTP-002.pdf |
+| D543-21 | Standard Practices for Evaluating the Resistance of Plastics to Chemical Reagents | edition 2021; product page undated, retrieved 20 October 2026 | §1, §4, §9, §10, §11.1 first sentence. Later procedure text UNCONFIRMED | https://www.astm.org/d0543-21.html |
+| D543-06 | Same title, 2006 edition | 2006 | Procedure I, Procedure II, Practice B exposure times | ASTM International; the copy read was not ASTM-hosted, so no link |
+| D570-22 | Standard Test Method for Water Absorption of Plastics | approved 1 September 2022, published September 2022 | §1, §6, §7.1, §8.1 start. Later procedures UNCONFIRMED | https://standards.iteh.ai/catalog/standards/astm/96e87ef8-a79c-4880-a714-dbd20160c276/astm-d570-22 |
+| D5229-12 | Standard Test Method for Moisture Absorption Properties and Equilibrium Conditioning of Polymer Matrix Composite Materials | approved 1 February 2012, published June 2012 | §8.2.2, §10.2, Table 3 Procedures BFEP and BFFF | ASTM International; the copy read was not ASTM-hosted, so no link |
+| D471-98e1 | Standard Test Method for Rubber Property—Effect of Liquids | 1998, Table 3 editorial update September 1999 | Table 3, Reference Fuel B. PAFI's 16a Table 4 was not opened | ASTM International; the copy read was not ASTM-hosted, so no link |
+| Swift FAQ | Swift Fuels FAQ | page undated, retrieved 20 October 2026 | "What is UL94 Unleaded Avgas?"; "How can my airfield buy UL94 Unleaded Avgas?" | https://www.swiftfuelsavgas.com/faq |
+| Swift letter | Swift Fuels response, Chris D'Acosta | on or after 12 April 2024 | full page, toluene paragraph | https://avweb.com/wp-content/uploads/2024/04/swift-response.pdf |
+| Avfuel | Unleaded Avgas: UL94 Available Now | page undated, retrieved 20 October 2026 | UL94 fast facts. No aromatic figure on the page | https://www.avfuel.com/unleaded-avgas/ |
+| E-Z bulletin | E-Z Poxy technical data bulletin, Endurance Technologies | revised August 2007 | Handling properties and post-cure, as read in `docs/research/2026-10-20-ul94-tank-resin.md` | https://www.aircraftspruce.com/catalog/pdf/EZpoxytechbulletin.pdf |
+
+## 13. Needs Ryan
 
 - **Buying the standards.** D3039, D3518 and D6641, plus ideally D6641's buckling note and CMH-17-1G
   Vol 1 Ch 8. The NOT READ values above wait on them.
