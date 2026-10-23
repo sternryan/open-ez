@@ -1306,14 +1306,22 @@ async function boot() {
     // frame, the highest score first (the nose wheel's conflict, then the parts new on the selected op, then the op's parts, then the rest)
     const LABEL_BUDGET = 10
     const cands: { id: string; wants: () => boolean; score: () => number }[] = []
+    let budgetWinners: Set<string> | null = null
     const budgetOn = () => subject === 'fuselage' && [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26].includes(chapterOf(selected))
     const budgeted = (id: string, wants: () => boolean, score: () => number): (() => number) => {
       cands.push({ id, wants, score })
       return () => {
         if (!wants()) return 0
         if (!budgetOn()) return 1
-        const ranked = cands.map((c, i) => ({ c, i })).filter((x) => x.c.wants()).sort((a, b) => b.c.score() - a.c.score() || a.i - b.i)
-        return ranked.slice(0, LABEL_BUDGET).some((x) => x.c.id === id) ? 1 : 0
+        // Visibility is sampled for every label. Rank the shared budget once
+        // per frame, and evaluate each score once rather than in the comparator.
+        if (budgetWinners === null) {
+          const ranked = cands.map((c, i) => ({ c, i })).filter((x) => x.c.wants())
+            .map(({ c, i }) => ({ id: c.id, i, score: c.score() }))
+            .sort((a, b) => b.score - a.score || a.i - b.i)
+          budgetWinners = new Set(ranked.slice(0, LABEL_BUDGET).map((x) => x.id))
+        }
+        return budgetWinners.has(id) ? 1 : 0
       }
     }
     const fwp = new THREE.Vector3(), fbox = new THREE.Box3()
@@ -1510,7 +1518,7 @@ async function boot() {
         vis: () => (subject === 'canard' && (tourOv.labels ?? labelsOn) && jigs.visible ? 1 : 0),
       })
     }
-    stepLabels = (dt) => { camera.updateMatrixWorld(); labels.update(window.innerWidth, window.innerHeight, dt); flabels.update(window.innerWidth, window.innerHeight, dt) }
+    stepLabels = (dt) => { camera.updateMatrixWorld(); budgetWinners = null; labels.update(window.innerWidth, window.innerHeight, dt); flabels.update(window.innerWidth, window.innerHeight, dt) }
     const setLabels = (on: boolean) => {
       labelsOn = on
       try { storage?.setItem(LABELS_KEY, on ? '1' : '0') } catch { /* per-viewer convenience only */ }
