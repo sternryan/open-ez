@@ -9,6 +9,9 @@ import math
 import numpy as np
 
 from config import config
+from core.kernels import lamina, laminate
+from core.kernels.thinwall import Cell, Wall, multicell_torsion
+from core.kernels.tsai_wu import tsai_wu_strength_ratio
 
 
 @dataclass
@@ -338,35 +341,51 @@ class CompositePly:
 
     @property
     def properties(self) -> Dict[str, float]:
-        return MATERIAL_PROPERTIES.get(self.material.lower(), UNI_GLASS_PROPERTIES)
+        """Material properties; an unknown name raises KeyError (no UNI fallback)."""
+        key = self.material.lower()
+        if key not in MATERIAL_PROPERTIES:
+            raise KeyError(f"unknown ply material {self.material!r}")
+        return MATERIAL_PROPERTIES[key]
+
+    def kernel_ply(self) -> lamina.Ply:
+        props = self.properties
+        return lamina.Ply(
+            props["E1"],
+            props["E2"],
+            props["G12"],
+            props["nu12"],
+            self.thickness_in,
+            self.angle_deg,
+        )
 
     def stiffness_matrix_local(self) -> np.ndarray:
         """Reduced stiffness matrix [Q] in local coordinates."""
         props = self.properties
-        E1, E2, G12, nu12 = props["E1"], props["E2"], props["G12"], props["nu12"]
-        nu21 = nu12 * E2 / E1
-        denom = 1 - nu12 * nu21
-        return np.array(
-            [
-                [E1 / denom, nu12 * E2 / denom, 0],
-                [nu21 * E1 / denom, E2 / denom, 0],
-                [0, 0, G12],
-            ]
+        return lamina.reduced_stiffness(
+            props["E1"], props["E2"], props["G12"], props["nu12"]
         )
 
     def stiffness_matrix_global(self) -> np.ndarray:
         """Transformed stiffness matrix [Q_bar] in global coordinates."""
-        Q = self.stiffness_matrix_local()
-        theta = math.radians(self.angle_deg)
-        c, s = math.cos(theta), math.sin(theta)
-        T_inv = np.array(
-            [
-                [c**2, s**2, -2 * c * s],
-                [s**2, c**2, 2 * c * s],
-                [c * s, -c * s, c**2 - s**2],
-            ]
+        return lamina.transformed_stiffness(
+            self.stiffness_matrix_local(), self.angle_deg
         )
-        return T_inv @ Q @ T_inv.T
+
+
+def _strength_ratio(sigma_12: np.ndarray, props: Dict[str, float]) -> float:
+    """Tsai-Wu strength ratio R (load multiplier to failure) from core.kernels.
+
+    f12* = -0.5 is the legacy adapter's interaction term, kept unchanged.
+    """
+    return tsai_wu_strength_ratio(
+        np.asarray(sigma_12, dtype=float),
+        props["F1t"],
+        props["F1c"],
+        props["F2t"],
+        props["F2c"],
+        props["F6"],
+        -0.5,
+    )
 
 
 @dataclass
@@ -380,52 +399,32 @@ class CompositeSection:
     def total_thickness(self) -> float:
         return sum(p.thickness_in for p in self.plies)
 
-    def abd_matrices(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Classical Laminate Theory [A], [B], [D] matrices."""
-        h_total = self.total_thickness
-        z_bottom = -h_total / 2
-        A, B, D = np.zeros((3, 3)), np.zeros((3, 3)), np.zeros((3, 3))
+    def kernel_plies(self) -> List[lamina.Ply]:
+        return [p.kernel_ply() for p in self.plies]
 
-        for ply in self.plies:
-            z_top = z_bottom + ply.thickness_in
-            z_mid = (z_top + z_bottom) / 2
-            Q_bar = ply.stiffness_matrix_global()
-            A += Q_bar * ply.thickness_in
-            B += Q_bar * ply.thickness_in * z_mid
-            D += Q_bar * (z_top**3 - z_bottom**3) / 3
-            z_bottom = z_top
-        return A, B, D
+    def abd_matrices(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Classical Laminate Theory [A], [B], [D] matrices (core.kernels.laminate)."""
+        return laminate.abd(self.kernel_plies())
 
     def equivalent_bending_stiffness(self) -> float:
         """D11 bending stiffness for spanwise loading."""
         _, _, D = self.abd_matrices()
         return D[0, 0] * self.width_in
 
+    def _min_allowables(self) -> Dict[str, float]:
+        keys = ("F1t", "F1c", "F2t", "F2c", "F6")
+        return {k: min(p.properties[k] for p in self.plies) for k in keys}
+
+    def tsai_wu_strength_ratio(self, stress_state: np.ndarray) -> float:
+        """Tsai-Wu strength ratio R for one material-axis stress state.
+
+        Uses the minimum allowables across all plies (legacy behaviour).
+        """
+        return _strength_ratio(stress_state, self._min_allowables())
+
     def tsai_wu_margin(self, stress_state: np.ndarray) -> float:
-        """Tsai-Wu failure criterion margin (>0 is safe)."""
-        sigma_1, sigma_2, tau_12 = stress_state
-        F1t = min(p.properties["F1t"] for p in self.plies)
-        F1c = min(p.properties["F1c"] for p in self.plies)
-        F2t = min(p.properties["F2t"] for p in self.plies)
-        F2c = min(p.properties["F2c"] for p in self.plies)
-        F6 = min(p.properties["F6"] for p in self.plies)
-
-        f1 = 1.0 / F1t - 1.0 / F1c
-        f2 = 1.0 / F2t - 1.0 / F2c
-        f11 = 1.0 / (F1t * F1c)
-        f22 = 1.0 / (F2t * F2c)
-        f66 = 1.0 / (F6**2)
-        f12 = -0.5 * math.sqrt(f11 * f22)
-
-        F = (
-            f1 * sigma_1
-            + f2 * sigma_2
-            + f11 * sigma_1**2
-            + f22 * sigma_2**2
-            + f66 * tau_12**2
-            + 2 * f12 * sigma_1 * sigma_2
-        )
-        return 1.0 - F
+        """Tsai-Wu margin of safety R - 1 (>0 is safe)."""
+        return self.tsai_wu_strength_ratio(stress_state) - 1.0
 
 
 @dataclass
@@ -547,8 +546,9 @@ class CompositeFEAAdapter:
     ) -> List[Dict[str, float]]:
         """Ply-by-ply stress and Tsai-Wu analysis under bending moment.
 
-        Computes curvature from the applied moment using CLT, then recovers
-        strains and stresses at each ply's mid-plane position.
+        Solves the laminate response to the moment through the full ABD inverse
+        (core.kernels.laminate), then recovers strains and stresses at each
+        ply's mid-plane position.
 
         Args:
             moment_in_lbf: Applied bending moment in in-lbf
@@ -556,69 +556,33 @@ class CompositeFEAAdapter:
 
         Returns:
             List of dicts with: ply_index, z_position, sigma_1, sigma_2,
-            tau_12, tsai_wu_margin
+            tau_12, tsai_wu_strength_ratio, tsai_wu_margin (R - 1)
         """
         section = section or self.build_section()
-        _, _, D = section.abd_matrices()
-        EI_equiv = D[0, 0] * section.width_in
+        kplies = section.kernel_plies()
 
-        # Curvature from beam bending
-        kappa = moment_in_lbf / EI_equiv
+        # Midplane strain and curvature from the full ABD inverse, with the
+        # moment applied per unit width
+        eps0, kappa = laminate.midplane_response(
+            kplies, np.zeros(3), np.array([moment_in_lbf / section.width_in, 0.0, 0.0])
+        )
 
-        # Walk through plies to get z-positions
         h_total = section.total_thickness
         z_bottom = -h_total / 2
         results = []
 
-        for i, ply in enumerate(section.plies):
+        for i, (ply, kply) in enumerate(zip(section.plies, kplies)):
             z_top = z_bottom + ply.thickness_in
             z_mid = (z_top + z_bottom) / 2
 
-            # Strain at ply mid-plane from bending: epsilon_x = kappa * z
-            strain_x = kappa * z_mid
-
-            # Global strain vector (only axial bending strain)
-            strain_global = np.array([strain_x, 0.0, 0.0])
-
-            # Ply-level stresses in global coords via Q_bar
-            Q_bar = ply.stiffness_matrix_global()
-            stress_global = Q_bar @ strain_global
-
-            # Transform global stresses to ply local (material) coords for Tsai-Wu
-            theta = math.radians(ply.angle_deg)
-            c_t, s_t = math.cos(theta), math.sin(theta)
-            T = np.array(
-                [
-                    [c_t**2, s_t**2, 2 * c_t * s_t],
-                    [s_t**2, c_t**2, -2 * c_t * s_t],
-                    [-c_t * s_t, c_t * s_t, c_t**2 - s_t**2],
-                ]
+            stress_global = ply.stiffness_matrix_global() @ laminate.strain_at(
+                eps0, kappa, z_mid
             )
-            stress_local = T @ stress_global
+            stress_local = lamina.stress_to_material(stress_global, kply.theta_deg)
             sigma_1, sigma_2, tau_12 = stress_local
 
-            # Tsai-Wu margin for this ply using its own material allowables
-            props = ply.properties
-            F1t, F1c = props["F1t"], props["F1c"]
-            F2t, F2c = props["F2t"], props["F2c"]
-            F6 = props["F6"]
-
-            f1 = 1.0 / F1t - 1.0 / F1c
-            f2 = 1.0 / F2t - 1.0 / F2c
-            f11 = 1.0 / (F1t * F1c)
-            f22 = 1.0 / (F2t * F2c)
-            f66 = 1.0 / (F6**2)
-            f12 = -0.5 * math.sqrt(f11 * f22)
-
-            F_val = (
-                f1 * sigma_1
-                + f2 * sigma_2
-                + f11 * sigma_1**2
-                + f22 * sigma_2**2
-                + f66 * tau_12**2
-                + 2 * f12 * sigma_1 * sigma_2
-            )
-            margin = 1.0 - F_val
+            # Tsai-Wu for this ply using its own material allowables
+            ratio = _strength_ratio(stress_local, ply.properties)
 
             results.append(
                 {
@@ -627,7 +591,8 @@ class CompositeFEAAdapter:
                     "sigma_1": sigma_1,
                     "sigma_2": sigma_2,
                     "tau_12": tau_12,
-                    "tsai_wu_margin": margin,
+                    "tsai_wu_strength_ratio": ratio,
+                    "tsai_wu_margin": ratio - 1.0,
                 }
             )
 
@@ -988,11 +953,17 @@ class TorsionSection:
 
     @property
     def gj(self) -> float:
-        """Torsional stiffness GJ (lb-in^2)."""
-        ds_over_t = sum(ds / t for ds, t in self.perimeter_segments)
-        if ds_over_t <= 0:
+        """Torsional stiffness GJ (lb-in^2), single cell via core.kernels.thinwall."""
+        if sum(ds for ds, _ in self.perimeter_segments) <= 0:
             return 0.0
-        return 4.0 * self.enclosed_area_sq_in**2 * self.shear_modulus_psi / ds_over_t
+        G = self.shear_modulus_psi
+        walls = [
+            Wall(0.0, 0.0, 0.0, 0.0, t, G * t, 0.0, 0.0, length=ds)
+            for ds, t in self.perimeter_segments
+        ]
+        cell = Cell(tuple(range(len(walls))), self.enclosed_area_sq_in)
+        gj, _ = multicell_torsion(walls, [cell])
+        return gj
 
 
 def analyze_torsion(
