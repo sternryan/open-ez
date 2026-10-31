@@ -36,15 +36,15 @@ def _load(text: str | None) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def _base_decision_paths(repo: Path, base: str, root: str) -> list[str]:
-    """Decision yaml paths at `base`, same shape as the working-tree glob."""
+def _base_decision_paths(repo: Path, base: str, root: str) -> list[str] | None:
+    """Decision yaml paths at `base`, same shape as the working-tree glob; None if git fails."""
     proc = subprocess.run(
         ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", base, "--", root],
         capture_output=True,
         text=True,
     )
     if proc.returncode != 0:
-        return []
+        return None
     prefix = root.strip("/") + "/"
     paths = []
     for rel in proc.stdout.splitlines():
@@ -56,24 +56,53 @@ def _base_decision_paths(repo: Path, base: str, root: str) -> list[str]:
     return paths
 
 
+def _verify_base(repo: Path, base: str) -> str | None:
+    try:
+        cmd = ["git", "-C", str(repo), "rev-parse", "--verify", f"{base}^{{commit}}"]
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return None
+    except (subprocess.CalledProcessError, OSError) as e:
+        msg = f"invalid base ref: {base}"
+        if hasattr(e, "stderr") and e.stderr:
+            msg += f" {e.stderr}"
+        return msg
+
+
 def check(repo: Path, base: str, root: str = "data/hangar") -> list[str]:
     """Problems for every decided record under `root` that was rewritten or removed."""
+    lookup_error = _verify_base(repo, base)
+    if lookup_error:
+        return [lookup_error]
+
+    base_paths = _base_decision_paths(repo, base, root)
+    if base_paths is None:
+        return [f"could not list {root} at base {base}"]
     errors: list[str] = []
     present = {
         path.relative_to(repo).as_posix()
         for path in (repo / root).glob("*/decisions/*.yaml")
     }
-    for rel in _base_decision_paths(repo, base, root):
+    for rel in base_paths:
         if rel in present:
             continue
-        old = _load(_git_show(repo, base, rel))
+        text = _git_show(repo, base, rel)
+        if text is None:
+            errors.append(f"{rel}: could not read it at base {base}")
+            continue
+        old = _load(text)
         if old is None or old.get("status") != "decided":
             continue
         errors.append(f"{rel}: a decided record was deleted")
 
     for path in sorted((repo / root).glob("*/decisions/*.yaml")):
         rel = path.relative_to(repo).as_posix()
-        old = _load(_git_show(repo, base, rel))
+        if rel not in base_paths:
+            continue
+        text = _git_show(repo, base, rel)
+        if text is None:
+            errors.append(f"{rel}: could not read it at base {base}")
+            continue
+        old = _load(text)
         if old is None or old.get("status") != "decided":
             continue
         new = _load(path.read_text(encoding="utf-8"))
