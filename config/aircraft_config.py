@@ -3630,6 +3630,36 @@ WEIGHT_PROVENANCE: dict[str, dict] = {
         "high",
         "233.3 cu in. Was 235.0, the model-name number; the TCDS and the operator's manual print 233 (docs/harness/2n-engine-inventory.md section 3). Read only by core/systems.py DISPLACEMENT_CI",
     ),
+    "engine_mount_weight_lb": _p(
+        "conflict",
+        "cp-text:p26 dynafocal mount 5 lb 3 oz (N26MS builder weight)",
+        "low",
+        "15 lb, the value core/systems.py hardcoded (Lord mount, tubes; no source). The builder weight of the dynafocal mount is 5.19 lb, so the two disagree; the model keeps 15 and flags it. Value unchanged by the move into config",
+    ),
+    "exhaust_weight_lb": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "12 lb, hardcoded in core/systems.py with no citation; moved into config unchanged",
+    ),
+    "baffles_weight_lb": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "5 lb, hardcoded in core/systems.py with no citation; moved into config unchanged",
+    ),
+    "cowling_weight_lb": _p(
+        "derived",
+        "cp-text:p27 standard Lycoming Long-EZ cowl, both halves, glass 18 lb (graphite 12 lb); closure row cowl",
+        "medium",
+        f"18 lb, the glass cowl, the top of the closure cowl band 12 to 18 ({_CLOSURE} cowl nominal is 15 lb, band centre; this analysis field is not folded to it). The hardcoded value already equalled the published glass weight. Moved into config unchanged",
+    ),
+    "prop_weight_lb": _p(
+        "unsourced",
+        "",
+        "n/a",
+        "35 lb fixed-pitch wood/composite propeller, hardcoded in core/systems.py with no citation; moved into config unchanged",
+    ),
     "battery_weight_lb": _p(
         "derived",
         "cp-text:p27 ladder step 4, 25 Ah battery about 19 lb over small",
@@ -3948,6 +3978,13 @@ class PropulsionConfig:
     engine_rated_hp: float = 115.0
     engine_rated_rpm: int = 2700
     engine_prop_diameter_in: float = 60.0
+
+    # === O-235 INSTALLATION WEIGHTS (lb; read by core/systems.py LycomingO235; see WEIGHT_PROVENANCE) ===
+    engine_mount_weight_lb: float = 15.0  # conflict: cp-text:p26 weighs the dynafocal mount at 5 lb 3 oz
+    exhaust_weight_lb: float = 12.0  # unsourced
+    baffles_weight_lb: float = 5.0  # unsourced
+    cowling_weight_lb: float = 18.0  # cp-text:p27 glass cowl, both halves
+    prop_weight_lb: float = 35.0  # unsourced
 
     # === ELECTRIC DEFAULTS (LiFePO4) ===
     motor_mass_kg: float = 35.0  # EMRAX 228 MV

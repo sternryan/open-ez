@@ -102,19 +102,18 @@ class LycomingO235(Propulsion):
     - Fuel consumption: 6.5 GPH cruise
     """
 
-    # Installation weights
-    ENGINE_MOUNT_WEIGHT = 15.0  # Lord mount, tubes
-    EXHAUST_WEIGHT = 12.0
-    BAFFLES_WEIGHT = 5.0
-    COWLING_WEIGHT = 18.0
-    PROP_WEIGHT = 35.0  # Fixed pitch wood/composite
-
     def __init__(self):
         super().__init__("lycoming_o235")
         self.prop_efficiency = 0.82  # Typical cruise efficiency
         # Engine specs sourced from config SSOT (instance attrs allow override
         # for variant engines like O-320 in get_propulsion_system).
         prop = config.propulsion
+        # Installation weights (config.propulsion; provenance in WEIGHT_PROVENANCE)
+        self.ENGINE_MOUNT_WEIGHT = prop.engine_mount_weight_lb
+        self.EXHAUST_WEIGHT = prop.exhaust_weight_lb
+        self.BAFFLES_WEIGHT = prop.baffles_weight_lb
+        self.COWLING_WEIGHT = prop.cowling_weight_lb
+        self.PROP_WEIGHT = prop.prop_weight_lb
         self.DISPLACEMENT_CI = prop.engine_displacement_ci
         self.RATED_HP = prop.engine_rated_hp
         self.RATED_RPM = prop.engine_rated_rpm

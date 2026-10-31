@@ -45,6 +45,11 @@ def test_flagged_fields_exist_and_hold_the_values_ledger_row_68_recorded():
         "interior_weight_lb": 20.0,
         "interior_arm_in": 81.0,
         "tank_volume_gal": 26.0,
+        "engine_mount_weight_lb": 15.0,
+        "exhaust_weight_lb": 12.0,
+        "baffles_weight_lb": 5.0,
+        "cowling_weight_lb": 18.0,
+        "prop_weight_lb": 35.0,
         "elevator_arm_in": G.fs_canard_le + 0.85 * G.canard_chord,
     }
     assert set(values) == set(WEIGHT_PROVENANCE)
