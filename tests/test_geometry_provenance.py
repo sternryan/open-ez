@@ -7,6 +7,7 @@ import re
 
 import pytest
 
+from config.provenance_check import validate_provenance
 from core.sources import check_citation
 from config.aircraft_config import (
     GEOMETRY_PROVENANCE,
@@ -64,26 +65,9 @@ def geometry_fields() -> set[str]:
     } | TRACKED_PROPERTIES
 
 
-def test_every_geometry_field_has_provenance():
-    missing = sorted(geometry_fields() - set(GEOMETRY_PROVENANCE))
-    assert missing == [], f"add GEOMETRY_PROVENANCE entries for: {missing}"
-
-
-def test_provenance_entries_are_well_formed():
-    for field, e in GEOMETRY_PROVENANCE.items():
-        assert set(e) == {"status", "source", "confidence", "note"}, field
-        assert e["status"] in PROVENANCE_STATUSES, (field, e["status"])
-        assert e["confidence"] in {"high", "medium", "low", "n/a"}, (
-            field,
-            e["confidence"],
-        )
-        if e["status"] in {"book", "cp-corrected", "derived"}:
-            assert e["source"].strip(), f"{field}: a {e['status']} value needs a source"
-
-
-def test_no_stale_provenance_entries():
-    stale = sorted(set(GEOMETRY_PROVENANCE) - geometry_fields())
-    assert stale == [], f"provenance for fields that no longer exist: {stale}"
+def test_shipped_provenance_passes_every_rule():
+    errors = validate_provenance(GEOMETRY_PROVENANCE, geometry_fields(), check_citation)
+    assert errors == [], errors
 
 
 OLD = {"fs_tail": 214.0}
@@ -167,12 +151,6 @@ def test_weight_arms_shift_uniformly():
     w = StructuralWeightParams()
     for name, o in old.items():
         assert getattr(w, name) == pytest.approx(o - SHIFT), name
-
-
-def test_sourced_entries_cite_the_registry():  # Review Focus 1
-    for field, e in GEOMETRY_PROVENANCE.items():
-        if e["status"] in {"book", "cp-corrected", "derived"}:
-            check_citation(e["source"])  # raises on unknown id or bad form
 
 
 def test_wing_planform_is_the_book():  # Task 7
