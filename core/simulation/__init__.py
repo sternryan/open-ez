@@ -9,7 +9,7 @@ from .fea_adapter import (
     DBoxResult,
     DBoxBeamAdapter,
 )
-from .regression import RegressionRunner, RegressionScenario, ScenarioResult
+from .regression import RegressionRunner
 
 __all__ = [
     "AeroPolar",
@@ -21,6 +21,4 @@ __all__ = [
     "DBoxResult",
     "DBoxBeamAdapter",
     "RegressionRunner",
-    "RegressionScenario",
-    "ScenarioResult",
 ]

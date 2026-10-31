@@ -25,13 +25,14 @@ continue to work unchanged.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 import json
 import math
 
 import numpy as np
 
 from config import config
+from config.aircraft_config import AirfoilType
 
 # ---------------------------------------------------------------------------
 # Re-exports for backward compatibility
@@ -719,6 +720,18 @@ class VSPBridge:
     """
 
     @staticmethod
+    def _airfoil_import_lines(geom_var: str, airfoil: AirfoilType) -> List[str]:
+        """VSPScript lines that load an airfoil .dat into the root XSec of a wing."""
+        from .aerodynamics import AirfoilFactory
+
+        dat = AirfoilFactory.DATA_DIR.resolve() / AirfoilFactory.AIRFOIL_FILES[airfoil]
+        xsec = f"GetXSec(GetXSecSurf({geom_var}, 0), 0)"
+        return [
+            f"  ChangeXSecShape(GetXSecSurf({geom_var}, 0), 0, XS_FILE_AIRFOIL);",
+            f'  ReadFileAirfoil({xsec}, "{dat}");',
+        ]
+
+    @staticmethod
     def export_vsp_script(output_path: Path):
         """
         Generate a VSPScript file to build the aircraft in OpenVSP.
@@ -758,8 +771,8 @@ class VSPBridge:
             "  // Wing incidence",
             f'  SetParmVal(wid, "X_Rel_Rotation", "XForm", {geo.wing_incidence});',
             "",
-            "  // Airfoil (placeholder - would need actual airfoil import)",
-            "  // ChangeXSecShape(GetXSec(GetXSecSurf(wid, 0), 0), XS_FILE_AIRFOIL);",
+            "  // Airfoil (config airfoil files)",
+            *VSPBridge._airfoil_import_lines("wid", config.airfoils.wing_root),
             "",
             "  //--- CANARD ---",
             '  string cid = AddGeom("WING", "");',
@@ -778,6 +791,9 @@ class VSPBridge:
             "",
             "  // Canard incidence",
             f'  SetParmVal(cid, "X_Rel_Rotation", "XForm", {geo.canard_incidence});',
+            "",
+            "  // Canard airfoil (config airfoil file)",
+            *VSPBridge._airfoil_import_lines("cid", config.airfoils.canard),
             "",
             "  //--- FUSELAGE ---",
             '  string fid = AddGeom("FUSELAGE", "");',

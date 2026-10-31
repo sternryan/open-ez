@@ -180,3 +180,14 @@ def test_aspect_ratio_is_span_squared_over_reference_area():
     expect = (G.wing_span / 12) ** 2 / G.wing_area_sqft
     assert G.wing_aspect_ratio == pytest.approx(expect, rel=1e-9)
     assert G.wing_aspect_ratio == pytest.approx(8.36, abs=0.02)
+
+
+def test_vsp_script_imports_the_config_airfoil_files(tmp_path):
+    text = Path(VSPBridge.export_vsp_script(tmp_path / "a.vsp")).read_text()
+    wing_dat = REPO / "data" / "airfoils" / "eppler_1230_mod.dat"
+    canard_dat = REPO / "data" / "airfoils" / "roncz_r1145ms.dat"
+    assert wing_dat.exists() and canard_dat.exists()
+    assert "XS_FILE_AIRFOIL" in text
+    for gid, dat in (("wid", wing_dat), ("cid", canard_dat)):
+        assert f'ReadFileAirfoil(GetXSec(GetXSecSurf({gid}, 0), 0), "{dat}")' in text
+    assert "placeholder" not in text

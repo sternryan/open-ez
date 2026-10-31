@@ -48,6 +48,7 @@ class TrimSweepResult:
     trimmed_alpha_deg: float
     static_margin: float
     description: str = ""
+    source: str = "synthetic"  # no solver is wired: every result is a surrogate
 
 
 @dataclass
@@ -57,6 +58,7 @@ class CLMaxResult:
     cl_max: float
     alpha_at_clmax: float
     stall_warning_margin: float
+    source: str = "synthetic"  # no solver is wired: every result is a surrogate
 
 
 @dataclass
@@ -156,21 +158,13 @@ class OpenVSPRunner:
         alpha_range: Tuple[float, float],
         n_steps: int,
     ) -> "TrimSweepResult":
-        """Run a trim sweep using OpenVSP if available, otherwise surrogate."""
-        vsp = self._try_import_vsp()
-        if vsp:
-            logger.debug("Using OpenVSP for trim sweep")
-            # Real solver orchestration would go here when dependencies are present
-
+        """Run the trim sweep. VSPAERO is not wired in: always the surrogate."""
+        logger.debug("Trim sweep: synthetic surrogate (VSPAERO not wired in)")
         return self._synthetic_trim(model, alpha_range, n_steps)
 
     def _run_clmax_search(self, model: Dict[str, Any]) -> "CLMaxResult":
-        """Search for CLmax using OpenVSP or surrogate."""
-        vsp = self._try_import_vsp()
-        if vsp:
-            logger.debug("Using OpenVSP for CLmax search")
-            # Placeholder for vspaero stall search integration
-
+        """Search for CLmax. VSPAERO is not wired in: always the surrogate."""
+        logger.debug("CLmax search: synthetic surrogate (VSPAERO not wired in)")
         return self._synthetic_clmax(model)
 
     def _synthetic_trim(
@@ -232,7 +226,8 @@ class OpenVSPRunner:
             points=points,
             trimmed_alpha_deg=trimmed_alpha,
             static_margin=static_margin,
-            description="Synthetic trim sweep (OpenVSP unavailable)",
+            description="Synthetic trim sweep (surrogate; no solver run)",
+            source="synthetic",
         )
 
     def _synthetic_clmax(self, model: Dict[str, Any]) -> "CLMaxResult":
@@ -251,6 +246,7 @@ class OpenVSPRunner:
             cl_max=cl_max,
             alpha_at_clmax=alpha_at_clmax,
             stall_warning_margin=stall_warning_margin,
+            source="synthetic",
         )
 
     def export_structural_mesh_manifest(
@@ -445,6 +441,7 @@ class OpenVSPRunner:
                 "trimmed_alpha_deg": trim.trimmed_alpha_deg,
                 "static_margin": trim.static_margin,
                 "description": trim.description,
+                "source": trim.source,
             },
             "clmax": asdict(clmax),
         }
@@ -463,6 +460,7 @@ class OpenVSPRunner:
             trimmed_alpha_deg=data["trim_sweep"]["trimmed_alpha_deg"],
             static_margin=data["trim_sweep"]["static_margin"],
             description=data["trim_sweep"].get("description", ""),
+            source=data["trim_sweep"].get("source", "synthetic"),
         )
         clmax = CLMaxResult(**data["clmax"])
         return trim, clmax

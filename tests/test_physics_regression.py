@@ -71,3 +71,10 @@ def test_regression_report_written(tmp_path):
     assert "current_values" in report
     assert "failures" in report
     assert report["status"] in ("pass", "fail")
+
+
+def test_deprecated_self_referential_runner_api_is_gone():
+    """The physics_baseline.json path was retired; only the accuracy report remains."""
+    for name in ("run", "load_baseline", "compare_to_baseline", "scenarios"):
+        assert not hasattr(RegressionRunner(), name), name
+    assert hasattr(RegressionRunner, "compare_to_accuracy_report")

@@ -42,3 +42,30 @@ def test_structural_manifest_hook(runner, tmp_path):
     manifest_file = manifest.mesh_directory / "manifest.json"
     data = json.loads(manifest_file.read_text())
     assert "Populate these paths" in data["notes"]
+
+
+class _FakeBridge:
+    has_vsp = True
+
+
+def test_results_are_labelled_synthetic_and_never_claim_openvsp(
+    runner, caplog, monkeypatch
+):
+    """The solver is not wired: results say so, even when the bindings are present."""
+    import logging
+
+    monkeypatch.setattr(runner, "_vsp", _FakeBridge())
+    with caplog.at_level(logging.DEBUG, logger="core.openvsp_runner"):
+        trim, clmax, cache_path = runner.run_validation(force_refresh=True)
+
+    assert trim.source == "synthetic"
+    assert clmax.source == "synthetic"
+    assert "Using OpenVSP" not in caplog.text
+
+    data = json.loads(cache_path.read_text())
+    assert data["trim_sweep"]["source"] == "synthetic"
+    assert data["clmax"]["source"] == "synthetic"
+
+    cached_trim, cached_clmax, _ = runner.run_validation()
+    assert cached_trim.source == "synthetic"
+    assert cached_clmax.source == "synthetic"
