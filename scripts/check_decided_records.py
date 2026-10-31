@@ -2,8 +2,9 @@
 
 The record validator sees one file. An edit of decision.picks together with the matching
 history entry passes it. This compares each decision file with the committed version at a
-base ref: a record that was decided there must keep its old history as a prefix, and its
-decision may change only if the history grew (a reopen and a new decision).
+base ref: a record that was decided there must still exist, keep its old history as a
+prefix (appending does not excuse a rewrite), and its whole decision may change only if
+the history grew (a reopen and a new decision).
 
     python scripts/check_decided_records.py [--base HEAD~1] [--root data/hangar]
 """
@@ -35,9 +36,41 @@ def _load(text: str | None) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
+def _base_decision_paths(repo: Path, base: str, root: str) -> list[str]:
+    """Decision yaml paths at `base`, same shape as the working-tree glob."""
+    proc = subprocess.run(
+        ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", base, "--", root],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        return []
+    prefix = root.strip("/") + "/"
+    paths = []
+    for rel in proc.stdout.splitlines():
+        if not rel.startswith(prefix) or not rel.endswith(".yaml"):
+            continue
+        parts = rel[len(prefix) :].split("/")
+        if len(parts) == 3 and parts[1] == "decisions":
+            paths.append(rel)
+    return paths
+
+
 def check(repo: Path, base: str, root: str = "data/hangar") -> list[str]:
-    """Problems for every decision file under `root` whose decided record was rewritten."""
+    """Problems for every decided record under `root` that was rewritten or removed."""
     errors: list[str] = []
+    present = {
+        path.relative_to(repo).as_posix()
+        for path in (repo / root).glob("*/decisions/*.yaml")
+    }
+    for rel in _base_decision_paths(repo, base, root):
+        if rel in present:
+            continue
+        old = _load(_git_show(repo, base, rel))
+        if old is None or old.get("status") != "decided":
+            continue
+        errors.append(f"{rel}: a decided record was deleted")
+
     for path in sorted((repo / root).glob("*/decisions/*.yaml")):
         rel = path.relative_to(repo).as_posix()
         old = _load(_git_show(repo, base, rel))

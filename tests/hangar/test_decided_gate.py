@@ -71,3 +71,60 @@ def test_reopen_and_redecide_by_appending_history_passes(tmp_path):
     ]
     f.write_text(yaml.safe_dump(ok))
     assert gate.check(tmp_path, "HEAD") == []
+
+
+def test_main_exits_zero_when_there_are_no_errors(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "PROJECT_ROOT", tmp_path)
+    committed(tmp_path)
+    assert gate.main(["--base", "HEAD"]) == 0
+
+
+def test_main_exits_nonzero_when_check_has_errors(tmp_path, monkeypatch):
+    monkeypatch.setattr(gate, "PROJECT_ROOT", tmp_path)
+    f = committed(tmp_path)
+    bad = copy.deepcopy(DECIDED)
+    bad["decision"]["picks"] = {"engine": "b"}
+    f.write_text(yaml.safe_dump(bad))
+    assert gate.main(["--base", "HEAD"]) != 0
+
+
+def test_unreadable_decided_file_is_an_error(tmp_path):
+    f = committed(tmp_path)
+    f.write_text("decision: [\n")
+    errors = gate.check(tmp_path, "HEAD")
+    assert len(errors) == 1 and "readable" in errors[0]
+
+
+def test_deleted_decided_record_is_an_error(tmp_path):
+    f = committed(tmp_path)
+    f.unlink()
+    errors = gate.check(tmp_path, "HEAD")
+    assert len(errors) == 1 and "deleted" in errors[0]
+
+
+def test_rewriting_old_history_and_appending_is_refused(tmp_path):
+    f = committed(tmp_path)
+    bad = copy.deepcopy(DECIDED)
+    bad["history"][0]["reason"] = "silently rewritten"
+    bad["history"].append(
+        {
+            "date": "2026-11-01",
+            "from": "decided",
+            "to": "decided",
+            "reason": "appended",
+            "picks": {"engine": "a"},
+        }
+    )
+    f.write_text(yaml.safe_dump(bad))
+    errors = gate.check(tmp_path, "HEAD")
+    assert len(errors) == 1 and "rewritten" in errors[0]
+
+
+def test_editing_decision_date_or_reason_is_refused(tmp_path):
+    f = committed(tmp_path)
+    bad = copy.deepcopy(DECIDED)
+    bad["decision"]["date"] = "2026-12-01"
+    bad["decision"]["reason"] = "different reason"
+    f.write_text(yaml.safe_dump(bad))
+    errors = gate.check(tmp_path, "HEAD")
+    assert len(errors) == 1 and "decision" in errors[0]

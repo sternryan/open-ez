@@ -111,6 +111,9 @@ class BeamFEAAdapter:
 
         Returns both cap-only legacy results (for backward compatibility with
         RegressionRunner) and D-box primary results with composite failure checks.
+        dbox_spar_cap_tsai_wu_margin and dbox_skin_tsai_wu_margin are the
+        Tsai-Wu strength ratio R minus 1. Zero stress leaves those margins
+        at float('inf').
         """
         half_span = (
             config.geometry.wing_panel_span
@@ -341,10 +344,13 @@ class CompositePly:
 
     @property
     def properties(self) -> Dict[str, float]:
-        """Material properties; an unknown name raises KeyError (no UNI fallback)."""
+        """Material properties; an unknown name raises KeyError naming it and the valid names (no UNI fallback)."""
         key = self.material.lower()
         if key not in MATERIAL_PROPERTIES:
-            raise KeyError(f"unknown ply material {self.material!r}")
+            valid = ", ".join(sorted(MATERIAL_PROPERTIES))
+            raise KeyError(
+                f"unknown ply material {self.material!r}; valid names: {valid}"
+            )
         return MATERIAL_PROPERTIES[key]
 
     def kernel_ply(self) -> lamina.Ply:
@@ -388,6 +394,13 @@ def _strength_ratio(sigma_12: np.ndarray, props: Dict[str, float]) -> float:
     )
 
 
+def _margin_r_minus_one(R: float) -> float:
+    """Margin of safety R - 1. Zero stress has R = inf; keep float('inf')."""
+    if R == float("inf"):
+        return float("inf")
+    return R - 1.0
+
+
 @dataclass
 class CompositeSection:
     """Multi-ply laminate section with CLT analysis."""
@@ -423,8 +436,11 @@ class CompositeSection:
         return _strength_ratio(stress_state, self._min_allowables())
 
     def tsai_wu_margin(self, stress_state: np.ndarray) -> float:
-        """Tsai-Wu margin of safety R - 1 (>0 is safe)."""
-        return self.tsai_wu_strength_ratio(stress_state) - 1.0
+        """Tsai-Wu margin of safety R - 1 (>0 is safe).
+
+        Zero stress gives R = inf, so the margin is float('inf').
+        """
+        return _margin_r_minus_one(self.tsai_wu_strength_ratio(stress_state))
 
 
 @dataclass
@@ -556,7 +572,7 @@ class CompositeFEAAdapter:
 
         Returns:
             List of dicts with: ply_index, z_position, sigma_1, sigma_2,
-            tau_12, tsai_wu_strength_ratio, tsai_wu_margin (R - 1)
+            tau_12, tsai_wu_strength_ratio, tsai_wu_margin (R - 1; float('inf') at zero stress)
         """
         section = section or self.build_section()
         kplies = section.kernel_plies()
@@ -592,7 +608,7 @@ class CompositeFEAAdapter:
                     "sigma_2": sigma_2,
                     "tau_12": tau_12,
                     "tsai_wu_strength_ratio": ratio,
-                    "tsai_wu_margin": ratio - 1.0,
+                    "tsai_wu_margin": _margin_r_minus_one(ratio),
                 }
             )
 
@@ -837,7 +853,12 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
     3. Shear web BID face sheets (shear stress vs F6)
     4. Foam core compression (bearing stress vs foam allowable)
 
-    Returns dict with margin keys (>0 means safe).
+    Spar-cap and skin Tsai-Wu margins are the kernel strength ratio R minus 1,
+    the same convention as CompositeSection.tsai_wu_margin. Zero stress gives
+    R = inf, so those margins are float('inf'), not 1. Callers must accept inf
+    (comparisons with > 0 treat it as safe; format specs such as .4f print it).
+
+    Returns dict with margin keys (>0 means safe; inf means no stress).
     """
     mat = config.materials
     dbox = DBoxBeamAdapter()
@@ -862,32 +883,17 @@ def dbox_failure_checks(half_span_in: float, total_load_lbf: float) -> Dict[str,
     d_cap = (d - cap_t) / 2  # distance from NA to cap centroid
     sigma_cap = UNI_GLASS_PROPERTIES["E1"] * kappa * (d_cap + cap_t / 2)
 
-    # Tsai-Wu for UNI glass under uniaxial bending
-    F1t = UNI_GLASS_PROPERTIES["F1t"]
-    F1c = UNI_GLASS_PROPERTIES["F1c"]
-    F2t = UNI_GLASS_PROPERTIES["F2t"]
-    F2c = UNI_GLASS_PROPERTIES["F2c"]
-    _F6 = UNI_GLASS_PROPERTIES["F6"]
-
-    f1 = 1.0 / F1t - 1.0 / F1c
-    f11 = 1.0 / (F1t * F1c)
-    _f2 = 1.0 / F2t - 1.0 / F2c
-    f22 = 1.0 / (F2t * F2c)
-    _f12 = -0.5 * math.sqrt(f11 * f22)
-
-    F_cap = f1 * sigma_cap + f11 * sigma_cap**2
-    cap_margin = 1.0 - F_cap
+    # Tsai-Wu margin is R - 1 (uniaxial fiber stress). Zero stress stays inf.
+    cap_margin = _margin_r_minus_one(
+        _strength_ratio(np.array([sigma_cap, 0.0, 0.0]), UNI_GLASS_PROPERTIES)
+    )
 
     # --- 2. D-box skin Tsai-Wu (BID glass) ---
     _skin_t = root_section.dbox_skin_plies * mat.bid_ply_thickness
     sigma_skin = BID_GLASS_PROPERTIES["E1"] * kappa * (d / 2)
-
-    F1t_bid = BID_GLASS_PROPERTIES["F1t"]
-    F1c_bid = BID_GLASS_PROPERTIES["F1c"]
-    f1_bid = 1.0 / F1t_bid - 1.0 / F1c_bid
-    f11_bid = 1.0 / (F1t_bid * F1c_bid)
-    F_skin = f1_bid * sigma_skin + f11_bid * sigma_skin**2
-    skin_margin = 1.0 - F_skin
+    skin_margin = _margin_r_minus_one(
+        _strength_ratio(np.array([sigma_skin, 0.0, 0.0]), BID_GLASS_PROPERTIES)
+    )
 
     # --- 3. Web shear check (BID face sheets) ---
     # Shear at root: V = total_load (worst case)

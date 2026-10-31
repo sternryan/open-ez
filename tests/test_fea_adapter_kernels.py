@@ -49,12 +49,29 @@ def test_unknown_material_raises():
         _ = ply.properties
 
 
-def test_abd_is_the_kernel_abd():
+def test_unknown_material_message_names_material_and_valid_names():
+    ply = CompositePly("no_such_cloth", 0.01, 0.0)
+    with pytest.raises(KeyError, match="no_such_cloth") as exc:
+        _ = ply.properties
+    msg = str(exc.value)
+    valid = ", ".join(sorted(fea_adapter.MATERIAL_PROPERTIES))
+    assert f"valid names: {valid}" in msg
+
+
+def test_abd_is_the_kernel_abd(monkeypatch):
+    """An inlined ABD sum never calls the kernel, so it cannot return this sentinel."""
+    sentinel = (
+        np.full((3, 3), 11.0),
+        np.full((3, 3), 22.0),
+        np.full((3, 3), 33.0),
+    )
+
+    def fake_abd(_plies):
+        return sentinel
+
+    monkeypatch.setattr(laminate, "abd", fake_abd)
     A, B, D = _section().abd_matrices()
-    kA, kB, kD = laminate.abd(_kernel_plies())
-    np.testing.assert_allclose(A, kA, rtol=1e-12)
-    np.testing.assert_allclose(B, kB, rtol=1e-12, atol=1e-9)
-    np.testing.assert_allclose(D, kD, rtol=1e-12)
+    assert A is sentinel[0] and B is sentinel[1] and D is sentinel[2]
 
 
 def test_tsai_wu_margin_is_strength_ratio_minus_one():
@@ -66,6 +83,47 @@ def test_tsai_wu_margin_is_strength_ratio_minus_one():
     )
     assert sec.tsai_wu_strength_ratio(sigma) == pytest.approx(R, rel=1e-12)
     assert sec.tsai_wu_margin(sigma) == pytest.approx(R - 1.0, rel=1e-12)
+    assert sec.tsai_wu_strength_ratio(np.zeros(3)) == float("inf")
+    assert sec.tsai_wu_margin(np.zeros(3)) == float("inf")
+
+
+def test_dbox_tsai_wu_margins_are_strength_ratio_minus_one(monkeypatch):
+    """D-box Tsai-Wu keys are kernel R - 1. The old 1 - F path never calls the kernel."""
+    ratios = []
+    real = fea_adapter.tsai_wu_strength_ratio
+
+    def spy(sigma, *args, **kwargs):
+        R = real(sigma, *args, **kwargs)
+        ratios.append(R)
+        return R
+
+    monkeypatch.setattr(fea_adapter, "tsai_wu_strength_ratio", spy)
+    out = fea_adapter.dbox_failure_checks(100.0, 450.0)
+    assert ratios, "dbox Tsai-Wu margins must come from tsai_wu_strength_ratio"
+    assert len(ratios) == 2
+    assert math.isfinite(ratios[0]) and math.isfinite(ratios[1])
+    assert out["dbox_spar_cap_tsai_wu_margin"] == pytest.approx(ratios[0] - 1.0)
+    assert out["dbox_skin_tsai_wu_margin"] == pytest.approx(ratios[1] - 1.0)
+
+
+def test_dbox_tsai_wu_margin_zero_stress_is_inf(monkeypatch):
+    """Zero stress: kernel R is inf, and both D-box margins stay float('inf'), not 1."""
+    seen = []
+    real = fea_adapter.tsai_wu_strength_ratio
+
+    def spy(sigma, *args, **kwargs):
+        R = real(sigma, *args, **kwargs)
+        seen.append((np.asarray(sigma, dtype=float).copy(), R))
+        return R
+
+    monkeypatch.setattr(fea_adapter, "tsai_wu_strength_ratio", spy)
+    out = fea_adapter.dbox_failure_checks(100.0, 0.0)
+    assert out["dbox_spar_cap_tsai_wu_margin"] == float("inf")
+    assert out["dbox_skin_tsai_wu_margin"] == float("inf")
+    assert len(seen) == 2
+    for sigma, R in seen:
+        assert np.all(sigma == 0.0)
+        assert R == float("inf")
 
 
 def test_ply_by_ply_uses_full_abd_response():
