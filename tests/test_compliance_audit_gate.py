@@ -3,8 +3,8 @@ compliance_audit script: is a non-compliant tracker a failure?
 ==============================================================
 
 scripts/compliance_audit.py prints IN-PROGRESS below 51% and still exits 0.
-It is also not run by CI. A gate must reject a non-compliant tracker; this
-test documents that and is a strict xfail until the script exits nonzero.
+It is also not run by CI. A gate must reject a non-compliant tracker; the script now
+exits 1 below 51% and this test holds it to that.
 """
 
 import runpy
@@ -21,11 +21,6 @@ import core.compliance as compliance  # noqa: E402
 SCRIPT = REPO_ROOT / "scripts" / "compliance_audit.py"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="scripts/compliance_audit.py exits 0 with IN-PROGRESS below 51% "
-    "(compliance_audit.py:36-39) and is not run in CI",
-)
 def test_audit_exits_nonzero_when_below_51_percent(tmp_path, monkeypatch):
     fresh = compliance.ComplianceTracker()
     monkeypatch.setattr(compliance, "compliance_tracker", fresh)

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from core.compliance import compliance_tracker, ManufacturingMethod
 
@@ -54,6 +55,10 @@ def run_compliance_audit():
     # 4. Export JSON
     json_file = compliance_tracker.export_json(output_dir)
     print(f"   ✅ JSON data exported: {json_file}")
+
+    if not compliance_tracker.is_compliant:
+        print("\n❌ Compliance Audit FAILED: builder credit below the 51% threshold", file=sys.stderr)
+        sys.exit(1)
 
     print("\n🎉 Compliance Audit Completed Successfully!")
 
