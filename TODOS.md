@@ -57,9 +57,10 @@ an undimensioned image.
 - **Kernel validation.** Block 3 M3.1 and M3.2 landed as `core/kernels/` (laminate, Tsai-Wu, thin-wall), tested
   against registered published data in `tests/kernels/` (ledger rows 73, 75, 78). One recorded miss is strict xfail
   (AS4/8552 [10/80/10] UNT, row 78); glass is not counted as validated by the textbook vectors (rows 78 and 80).
-  The older laminate code in `core/simulation/fea_adapter.py` (`CompositePly`, `CompositeSection`) has no direct
-  test; `tests/test_dbox_deflection.py` only checks its Tsai-Wu margins are positive, which is not validation
-  (ledger row 72). Design: `docs/superpowers/specs/2026-10-07-block3-equivalence-engine-design.md` section 5.
+  `core/simulation/fea_adapter.py` (`CompositePly`, `CompositeSection`, `TorsionSection.gj`,
+  `analyze_ply_by_ply`) now delegates to those kernels (`tests/test_fea_adapter_kernels.py`); `dbox_failure_checks`
+  still computes its own inline Tsai-Wu margin, and `tests/test_dbox_deflection.py` only checks that margin is
+  positive, which is not validation (ledger rows 72 and 83). Design: `docs/superpowers/specs/2026-10-07-block3-equivalence-engine-design.md` section 5.
 - **Analysis wing and winglet fields (M2.8 update).** `wing_span` 314.0, `wing_root_bl` 23.0 and the
   `winglet_*` analysis fields now carry the book values (ledger rows 60 to 62); `wing_washout` 1.0 still
   matches no page (the book twist is in `wing_book_washout_deg`) and moving it changes the NP.
