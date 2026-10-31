@@ -541,3 +541,14 @@ def test_apply_patch_on_the_real_data_changes_only_the_patched_entry(tmp_path):
     changed = [l for l in difflib.unified_diff(before.splitlines(), after.splitlines(), lineterm="")
                if l[:1] in "+-" and l[:3] not in ("+++", "---")]
     assert 0 < len(changed) <= 8, "\n".join(changed)   # the entry's own lines, no reflow of the rest of the file
+
+
+def test_populated_flow_registry_is_refused_unchanged(tmp_path):
+    p = tmp_path / "registry.yaml"
+    p.write_text("sources: {old-one: {title: Old, edition: e, obtain: 'https://example.org/old', copy: document, page_basis: pdf}}\n")
+    before = p.read_bytes()
+    assert yaml.safe_load(before)["sources"]["old-one"]["title"] == "Old"
+    with pytest.raises(ValueError, match="refusing to edit"):
+        sc.register_source(p, prop(), today="2026-10-19")
+    assert p.read_bytes() == before
+    assert not list(tmp_path.glob("*.tmp"))
