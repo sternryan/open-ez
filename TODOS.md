@@ -34,11 +34,11 @@ an undimensioned image.
 
 - **Two-method NP.** Analytic vs VSPAERO disagree by more than the 1.0 in bound. The next step is a
   method chosen from a textbook source before it is run, per the ledger. Do not widen the bound.
-- **Empty weight.** Waits on Block 2 ledger closure (per-part mass from geometry and ply schedules).
-  Target: the OM sample empty airplane, 730 lb at FS 111.7 (om-1980:p25, p35), with a tolerance set in
-  the 2.n spec; the OM also says about 750 lb normally equipped. The ledger must reproduce both OM sample
-  loadings exactly: the light pilot at 103.96 (OUTSIDE the 103 aft limit, as the manual says) and the heavy
-  pilot at 101.06 (inside).
+- **Empty weight.** The Block 2 closure table exists (`data/mass_ledger.yaml` `closure:`, frozen, ledger row 65) and
+  its verdict against the target is over the weight cap, so `tests/test_ledger_closure.py::test_empty_closes_on_the_om_sample`
+  and `test_om_samples_from_the_ledger_empty` are strict xfail (rows 65 to 68). Target: the OM sample empty airplane,
+  730 lb at FS 111.7 (om-1980:p25, p35); the OM also says about 750 lb normally equipped. The open work is what
+  moves the closure rows (row 68 lists the unresolved weights), not a missing ledger.
 - **CG limits.** Computed from the NP, graded against the LOADED envelope FS 97 to 103 (om-1980:p28).
   They do not wait on the ledger. The empty CG (111.7 in the OM sample) is outside that band by design
   and is never graded against it (ledger row 63).
@@ -50,14 +50,16 @@ an undimensioned image.
 
 ## Code
 
-- **Fuselage and full-airframe assembly.** `core.structures.Fuselage` is an elliptical placeholder
-  with unsourced dimensions and no `manufacturing_plan`, so `AircraftAssembly` cannot be built
-  (`scripts/assembly_test.py`, strict xfail). Rebuild the fuselage from book stations in Block 2
-  rather than patching the placeholder.
-- **Kernel validation.** The laminate kernel (`core/simulation/fea_adapter.py`) has never been tested: an
-  earlier note claimed "one textbook E-glass case", but no such test exists in the tree or its history
-  (ledger row 72). Block 3 milestone M3.1 validates a new kernel against registered published data
-  (`docs/superpowers/specs/2026-10-07-block3-equivalence-engine-design.md` section 5).
+- **Fuselage and full-airframe assembly.** The elliptical placeholder was retired in d9b8f53; the fuselage is the
+  book box in `core/fuselage_book.py` (chapters 4 to 9, parts tagged `book`, `derived` or `representational`) and
+  `scripts/assembly_test.py` no longer carries an xfail. Still open: nothing aft of the firewall is modelled
+  (AGENTS.md, Known Issues).
+- **Kernel validation.** Block 3 M3.1 and M3.2 landed as `core/kernels/` (laminate, Tsai-Wu, thin-wall), tested
+  against registered published data in `tests/kernels/` (ledger rows 73, 75, 78). One recorded miss is strict xfail
+  (AS4/8552 [10/80/10] UNT, row 78); glass is not counted as validated by the textbook vectors (rows 78 and 80).
+  The older laminate code in `core/simulation/fea_adapter.py` (`CompositePly`, `CompositeSection`) has no direct
+  test; `tests/test_dbox_deflection.py` only checks its Tsai-Wu margins are positive, which is not validation
+  (ledger row 72). Design: `docs/superpowers/specs/2026-10-07-block3-equivalence-engine-design.md` section 5.
 - **Analysis wing and winglet fields (M2.8 update).** `wing_span` 314.0, `wing_root_bl` 23.0 and the
   `winglet_*` analysis fields now carry the book values (ledger rows 60 to 62); `wing_washout` 1.0 still
   matches no page (the book twist is in `wing_book_washout_deg`) and moving it changes the NP.

@@ -85,8 +85,12 @@ against the book today. The Block 1 report explains each and what would fix it. 
 **In progress.** Block 2: finishing the rehearsal and closing the mass ledger on the manual's sample
 empty airplane. Open items are in [`TODOS.md`](TODOS.md).
 
-**Planned, design only.** Blocks 3 to 7: an equivalence engine, printed plugs and molds, physical
-test coupons and outside review, engine and systems, and a build and flight-test plan. See the
+**In progress, Block 3.** The equivalence engine: laminate, thin-wall and flutter-criterion kernels
+(`core/kernels/`) are written and tested against published data, and the canard report runs. Its strength gate and
+flutter screen still read blocked on unsourced inputs.
+
+**Planned, design only.** Blocks 4 to 7: printed plugs and molds, physical test coupons and outside review,
+engine and systems, and a build and flight-test plan. See the
 [roadmap](docs/superpowers/specs/2026-09-29-roadmap-same-airplane-new-process-design.md).
 
 **Not done:** nothing here has been checked against hardware. The CNC cutting paths have never run

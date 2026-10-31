@@ -82,6 +82,9 @@ analysis, the report and the guide.
 - **Mass ledger** (`core/ledger.py`, `data/mass_ledger.yaml`): per-part mass and CG with sources
 - **O-235 engine module** (`core/engine_o235_book.py`): representational component geometry placed from the prop
   flange, and `engine_mass_properties()` (sourced accessories plus a residual core); layout frozen by hash (ledger row 70)
+- **Kernels** (`core/kernels/`): Block 3 pure functions with no airframe data: laminate ABD and ply stress,
+  Tsai-Wu, thin-wall section and shear centre, FAA Report 45 flutter criteria; tests in `tests/kernels/`
+  (ledger rows 73, 75, 78, 79)
 - **GCodeWriter / GCodeEngine** (`core/manufacturing.py`): 4-axis hot-wire paths (never run on a machine)
 - **ComplianceTracker** (`core/compliance/`): builder-credit tally for the 51% rule
 
