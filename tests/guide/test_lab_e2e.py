@@ -14,7 +14,7 @@ import pytest
 from playwright.sync_api import sync_playwright as _real_sync_playwright
 
 from guide.build_site import build
-from tests.guide.render_fixture import ROOT
+from tests.guide.render_fixture import ROOT, pixels
 from tests.guide.test_schema import gdir as _schema_gdir
 
 _graph_dir = pytest.fixture(name="gdir")(_schema_gdir.__wrapped__)
@@ -2264,7 +2264,7 @@ def _box_js(bl):
 
 def _changed(a, c, tol=24):
     """Pixels that differ by more than `tol` (summed RGB) between two same-size crops."""
-    pa, pc = list(a.getdata()), list(c.getdata())
+    pa, pc = list(pixels(a)), list(pixels(c))
     return sum(
         1 for u, v in zip(pa, pc) if sum(abs(i - j) for i, j in zip(u[:3], v[:3])) > tol
     )
@@ -2314,7 +2314,7 @@ def _cap_pixels_case(pg, w, dpr):
     # with the cut on, the cut face shows the layers (foam, plies) in place of the skin the camera otherwise sees there
     assert n > 0.15 * total, (n, total)
     # and the face is not one flat colour: a foam core and several plies show as distinct tones
-    colours = {(px[0] // 16, px[1] // 16, px[2] // 16) for px in on.getdata()}
+    colours = {(px[0] // 16, px[1] // 16, px[2] // 16) for px in pixels(on)}
     assert len(colours) >= 6, len(colours)
 
 
@@ -4179,7 +4179,7 @@ def _elevator_pixels(pg, pgh, clip, tol=45):
     on, off = _shot_clip(pg, clip), _shot_clip(pgh, clip)
     return [
         1 if sum(abs(i - j) for i, j in zip(u, v)) > tol else 0
-        for u, v in zip(on.getdata(), off.getdata())
+        for u, v in zip(pixels(on), pixels(off))
     ]
 
 
@@ -4242,7 +4242,7 @@ def test_ch11_travel_check_changes_the_pixels_of_the_elevator_on_screen_between_
                 on, off = crop(on), crop(off)
                 m[deg] = [
                     1 if sum(abs(i - j) for i, j in zip(u, v)) > 45 else 0
-                    for u, v in zip(on.getdata(), off.getdata())
+                    for u, v in zip(pixels(on), pixels(off))
                 ]
             n30, n15 = sum(m[30.0]), sum(m[-15.0])
             moved = sum(1 for a, c in zip(m[30.0], m[-15.0]) if a != c)
@@ -4286,7 +4286,7 @@ def test_ch11_hinge_slots_show_the_striped_elevator_in_an_open_cove_of_the_canar
                     _run(g, 0.2)
                 clip = _screen_clip(pg, [e["boxes"]["elevator.right"]], 1180, 820)
                 mask = _elevator_pixels(pg, pgh, clip)
-                n, warm = sum(mask), _orange(list(_shot_clip(pg, clip).getdata()), mask)
+                n, warm = sum(mask), _orange(list(pixels(_shot_clip(pg, clip))), mask)
                 print(
                     f"{op}: the elevator covers {n} px of its {clip['width']:.0f}x{clip['height']:.0f} box, {warm} of them amber"
                 )
@@ -5503,7 +5503,7 @@ def test_the_root_notch_is_gone_the_cove_is_the_foam_span_only(rsite):
                     pgh,
                     {"x": max(0, sx - 2), "y": max(0, sy - 2), "width": 4, "height": 4},
                 )
-                d = list(im.getdata())
+                d = list(pixels(im))
                 return tuple(sum(c[i] for c in d) / len(d) for i in range(3))
 
             def dist(a, b):

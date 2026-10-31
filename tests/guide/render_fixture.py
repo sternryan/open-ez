@@ -17,6 +17,14 @@ PNG_1PX = bytes.fromhex(
 )
 
 
+def pixels(im) -> list:
+    """The image's pixels as a flat list (a tuple per pixel, a bare value for one-band images); Image.getdata is deprecated."""
+    import numpy as np
+
+    a = np.asarray(im)
+    return a.reshape(-1).tolist() if a.ndim == 2 else list(map(tuple, a.reshape(-1, a.shape[-1]).tolist()))
+
+
 def make_export(d: Path) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     g = load_graph(ROOT / "guide" / "graph")

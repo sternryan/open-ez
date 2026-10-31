@@ -444,6 +444,7 @@ function applyPane() {
 }
 function showCut(c) {
   const img = $("#cutimg"), fig = $("#cutpane"); $("#cuterr").hidden = true; img.hidden = false; $("#cutzoom").hidden = false;
+  if (img.getAttribute("src") === c.src && img.complete && img.naturalWidth > 0) { img.alt = c.alt; $("#cutcap").textContent = c.alt; return; } // same picture already showing: no placeholder flash
   fig.classList.add("loading");
   img.onload = () => fig.classList.remove("loading");
   img.onerror = () => { fig.classList.remove("loading"); img.hidden = true; $("#cutzoom").hidden = true; $("#cuterr").hidden = false; };

@@ -188,7 +188,7 @@ def test_gu_lists_no_geometry_chip_and_hides_unused_meshes(site):
 
 
 # ---- M2 Task 9: cutaway toggle, glance view, states
-from tests.guide.render_fixture import ROOT, make_export, make_renders  # noqa: E402
+from tests.guide.render_fixture import ROOT, make_export, make_renders, pixels  # noqa: E402
 
 
 @pytest.fixture
@@ -712,7 +712,7 @@ def _dark_pixels(pg, clip):
     from PIL import Image
 
     im = Image.open(io.BytesIO(pg.screenshot(clip=clip))).convert("L")
-    return sum(1 for v in im.getdata() if v < 200)
+    return sum(1 for v in pixels(im) if v < 200)
 
 
 @pytest.mark.local_render
@@ -799,5 +799,28 @@ def test_isolate_zooms_to_the_ply_and_show_all_returns_home(csite):
         back = pg.evaluate("window.__guide.camera()")
         assert back["distance"] == pytest.approx(home["distance"], rel=1e-6)
         assert back["target"] == pytest.approx(home["target"], rel=1e-6, abs=1e-6)
+        b.close()
+    s.shutdown()
+
+
+def test_reselecting_the_same_op_does_not_reload_the_cut_picture(csite):
+    s, url = serve(csite)
+    with sync_playwright() as p:
+        b, pg = open_page(p, url, width=1180)
+        pg.select_option("#variant", "roncz")
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.click('#viewtoggle [data-view="cutaway"]')
+        pg.wait_for_function(
+            "document.querySelector('#cutimg').complete && !document.querySelector('#cutpane').classList.contains('loading')"
+        )
+        pg.evaluate(
+            """() => { window.__sawLoading = false;
+              new MutationObserver(() => { if (document.querySelector('#cutpane').classList.contains('loading')) window.__sawLoading = true; })
+                .observe(document.querySelector('#cutpane'), { attributes: true, attributeFilter: ['class'] }); }"""
+        )
+        pg.click('#ops li[data-op="r30.bottom-skin"]')
+        pg.evaluate("window.__guide.paneMode()")  # let the observer's microtasks run
+        assert pg.evaluate("window.__sawLoading") is False
+        assert pg.is_visible("#cutimg")
         b.close()
     s.shutdown()
