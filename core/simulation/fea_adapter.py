@@ -495,66 +495,24 @@ class CompositeFEAAdapter:
         load_factor: float = 3.8,
         n_stations: int = 10,
     ) -> SparCapResult:
-        """Verify spar cap adequacy under design loads."""
-        span_in = span_in or config.geometry.wing_panel_span
-        ultimate_load = tip_load_lbf * load_factor * 1.5
+        """Delegates to core.spar_sizing (two-cap beam, re-solved plies, per-station mass).
 
-        station_positions = list(np.linspace(0, span_in, n_stations))
-        max_stresses, margins, recommended = [], [], []
+        The old flat-plate Mc/I, the ply heuristic and the full-span weight are retired; the
+        unsourced legacy load arguments are rejected rather than silently used."""
+        if (span_in, tip_load_lbf, load_factor, n_stations) != (None, 450.0, 3.8, 10):
+            raise ValueError(
+                "legacy spar-cap load arguments are retired; use core.spar_sizing"
+            )
+        from core.spar_sizing import size_spar_caps
 
-        section = self.build_section()
-        h = section.total_thickness
-        _, _, D = section.abd_matrices()
-        # D11 * width is the beam bending stiffness (EI equivalent)
-        EI_equiv = D[0, 0] * self.spar_width
-
-        # Outermost ply Q_bar for stress recovery
-        outermost_ply = section.plies[-1]
-        Q_bar = outermost_ply.stiffness_matrix_global()
-
-        for pos in station_positions:
-            moment = ultimate_load * (span_in - pos)
-            # Curvature from CLT beam bending: kappa = M / (D11 * width)
-            kappa = moment / EI_equiv
-            # Strain at outermost fiber: epsilon = kappa * z_max
-            c = h / 2
-            epsilon_max = kappa * c
-            # Ply-level stress via Q_bar: sigma = Q11_bar * epsilon
-            sigma_max = Q_bar[0, 0] * epsilon_max
-
-            stress_state = np.array([sigma_max, 0.0, 0.0])
-            margin = section.tsai_wu_margin(stress_state)
-
-            max_stresses.append(abs(sigma_max))
-            margins.append(margin)
-
-            if margin < 0.2:
-                extra = max(
-                    1,
-                    int(math.ceil(self.baseline_plies * (0.25 - margin) / 0.25 * 0.3)),
-                )
-                recommended.append(self.baseline_plies + extra)
-            else:
-                recommended.append(self.baseline_plies)
-
-        extra_total = sum(r - self.baseline_plies for r in recommended)
-        ply_density = MATERIAL_PROPERTIES[self.ply_material]["density"]
-        weight_penalty = (
-            extra_total
-            * self.spar_width
-            * span_in
-            * self.ply_thickness
-            * ply_density
-            * 2
-        )
-
+        r = size_spar_caps()
         return SparCapResult(
-            stations=station_positions,
-            max_stresses=max_stresses,
-            tsai_wu_margins=margins,
-            recommended_plies=recommended,
-            weight_penalty_lb=weight_penalty,
-            is_adequate=all(m > 0 for m in margins),
+            stations=[s.y_in for s in r.stations],
+            max_stresses=[s.sigma_psi for s in r.stations],
+            tsai_wu_margins=[s.margin for s in r.stations],
+            recommended_plies=[s.plies_solved for s in r.stations],
+            weight_penalty_lb=r.extra_ply_mass_lb,
+            is_adequate=all(s.margin >= r.required_margin for s in r.stations),
         )
 
     def analyze_ply_by_ply(
