@@ -4,6 +4,7 @@ import os
 import re
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -62,7 +63,7 @@ def env(tmp_path):
         LONGEZ_EXPORT_DIR=str(export),
         LONGEZ_RENDER_CACHE=str(tmp_path / "cache"),
         LONGEZ_POLL_S="0",
-        PY=str(ROOT / ".venv" / "bin" / "python"),
+        PY=sys.executable,  # a fresh worktree has no ROOT/.venv
         STUB_LOG=str(tmp_path / "log"),
         STUB_SCRIPTS=str(scripts),
         STUB_OUT=str(out),
