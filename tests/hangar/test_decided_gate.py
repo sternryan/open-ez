@@ -128,3 +128,14 @@ def test_editing_decision_date_or_reason_is_refused(tmp_path):
     f.write_text(yaml.safe_dump(bad))
     errors = gate.check(tmp_path, "HEAD")
     assert len(errors) == 1 and "decision" in errors[0]
+
+
+def test_invalid_base_ref_exits_nonzero(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(gate, "PROJECT_ROOT", tmp_path)
+    committed(tmp_path)
+    code = gate.main(["--base", "astra-nonexistent-ref"])
+    captured = capsys.readouterr()
+    assert code != 0
+    text = captured.out + captured.err
+    assert "astra-nonexistent-ref" in text
+    assert "no in-place rewrites" not in text

@@ -56,8 +56,24 @@ def _base_decision_paths(repo: Path, base: str, root: str) -> list[str]:
     return paths
 
 
+def _verify_base(repo: Path, base: str) -> str | None:
+    try:
+        cmd = ["git", "-C", str(repo), "rev-parse", "--verify", f"{base}^{{commit}}"]
+        subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return None
+    except (subprocess.CalledProcessError, OSError) as e:
+        msg = f"invalid base ref: {base}"
+        if hasattr(e, "stderr") and e.stderr:
+            msg += f" {e.stderr}"
+        return msg
+
+
 def check(repo: Path, base: str, root: str = "data/hangar") -> list[str]:
     """Problems for every decided record under `root` that was rewritten or removed."""
+    lookup_error = _verify_base(repo, base)
+    if lookup_error:
+        return [lookup_error]
+
     errors: list[str] = []
     present = {
         path.relative_to(repo).as_posix()
