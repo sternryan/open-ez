@@ -40,7 +40,7 @@ test('CLI rejects a planted encoder failure instead of reporting a written video
 })
 
 function harness(settings = {}) {
-  const calls = { browserClosed: 0, signals: [], writes: 0, spawned: 0, logs: [] }
+  const calls = {urls: [],  browserClosed: 0, signals: [], writes: 0, spawned: 0, logs: [] }
   const browser = new EventEmitter()
   const page = new EventEmitter()
   const encoder = new EventEmitter()
@@ -67,7 +67,7 @@ function harness(settings = {}) {
     if (settings.closeError) throw new Error('planted browser cleanup failure')
     if (settings.hangClose) return new Promise(() => {})
   }
-  page.goto = async () => {}
+  page.goto = async (u) => { calls.urls.push(u) }
   page.waitForFunction = async () => {
     if (settings.readinessError) throw new Error('planted recorder readiness failure')
     if (settings.hangReadiness) return new Promise(() => {})
@@ -256,3 +256,12 @@ for (const duration of [-1, 0, NaN, Infinity, 1801]) {
     assert.equal(calls.browserClosed, 1)
   })
 }
+
+test('the recorder films the legacy lab (the player is the default page)', async () => {
+  const {options, dependencies, calls} = harness()
+  await recordFilm(options, dependencies)
+  assert.equal(calls.urls.length, 1)
+  const q = new URL(calls.urls[0]).searchParams
+  assert.equal(q.get('rec'), '1')
+  assert.equal(q.get('player'), '0')
+})

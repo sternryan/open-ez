@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { CutState } from './core/cut'
 import { compositeMaterial, partMaterial, plyFrame, setPlyLook, dimColor, COLORS, HATCH_COLOR } from './core/composite'
 import type { MaterialSpec } from './logic/materials'
+import type { DrawnPly } from './logic/plyMap'
 import { plyPhase, partPhase, type Phase } from './logic/anim'
 import type { BuildState, MeshInfo } from './logic/build'
 import {
@@ -742,6 +743,15 @@ export class FuselageBay {
 
   opCount(opId: string | null): number {
     return opId ? this.meshes.filter((m) => m.ply?.op === opId && (!m.m27 || this.wingShown(m, opId))).length : 0 // (the left wing's plies wait for the attach: they are not counted before it)
+  }
+
+  /** the op's drawn plies as opCount counts them, with the layup row each comes from (logic/plyMap.ts maps a script's plies onto them) */
+  plyRows(opId: string | null): DrawnPly[] {
+    if (!opId) return []
+    return this.meshes.filter((m) => m.ply?.op === opId && (!m.m27 || this.wingShown(m, opId))).map((m) => {
+      const r = this.data.nodes[m.name] as Partial<FusePlyRow> | undefined
+      return { name: m.name, part: r?.part ?? m.cid, cloth: r?.cloth ?? '', where: r?.where ?? '', opOrder: m.ply!.order }
+    })
   }
 
   /**

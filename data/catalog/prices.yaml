@@ -1,0 +1,495 @@
+# Coupon purchase order line items. Every read is 2026-10-08.
+# page: price read on the vendor page. unverified: snippet or a page that did not load.
+# unsourced: no USD price. URLs are stored as written, without an added scheme.
+- id: bid-7725
+  label: "BID glass, style 7725, 38 in"
+  vendor: Aircraft Spruce
+  part: "01-00642"
+  url: aircraftspruce.com/catalog/pnpages/01-00642.php
+  price_usd: 10.50
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: und-7715
+  label: "UND glass, style 7715, 38 in"
+  vendor: Aircraft Spruce
+  part: "01-00641"
+  url: aircraftspruce.com/catalog/pnpages/01-00641.php
+  price_usd: 12.55
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: carbon-282
+  label: "Carbon, 3K plain weave, 50 in"
+  vendor: Aircraft Spruce
+  part: "01-00971"
+  url: aircraftspruce.com/catalog/pnpages/01-00971.php
+  price_usd: 32.55
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: mgs-lr285-gal
+  label: MGS LR 285 resin
+  vendor: Aircraft Spruce
+  part: "01-41000"
+  url: aircraftspruce.com/catalog/pnpages/01-41000.php
+  price_usd: 439.00
+  unit: gal
+  read: 2026-10-08
+  flag: page
+- id: mgs-h287s-qt
+  label: MGS hardener H287S (slow)
+  vendor: Aircraft Spruce
+  part: "01-41006"
+  url: aircraftspruce.com/catalog/pnpages/01-41006.php
+  price_usd: 123.75
+  unit: qt
+  read: 2026-10-08
+  flag: page
+# "page wording" on the hardener page; stored as page. URL is the hardener page.
+- id: mgs-h287s-hazmat
+  label: Hazmat fees on hardener
+  vendor: Aircraft Spruce
+  part: null
+  url: aircraftspruce.com/catalog/pnpages/01-41006.php
+  price_usd: 70.00
+  unit: qt
+  read: 2026-10-08
+  flag: page
+- id: peel-ply-582c
+  label: "Nylon release peel ply, 60 in, 5 yd pack"
+  vendor: Fibre Glast
+  part: 582-C
+  url: fibreglast.com/product/Nylon_Released_Peel_Ply_582
+  price_usd: 79.72
+  unit: each
+  read: 2026-10-08
+  flag: page
+- id: release-film-1580
+  label: "Perforated release film, 315 F rated"
+  vendor: Fibre Glast
+  part: "1580"
+  url: fibreglast.com/product/low-temperature-release-film-1580
+  price_usd: 6.84
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: breather-579
+  label: "Breather/bleeder, 4 oz polyester"
+  vendor: Fibre Glast
+  part: "579"
+  url: fibreglast.com/product/Breather_and_Bleeder_579
+  price_usd: 5.78
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: bag-film-1796
+  label: "Nylon bag film, 400 F"
+  vendor: Fibre Glast
+  part: "1796"
+  url: fibreglast.com/product/nylon-bagging-film
+  price_usd: 5.95
+  unit: yd
+  read: 2026-10-08
+  flag: page
+- id: sealant-tape-580a
+  label: "Yellow sealant tape, 25 ft roll"
+  vendor: Fibre Glast
+  part: 580-A
+  url: fibreglast.com/product/yellow-sealant-tape-00580
+  price_usd: 11.97
+  unit: each
+  read: 2026-10-08
+  flag: page
+- id: thru-bag-915a
+  label: "Through-bag connector, 1/2 in barb"
+  vendor: Fibre Glast
+  part: 915-A
+  url: fibreglast.com/products/thru-bag-vacuum-connector-00910
+  price_usd: 50.87
+  unit: each
+  read: 2026-10-08
+  flag: page
+- id: vacuum-hose-893
+  label: "Vacuum hose, 1/2 in ID"
+  vendor: Fibre Glast
+  part: "893"
+  url: fibreglast.com/product/Air_Hose_Assemblies_00893_A
+  price_usd: 2.67
+  unit: ft
+  read: 2026-10-08
+  flag: page
+- id: vacuum-gauge-896a
+  label: "Vacuum gauge, 2 in"
+  vendor: Fibre Glast
+  part: 896-A
+  url: fibreglast.com/product/vacuum-gauge-00896/Vacuum_Fittings
+  price_usd: 31.78
+  unit: each
+  read: 2026-10-08
+  flag: page
+- id: partall-wax-1016f
+  label: "Partall #2 wax, 12 oz"
+  vendor: Fibre Glast
+  part: 1016-F
+  url: fibreglast.com/products/parting-wax-1016
+  price_usd: 15.86
+  unit: each
+  read: 2026-10-08
+  flag: page
+- id: pva-13a
+  label: "PVA release film, quart"
+  vendor: Fibre Glast
+  part: 13-A
+  url: fibreglast.com/products/pva-release-film-13
+  price_usd: 13.74
+  unit: each
+  read: 2026-10-08
+  flag: page
+# Unit price is the upper figure of the recorded range.
+- id: vacuum-pump-15500
+  label: "Vacuum pump, 2-stage, about 5 cfm"
+  vendor: retailers
+  part: "15500"
+  url: null
+  price_usd: 469.00
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: tool-plate-glass
+  label: "Tool plate, 1/4 in tempered glass, 24 x 24 in"
+  vendor: Home Depot
+  part: "304248764"
+  url: homedepot.com
+  price_usd: 69.33
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: thermocouple-gk11m
+  label: Type K bead thermocouple
+  vendor: Transcat
+  part: GK11M
+  url: transcat.com/test-products-international-gk11m-gk11m
+  price_usd: 14.95
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: logger-sdl200
+  label: "4-channel type K logger, SD card"
+  vendor: Test Equipment Depot
+  part: SDL200
+  url: testequipmentdepot.com
+  price_usd: 337.95
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: emery-cloth-120
+  label: "Emery cloth, 120 grit, 1 in x 50 yd"
+  vendor: eBay listing
+  part: null
+  url: ebay.com/itm/251154409552
+  price_usd: 26.17
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: diamond-blade-dw4760
+  label: "7 in continuous-rim diamond blade"
+  vendor: retailer
+  part: DW4760
+  url: thepowertoolstore.com/products/dewalt-dw4760
+  price_usd: 54.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: tile-saw-3540
+  label: "7 in wet tile saw"
+  vendor: retailer
+  part: "3540-02"
+  url: null
+  price_usd: 99.00
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: caliper-mitutoyo
+  label: "Digital caliper, 0.01 mm"
+  vendor: Transcat
+  part: "500-196-30"
+  url: transcat.com
+  price_usd: 169.28
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: micrometer-mitutoyo
+  label: "Micrometer, 0 to 1 in"
+  vendor: Transcat
+  part: "293-340-30"
+  url: transcat.com
+  price_usd: 239.20
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+# Status says UNVERIFIED and the price was not read, so the price stays null.
+- id: g10-sheet-85345k211
+  label: "G-10/FR-4 sheet, 1/16 in, 12 x 12 in"
+  vendor: McMaster-Carr
+  part: 85345K211
+  url: mcmaster.com/products/85345K211/
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: tab-adhesive
+  label: Toughened paste adhesive for tabs
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unsourced
+- id: resin-trap
+  label: Resin trap and bleed valve
+  vendor: Fibre Glast
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unsourced
+- id: mixing-supplies
+  label: "Mixing scale, cups, squeegees, gloves"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unsourced
+- id: balance-ohaus
+  label: "Analytical balance, 0.001 g"
+  vendor: retailer
+  part: null
+  url: null
+  price_usd: 1609.05
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+# Price was quoted in EUR. Not converted, so price_usd stays null.
+- id: rosette-cea-06-125uta-350
+  label: "0/90 tee rosettes, 350 ohm, 5 per pack"
+  vendor: Farnell
+  part: CEA-06-125UTA-350
+  url: farnell.com
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: mbond-200
+  label: M-Bond 200 gauge adhesive
+  vendor: DigiKey
+  part: MMF022656
+  url: digikey.com
+  price_usd: 109.40
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: load-frame
+  label: "Load frame, grips, CLC fixture, extensometer"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unsourced
+- id: postcure-oven
+  label: Oven or kiln
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: 2026-10-08
+  flag: unsourced
+- id: polyiso-board
+  label: "Insulated enclosure walls, foil-faced polyiso"
+  vendor: Home Depot
+  part: null
+  url: homedepot.com
+  price_usd: 34.68
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: furring-2x2
+  label: "Frame, 2 x 2 in furring strips"
+  vendor: Home Depot
+  part: null
+  url: null
+  price_usd: 4.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: foil-tape-af099
+  label: UL 181 aluminium foil tape
+  vendor: Shurtape
+  part: AF 099
+  url: null
+  price_usd: 35.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: space-heater-lasko
+  label: "1500 W ceramic space heater with fan"
+  vendor: Lasko
+  part: "754200"
+  url: lasko.com
+  price_usd: 39.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: circulation-fan-ad1212
+  label: "Circulation fan, 120 mm"
+  vendor: retailer
+  part: AD1212UB-A73GL
+  url: null
+  price_usd: 20.70
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: dc-supply-12v
+  label: "12 V DC supply for the fan"
+  vendor: retailer
+  part: null
+  url: null
+  price_usd: 8.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: pid-itc-100vh
+  label: PID controller with SSR
+  vendor: Inkbird
+  part: ITC-100VH
+  url: inkbird.com
+  price_usd: 36.99
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+- id: pass-through-hose-barb
+  label: "Vacuum-line pass-through, hose barb"
+  vendor: Titan Fittings
+  part: null
+  url: titanfittings.com
+  price_usd: 26.10
+  unit: each
+  read: 2026-10-08
+  flag: unverified
+# Chapter 4-5 buys. Read 2026-10-17. page needs price, url and read; otherwise unsourced and price_usd null.
+# 0.8 in PVC was not on the vendor page; the URL is the foam listing only.
+- id: foam-pvc-0p8
+  label: "PVC foam, 0.8 in thick (BOM: R45/H45)"
+  vendor: null
+  part: null
+  url: aircraftspruce.com/catalog/cmpages/divinycellfoam.php
+  price_usd: null
+  unit: sqft
+  read: null
+  flag: unsourced
+- id: foam-pvc-0p2
+  label: "high-density PVC foam, 0.2 to 1/4 in (BOM: R250)"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: sqft
+  read: null
+  flag: unsourced
+- id: birch-ply-6mm-48x48
+  label: "Finnish birch plywood 6 mm, 48 x 48"
+  vendor: Aircraft Spruce
+  part: "02-20800"
+  url: aircraftspruce.com/catalog/pnpages/02-20800.php
+  price_usd: 138.90
+  unit: each
+  read: 2026-10-17
+  flag: page
+- id: spruce-capstrip-075x1
+  label: "spruce capstrip 3/4 x 1 in"
+  vendor: Aircraft Spruce
+  part: "02-341"
+  url: aircraftspruce.com/catalog/pnpages/02-341.php
+  price_usd: 4.35
+  unit: ft
+  read: 2026-10-17
+  flag: page
+- id: spruce-triangle-075
+  label: "triangular corner blocking, 3/4 in"
+  vendor: Aircraft Spruce
+  part: "02-18200"
+  url: aircraftspruce.com/catalog/pnpages/02-18200.php
+  price_usd: 3.25
+  unit: ft
+  read: 2026-10-17
+  flag: page
+- id: an509-10r10
+  label: AN509-10R10 flat-head screw
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: lmga-assembly
+  label: main gear attach tube assembly
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: main-gear-extrusion
+  label: main gear attach extrusion
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: flox-cotton-1lb
+  label: "flocked cotton fiber, 1 lb"
+  vendor: Aircraft Spruce
+  part: "01-14800"
+  url: aircraftspruce.com/catalog/pnpages/01-14800.php
+  price_usd: 4.85
+  unit: each
+  read: 2026-10-17
+  flag: page
+- id: micro-bubbles-1lb
+  label: "3M glass bubbles, 1 lb"
+  vendor: Aircraft Spruce
+  part: "01-14600"
+  url: aircraftspruce.com/catalog/pnpages/01-14600.php
+  price_usd: 13.25
+  unit: each
+  read: 2026-10-17
+  flag: page
+- id: urethane-foam-1x24x48
+  label: "urethane foam 1 x 24 x 48"
+  vendor: Aircraft Spruce
+  part: "01-11500"
+  url: aircraftspruce.com/catalog/pnpages/01-11500.php
+  price_usd: 25.60
+  unit: each
+  read: 2026-10-17
+  flag: page
+- id: release-tape
+  label: release tape for bond areas
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: roll
+  read: null
+  flag: unsourced

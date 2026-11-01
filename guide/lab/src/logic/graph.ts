@@ -1,16 +1,33 @@
 // Ported from guide/viewer/js/graph.js (visibleOps, makeStore); same behaviour, typed.
 
+/** Per-step plan as shipped on an op. Tuples in the Python plan are arrays here. */
+export interface PlanJson {
+  people?: 1 | 2
+  people_why?: string | null
+  hours?: { value: number | null; flag: string; source?: string | null } | null
+  cure?: 'none' | 'part' | 'all'
+  resin?: string | null
+  tools?: string[]
+  /** source: the buy's evidence (a citation, a derivation note or a link) when the build carries one */
+  buy?: { item: string; qty: number; flag: string; source?: string | null }[]
+}
+
 export interface Op {
   id: string
   chapter: number
   title: string
   summary: string
   variants: string[]
+  requires?: string[]
   completion?: string[]
   /** the op's own ply schedule (cloth, plies, where), where the research gives one */
   materials?: { cloth: string; plies: number; where: string }[]
   stub?: boolean
   components: string[]
+  group?: string | null
+  plan?: PlanJson | null
+  /** registry citations; `scan_pp` maps to a plans page through graph.json `pages` (absent from a public build) */
+  sources?: { doc: string; page?: string | null; scan_pp?: number | null }[]
 }
 export interface GraphLite {
   ops: Op[]
@@ -43,7 +60,7 @@ export function barOps(graph: GraphLite, variant: string): Op[] {
   return visibleOps(graph, variant).filter((o) => !NON_CANARD.has(o.chapter) && !o.stub)
 }
 
-interface Storage2 { getItem(k: string): string | null; setItem(k: string, v: string): void }
+export interface Storage2 { getItem(k: string): string | null; setItem(k: string, v: string): void }
 
 export function makeStore(storage: Storage2) {
   const mem = new Map<string, Set<number>>()
@@ -67,4 +84,14 @@ export function makeStore(storage: Storage2) {
       try { storage.setItem(key(opId), JSON.stringify([...s])) } catch { /* keep in memory */ }
     },
   }
+}
+
+/** plan.json as guide/build_site.py ships it (contract 5): groups, resins, catalog, step scripts and the build date. */
+export interface PlanFile {
+  groups: { id: string; label: string }[]
+  resins: Record<string, { min_temp_c: number | null; gate_hours: [number, number][]; flag: string; source: string | null }>
+  catalog: Record<string, { label: string; url: string | null; price_usd: number | null; unit: string; flag: string; read: string | null; stale: boolean }>
+  /** op id -> actions (logic/actions.ts Action); generated ply actions with the authored overrides applied */
+  scripts: Record<string, { do: string; part?: string; ply?: number; tool?: string; who: 'owner' | 'buddy'; why?: string }[]>
+  today: string
 }

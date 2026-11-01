@@ -1,5 +1,14 @@
 # Chapter 5 — fuselage sides (plans pp. 5-1 to 5-3). Chain runs in order; the chapter needs chapter 4 only for bulkhead marks, not as a prerequisite.
 - id: f05.side-blank
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, straightedge, squeegee, cup, sanding-block]
+    buy:
+      - {item: foam-pvc-0p8, qty: 30.04, flag: estimate}
   chapter: 5
   title: Side foam blank
   summary: Butt-join the thick blue foam into a 103 by 21 blank with one edge dead straight, which becomes the top edge of both sides.
@@ -14,6 +23,12 @@
     - Joints butted tight and bonded flat
     - One long edge checked straight with a straightedge
 - id: f05.side-profile
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: none
+    tools: [straightedge, batten, knife, sanding-block]
   chapter: 5
   title: Mark and cut the side profile
   summary: Mark the twelve printed heights along the blank, cut the first side to that outline, then use it as the pattern for the second so the pair are mirror twins.
@@ -30,6 +45,12 @@
     - Top edge straight and square at both corners
     - Second side cut to match the first, then flipped for the pair
 - id: f05.side-layout
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: none
+    tools: [straightedge, compass, router, sanding-block, knife]
   chapter: 5
   title: Side layout marks, dish and sight gauge
   summary: Draw the bulkhead lines and the spar cutout on each side, cut the shallow 8 in dish in the right side only, and form the fuel sight-gauge groove. Then lay release tape over the marked areas.
@@ -45,6 +66,20 @@
     - Dish cut on the right side only
     - Release tape laid where the bulkheads and longerons will later be bonded
 - id: f05.inside-layup
+  group: fuselage-sides
+  plan:
+    people: 2
+    people_why: one mixes resin while one wets out two large plies
+    hours: {value: 11.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, clamps, peel-ply]
+    buy:
+      - {item: und-7715, qty: 6.58, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.216, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.440, flag: estimate}
+      - {item: spruce-capstrip-075x1, qty: 26, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.42, flag: estimate}
   chapter: 5
   title: Inside layup and longerons in flox
   summary: Glass the inside face of each side with two crossed unidirectional plies at 30 degrees, then flox in the top longeron, its stiffener and the two wood blocks at the aft end.
@@ -63,6 +98,13 @@
     - Top longeron, stiffener and aft blocks floxed into place
     - Longeron flush at the front and slightly proud at the rear
 - id: f05.top-longeron-glass
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, router]
   chapter: 5
   title: Glass over the top longeron
   summary: Lay three unidirectional plies along the short stiffener, then a single 45-degree BID ply along the whole 103 in length, which may be made from several pieces.
@@ -82,6 +124,15 @@
     - BID ply runs the whole side length, joints overlapped
     - Both sides done before the next step
 - id: f05.lower-longeron
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, drill, hammer, clamps, cup, tape-measure]
+    buy:
+      - {item: spruce-triangle-075, qty: 17.3, flag: estimate}
   chapter: 5
   title: Lower longeron and aft doubler
   summary: Nail the triangular spruce lower longeron to the side, notching it about every 2 in toward the aft end, then add the doubler behind the LWX block and a small urethane block.
@@ -96,6 +147,13 @@
     - Notches cut in the aft section at the printed spacing
     - Doubler and foam block bonded at the aft end
 - id: f05.gear-pad
+  group: fuselage-sides
+  plan:
+    people: 1
+    hours: {value: 5.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, peel-ply]
   chapter: 5
   title: Main gear attach pad
   summary: Build up the pad for the main gear attachment with six 45-degree BID plies over the hatched area and a fifteen-ply stack over it. Keep the stack below the printed waterline.
@@ -116,6 +174,11 @@
     - No glass of the stack above W.L. 12.35
     - Pad positions match the dimensions from the aft end
 - id: f05.spar-cutout
+  group: fuselage-sides
+  plan:
+    people: 1
+    cure: none
+    tools: [jigsaw, knife, sanding-block, tape-measure]
   chapter: 5
   title: Spar cutout
   summary: Remove the 6.5 by 8.5 block of foam and glass at the aft top corner of each side so the wing spar can pass through.
@@ -130,6 +193,14 @@
     - Cutout measures 6.5 wide by 8.5 deep at the marked corner
     - Edges clean, no glass delamination at the cut
 - id: f05.gear-extrusions
+  group: fuselage-sides
+  plan:
+    people: 1
+    cure: none
+    tools: [drill-press, drill, reamer, wrench]
+    buy:
+      - {item: lmga-assembly, qty: 2, flag: derived}
+      - {item: main-gear-extrusion, qty: 4, flag: derived}
   chapter: 5
   title: Gear tube and extrusions
   summary: Assemble the main gear attach tube with its two extruded fittings on each side, drill the sixteen bolt holes, and fit the long bolts with their washers and nuts.

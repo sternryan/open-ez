@@ -1,0 +1,4 @@
+groups:
+  - {id: bulkheads-firewall, label: "Seat bulkheads and firewall"}
+  - {id: fuselage-sides, label: "Fuselage sides"}
+required_files: [ch04.yaml, ch05.yaml]

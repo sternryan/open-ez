@@ -1,0 +1,5 @@
+id: mgs-285-287
+source: "mgs-l285-tds:p1"
+min_temp_c: 10
+gate_hours: []
+flag: unsourced

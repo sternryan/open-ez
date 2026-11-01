@@ -3,6 +3,7 @@
 import contextlib
 import functools
 import json
+import re
 import sys
 import http.server
 import io
@@ -124,7 +125,7 @@ def test_lab_renders_the_canard_and_the_classic_viewer_still_loads(rsite):
             pg = b.new_page(viewport={"width": 960, "height": 600})
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low")
+            pg.goto(url + "?player=0&test=1&q=low")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             names = pg.evaluate("window.__lab.meshNames()")
             assert "canard.core" in names
@@ -149,6 +150,9 @@ def _open(p, url, w, h, init=None, query="", q="low"):
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
+    # the legacy page unless the query names the player (the player is the default page; test_player_is_default loads it raw)
+    if "player" not in query:
+        query += "&player=0"
     pg.goto(url + "?test=1" + (f"&q={q}" if q else "") + query)
     pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
     return b, pg, errors
@@ -703,7 +707,7 @@ def test_section_readout_lists_only_built_layers(rsite):
             ]
             assert len(web) == 1
             assert (
-                f'{_lab_of(g, "canard.shear_web")}: 1 {web[0]["cloth"]}'
+                f"{_lab_of(g, 'canard.shear_web')}: 1 {web[0]['cloth']}"
                 in pg.inner_text("#ro-layers")
             )
             pg.evaluate("window.__lab.select('r30.top-skin')")
@@ -1059,7 +1063,7 @@ def test_load_paths_follow_the_build_and_the_toggle_is_remembered_even_without_s
             pg2 = ctx.new_page()
             errs2 = []
             pg2.on("pageerror", lambda e: errs2.append(str(e)))
-            pg2.goto(url + "?test=1&q=low&op=r30.top-skin")
+            pg2.goto(url + "?player=0&test=1&q=low&op=r30.top-skin")
             pg2.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             assert pg2.is_checked("#paths-on") and len(_drawn(pg2)) == 3
             _display(pg2)
@@ -1268,6 +1272,8 @@ def _open_rec(p, url, w=960, h=600, query=""):
     pg = b.new_page(viewport={"width": w, "height": h})
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
+    if "player" not in query:
+        query += "&player=0"  # films are of the legacy page
     pg.goto(url + "?rec=1&q=low&test=1" + query)
     pg.wait_for_function(
         "window.__rec && window.__lab && window.__lab.ready", timeout=90000
@@ -1530,7 +1536,7 @@ def test_tour_leaves_paths_labels_and_storage_as_the_person_set_them(rsite):
             pg.add_init_script(
                 "window.__setItems = 0; const o = Storage.prototype.setItem; Storage.prototype.setItem = function () { window.__setItems++; return o.apply(this, arguments) }"
             )
-            pg.goto(url + "?rec=1&q=low&test=1")
+            pg.goto(url + "?player=0&rec=1&q=low&test=1")
             pg.wait_for_function(
                 "window.__rec && window.__lab && window.__lab.ready", timeout=90000
             )
@@ -1738,7 +1744,7 @@ def test_forced_tier_freeze_and_rec_turn_automatic_step_down_off(rsite):
             # ?rec=1 is a forced high tier, and off
             b = p.chromium.launch(args=GL)
             pg = b.new_page(viewport={"width": 500, "height": 360})
-            pg.goto(url + "?rec=1&test=1")
+            pg.goto(url + "?player=0&rec=1&test=1")
             pg.wait_for_function(
                 "window.__rec && window.__lab && window.__lab.ready", timeout=90000
             )
@@ -1860,7 +1866,7 @@ def test_the_cards_leave_the_canard_clear_and_touch_targets_are_44px(rsite, w, h
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
             for op in (None, "r30.top-skin"):
-                pg.goto(url + "?test=1&q=low" + (f"&op={op}" if op else ""))
+                pg.goto(url + "?player=0&test=1&q=low" + (f"&op={op}" if op else ""))
                 pg.wait_for_function(
                     "window.__lab && window.__lab.ready", timeout=60000
                 )
@@ -2090,7 +2096,9 @@ def test_scrubber_hidden_without_plies_and_hooks_need_the_test_flag(
                 and pg.is_hidden("#scrub")
                 and pg.is_hidden("#play")
             )
-            pg.goto(url)  # no ?test=1
+            pg.goto(
+                url + "?player=0"
+            )  # no ?test=1 (the legacy page: the player is the default)
             pg.wait_for_selector("#opbar button[data-op]")
             assert (
                 pg.evaluate("typeof window.__lab") == "undefined"
@@ -2118,7 +2126,7 @@ def test_build_controls_clear_of_other_controls(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&op=r30.shear-web")
+            pg.goto(url + "?player=0&test=1&q=low&op=r30.shear-web")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             pg.click(
                 "#more"
@@ -2188,7 +2196,7 @@ def test_variant_change_keeps_the_build_state_rules(
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
             pg.route("**/graph.json", widen)
-            pg.goto(url + "?test=1&q=low&freeze=1")
+            pg.goto(url + "?player=0&test=1&q=low&freeze=1")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             pg.click('#opbar button[data-op="r30.shear-web"]')
             _scrub(pg, 2)
@@ -2224,7 +2232,7 @@ def test_phone_model_stays_visible_and_scrubber_reachable(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&op=r30.shear-web")
+            pg.goto(url + "?player=0&test=1&q=low&op=r30.shear-web")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             assert pg.is_visible("#scrubwrap") and pg.is_visible("#dock")
             assert pg.evaluate("document.documentElement.scrollWidth") <= w
@@ -2345,7 +2353,7 @@ def test_section_at_dpr2_projection_and_cap_pixels(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&freeze=1")
+            pg.goto(url + "?player=0&test=1&q=low&freeze=1")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             _cap_pixels_case(pg, 390, 2)
             assert not errors, errors
@@ -2387,7 +2395,7 @@ def test_phone_section_readout_one_line_and_controls_reachable(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&freeze=1&op=r30.top-skin")
+            pg.goto(url + "?player=0&test=1&q=low&freeze=1&op=r30.top-skin")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             pg.evaluate(
                 "window.__lab.setLay(Number(document.getElementById('scrub').max))"
@@ -2443,7 +2451,7 @@ def test_frame_time_at_dpr2_is_reported_not_asserted(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&realframes=1&op=r30.top-skin")
+            pg.goto(url + "?player=0&test=1&q=low&realframes=1&op=r30.top-skin")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             pg.click("#section-on")
             pg.eval_on_selector(
@@ -2474,7 +2482,7 @@ def test_tour_button_is_touch_sized_and_clear_of_other_controls(
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&op=r30.top-skin")
+            pg.goto(url + "?player=0&test=1&q=low&op=r30.top-skin")
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             t = _rect(pg, "#tour")
             assert pg.is_visible("#tour") and t[3] - t[1] >= 44  # the 2.1 touch target
@@ -3344,7 +3352,7 @@ def test_recorder_url_exposes_rec_and_both_films_start(rsite, film):
             pg = b.new_page(viewport={"width": 960, "height": 540})
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?rec=1")
+            pg.goto(url + "?player=0&rec=1")
             pg.wait_for_function(
                 "typeof window.__rec === 'object'", timeout=30000, polling=250
             )
@@ -3367,7 +3375,7 @@ def test_recorder_chapter_9_film_starts_and_steps_a_frame(rsite):
             pg = b.new_page(viewport={"width": 960, "height": 540})
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?rec=1")
+            pg.goto(url + "?player=0&rec=1")
             pg.wait_for_function(
                 "typeof window.__rec === 'object'", timeout=30000, polling=250
             )
@@ -5350,7 +5358,7 @@ def test_the_motion_row_is_not_clipped_and_does_not_overlap_its_neighbours(rsite
                 pg = ctx.new_page()
                 errors = []
                 pg.on("pageerror", lambda e: errors.append(str(e)))
-                pg.goto(url + f"?test=1&q=low&freeze=1&op={op}")
+                pg.goto(url + f"?player=0&test=1&q=low&freeze=1&op={op}")
                 pg.wait_for_function(
                     "window.__lab && window.__lab.ready", timeout=60000
                 )
@@ -7525,7 +7533,14 @@ def test_m28_the_chapters_follow_chapter_20_in_book_order_and_every_op_is_on_the
         byid[o]["chapter"] >= 21 for o in order[first21:] if byid[o]["chapter"] < 30
     ), [o for o in order[first21:] if byid[o]["chapter"] < 21]
     seq = [byid[o]["chapter"] for o in order[first21:]]
-    assert seq == sorted(seq) and set(seq) == {21, 22, 23, 24, 25, 26}  # (24 to 26 follow in M2.9)
+    assert seq == sorted(seq) and set(seq) == {
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+    }  # (24 to 26 follow in M2.9)
     assert (
         order.index("f20.rudder-hang")
         < order.index("f16.rudder-cable-rig")
@@ -8252,7 +8267,9 @@ def test_m29_every_chapter_24_and_26_op_puts_its_subject_on_screen_not_hidden_in
             weak = {o: n for o, n in seen.items() if n < 150}
             assert not weak, f"what the op adds is not visible on screen: {weak}"
             weak = {o: n for o, n in ctx.items() if n < _M29_CONTEXT[o][1]}
-            assert not weak, f"the airframe round the op's subject is not in frame: {weak}"
+            assert (
+                not weak
+            ), f"the airframe round the op's subject is not in frame: {weak}"
             assert not errors, errors
             b.close()
     finally:
@@ -8298,14 +8315,20 @@ def test_m29_the_finish_goes_on_in_stages_fill_then_primer_then_white_on_the_upp
             for op, st in want.items():
                 fin = stage_of[op]
                 tops = {k: v for k, v in fin.items() if "wing.skins.skin_top" in k}
-                bottoms = {k: v for k, v in fin.items() if "wing.skins.skin_bottom" in k}
+                bottoms = {
+                    k: v for k, v in fin.items() if "wing.skins.skin_bottom" in k
+                }
                 sides = {k: v for k, v in fin.items() if k.startswith("fuselage.side")}
                 canard = {k: v for k, v in fin.items() if "canard.skin_top" in k}
                 assert tops and bottoms and sides and canard, (op, list(fin)[:8])
                 for grp in (tops, bottoms, sides, canard):
                     assert set(grp.values()) == {st}, (op, grp)
                 # the unfinished (the canopy's plexi, the firewall) never gets the finish
-                assert not [k for k in fin if k.startswith(("canopy.plexi", "fuselage.firewall"))]
+                assert not [
+                    k
+                    for k in fin
+                    if k.startswith(("canopy.plexi", "fuselage.firewall"))
+                ]
             # each coat changes the picture; the second fill coat does not (same tint)
             d1 = _diff_px(frames["f25.inspect-repair"], frames["f25.coarse-fill"])
             d2 = _diff_px(frames["f25.coarse-fill"], frames["f25.feather-fill"])
@@ -8317,7 +8340,7 @@ def test_m29_the_finish_goes_on_in_stages_fill_then_primer_then_white_on_the_upp
             # the paint is white on the upper wing and canard only: the top skins change from primer to paint, nothing else does (the fuselage stays grey)
             assert d4 > 3000, d4
             top = _pixels_of(pg, ["wing.skins.skin_top", "installed:canard.skin_top"])
-            print('finish top skins px', top)
+            print("finish top skins px", top)
             assert top >= 1480, top
             assert not errors, errors
             b.close()
@@ -8345,7 +8368,12 @@ def test_m29_phone_width_keeps_the_subject_on_screen_and_the_page_unscrolled(rsi
                 assert _pixels_of(pg, _M29_SUBJECT[op], 390, 844) >= 150, op
             else:  # the finish op: the wing's top skins, white now, are in the frame
                 assert (
-                    _pixels_of(pg, ["wing.skins.skin_top", "installed:canard.skin_top"], 390, 844)
+                    _pixels_of(
+                        pg,
+                        ["wing.skins.skin_top", "installed:canard.skin_top"],
+                        390,
+                        844,
+                    )
                     >= 150
                 ), op
             assert not errors, errors
@@ -8600,11 +8628,13 @@ def _lab_session(rsite, w, h, dpr=1, query=""):
     try:
         with sync_playwright() as p:
             b = p.chromium.launch(args=GL)
-            ctx = b.new_context(viewport={"width": w, "height": h}, device_scale_factor=dpr)
+            ctx = b.new_context(
+                viewport={"width": w, "height": h}, device_scale_factor=dpr
+            )
             pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
-            pg.goto(url + "?test=1&q=low&freeze=1" + query)
+            pg.goto(url + "?player=0&test=1&q=low&freeze=1" + query)
             pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
             pg.evaluate("window.__lab.freeze(true)")
             _to_fuselage(pg)
@@ -8625,12 +8655,28 @@ def _step_to(pg, op, dt=0.1):
 def _subject_pixels(pg, g, op, w, h):
     """Pixels of the 3D view that change when the op's own parts are left out (the same diff as _pixels_of)."""
     comps = {o["id"]: o for o in g["ops"]}[op]["components"]
-    if op.startswith("f25."):  # the finish ops change a material, not a part: the subject is the airframe's skins
-        comps = ["fuselage.", "wing.", "strake.", "winglet.", "nose.", "engine.", "cover."]
+    if op.startswith(
+        "f25."
+    ):  # the finish ops change a material, not a part: the subject is the airframe's skins
+        comps = [
+            "fuselage.",
+            "wing.",
+            "strake.",
+            "winglet.",
+            "nose.",
+            "engine.",
+            "cover.",
+        ]
     return _pixels_of(pg, comps, w, h)
 
 
-_FAR_OPS = ["f19.shear-web", "f24.gap-seal", "f24.aft-cover", "f25.paint-seals", "f14.fit-fuselage"]
+_FAR_OPS = [
+    "f19.shear-web",
+    "f24.gap-seal",
+    "f24.aft-cover",
+    "f25.paint-seals",
+    "f14.fit-fuselage",
+]
 
 
 @pytest.mark.parametrize("w,h,dpr", [(1180, 820, 1), (390, 844, 2)])
@@ -8645,11 +8691,15 @@ def test_max_zoom_out_subject_pixels_hold(rsite, w, h, dpr):
             pg.evaluate("window.__lab.zoomTo(99); window.__lab.advance(0.5)")
             far = _subject_pixels(pg, g, op, w, h)
             print("zoom-out subject px", w, op, "framed", base, "far", far)
-            assert far >= 400 * dpr * dpr, f"{op}: {far} px at max zoom-out (framed {base})"
+            assert (
+                far >= 400 * dpr * dpr
+            ), f"{op}: {far} px at max zoom-out (framed {base})"
             assert pg.evaluate("window.__lab.room().blocks") == [], op
 
 
-def test_max_zoom_out_fails_without_cull(rsite):  # the gate fails on the real broken input
+def test_max_zoom_out_fails_without_cull(
+    rsite,
+):  # the gate fails on the real broken input
     g = _graph(rsite)
     with _lab_session(rsite, 1180, 820, 1, query="&nocull=1") as pg:
         _step_to(pg, "f19.shear-web")
@@ -8710,7 +8760,9 @@ def test_room_cull_adds_no_draw_calls_while_the_eye_is_inside(rsite):
 
 # ---- BEGIN nits block (M2.9 visual pass, Ryan 10-04); round 2: outside shots, opaque dimmed gap-seal context ----
 def _union(boxes):
-    return [min(b[0][k] for b in boxes) for k in range(3)], [max(b[1][k] for b in boxes) for k in range(3)]
+    return [min(b[0][k] for b in boxes) for k in range(3)], [
+        max(b[1][k] for b in boxes) for k in range(3)
+    ]
 
 
 def _screen_rect(pg, lo, hi):
@@ -8721,7 +8773,12 @@ def _screen_rect(pg, lo, hi):
         )
         for m in range(8)
     ]
-    return (min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts))
+    return (
+        min(p[0] for p in pts),
+        min(p[1] for p in pts),
+        max(p[0] for p in pts),
+        max(p[1] for p in pts),
+    )
 
 
 def _outer_fifth(lo, hi, other):
@@ -8742,12 +8799,21 @@ def _airplane_rects(pg):
     keys = pg.evaluate("window.__lab.meshNames()")
 
     def boxes(pred):
-        return [b for k in keys if pred(k) for b in [pg.evaluate(f"window.__lab.meshBox('{k}')")] if b]
+        return [
+            b
+            for k in keys
+            if pred(k)
+            for b in [pg.evaluate(f"window.__lab.meshBox('{k}')")]
+            if b
+        ]
 
     out = {}
     wr = _union(boxes(lambda k: k.startswith("wing.skins") and ".right." in k))
     wl = _union(boxes(lambda k: k.startswith("wing.skins") and ".left." in k))
-    mid = lambda b: [(b[0][k] + b[1][k]) / 2 for k in range(3)]
+
+    def mid(b):
+        return [(b[0][k] + b[1][k]) / 2 for k in range(3)]
+
     out["wing right tip"] = _screen_rect(pg, *_outer_fifth(*wr, mid(wl)))
     out["wing left tip"] = _screen_rect(pg, *_outer_fifth(*wl, mid(wr)))
     ic = pg.evaluate("window.__lab.installedCanard()")["boxes"]
@@ -8770,9 +8836,22 @@ def _dock_rect(pg):
 def _assert_outside_framing(pg, w, h, what):
     dock = _dock_rect(pg)
     for name, r in _airplane_rects(pg).items():
-        assert r[0] >= 0 and r[1] >= 0 and r[2] <= w and r[3] <= h, (what, name, [round(v) for v in r], "outside the viewport")
-        hit = not (r[2] <= dock[0] or r[0] >= dock[2] or r[3] <= dock[1] or r[1] >= dock[3])
-        assert not hit, (what, name, [round(v) for v in r], "under the card", [round(v) for v in dock])
+        assert r[0] >= 0 and r[1] >= 0 and r[2] <= w and r[3] <= h, (
+            what,
+            name,
+            [round(v) for v in r],
+            "outside the viewport",
+        )
+        hit = not (
+            r[2] <= dock[0] or r[0] >= dock[2] or r[3] <= dock[1] or r[1] >= dock[3]
+        )
+        assert not hit, (
+            what,
+            name,
+            [round(v) for v in r],
+            "under the card",
+            [round(v) for v in dock],
+        )
     assert pg.evaluate("window.__lab.room().blocks") == [], what
 
 
@@ -8782,7 +8861,12 @@ def _viewport_luminance_outside(pg, g, op):
 
     comps = {o["id"]: o for o in g["ops"]}[op]["components"]
     on, off = _frames(pg, comps)
-    mask = ImageChops.difference(on, off).convert("L").point(lambda v: 255 if v > 30 else 0).filter(ImageFilter.MaxFilter(25))
+    mask = (
+        ImageChops.difference(on, off)
+        .convert("L")
+        .point(lambda v: 255 if v > 30 else 0)
+        .filter(ImageFilter.MaxFilter(25))
+    )
     rest = mask.point(lambda v: 0 if v else 255)
     return ImageStat.Stat(on.convert("L"), mask=rest).mean[0]
 
@@ -8809,7 +8893,16 @@ def test_m29_gap_seal_context_is_not_a_pale_haze(rsite, w, h):
         ref = _viewport_luminance_outside(pg, g, "f24.console-lc1")
         _step_to(pg, "f24.gap-seal")
         got = _viewport_luminance_outside(pg, g, "f24.gap-seal")
-        print("gap-seal haze", w, "got", round(got, 1), "ref", round(ref, 1), "limit", round(ref * 1.1, 1))
+        print(
+            "gap-seal haze",
+            w,
+            "got",
+            round(got, 1),
+            "ref",
+            round(ref, 1),
+            "limit",
+            round(ref * 1.1, 1),
+        )
         assert got <= ref * 1.1, (got, ref)
 
 
@@ -8827,15 +8920,22 @@ def test_m29_aft_cover_reads_at_size(rsite, w, h, share):
 
 
 @pytest.mark.parametrize("w,h", [(1180, 820), (390, 844)])
-@pytest.mark.parametrize("op", ["f25.inspect-repair", "f25.coarse-fill", "f25.feather-fill", "f25.primer", "f25.paint-seals"])
+@pytest.mark.parametrize(
+    "op",
+    [
+        "f25.inspect-repair",
+        "f25.coarse-fill",
+        "f25.feather-fill",
+        "f25.primer",
+        "f25.paint-seals",
+    ],
+)
 def test_m29_whole_airplane_fits_clear_of_the_card(rsite, op, w, h):
     """Round 2 (plan 7d): the finish ops stand outside the room (outside: true skips the room clamp; the cull hides the walls).
     Both wingtips, both canard tips and the nose are in the viewport and clear of the dock card."""
     with _lab_session(rsite, w, h) as pg:
         _step_to(pg, op)
         _assert_outside_framing(pg, w, h, op)
-
-
 
 
 def test_m29_outside_shots_show_no_black_void(rsite):
@@ -8885,6 +8985,1154 @@ def test_public_briefing_room_is_read_only(public_briefing_site):
             assert pg.locator('[data-test="decide"]').count() == 0
             assert pg.locator('[data-test="reopen"]').count() == 0
             assert pg.locator('#briefing textarea, #briefing select').count() == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- the build rehearsal player (opt-in: ?player=1) ----
+
+FIRST_STRETCH_LAST = "f05.gear-extrusions"
+
+
+def _player(p, url, w=1180, h=820, query="", init=None):
+    b, pg, errors = _open(p, url, w, h, init=init, query="&player=1&freeze=1" + query)
+    pg.wait_for_selector("#navlog button.step[data-op]")
+    return b, pg, errors
+
+
+def _grouped(rsite):
+    """The first stretch as the player orders it: each plan group's Roncz, non-stub ops in graph order."""
+    g = _graph(rsite)
+    plan = json.loads((rsite / "plan.json").read_text())
+    byid = {o["id"]: o for o in g["ops"]}
+    out = []
+    for grp in plan["groups"]:
+        for i in g["order"]:
+            o = byid[i]
+            if o.get("group") != grp["id"] or o["stub"]:
+                continue
+            if "both" in o["variants"] or "roncz" in o["variants"]:
+                out.append(i)
+    return plan, out
+
+
+@pytest.fixture(scope="module")
+def ksite(rsite, tmp_path_factory):
+    """The real site with one change in its plan.json: the resin carries a known curve (test data, tmp only), so the
+    temperature assertions have numbers to work with. The shipped resin file is unsourced and is not touched."""
+    import shutil
+
+    out = tmp_path_factory.mktemp("lab_site_known_resin") / "site"
+    shutil.copytree(rsite, out)
+    plan = json.loads((out / "plan.json").read_text())
+    for r in plan["resins"].values():
+        r.update(
+            min_temp_c=10,
+            gate_hours=[[10, 24], [20, 12], [30, 6]],
+            flag="estimate",
+            source=None,
+        )
+    (out / "plan.json").write_text(json.dumps(plan))
+    return out
+
+
+def _sessions(pg):
+    return pg.evaluate("window.__lab.navlog().sessions")
+
+
+def test_player_navlog_lists_the_first_stretch_groups(rsite):
+    plan, want = _grouped(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            assert pg.get_attribute("body", "data-player") is not None
+            labels = pg.eval_on_selector_all(
+                "#navlog .group",
+                "els => els.map(e => [e.dataset.group, e.querySelector(':scope > .group-label').textContent])",
+            )
+            assert [x[0] for x in labels] == [gr["id"] for gr in plan["groups"]]
+            for (gid, text), gr in zip(labels, plan["groups"]):
+                assert gr["label"] in text, (gid, text)
+            # the current group shows its session cards and steps; walking to the other group shows its steps
+            seen = []
+            for k, gr in enumerate(plan["groups"]):
+                if k:
+                    pg.click(f'#navlog .group[data-group="{gr["id"]}"] > .group-label')
+                seen += pg.eval_on_selector_all(
+                    f'#navlog .group[data-group="{gr["id"]}"] button.step[data-op]',
+                    "els => els.map(e => e.dataset.op)",
+                )
+            assert seen == want, (seen, want)
+            assert want[-1] == FIRST_STRETCH_LAST
+            assert pg.locator("#navlog .session[data-session]").count() >= 1
+            assert pg.evaluate("window.__lab.navlog().sessions") >= 2
+            # the one two-person step carries the buddy chip
+            two = [
+                o["id"]
+                for o in _graph(rsite)["ops"]
+                if o["id"] in want and (o.get("plan") or {}).get("people") == 2
+            ]
+            assert two, "the first stretch has a two-person step"
+            pg.click('#navlog .group-label:has-text("Fuselage sides")')
+            for i in two:
+                assert (
+                    pg.locator(
+                        f'#navlog button.step[data-op="{i}"] .chip.buddy'
+                    ).count()
+                    == 1
+                )
+            # cure markers sit between cards; the shipped resin curve is unsourced, so every cure marker warns
+            assert pg.locator("#navlog .marker.cure").count() >= 1
+            assert (
+                pg.locator("#navlog .marker.cure").count()
+                == pg.locator("#navlog .marker.cure.warn").count()
+            )
+            assert pg.locator("#navlog .marker.buy").count() >= 1
+            assert "NaN" not in pg.inner_text("#navlog")
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_has_no_chapter_navigation(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            nav = pg.inner_text("#navlog")
+            assert "chapter" not in nav.lower(), nav
+            assert "chapter" not in pg.inner_text("#meter").lower()
+            # the old op bar (chapter chips) and the variant switch are out of the player's way, but still in the page
+            assert not pg.is_visible("#opbar")
+            assert not pg.is_visible("#variant")
+            assert (
+                pg.locator("#chips").count() == 1
+                and pg.locator("#variant").count() == 1
+            )
+            # chapter survives only in the step's source detail
+            src = pg.inner_text("#bench .source")
+            assert "Chapter 4" in src, src
+            bench_rest = pg.evaluate(
+                "(() => { const c = document.querySelector('#bench').cloneNode(true); c.querySelector('.source').remove(); return c.innerText })()"
+            )
+            assert "chapter" not in bench_rest.lower(), bench_rest
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_step_click_updates_bench_and_camera(rsite):
+    g = _graph(rsite)
+    byid = {o["id"]: o for o in g["ops"]}
+    op = "f04.firewall-aft"
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            before = pg.evaluate("window.__lab.camera()")
+            pg.click(f'#navlog button.step[data-op="{op}"]')
+            assert pg.evaluate("window.__lab.selected()") == op
+            assert pg.evaluate("window.__lab.navlog().current") == op
+            assert pg.evaluate("window.__lab.player().step") == op
+            assert (
+                pg.locator(f'#navlog button.step.current[data-op="{op}"]').count() == 1
+            )
+            assert byid[op]["title"] in pg.inner_text("#bench")
+            mats = pg.inner_text('#bench [data-k="materials"]')
+            assert "BID" in mats, mats
+            assert pg.inner_text('#bench [data-k="tools"]').strip()
+            assert "One person" in pg.inner_text('#bench [data-k="buddy"]')
+            assert pg.inner_text('#bench [data-k="cure"]').strip()
+            # the camera flies to the step's own shot, on the sim clock
+            pg.evaluate("window.__lab.advance(3)")
+            cam, shot = (
+                pg.evaluate("window.__lab.camera()"),
+                pg.evaluate(f"window.__lab.shot('{op}')"),
+            )
+            assert shot is not None
+            for a, c in zip(cam["pos"], shot["pos"]):
+                assert abs(a - c) < 0.02, (cam, shot)
+            assert cam["pos"] != before["pos"]
+            # the two-person step names why a buddy is needed
+            pg.click('#navlog .group-label:has-text("Fuselage sides")')
+            pg.click('#navlog button.step[data-op="f05.inside-layup"]')
+            assert byid["f05.inside-layup"]["plan"]["people_why"] in pg.inner_text(
+                '#bench [data-k="buddy"]'
+            )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_meter_shows_dash_for_unknown_hours(rsite):
+    g = _graph(rsite)
+    byid = {o["id"]: o for o in g["ops"]}
+    _, want = _grouped(rsite)
+    unknown = [
+        i
+        for i in want
+        if ((byid[i].get("plan") or {}).get("hours") or {}).get("value") is None
+    ]
+    assert unknown, "the first stretch has a step with no hours figure"
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            assert pg.inner_text('#meter [data-k="hours"]').strip() == "—"
+            assert pg.evaluate("window.__lab.meter().hoursKnown") is False
+            pg.click('#navlog .group-label:has-text("Fuselage sides")')
+            pg.click(f'#navlog button.step[data-op="{unknown[0]}"]')
+            assert pg.inner_text('#bench [data-k="hours"]').strip().startswith("—")
+            # the shipped resin curve is unsourced: the calendar is unknown once a cure has passed
+            assert pg.inner_text('#meter [data-k="calendar"]').strip() == "—"
+            for k in ("spent", "next-buy", "hours", "sessions", "calendar"):
+                t = pg.inner_text(f'#meter [data-k="{k}"]')
+                assert t.strip() and "NaN" not in t and "undefined" not in t, (k, t)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_play_through_reaches_the_last_step(rsite):
+    _, want = _grouped(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            pg.click('#tp-speed [data-speed="16"]')
+            pg.click("#tp-play")
+            assert pg.get_attribute("#tp-play", "aria-pressed") == "true"
+            seen = [pg.evaluate("window.__lab.player().step")]
+            captions = set()
+            for _ in range(400):
+                pg.evaluate("window.__lab.advance(0.5)")
+                st = pg.evaluate("window.__lab.player()")
+                captions.add(st["caption"])
+                if st["step"] != seen[-1]:
+                    seen.append(st["step"])
+                if not st["playing"]:
+                    break
+            assert seen == want, seen
+            st = pg.evaluate("window.__lab.player()")
+            assert st["step"] == FIRST_STRETCH_LAST and st["playing"] is False
+            assert pg.get_attribute("#tp-play", "aria-pressed") == "false"
+            assert pg.evaluate("window.__lab.navlog().current") == FIRST_STRETCH_LAST
+            assert pg.evaluate("window.__lab.selected()") == FIRST_STRETCH_LAST
+            assert any("ply" in c for c in captions), captions
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_orbit_does_not_stop_playback(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            pg.click("#tp-play")
+            pg.evaluate("window.__lab.advance(0.5)")
+            t0 = pg.evaluate("window.__lab.player()")
+            before = pg.evaluate("window.__lab.camera()")
+            pg.mouse.move(760, 330)
+            pg.mouse.down()
+            pg.mouse.move(860, 360, steps=6)
+            pg.mouse.up()
+            pg.evaluate("window.__lab.advance(0.1)")
+            after = pg.evaluate("window.__lab.camera()")
+            assert after["pos"] != before["pos"], "the drag orbited the view"
+            st = pg.evaluate("window.__lab.player()")
+            assert st["playing"] is True
+            for _ in range(20):
+                pg.evaluate("window.__lab.advance(0.5)")
+            st = pg.evaluate("window.__lab.player()")
+            assert st["playing"] is True and st["step"] != t0["step"], (t0, st)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_step_change_flies_to_its_shot(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            pg.click("#tp-play")
+            checked = 0
+            last = pg.evaluate("window.__lab.player().step")
+            for _ in range(400):
+                pg.evaluate("window.__lab.advance(0.25)")
+                st = pg.evaluate("window.__lab.player().step")
+                if st == last:
+                    continue
+                last = st
+                # a new step: the camera is on its way to that step's default shot and lands there
+                assert pg.evaluate("window.__lab.flying()") is True, st
+                pg.evaluate("window.__lab.freeze(true)")
+                shot = pg.evaluate(f"window.__lab.shot('{st}')")
+                assert shot is not None, st
+                for _ in range(8):
+                    pg.evaluate("window.__lab.advance(0.25)")
+                    if pg.evaluate("window.__lab.player().step") != st:
+                        break
+                cam = pg.evaluate("window.__lab.camera()")
+                if pg.evaluate("window.__lab.player().step") == st:
+                    for a, c in zip(cam["pos"], shot["pos"]):
+                        assert abs(a - c) < 0.02, (st, cam, shot)
+                    checked += 1
+                last = pg.evaluate("window.__lab.player().step")
+                if checked >= 3:
+                    break
+            assert checked >= 3, checked
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_snaps_and_transport(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            first = pg.evaluate("window.__lab.player().step")
+            pg.click("#tp-next")
+            assert pg.evaluate("window.__lab.player().step") != first
+            pg.click("#tp-prev")
+            assert pg.evaluate("window.__lab.player().step") == first
+            pg.click('#tp-speed [data-speed="4"]')
+            assert pg.evaluate("window.__lab.player().speed") == 4
+            assert (
+                pg.get_attribute('#tp-speed [data-speed="4"]', "aria-pressed") == "true"
+            )
+            assert pg.inner_text("#caption").strip()
+            pg.click("#snap-top")
+            pg.evaluate("window.__lab.advance(3)")
+            cam = pg.evaluate("window.__lab.camera()")
+            d = [cam["pos"][i] - cam["target"][i] for i in range(3)]
+            assert d[1] > 3 * (d[0] ** 2 + d[2] ** 2) ** 0.5, ("top snap looks down", d)
+            pg.click("#snap-side")
+            pg.evaluate("window.__lab.advance(3)")
+            cam = pg.evaluate("window.__lab.camera()")
+            d = [cam["pos"][i] - cam["target"][i] for i in range(3)]
+            assert abs(d[1]) < 0.35 * (d[0] ** 2 + d[2] ** 2) ** 0.5, (
+                "side snap is level",
+                d,
+            )
+            # the whole-build zoom is not offered until phase 2
+            assert pg.locator("#navlog [data-zoom]").count() == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_shows_both_glove_pairs_on_a_two_person_step(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            g = pg.evaluate("window.__lab.gloves()")
+            assert g["owner"] is True and g["buddy"] is False, g
+            pg.click('#navlog .group-label:has-text("Fuselage sides")')
+            pg.click('#navlog button.step[data-op="f05.inside-layup"]')
+            pg.evaluate("window.__lab.advance(0.5)")
+            g = pg.evaluate("window.__lab.gloves()")
+            assert g["owner"] is True and g["buddy"] is True, g
+            pg.click('#navlog button.step[data-op="f05.gear-extrusions"]')
+            pg.evaluate("window.__lab.advance(0.5)")
+            g = pg.evaluate("window.__lab.gloves()")
+            assert g["buddy"] is False and "stand-in" in g["props"], g
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _beats_with_lay(pg, op, limit=600):
+    """Play the step from its first beat at 4x and record, per distinct caption, the scrubber position the beat leaves (lay)."""
+    pg.click('#tp-speed [data-speed="4"]')
+    pg.click("#tp-play")
+    seen = {}
+    for _ in range(limit):
+        pg.evaluate("window.__lab.advance(0.05)")
+        st = pg.evaluate("window.__lab.player()")
+        if st["step"] != op:
+            break
+        seen.setdefault(st["caption"], pg.evaluate("window.__lab.lay()"))
+    return seen
+
+
+def test_player_plies_land_on_their_own_meshes_cloth_and_order(rsite):
+    """A real multi-material op (instrument panel forward faces: BID face plies drawn on three parts, an undimensioned upper-panel
+    extra and the UND/BID canard-attach pads not drawn): each scripted ply shows exactly its own meshes, cloth and lay order, and
+    a ply with no geometry plays caption-only instead of landing on a different ply (the old proportional rule put ply 5, an UND pad
+    ply, on F28's first BID face ply)."""
+    op = "f04.panel-f22-f28-fwd"
+    g = _graph(rsite)
+    mats = {o["id"]: o for o in g["ops"]}[op]["materials"]
+    rows = sorted(
+        ((n, r) for n, r in g["layup"]["fuselage"]["nodes"].items() if r["op"] == op),
+        key=lambda nr: nr[1]["op_order"],
+    )
+
+    def laid(lay):
+        return [n for n, r in rows if r["op_order"] <= lay]
+
+    cloth = {n: r["cloth"] for n, r in rows}
+    total = sum(m["plies"] for m in mats)
+    assert total == 12 and len(rows) == 6, (total, len(rows))
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, query=f"&op={op}")
+            assert pg.evaluate("window.__lab.player().step") == op
+            seen = _beats_with_lay(pg, op)
+            by_ply = {}
+            for cap, lay in seen.items():
+                m = re.search(r"ply (\d+) of (\d+)", cap)
+                if m:
+                    assert int(m.group(2)) == total, cap
+                    by_ply.setdefault(int(m.group(1)), []).append((cap, lay))
+            assert sorted(by_ply) == list(range(1, total + 1)), sorted(by_ply)
+            face = ["fuselage.panel.p3", "fuselage.f22.p3", "fuselage.f28.p3"]
+            for cap, lay in by_ply[1]:
+                assert laid(lay) == face, (cap, laid(lay))
+                assert "BID, forward faces of panel, F22 and F28" in cap, cap
+            for cap, lay in by_ply[2]:
+                assert laid(lay) == face + [
+                    "fuselage.panel.p4",
+                    "fuselage.f22.p4",
+                    "fuselage.f28.p4",
+                ], (cap, laid(lay))
+            assert all(cloth[n] == "BID" for n in laid(6))
+            # plies 3 to 12 have no geometry: the scene keeps the two face plies, and the caption names the ply's own cloth and row
+            for k in range(3, total + 1):
+                for cap, lay in by_ply[k]:
+                    assert laid(lay) == laid(6), (k, cap, laid(lay))
+                    assert "caption only" in cap, (k, cap)
+            for cap, _ in by_ply[5]:
+                assert "UND, F22 canard attach pad" in cap, cap
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_gu_note_renders_once_on_the_bench(rsite, tmp_path):
+    """The GU asterisk (the first canard step only) is rendered once, on the bench, never also in the step list. The shipped plan has
+    no canard group yet, so a copy of the site gives two Roncz canard ops that group."""
+    import shutil
+
+    site = tmp_path / "site"
+    shutil.copytree(rsite, site)
+    g = json.loads((site / "graph.json").read_text())
+    canard = ["r30.shear-web", "r30.bottom-spar-cap"]
+    for o in g["ops"]:
+        if o["id"] in canard:
+            o["group"] = "canard"
+    (site / "graph.json").write_text(json.dumps(g))
+    plan = json.loads((site / "plan.json").read_text())
+    plan["groups"].append({"id": "canard", "label": "Canard"})
+    (site / "plan.json").write_text(json.dumps(plan))
+    note = "The 1980 plans built the GU canard. This build uses the Roncz."
+    s, url = serve(site)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, query=f"&op={canard[0]}")
+            assert pg.evaluate("window.__lab.player().step") == canard[0]
+
+            def count():
+                return pg.evaluate(
+                    "(t) => Array.from(document.querySelectorAll('body *')).filter((e) => e.childElementCount === 0 && e.textContent.includes(t) && e.getClientRects().length).length",
+                    note,
+                )
+
+            assert count() == 1
+            assert note in pg.inner_text("#bench")
+            assert note not in pg.inner_text("#navlog")
+            pg.click(f'#navlog button.step[data-op="{canard[1]}"]')
+            assert count() == 0
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _bench_values(pg):
+    """The bench's hours and buy rows: (key, printed flag, evidence text or None)."""
+    return pg.evaluate(
+        """() => Array.from(document.querySelectorAll('#bench [data-k="hours"], #bench li.buy')).map((e) => {
+             const f = e.querySelector('.flag'), ev = e.querySelector('.ev')
+             return [e.dataset.item ?? 'hours', f ? f.dataset.flag : null, ev ? (ev.tagName === 'A' ? ev.getAttribute('href') : ev.textContent) : null]
+           })"""
+    )
+
+
+SOURCED = {"official", "derived", "community"}
+
+
+def test_player_bench_shows_evidence_for_every_sourced_value(rsite):
+    """Contract 2 on the bench: a value printed as official, derived or community shows its evidence; a value flagged as sourced
+    with no evidence on record (the six AN509 screws on the firewall at the time of the phase 1 gate) prints as an estimate."""
+    g = _graph(rsite)
+    byid = {o["id"]: o for o in g["ops"]}
+    ops = [o["id"] for o in g["ops"] if o.get("group") == "bulkheads-firewall"]
+    assert "f04.firewall-fwd" in ops
+    checked = 0
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            for op in ops:
+                pg.click(f'#navlog button.step[data-op="{op}"]')
+                plan = byid[op].get("plan") or {}
+                want = {}
+                h = plan.get("hours") or {}
+                if h.get("value") is not None:
+                    want["hours"] = (h["flag"], h.get("source"))
+                for bu in plan.get("buy") or []:
+                    want[bu["item"]] = (bu["flag"], bu.get("source"))
+                got = {k: (f, ev) for k, f, ev in _bench_values(pg)}
+                assert set(got) == set(want), (op, got, want)
+                for k, (flag, src) in want.items():
+                    f, ev = got[k]
+                    if flag in SOURCED and (src or "").strip():
+                        assert f == flag and ev == src.strip(), (op, k, got[k], want[k])
+                    elif flag in SOURCED:
+                        assert f == "estimate" and ev is None, (op, k, got[k], want[k])
+                    else:
+                        assert f == flag and ev is None, (op, k, got[k])
+                    checked += 1
+                # nothing on the bench says official, derived or community without its evidence beside it
+                for k, f, ev in _bench_values(pg):
+                    assert f not in SOURCED or ev, (op, k, f)
+            assert checked > 10, checked
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_bench_links_a_citation_a_derivation_and_a_community_source(
+    rsite, tmp_path
+):
+    """The three kinds of evidence as the bench shows them (a site copy gives the firewall step one of each)."""
+    import shutil
+
+    site = tmp_path / "site"
+    shutil.copytree(rsite, site)
+    g = json.loads((site / "graph.json").read_text())
+    op = next(o for o in g["ops"] if o["id"] == "f04.firewall-fwd")
+    op["plan"]["hours"] = {
+        "value": 2.8,
+        "flag": "derived",
+        "source": "two layups at the p34 rate",
+    }
+    buys = op["plan"]["buy"]
+    buys[0].update(flag="official", source="plans-1980:p34")
+    buys[1].update(flag="community", source="https://example.org/bid-yardage")
+    buys[2].update(flag="official", source=None)
+    (site / "graph.json").write_text(json.dumps(g))
+    s, url = serve(site)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, query="&op=f04.firewall-fwd")
+            got = {k: (f, ev) for k, f, ev in _bench_values(pg)}
+            assert got["hours"] == ("derived", "two layups at the p34 rate"), got
+            assert got[buys[0]["item"]] == ("official", "plans-1980:p34"), got
+            assert got[buys[1]["item"]] == (
+                "community",
+                "https://example.org/bid-yardage",
+            ), got
+            assert got[buys[2]["item"]] == ("estimate", None), got
+            assert "plans-1980:p34" in pg.inner_text("#bench [data-k=materials]")
+            a = pg.locator(f'#bench li.buy[data-item="{buys[1]["item"]}"] a.ev')
+            assert (
+                a.get_attribute("rel") == "noopener noreferrer"
+                and a.get_attribute("target") == "_blank"
+            )
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("query", ["", "&player=0"])
+def test_legacy_page_is_unchanged(rsite, query):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _open(p, url, 1180, 820, query="&freeze=1" + query)
+            assert pg.get_attribute("body", "data-player") is None
+            for sel in ("#navlog", "#meter", "#bench", "#environment", "#stagebar"):
+                assert not pg.is_visible(sel), sel
+            assert pg.is_visible("#opbar") and pg.is_visible("#variant")
+            assert pg.is_visible("#subject") and pg.is_visible("#dock")
+            chips = pg.eval_on_selector_all(
+                "#chips button[data-op]", "els => els.map(e => e.dataset.op)"
+            )
+            assert chips == _bar_ops(_graph(rsite), "roncz"), chips[:5]
+            pg.click(f'#chips button[data-op="{chips[1]}"]')
+            assert pg.evaluate("window.__lab.selected()") == chips[1]
+            pg.click('#subject [data-subject="fuselage"]')
+            assert pg.evaluate("window.__lab.subject()") == "fuselage"
+            assert pg.locator("#play").count() == 1
+            assert pg.evaluate("window.__lab.player") is None
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_session_length_repacks(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            assert pg.input_value("#session-hours") == "4"
+            n4, m4 = _sessions(pg), pg.evaluate("window.__lab.meter()")
+            pg.fill("#session-hours", "12")
+            pg.dispatch_event("#session-hours", "change")
+            n12, m12 = _sessions(pg), pg.evaluate("window.__lab.meter()")
+            assert n12 < n4, (n4, n12)
+            assert (
+                abs(m12["hoursTotal"] - m4["hoursTotal"]) < 1e-9
+            ), "shop hours do not change"
+            pg.fill("#session-hours", "1")
+            pg.dispatch_event("#session-hours", "change")
+            assert _sessions(pg) > n4
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _set_env(pg, temp=None, heat=None):
+    if temp is not None:
+        pg.fill("#env-temp", str(temp))
+        pg.dispatch_event("#env-temp", "input")
+        pg.dispatch_event("#env-temp", "change")
+    if heat is not None:
+        pg.select_option("#env-heat", heat)
+
+
+def test_env_below_minimum_warns(ksite):
+    s, url = serve(ksite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            assert pg.locator("#navlog .marker.cure").count() >= 1
+            assert (
+                pg.locator("#navlog .marker.cure.warn").count() == 0
+            ), "a known curve at 20 C gives numbers"
+            assert not pg.is_visible("#env-warn")
+            n = _sessions(pg)
+            _set_env(pg, temp=6)
+            assert pg.is_visible("#env-warn")
+            assert "minimum" in pg.inner_text("#env-warn")
+            assert (
+                pg.locator("#navlog .marker.cure.warn").count()
+                == pg.locator("#navlog .marker.cure").count()
+            )
+            assert _sessions(pg) == n, "a cold shop still packs the same sessions"
+            for sel in ("#navlog", "#meter", "#bench"):
+                assert "NaN" not in pg.inner_text(sel), sel
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_env_enclosure_clears_the_warning(ksite):
+    s, url = serve(ksite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            _set_env(pg, temp=6)
+            assert pg.is_visible("#env-warn")
+            assert "estimate" in pg.inner_text("#env-heat")
+            _set_env(pg, heat="enclosure")
+            assert not pg.is_visible("#env-warn")
+            assert pg.locator("#navlog .marker.cure.warn").count() == 0
+            assert pg.locator("#navlog .marker.cure").count() >= 1
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_env_survives_reload(rsite):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            _set_env(pg, temp=12, heat="space-heater")
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.wait_for_selector("#navlog button.step[data-op]")
+            assert pg.input_value("#env-temp") == "12"
+            assert pg.input_value("#env-heat") == "space-heater"
+            # an invalid stored value falls back to the default instead of breaking the page
+            pg.evaluate("localStorage.setItem('longez.env', '{not json')")
+            pg.reload()
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            pg.wait_for_selector("#navlog button.step[data-op]")
+            assert pg.input_value("#env-temp") == "20"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_env_change_keeps_session_hours(ksite):
+    s, url = serve(ksite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url)
+            pg.fill("#session-hours", "6")
+            pg.dispatch_event("#session-hours", "change")
+            n = _sessions(pg)
+            hours = pg.evaluate("window.__lab.meter().hoursTotal")
+            _set_env(pg, temp=25, heat="enclosure")
+            assert pg.input_value("#session-hours") == "6"
+            assert _sessions(pg) == n
+            assert pg.evaluate("window.__lab.meter().hoursTotal") == hours
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- the player on a narrow or portrait screen (width <= 820 CSS px, or taller than wide): the 3D view gets the screen. The nav log
+# and the bench live in a bottom sheet (collapsed: the session and step, the caption and one transport row), the shop settings behind
+# a gear, and the meter is one strip of three numbers that opens to the full meter on a tap. ----
+
+NARROW = [(390, 844), (820, 1180)]
+HIT = 44
+
+
+def _narrow(p, url, w, h, query=""):
+    b, pg, errors = _open(p, url, w, h, query="&player=1&freeze=1" + query)
+    pg.wait_for_selector("#navlog-list button.step[data-op]", state="attached")
+    return b, pg, errors
+
+
+def _no_hscroll(pg):
+    sw, iw = pg.evaluate("[document.documentElement.scrollWidth, innerWidth]")
+    assert sw <= iw, (sw, iw)
+
+
+def _free_band(pg):
+    """The tallest full-width strip of the screen that no visible card covers, as a share of the viewport height."""
+    return pg.evaluate(
+        """(() => {
+          const H = innerHeight, sel = ['#navlog', '#meter', '#stage', '#controls', '#envsheet', '#env-toggle', '#viewpop', '#dock', '#opbar']
+          const iv = []
+          for (const s of sel) {
+            const e = document.querySelector(s)
+            if (!e) continue
+            const r = e.getBoundingClientRect(), cs = getComputedStyle(e)
+            if (r.width < 1 || r.height < 1 || cs.display === 'none' || cs.visibility === 'hidden') continue
+            if (r.bottom <= 0 || r.top >= H || r.right <= 0 || r.left >= innerWidth) continue
+            iv.push([Math.max(0, r.top), Math.min(H, r.bottom)])
+          }
+          iv.sort((a, b) => a[0] - b[0])
+          let best = 0, at = 0
+          for (const [t, b] of iv) { best = Math.max(best, t - at); at = Math.max(at, b) }
+          best = Math.max(best, H - at)
+          return best / H
+        })()"""
+    )
+
+
+def _box(pg, sel):
+    return pg.evaluate(
+        f"(() => {{ const r = document.querySelector({json.dumps(sel)}).getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] }})()"
+    )
+
+
+def _intersects(a, c):
+    return a[0] < c[2] and c[0] < a[2] and a[1] < c[3] and c[1] < a[3]
+
+
+def _not_truncated(pg, sel):
+    """Every element matching sel that is shown: its text fits its box (no ellipsis, no clipping)."""
+    return pg.evaluate(
+        f"""Array.from(document.querySelectorAll({json.dumps(sel)})).filter((e) => e.getClientRects().length && getComputedStyle(e).display !== 'none')
+          .map((e) => [e.textContent, e.scrollWidth, e.clientWidth]).filter(([, s, c]) => s > c + 1)"""
+    )
+
+
+@pytest.mark.parametrize("w,h", NARROW)
+def test_player_narrow_layout_gives_the_view_the_screen(rsite, w, h):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _narrow(p, url, w, h)
+            assert pg.get_attribute("body", "data-narrow") is not None
+            _no_hscroll(pg)
+            # everything starts collapsed: the sheet, the shop settings and the meter
+            assert pg.get_attribute("#stage", "data-open") == "false"
+            assert not pg.is_visible("#envsheet") and not pg.is_visible("#env-temp")
+            assert not pg.is_visible("#navlog-list")
+            assert pg.get_attribute("#meter", "data-open") == "false"
+            band = _free_band(pg)
+            assert band >= 0.5, f"only {band:.0%} of the height is free 3D view"
+            st = _box(pg, "#stage")
+            assert (st[3] - st[1]) <= 0.45 * h, ("collapsed sheet height", st, h)
+            # the meter strip: three numbers, every label and value whole
+            shown = pg.eval_on_selector_all(
+                "#meter [data-k]",
+                "els => els.filter(e => e.getClientRects().length).map(e => e.dataset.k)",
+            )
+            assert shown == ["next-buy", "hours", "sessions"], shown
+            strip = pg.inner_text("#meter")
+            for word in ("Next buy", "Shop hours", "Sessions left"):
+                assert word in strip, strip
+            assert _not_truncated(pg, "#meter .label, #meter b, #meter .label *") == []
+            # touch targets
+            for sel in (
+                "#tp-prev",
+                "#tp-play",
+                "#tp-next",
+                '#tp-speed [data-speed="1"]',
+                '#tp-speed [data-speed="4"]',
+                '#tp-speed [data-speed="16"]',
+                "#snap-top",
+                "#snap-side",
+                "#env-toggle",
+                "#sheet-handle",
+                "#meter",
+            ):
+                bx = _box(pg, sel)
+                assert bx[2] - bx[0] >= HIT - 0.5 and bx[3] - bx[1] >= HIT - 0.5, (
+                    sel,
+                    bx,
+                )
+            # transport is one row; the caption has its own line and wraps instead of truncating
+            mids = []
+            for sel in (
+                "#tp-prev",
+                "#tp-play",
+                "#tp-next",
+                '#tp-speed [data-speed="16"]',
+                "#snap-side",
+            ):
+                r = _box(pg, sel)
+                mids.append((r[1] + r[3]) / 2)
+            assert max(mids) - min(mids) <= 4, mids
+            cap, row = _box(pg, "#caption"), _box(pg, "#tp-prev")
+            assert cap[3] <= row[1] + 0.5 or cap[1] >= row[3] - 0.5, (cap, row)
+            assert pg.inner_text("#caption").strip()
+            assert (
+                pg.evaluate(
+                    "getComputedStyle(document.querySelector('#caption')).whiteSpace"
+                )
+                != "nowrap"
+            )
+            assert _not_truncated(pg, "#caption") == []
+            # the summary names the current session and step
+            op = pg.evaluate("window.__lab.player().step")
+            title = {o["id"]: o for o in _graph(rsite)["ops"]}[op]["title"]
+            summ = pg.inner_text("#sheet-handle")
+            assert "Session" in summ and title in summ, summ
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_narrow_meter_keeps_its_price_and_hours_qualifiers(rsite):
+    """On a phone (390x844) the collapsed meter strip still says a price is partial or an estimate: "$352" alone reads as a quote."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            for op in (None, "f05.inside-layup", FIRST_STRETCH_LAST):
+                b, pg, errors = _narrow(
+                    p, url, 390, 844, query=f"&op={op}" if op else ""
+                )
+                assert pg.get_attribute("#meter", "data-open") == "false"
+                m = pg.evaluate("window.__lab.meter()")
+                tile = pg.inner_text('#meter .tile[data-tile="next-buy"]')
+                nb = m["nextBuy"]
+                if nb and nb["amount"] > 0:
+                    want = "partial" if nb["unpriced"] else "estimate"
+                    assert "$" in tile and want in tile, (op, tile, nb)
+                elif nb and nb["unpriced"]:
+                    assert "unpriced" in tile, (op, tile, nb)
+                hours = pg.inner_text('#meter .tile[data-tile="hours"]')
+                if m["hoursKnown"]:
+                    assert "estimate" in hours or "est." in hours, (op, hours)
+                assert pg.is_visible('#meter .tile[data-tile="next-buy"] .q') or not (
+                    nb and (nb["amount"] > 0 or nb["unpriced"])
+                )
+                _no_hscroll(pg)
+                assert (
+                    _not_truncated(
+                        pg, "#meter .label, #meter b, #meter .label *, #meter .q"
+                    )
+                    == []
+                )
+                assert not errors, errors
+                if op != FIRST_STRETCH_LAST:
+                    b.close()
+            # the strip is still one row of three tiles, the full words one tap away
+            shown = pg.eval_on_selector_all(
+                "#meter [data-k]",
+                "els => els.filter(e => e.getClientRects().length).map(e => e.dataset.k)",
+            )
+            assert shown == ["next-buy", "hours", "sessions"], shown
+            pg.click("#meter")
+            assert pg.get_attribute("#meter", "data-open") == "true"
+            assert not pg.is_visible(
+                '#meter .tile[data-tile="next-buy"] .q'
+            )  # the open sheet shows the full subtitle instead
+            assert pg.is_visible('#meter .tile[data-tile="next-buy"] .sub')
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", NARROW)
+def test_player_narrow_env_sheet_behind_the_gear(rsite, w, h):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _narrow(p, url, w, h)
+            assert pg.get_attribute("#env-toggle", "aria-expanded") == "false"
+            pg.click("#env-toggle")
+            assert pg.get_attribute("#env-toggle", "aria-expanded") == "true"
+            for sel in (
+                "#envsheet",
+                "#env-temp",
+                "#env-humidity",
+                "#env-heat",
+                "#session-hours",
+            ):
+                assert pg.is_visible(sel), sel
+            _no_hscroll(pg)
+            sheet = _box(pg, "#envsheet")
+            assert sheet[2] <= w + 0.5 and sheet[0] >= -0.5, sheet
+            # each slider's value sits beside it, never under the thumb, and is whole
+            for sel in ("#env-temp", "#env-humidity"):
+                rng = _box(pg, sel)
+                val = pg.evaluate(
+                    f"(() => {{ const r = document.querySelector('{sel}').parentElement.querySelector('.val').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom] }})()"
+                )
+                assert val[2] - val[0] > 10, (sel, val)
+                assert not _intersects(rng, val), (sel, rng, val)
+                assert rng[3] - rng[1] >= HIT - 0.5, (sel, rng)
+            assert (
+                _not_truncated(pg, "#envsheet .env-row .val, #envsheet .env-row .label")
+                == []
+            )
+            heat, ses = _box(pg, "#env-heat"), _box(pg, "#session-hours")
+            assert heat[2] - heat[0] >= 0.5 * (sheet[2] - sheet[0]), (
+                "heat select crushed",
+                heat,
+                sheet,
+            )
+            assert heat[3] - heat[1] >= HIT - 0.5, heat
+            assert ses[2] - ses[0] >= 64 and ses[3] - ses[1] >= HIT - 0.5, ses
+            # the settings still repack the plan from here
+            n = _sessions(pg)
+            pg.fill("#session-hours", "12")
+            pg.dispatch_event("#session-hours", "change")
+            assert _sessions(pg) < n
+            _set_env(pg, temp=12, heat="space-heater")
+            assert pg.is_visible("#envsheet"), "a change keeps the sheet open"
+            pg.click("#env-toggle")
+            assert not pg.is_visible("#envsheet")
+            assert pg.get_attribute("#env-toggle", "aria-expanded") == "false"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", NARROW)
+def test_player_narrow_sheet_expands_to_the_step_list_and_bench(rsite, w, h):
+    byid = {o["id"]: o for o in _graph(rsite)["ops"]}
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _narrow(p, url, w, h)
+            pg.click("#sheet-handle")
+            assert pg.get_attribute("#stage", "data-open") == "true"
+            assert pg.get_attribute("#sheet-handle", "aria-expanded") == "true"
+            steps = pg.locator("#navlog-list button.step[data-op]")
+            assert steps.count() >= 2
+            assert steps.first.is_visible()
+            _no_hscroll(pg)
+            st = _box(pg, "#stage")
+            assert st[1] >= 0 and st[3] <= h + 0.5, st
+            # the bench is in the open sheet
+            pg.locator('#bench [data-k="materials"]').scroll_into_view_if_needed()
+            assert pg.is_visible('#bench [data-k="materials"]')
+            # a step from the list
+            op = "f04.firewall-aft"
+            pg.locator(f'#navlog-list button.step[data-op="{op}"]').click()
+            assert pg.evaluate("window.__lab.player().step") == op
+            assert byid[op]["title"] in pg.inner_text("#sheet-handle")
+            assert byid[op]["title"] in pg.inner_text("#bench")
+            # dragging the handle down closes it, dragging up opens it
+            hb = _box(pg, "#sheet-handle")
+            x, y = (hb[0] + hb[2]) / 2, (hb[1] + hb[3]) / 2
+            pg.mouse.move(x, y)
+            pg.mouse.down()
+            pg.mouse.move(x, y + 120, steps=6)
+            pg.mouse.up()
+            assert pg.get_attribute("#stage", "data-open") == "false"
+            assert not pg.is_visible("#navlog-list")
+            hb = _box(pg, "#sheet-handle")
+            x, y = (hb[0] + hb[2]) / 2, (hb[1] + hb[3]) / 2
+            pg.mouse.move(x, y)
+            pg.mouse.down()
+            pg.mouse.move(x, y - 120, steps=6)
+            pg.mouse.up()
+            assert pg.get_attribute("#stage", "data-open") == "true"
+            pg.click("#sheet-handle")
+            assert pg.get_attribute("#stage", "data-open") == "false"
+            # the meter strip opens to the full meter on a tap, nothing cut off
+            pg.click("#meter")
+            assert pg.get_attribute("#meter", "data-open") == "true"
+            shown = pg.eval_on_selector_all(
+                "#meter [data-k]",
+                "els => els.filter(e => e.getClientRects().length).map(e => e.dataset.k)",
+            )
+            assert shown == [
+                "spent",
+                "next-buy",
+                "hours",
+                "sessions",
+                "calendar",
+            ], shown
+            assert _not_truncated(pg, "#meter .label, #meter b, #meter .sub") == []
+            _no_hscroll(pg)
+            pg.click("#meter")
+            assert pg.get_attribute("#meter", "data-open") == "false"
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", NARROW)
+def test_player_narrow_play_through_reaches_the_last_step(rsite, w, h):
+    _, want = _grouped(rsite)
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _narrow(p, url, w, h)
+            pg.click('#tp-speed [data-speed="16"]')
+            pg.click("#tp-play")
+            assert pg.get_attribute("#tp-play", "aria-pressed") == "true"
+            seen = [pg.evaluate("window.__lab.player().step")]
+            for _ in range(400):
+                pg.evaluate("window.__lab.advance(0.5)")
+                st = pg.evaluate("window.__lab.player()")
+                if st["step"] != seen[-1]:
+                    seen.append(st["step"])
+                if not st["playing"]:
+                    break
+            assert seen == want, seen
+            assert pg.evaluate("window.__lab.player().step") == FIRST_STRETCH_LAST
+            assert pg.get_attribute("#tp-play", "aria-pressed") == "false"
+            title = {o["id"]: o for o in _graph(rsite)["ops"]}[FIRST_STRETCH_LAST][
+                "title"
+            ]
+            assert title in pg.inner_text("#sheet-handle")
+            _no_hscroll(pg)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def test_player_narrow_layout_leaves_the_wide_layout_alone(rsite):
+    """A landscape screen wider than 820 px keeps the desktop player; turning a narrow screen wide puts everything back."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, 1180, 820)
+            assert pg.get_attribute("body", "data-narrow") is None
+            assert not pg.is_visible("#env-toggle") and not pg.is_visible(
+                "#sheet-handle"
+            )
+            assert pg.is_visible("#navlog .nav-head #env-temp")
+            assert pg.is_visible("#navlog #navlog-list button.step[data-op]")
+            b.close()
+            b, pg, errors = _narrow(p, url, 390, 844)
+            assert pg.locator("#navlog #navlog-list").count() == 0
+            pg.set_viewport_size({"width": 1180, "height": 820})
+            pg.wait_for_function("!document.body.dataset.narrow")
+            assert pg.is_visible("#navlog .nav-head #env-temp")
+            assert pg.is_visible("#navlog #navlog-list button.step[data-op]")
+            assert pg.is_visible("#controls") and not pg.is_visible("#envsheet")
+            assert not pg.is_visible("#sheet-handle")
+            _no_hscroll(pg)
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# ---- the P1 gate's default flip: the player is the page; an explicit ?player=0 is the legacy lab ----
+
+
+def test_player_is_default(rsite):
+    """A raw URL (not _open, which asks for the legacy page) opens the player; ?player=0 still opens the legacy lab."""
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b = p.chromium.launch(args=GL)
+            pg = b.new_page(viewport={"width": 1180, "height": 820})
+            errors = []
+            pg.on("pageerror", lambda e: errors.append(str(e)))
+            pg.goto(url + "?test=1&q=low&freeze=1")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.get_attribute("body", "data-player") is not None
+            pg.wait_for_selector("#navlog button.step[data-op]")
+            assert pg.is_visible("#meter") and pg.is_visible("#stage")
+            assert not pg.is_visible("#opbar")
+            assert pg.evaluate("window.__lab.player().step")
+            # with no query at all (the real visitor's URL) the player is on too
+            pg.goto(url)
+            pg.wait_for_selector("#navlog button.step[data-op]")
+            assert pg.get_attribute("body", "data-player") is not None
+            assert not pg.is_visible("#status.err")
+            pg.goto(url + "?test=1&q=low&freeze=1&player=0")
+            pg.wait_for_function("window.__lab && window.__lab.ready", timeout=60000)
+            assert pg.get_attribute("body", "data-player") is None
+            assert pg.is_visible("#opbar") and not pg.is_visible("#navlog")
+            assert pg.evaluate("window.__lab.player") is None
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+@pytest.mark.parametrize("w,h", [(1180, 820), (1024, 768), (900, 700)])
+def test_player_desktop_meter_labels_are_whole(rsite, w, h):
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, w, h)
+            assert pg.get_attribute("body", "data-narrow") is None
+            assert _not_truncated(pg, "#meter .label, #meter .label *") == []
+            assert "Sessions left" in pg.inner_text(
+                '#meter .tile[data-tile="sessions"]'
+            )
             assert not errors, errors
             b.close()
     finally:

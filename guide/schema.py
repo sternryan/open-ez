@@ -2,21 +2,34 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import yaml
+
+from core.sources import check_citation
+
+if TYPE_CHECKING:
+    from guide.catalog import CatalogItem
+    from guide.resin import Resin
 
 VARIANTS = {"gu", "roncz", "both"}
 FIDELITY = {"no-geometry", "unvalidated", "plans-checked", "a-sheet-verified"}
 STATUS = {"verified", "unresolved", "conflict"}
 KIND = {"official", "community"}
+FLAGS = {"official", "community", "derived", "estimate", "unsourced"}
+CURE = {"none", "part", "all"}
+BUY_FLAGS = {"official", "derived", "estimate"}
 RESERVED = {
     "components.yaml",
     "pages.yaml",
     "annotations.yaml",
     "loadpaths.yaml",
     "tours.yaml",
+    "groups.yaml",
+    "scripts.yaml",
 }
 LOADPATH_KINDS = {"bending", "shear", "lift"}
 
@@ -36,7 +49,14 @@ OP_KEYS = {
     "completion",
     "inspection",
     "stub",
+    "group",
+    "plan",
 }
+PLAN_KEYS = {"people", "people_why", "hours", "cure", "resin", "tools", "buy"}
+VALUE_KEYS = {"value", "flag", "source"}
+BUY_KEYS = {"item", "qty", "flag"}
+GROUP_FILE_KEYS = {"groups", "required_files"}
+GROUP_KEYS = {"id", "label"}
 CHANGE_KEYS = {"cp", "lpc", "class", "status", "kind", "note", "annotation_pp"}
 MATERIAL_KEYS = {"cloth", "plies", "where"}
 ANNOTATION_KEYS = {"scan_pp", "cp", "lpc", "class", "text", "confirmed"}
@@ -87,6 +107,37 @@ class Change:
 
 
 @dataclass(frozen=True)
+class Group:
+    id: str
+    label: str
+
+
+@dataclass(frozen=True)
+class Value:
+    value: float | None
+    flag: str
+    source: str | None
+
+
+@dataclass(frozen=True)
+class Buy:
+    item: str
+    qty: float
+    flag: str
+
+
+@dataclass(frozen=True)
+class Plan:
+    people: int = 1
+    people_why: str | None = None
+    hours: Value | None = None
+    cure: str = "none"
+    resin: str | None = None
+    tools: tuple[str, ...] = ()
+    buy: tuple[Buy, ...] = ()
+
+
+@dataclass(frozen=True)
 class Operation:
     id: str
     chapter: int
@@ -102,6 +153,9 @@ class Operation:
     completion: tuple[str, ...] = ()
     inspection: bool = False
     stub: bool = False
+    group: str | None = None
+    file: str = ""
+    plan: Plan | None = None
 
 
 @dataclass(frozen=True)
@@ -139,6 +193,8 @@ class Graph:
     tours: dict[str, dict] = field(
         default_factory=dict
     )  # op id -> {"target": [x, y, z], "position": [x, y, z]} camera shot
+    groups: list[Group] = field(default_factory=list)
+    groups_required: set[str] = field(default_factory=set)
 
 
 def _read(path: Path):
@@ -148,12 +204,148 @@ def _read(path: Path):
         raise SchemaError(f"{path.name}: malformed YAML: {e}") from e
 
 
+def _number(v, where: str) -> float:
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        raise SchemaError(f"{where}: must be a number, got {v!r}")
+    number = float(v)
+    if not math.isfinite(number):
+        raise SchemaError(f"{where}: must be finite, got {v!r}")
+    if number < 0:
+        raise SchemaError(f"{where}: must be >= 0, got {v!r}")
+    return number
+
+
+def _http_url(source: str) -> bool:
+    return source.startswith(("http://", "https://"))
+
+
+def _value(d, where: str) -> Value:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
+    _extra(d, VALUE_KEYS, where)
+    flag = d.get("flag")
+    if flag not in FLAGS:
+        raise SchemaError(f"{where}: bad flag {flag!r}")
+    raw = d.get("value")
+    value = None if raw is None else _number(raw, f"{where} value")
+    source = d.get("source")
+    if flag == "unsourced":
+        if value is not None:
+            raise SchemaError(f"{where}: unsourced value must be null")
+        if source is not None:
+            raise SchemaError(f"{where}: unsourced carries no source")
+    elif flag == "estimate":
+        if source is not None:
+            raise SchemaError(f"{where}: estimate carries no source")
+    elif flag == "official":
+        if not isinstance(source, str):
+            raise SchemaError(f"{where}: official needs a registry citation")
+        try:
+            check_citation(source)
+        except ValueError as e:
+            raise SchemaError(f"{where}: {e}") from e
+    elif flag == "community":
+        if not isinstance(source, str) or not _http_url(source):
+            raise SchemaError(f"{where}: community source must be an http(s) URL")
+    elif not isinstance(source, str) or source.strip() == "":
+        raise SchemaError(
+            f"{where}: derived source must be a non-empty derivation note"
+        )
+    return Value(value, flag, source)
+
+
+def _buy(d, where: str) -> Buy:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
+    _extra(d, BUY_KEYS, where)
+    item = d.get("item")
+    if not isinstance(item, str) or item.strip() == "":
+        raise SchemaError(f"{where}: item must be a non-empty string")
+    if "qty" not in d:
+        raise SchemaError(f"{where}: qty required")
+    flag = d.get("flag")
+    if flag not in BUY_FLAGS:
+        raise SchemaError(f"{where}: bad flag {flag!r}")
+    return Buy(item, _number(d["qty"], f"{where} qty"), flag)
+
+
+def _plan(d, where: str) -> Plan:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
+    _extra(d, PLAN_KEYS, where)
+    people = d.get("people", 1)
+    if isinstance(people, bool) or people not in (1, 2):
+        raise SchemaError(f"{where}: people must be 1 or 2, got {people!r}")
+    why = d.get("people_why")
+    if people == 2 and (not isinstance(why, str) or why.strip() == ""):
+        raise SchemaError(f"{where}: people_why required when people is 2")
+    if why is not None and not isinstance(why, str):
+        raise SchemaError(f"{where}: people_why must be a string, got {why!r}")
+    hours = d.get("hours")
+    parsed_hours = None if hours is None else _value(hours, f"{where} hours")
+    cure = d.get("cure", "none")
+    if cure not in CURE:
+        raise SchemaError(f"{where}: bad cure {cure!r}")
+    resin = d.get("resin")
+    if cure != "none":
+        if not isinstance(resin, str) or resin.strip() == "":
+            raise SchemaError(f"{where}: resin required when cure is not none")
+    elif resin is not None and not isinstance(resin, str):
+        raise SchemaError(f"{where}: resin must be a string, got {resin!r}")
+    tools = d.get("tools", [])
+    if not isinstance(tools, list) or not all(isinstance(t, str) for t in tools):
+        raise SchemaError(f"{where}: tools must be a list of strings")
+    raw_buy = d.get("buy", [])
+    if not isinstance(raw_buy, list):
+        raise SchemaError(f"{where}: buy must be a list")
+    buy = tuple(_buy(b, f"{where} buy {i}") for i, b in enumerate(raw_buy))
+    return Plan(
+        people=people,
+        people_why=why,
+        hours=parsed_hours,
+        cure=cure,
+        resin=resin,
+        tools=tuple(tools),
+        buy=buy,
+    )
+
+
+def _groups(path: Path) -> tuple[list[Group], set[str]]:
+    data = _read(path)
+    if not isinstance(data, dict):
+        raise SchemaError("groups.yaml: must be a mapping")
+    _extra(data, GROUP_FILE_KEYS, "groups.yaml")
+    rows = data.get("groups", [])
+    if not isinstance(rows, list):
+        raise SchemaError("groups.yaml: groups must be a list")
+    groups: list[Group] = []
+    for idx, row in enumerate(rows):
+        where = f"groups.yaml group {idx}"
+        if not isinstance(row, dict):
+            raise SchemaError(f"{where}: must be a mapping")
+        _extra(row, GROUP_KEYS, where)
+        gid, label = row.get("id"), row.get("label")
+        if not isinstance(gid, str) or gid.strip() == "":
+            raise SchemaError(f"{where}: id must be a non-empty string")
+        if not isinstance(label, str) or label.strip() == "":
+            raise SchemaError(f"{where}: label must be a non-empty string")
+        groups.append(Group(gid, label))
+    required = data.get("required_files", [])
+    if not isinstance(required, list) or not all(isinstance(x, str) for x in required):
+        raise SchemaError("groups.yaml: required_files must be a list of file names")
+    return groups, set(required)
+
+
 def _op(d: dict, file_name: str, idx: int) -> Operation:
     if not isinstance(d, dict):
         raise SchemaError(f"{file_name} entry {idx}: must be a mapping")
     op_id = d.get("id", f"entry_{idx}")
     where = f"{file_name} entry {idx} ({op_id})"
     _extra(d, OP_KEYS, where)
+    group = d.get("group")
+    if group is not None and not isinstance(group, str):
+        raise SchemaError(f"{where}: group must be a string, got {group!r}")
+    plan = _plan(d["plan"], f"{where} plan") if d.get("plan") is not None else None
     try:
         sources = []
         for s in d.get("sources", []):
@@ -202,6 +394,9 @@ def _op(d: dict, file_name: str, idx: int) -> Operation:
             completion=tuple(d.get("completion", [])),
             inspection=_bool(d, "inspection", False, where),
             stub=_bool(d, "stub", False, where),
+            group=group,
+            file=file_name,
+            plan=plan,
         )
     except (KeyError, TypeError, ValueError, AttributeError) as e:
         op_id = d.get("id", f"entry_{idx}")
@@ -299,6 +494,9 @@ def load_graph(graph_dir: Path) -> Graph:
             g.tours[str(op_id)] = {
                 k: [float(x) for x in shot[k]] for k in ("target", "position")
             }
+    groups = graph_dir / "groups.yaml"
+    if groups.exists():
+        g.groups, g.groups_required = _groups(groups)
     for f in sorted(graph_dir.glob("*.yaml")):
         if f.name in RESERVED:
             continue
@@ -344,6 +542,11 @@ def validate(g: Graph) -> list[str]:
         if c.fidelity not in FIDELITY:
             errs.append(f"component {c.id}: bad fidelity {c.fidelity}")
     linked = {(ch.cp, ch.lpc) for op in g.ops.values() for ch in op.changes}
+    seen_groups: set[str] = set()
+    for grp in g.groups:
+        if grp.id in seen_groups:
+            errs.append(f"groups.yaml: duplicate group {grp.id}")
+        seen_groups.add(grp.id)
     for op in g.ops.values():
         for r in op.requires:
             if r not in g.ops:
@@ -355,6 +558,11 @@ def validate(g: Graph) -> list[str]:
         for cid in op.components:
             if cid not in g.components:
                 errs.append(f"{op.id}: unknown component {cid}")
+        if op.group:
+            if op.group not in seen_groups:
+                errs.append(f"{op.id}: group '{op.group}' not in groups.yaml")
+        elif op.file in g.groups_required and not op.stub and op.variants != ("gu",):
+            errs.append(f"{op.id}: missing group")
         # Check change status and kind for ALL ops (including stubs)
         for ch in op.changes:
             if ch.status not in STATUS:
@@ -449,6 +657,24 @@ def topo_order(g: Graph) -> list[str]:
     for n in sorted(g.ops, key=key):
         visit(n)
     return order
+
+
+def validate_refs(
+    g: Graph,
+    catalog: dict[str, CatalogItem],
+    resins: dict[str, Resin],
+) -> list[str]:
+    """Shape is checked in validate; this checks catalog and resin ids only."""
+    errs: list[str] = []
+    for op in g.ops.values():
+        if op.plan is None:
+            continue
+        for buy in op.plan.buy:
+            if buy.item not in catalog:
+                errs.append(f"{op.id}: buy item '{buy.item}' not in catalog")
+        if op.plan.resin is not None and op.plan.resin not in resins:
+            errs.append(f"{op.id}: resin '{op.plan.resin}' not in data/resins")
+    return errs
 
 
 def authored_texts(g: Graph) -> list[tuple[str, str]]:

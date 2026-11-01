@@ -115,6 +115,48 @@
     <div id="chips" role="list"></div>
   </nav>
 
+  <!-- the rehearsal player (?player=1): hidden on the legacy page, which keeps every control above -->
+  <aside id="navlog" class="card" aria-label="Build sessions" hidden>
+    <div class="nav-head">
+      <b class="nav-title">Build rehearsal</b>
+      <div id="environment" role="group" aria-label="Shop environment"></div>
+      <label class="env-row"><span class="label">Session length</span><input type="number" id="session-hours" min="1" max="12" step="0.5" value="4" inputmode="decimal" aria-label="Session length in hours"><span class="val">h</span></label>
+      <p id="env-warn" class="warn" role="alert" hidden></p>
+      <p id="env-note" class="sub" hidden></p>
+    </div>
+    <div id="navlog-list"></div>
+  </aside>
+  <header id="meter" class="card" aria-label="Plan so far" aria-live="polite" hidden></header>
+  <!-- narrow or portrait screens only (src/ui/narrow.ts): the shop settings and the view card move behind this gear -->
+  <button type="button" id="env-toggle" class="btn sq card" aria-expanded="false" aria-controls="envsheet" aria-label="Shop and view settings" title="Shop and view settings">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+  <section id="envsheet" class="card" aria-label="Shop and view settings" hidden>
+    <div id="envsheet-shop"><b class="nav-title">Shop</b></div>
+    <div id="envsheet-view"><b class="nav-title">View</b></div>
+  </section>
+  <section id="stage" class="card" aria-label="Step player" hidden>
+    <button type="button" id="sheet-handle" aria-expanded="false" aria-controls="sheet-body" title="Tap or drag for the step list and the bench"><span class="grab" aria-hidden="true"></span><span id="sheet-summary"></span></button>
+    <div id="stagebar">
+      <div class="row" role="group" aria-label="Transport">
+        <button type="button" id="tp-prev" class="btn sq" aria-label="Previous step" title="Previous step">&#9198;</button>
+        <button type="button" id="tp-play" class="btn" aria-pressed="false">Play</button>
+        <button type="button" id="tp-next" class="btn sq" aria-label="Next step" title="Next step">&#9197;</button>
+      </div>
+      <div id="tp-speed" class="seg" role="group" aria-label="Playback speed">
+        <button type="button" data-speed="1" aria-pressed="true">1&times;</button>
+        <button type="button" data-speed="4" aria-pressed="false">4&times;</button>
+        <button type="button" data-speed="16" aria-pressed="false">16&times;</button>
+      </div>
+      <div class="seg" role="group" aria-label="Camera">
+        <button type="button" id="snap-top" aria-pressed="false">Top</button>
+        <button type="button" id="snap-side" aria-pressed="false">Side</button>
+      </div>
+      <p id="caption" aria-live="polite"></p>
+    </div>
+    <div id="sheet-body"><div id="bench" aria-live="polite"></div></div>
+  </section>
+
   <div id="gl-lost" class="card" role="alert" hidden>
     <b>3D paused</b>
     <p>The browser reclaimed graphics memory. Tap to reload and pick up at this step.</p>

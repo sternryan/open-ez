@@ -1,0 +1,135 @@
+# Step-script overrides (our own words). Ops absent here use generated ply actions or play caption-only.
+f04.firewall-aft:
+- {do: cut, part: fuselage.firewall, tool: stand-in, who: owner, why: cut the plywood to the template}
+- {do: place, part: fuselage.firewall, ply: 1, who: owner, why: lay down first glass layer}
+- {do: wet-out, part: fuselage.firewall, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.firewall, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+f04.firewall-fwd:
+- {do: bond, part: fuselage.firewall, tool: cup, who: owner, why: secure hardware}
+- {do: place, part: fuselage.firewall, ply: 1, who: owner, why: lay down front glass layer}
+- {do: wet-out, part: fuselage.firewall, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.firewall, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: cut, part: fuselage.firewall, tool: stand-in, who: owner, why: cut the longeron holes}
+f04.front-seat-bkhd-back:
+- {do: cut, part: fuselage.front_seat_bkhd, tool: stand-in, who: owner, why: taper the other end}
+- {do: sand, part: fuselage.front_seat_bkhd, tool: sanding-block, who: owner, why: round the edges}
+- {do: place, part: fuselage.front_seat_bkhd, ply: 1, who: owner, why: lay 45-degree BID ply}
+- {do: wet-out, part: fuselage.front_seat_bkhd, ply: 1, tool: brush, who: owner, why: saturate the BID ply}
+- {do: squeegee, part: fuselage.front_seat_bkhd, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: cut, part: fuselage.front_seat_bkhd, tool: stand-in, who: owner, why: "cut the corner, longeron notches, and control holes"}
+f04.rear-seat-bkhd-hole:
+- {do: cut, part: fuselage.rear_seat_bkhd, tool: stand-in, who: owner, why: scoop out the 8 in foam circle}
+- {do: place, part: fuselage.rear_seat_bkhd, ply: 1, who: owner, why: lay first BID ply}
+- {do: wet-out, part: fuselage.rear_seat_bkhd, ply: 1, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.rear_seat_bkhd, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.rear_seat_bkhd, ply: 2, who: owner, why: lay second BID ply}
+- {do: wet-out, part: fuselage.rear_seat_bkhd, ply: 2, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.rear_seat_bkhd, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: cut, part: fuselage.rear_seat_bkhd, tool: stand-in, who: owner, why: open the access hole and cut the notches and holes}
+f05.gear-extrusions:
+- {do: place, part: fuselage.gear_extrusions, tool: stand-in, who: owner, why: assemble gear tube and fittings}
+- {do: place, part: fuselage.side_left, tool: stand-in, who: owner, why: fit bolts and washers}
+f05.gear-pad:
+- {do: place, part: fuselage.gear_pad, ply: 1, tool: brush, who: owner, why: lay first BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 1, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 2, tool: brush, who: owner, why: lay second BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 2, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 3, tool: brush, who: owner, why: lay third BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 3, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 4, tool: brush, who: owner, why: lay fourth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 4, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 5, tool: brush, who: owner, why: lay fifth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 5, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 5, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 6, tool: brush, who: owner, why: lay sixth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 6, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 6, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 7, tool: brush, who: owner, why: lay seventh BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 7, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 7, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 8, tool: brush, who: owner, why: lay eighth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 8, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 8, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 9, tool: brush, who: owner, why: lay ninth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 9, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 9, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 10, tool: brush, who: owner, why: lay tenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 10, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 10, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 11, tool: brush, who: owner, why: lay eleventh BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 11, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 11, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 12, tool: brush, who: owner, why: lay twelfth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 12, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 12, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 13, tool: brush, who: owner, why: lay thirteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 13, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 13, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 14, tool: brush, who: owner, why: lay fourteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 14, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 14, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 15, tool: brush, who: owner, why: lay fifteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 15, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 15, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 16, tool: brush, who: owner, why: lay sixteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 16, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 16, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 17, tool: brush, who: owner, why: lay seventeenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 17, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 17, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 18, tool: brush, who: owner, why: lay eighteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 18, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 18, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 19, tool: brush, who: owner, why: lay nineteenth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 19, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 19, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 20, tool: brush, who: owner, why: lay twentieth BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 20, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 20, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.gear_pad, ply: 21, tool: brush, who: owner, why: lay twenty-first BID ply}
+- {do: wet-out, part: fuselage.gear_pad, ply: 21, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.gear_pad, ply: 21, tool: squeegee, who: owner, why: remove excess resin}
+f05.lower-longeron:
+- {do: place, part: fuselage.longerons, tool: stand-in, who: owner, why: position spruce longeron}
+- {do: bond, part: fuselage.side_left, tool: cup, who: owner, why: attach longeron to side}
+- {do: bond, part: fuselage.side_right, tool: cup, who: owner, why: attach doubler and urethane block}
+f05.side-blank:
+- {do: cut, part: fuselage.side_left, tool: stand-in, who: owner, why: trim foam sheets for the blank}
+- {do: bond, part: fuselage.side_left, tool: cup, who: owner, why: butt-join the sheets into one blank}
+- {do: squeegee, part: fuselage.side_right, tool: squeegee, who: owner, why: fair the micro joint flat}
+f05.side-layout:
+- {do: cut, part: fuselage.side_right, tool: stand-in, who: owner, why: cut the dish and the sight-gauge groove}
+- {do: drape, part: fuselage.side_left, tool: stand-in, who: owner, why: lay release tape over the marked areas}
+- {do: drape, part: fuselage.side_right, tool: stand-in, who: owner, why: lay release tape over the marked areas}
+f05.side-profile:
+- {do: cut, part: fuselage.side_left, tool: stand-in, who: owner, why: cut the first side to the marked outline}
+- {do: cut, part: fuselage.side_right, tool: stand-in, who: owner, why: cut the second side using the first as the pattern}
+f05.spar-cutout:
+- {do: cut, part: fuselage.side_left, tool: stand-in, who: owner, why: remove the foam and glass block}
+- {do: cut, part: fuselage.side_right, tool: stand-in, who: owner, why: remove the foam and glass block}
+f05.top-longeron-glass:
+- {do: place, part: fuselage.longerons, ply: 1, tool: brush, who: owner, why: lay first unidirectional ply}
+- {do: wet-out, part: fuselage.longerons, ply: 1, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.longerons, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.longerons, ply: 2, tool: brush, who: owner, why: lay second unidirectional ply}
+- {do: wet-out, part: fuselage.longerons, ply: 2, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.longerons, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.longerons, ply: 3, tool: brush, who: owner, why: lay third unidirectional ply}
+- {do: wet-out, part: fuselage.longerons, ply: 3, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.longerons, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.longerons, ply: 4, tool: brush, who: owner, why: lay 45-degree BID ply}
+- {do: wet-out, part: fuselage.longerons, ply: 4, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: fuselage.longerons, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+f05.inside-layup:
+- {do: place, part: fuselage.side_left, who: owner}
+- {do: drape, ply: 1, who: buddy, why: the buddy mixes and passes resin while you wet out}
+- {do: wet-out, ply: 1, tool: brush, who: owner}
+- {do: squeegee, ply: 1, tool: squeegee, who: owner}
+- {do: drape, ply: 2, who: buddy, why: the second ply crosses the first at the opposite angle}
+- {do: wet-out, ply: 2, tool: brush, who: owner}
+- {do: squeegee, ply: 2, tool: squeegee, who: owner}
+- {do: bond, part: fuselage.longerons, tool: cup, who: owner, why: "flox in the top longeron, stiffener and aft blocks"}

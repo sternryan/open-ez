@@ -1,6 +1,19 @@
 # Chapter 4 — fuselage bulkheads (1980 first edition, plans pp. 4-1 to 4-3). Summaries are ours; the plans pages are the authority.
 # Ops 1-4 (seat bulkheads) and 5-8 (panel, F22, F28, firewall) are independent groups; both feed the chapter 6 trial fit.
 - id: f04.front-seat-bkhd-front
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 1.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, sanding-block, cup, brush, squeegee, scissors, knife, peel-ply]
+    buy:
+      - {item: foam-pvc-0p8, qty: 4.52, flag: estimate}
+      - {item: und-7715, qty: 1.05, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.034, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.070, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.066, flag: estimate}
   chapter: 4
   title: Front seat bulkhead, front face
   summary: Cut the front seat bulkhead blank from the thick blue foam, taper one end, and cover its front face and that tapered end with two crossed unidirectional plies.
@@ -19,6 +32,17 @@
     - Two unidirectional plies cured on the front face and over the tapered end
     - Foam slurried before glassing
 - id: f04.front-seat-bkhd-back
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 2.8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, knife, cup, brush, squeegee, scissors, drill, jigsaw]
+    buy:
+      - {item: bid-7725, qty: 0.61, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.025, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.051, flag: estimate}
   chapter: 4
   title: Front seat bulkhead, back face and cutouts
   summary: Taper the other end, round the edges, and lay one 45-degree BID ply on the back that wraps around the edges. Then add the flexible corner, the longeron notches and the right-side control holes.
@@ -35,6 +59,18 @@
     - Back ply wraps the edges and is cured without bubbles
     - Corner notches and control-hole openings cut to the page dimensions
 - id: f04.rear-seat-bkhd-foam
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 2.4, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, sanding-block, cup, brush, squeegee, scissors, knife]
+    buy:
+      - {item: foam-pvc-0p8, qty: 2.30, flag: estimate}
+      - {item: und-7715, qty: 0.51, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.017, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.034, flag: estimate}
   chapter: 4
   title: Rear seat bulkhead foam and glass
   summary: Cut the rear seat bulkhead from the thick blue foam as a wedge-ended piece about 20.6 wide at the bottom, 18.7 wide at the top and 16.1 long. Taper top and bottom, slope both sides, and put two crossed unidirectional plies on one face.
@@ -53,6 +89,17 @@
     - Side taper of 0.95 present on both sides
     - Two unidirectional plies cured without dry spots
 - id: f04.rear-seat-bkhd-hole
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 2.4, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, squeegee, scissors, drill, jigsaw]
+    buy:
+      - {item: bid-7725, qty: 0.54, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.022, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.046, flag: estimate}
   chapter: 4
   title: Rear seat bulkhead access hole and notches
   summary: Scoop out the 8 in foam circle, glass it with two 45-degree BID plies, then open the 7 in access hole, cut the lower-corner notches and drill the control and rudder-conduit holes.
@@ -69,6 +116,18 @@
     - 7 in access hole opened inside the glassed circle
     - Corner notches 0.7 by 1.4 and small rudder-conduit holes cut
 - id: f04.panel-f22-f28-aft
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 6.0, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, jigsaw, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: foam-pvc-0p2, qty: 6.18, flag: estimate}
+      - {item: bid-7725, qty: 1.43, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.059, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.121, flag: estimate}
   chapter: 4
   title: "Instrument panel, F22 and F28: aft faces"
   summary: Cut the panel, F22 and F28 from the thin red foam using the full-size templates, then glass their aft faces. A foam doubler is pressed in wet and covered, with an extra ply above the leg cutouts.
@@ -89,6 +148,17 @@
     - Aft-face plies and the doubler cured in one sequence
     - Extra ply over the leg cutouts present on the panel
 - id: f04.panel-f22-f28-fwd
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 13.1, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, knife, sanding-block, drill]
+    buy:
+      - {item: bid-7725, qty: 1.43, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.059, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.121, flag: estimate}
   chapter: 4
   title: "Instrument panel, F22 and F28: forward faces"
   summary: Glass the forward faces, with one extra ply on the upper panel, and build up the canard attach pads on the left and right of F22's forward face. The instrument holes are opened last.
@@ -111,6 +181,18 @@
     - Canard attach buildup on the left and right of F22, forward face only, plies alternated
     - Instrument-panel holes opened only after all glass is cured
 - id: f04.firewall-aft
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 2.1, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [jigsaw, sanding-block, drill, cup, brush, squeegee, scissors]
+    buy:
+      - {item: birch-ply-6mm-48x48, qty: 0.31, flag: estimate}
+      - {item: bid-7725, qty: 0.25, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.010, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.021, flag: estimate}
   chapter: 4
   title: "Firewall: plywood and aft glass"
   summary: Cut the firewall from quarter-inch birch plywood, put one BID ply on its aft face and drill the six pulley holes. The rest of the firewall build-up is fitted in chapter 15.
@@ -131,6 +213,19 @@
     - Remaining firewall build-up left for chapter 15
     - Six pulley holes drilled at the marked points
 - id: f04.firewall-fwd
+  group: bulkheads-firewall
+  plan:
+    people: 1
+    hours: {value: 2.8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, countersink, cup, brush, squeegee, scissors, jigsaw, peel-ply]
+    buy:
+      - {item: an509-10r10, qty: 6, flag: estimate}
+      - {item: bid-7725, qty: 0.25, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.010, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.021, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.031, flag: estimate}
   chapter: 4
   title: "Firewall: hardware, front glass and longeron holes"
   summary: Countersink and bond the six AN509 screws, put one BID ply on the front, then cut the four rectangular and two small square longeron holes.

@@ -12,10 +12,14 @@ import hashlib
 import shutil
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 from guide import layup, render_key
+from guide.catalog import DATA, is_stale, load_catalog
+from guide.resin import load_resins
 from guide.schema import SchemaError, load_graph, topo_order, validate
+from guide.scripts_schema import load_scripts, scripts_for, validate_scripts
 from hangar.records import load_records, load_spots
 
 VIEWER = Path(__file__).parent / "viewer"
@@ -228,6 +232,36 @@ def _hangar_payload() -> dict:
     }
 
 
+def _plan_payload(g, catalog, resins, today: date, scripts: dict | None = None) -> dict:
+    """Shipped plan.json: groups, resins, catalog, scripts and the build date."""
+    return {
+        "groups": [{"id": grp.id, "label": grp.label} for grp in g.groups],
+        "resins": {
+            resin_id: {
+                "min_temp_c": resin.min_temp_c,
+                "gate_hours": [list(pair) for pair in resin.gate_hours],
+                "flag": resin.flag,
+                "source": resin.source,
+            }
+            for resin_id, resin in resins.items()
+        },
+        "catalog": {
+            item_id: {
+                "label": item.label,
+                "url": item.url,
+                "price_usd": item.price_usd,
+                "unit": item.unit,
+                "flag": item.flag,
+                "read": None if item.read is None else item.read.isoformat(),
+                "stale": is_stale(item, today),
+            }
+            for item_id, item in catalog.items()
+        },
+        "scripts": {} if scripts is None else scripts,
+        "today": today.isoformat(),
+    }
+
+
 def build(
     graph_dir: Path,
     out: Path,
@@ -236,6 +270,9 @@ def build(
     docs: Path | None,
     renders: Path | None = None,
     public: bool = False,
+    *,
+    catalog: Path | None = None,
+    resins: Path | None = None,
 ) -> None:
     """public=True: a site safe for a public host. No scan base, no plans figure/page references, no classic viewer, no docs."""
     if public:
@@ -248,6 +285,15 @@ def build(
     errs = validate(g)
     if errs:
         raise SchemaError("; ".join(errs))
+    catalog_items = load_catalog(
+        DATA / "catalog" / "prices.yaml" if catalog is None else catalog
+    )
+    resin_curves = load_resins(DATA / "resins" if resins is None else resins)
+    scripts = scripts_for(g, load_scripts(graph_dir))
+    script_errs = validate_scripts(scripts, g)
+    if script_errs:
+        raise SchemaError("; ".join(script_errs))
+    plan = _plan_payload(g, catalog_items, resin_curves, date.today(), scripts)
     if out.exists():
         shutil.rmtree(out)
     # The lab is the site: its index.html + assets sit at the root beside graph.json, config.json, models/ and docs/.
@@ -293,6 +339,7 @@ def build(
     if renders:
         payload["cutaway"] = _cutaway(g, models, renders, out)
     (out / "graph.json").write_text(json.dumps(payload, indent=1))
+    (out / "plan.json").write_text(json.dumps(plan, indent=1))
     (out / "config.json").write_text(
         json.dumps({"scanBase": scan_base, "model": "models/longez.glb"})
     )

@@ -1,5 +1,9 @@
+import calendar
 import json
+from datetime import date, timedelta
+
 import pytest
+
 from guide.build_site import build
 from guide.schema import SchemaError
 from tests.guide.render_fixture import ROOT, make_export, make_renders
@@ -273,6 +277,117 @@ def test_classic_and_lab_docs_links_and_renders_still_resolve(tmp_path):
     assert (
         (out / "docs" / href).resolve().is_file()
     )  # the docs page still finds its stylesheet
+
+
+def _months_ago(today: date, months: int = 6) -> date:
+    """Calendar months back; the day clamps to the target month. Equal is not stale."""
+    year, month = today.year, today.month - months
+    while month <= 0:
+        month += 12
+        year -= 1
+    return date(year, month, min(today.day, calendar.monthrange(year, month)[1]))
+
+
+def test_plan_json_payload_and_iso_dates(gdir, tmp_path):
+    from tests.guide.test_schema import write
+
+    write(
+        gdir,
+        "groups.yaml",
+        """
+        groups:
+          - {id: bulkheads-firewall, label: "Seat bulkheads and firewall"}
+          - {id: fuselage-sides, label: "Fuselage sides"}
+        required_files: []
+        """,
+    )
+    out = tmp_path / "site"
+    build(gdir, out, models=None, scan_base=None, docs=None)
+    plan = json.loads((out / "plan.json").read_text())
+    assert set(plan) == {"groups", "resins", "catalog", "scripts", "today"}
+    assert plan["groups"] == [
+        {"id": "bulkheads-firewall", "label": "Seat bulkheads and firewall"},
+        {"id": "fuselage-sides", "label": "Fuselage sides"},
+    ]
+    assert plan["scripts"] == {}
+    assert plan["today"] == date.today().isoformat()
+    bid = plan["catalog"]["bid-7725"]
+    assert set(bid) == {"label", "url", "price_usd", "unit", "flag", "read", "stale"}
+    assert bid["read"] == "2026-10-08"
+    assert bid["price_usd"] == 10.50
+    resin = plan["resins"]["mgs-285-287"]
+    assert set(resin) == {"min_temp_c", "gate_hours", "flag", "source"}
+    assert resin["flag"] == "unsourced" and resin["source"] == "mgs-l285-tds:p1"
+    assert resin["min_temp_c"] == 10 and resin["gate_hours"] == []
+
+
+def test_plan_json_six_month_staleness(gdir, tmp_path):
+    out = tmp_path / "site"
+    build(gdir, out, models=None, scan_base=None, docs=None)
+    shipped = json.loads((out / "plan.json").read_text())
+    today = date.fromisoformat(shipped["today"])
+    cutoff = _months_ago(today)
+    for item in shipped["catalog"].values():
+        if item["read"] is None:
+            assert item["stale"] is True
+        else:
+            assert item["stale"] is (date.fromisoformat(item["read"]) < cutoff)
+    old = (cutoff - timedelta(days=1)).isoformat()
+
+    def row(item_id, label, read, flag, url, price):
+        url_yaml = "null" if url is None else f"'{url}'"
+        read_yaml = "null" if read is None else read
+        price_yaml = "null" if price is None else price
+        return (
+            f"- {{id: {item_id}, label: {label}, vendor: null, part: null, "
+            f"url: {url_yaml}, price_usd: {price_yaml}, unit: each, "
+            f"read: {read_yaml}, flag: {flag}}}"
+        )
+
+    catalog = tmp_path / "catalog" / "prices.yaml"
+    catalog.parent.mkdir()
+    catalog.write_text(
+        "\n".join(
+            [
+                row(
+                    "fresh",
+                    "Fresh",
+                    today.isoformat(),
+                    "page",
+                    "https://example.com/f",
+                    1,
+                ),
+                row(
+                    "edge",
+                    "Edge",
+                    cutoff.isoformat(),
+                    "page",
+                    "https://example.com/e",
+                    1,
+                ),
+                row("old", "Old", old, "page", "https://example.com/o", 1),
+                row("blank", "Blank", None, "unsourced", None, None),
+            ]
+        )
+        + "\n"
+    )
+    build(
+        gdir,
+        out,
+        models=None,
+        scan_base=None,
+        docs=None,
+        catalog=catalog,
+        resins=ROOT / "data" / "resins",
+    )
+    plan = json.loads((out / "plan.json").read_text())
+    assert plan["today"] == today.isoformat()
+    assert plan["catalog"]["fresh"]["stale"] is False
+    assert plan["catalog"]["edge"]["read"] == cutoff.isoformat()
+    assert plan["catalog"]["edge"]["stale"] is False
+    assert plan["catalog"]["old"]["stale"] is True
+    assert plan["catalog"]["blank"]["read"] is None
+    assert plan["catalog"]["blank"]["stale"] is True
 
 
 def test_lab_build_fails_loudly_without_npm(gdir, tmp_path, monkeypatch):

@@ -252,3 +252,152 @@ body.clean #controls, body.clean #viewpop, body.clean #dock, body.clean #opbar, 
 #briefing .matrix article + article,
 #briefing .unknowns article + article { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
 #briefing .matrix .out { color: var(--accent); }
+
+/* ---- the rehearsal player (?player=1, body[data-player]): nav log left, meter on top, the stage (transport, caption, bench)
+   under the view. The 3D view stays full-bleed under the cards, as on the legacy page; the old op bar, step card and variant
+   switch are hidden but kept in the page for the legacy route and the recorder. ---- */
+body[data-player] { --nav-w: clamp(240px, 27vw, 340px); --stage-l: calc(var(--left) + var(--nav-w) + var(--gap)); }
+body[data-player] #opbar, body[data-player] #dock, body[data-player] #variant, body[data-player] #tour, body[data-player] #scrubwrap { display: none !important; }
+body[data-player] #controls { width: auto; top: calc(var(--top) + 70px); }
+#navlog { left: var(--left); top: var(--top); bottom: var(--bottom); width: var(--nav-w); display: flex; flex-direction: column; overflow: hidden; }
+.nav-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.nav-title { font-size: 14px; margin-bottom: 4px; }
+.env-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px; min-height: 30px; }
+.env-row .val { min-width: 34px; }
+.env-row select, .env-row input[type="number"] { min-width: 0; font: inherit; color: var(--ink); background: var(--well); border: 1px solid var(--line); border-radius: 7px; min-height: 28px; padding: 0 6px; }
+.env-row input[type="range"] { min-height: 28px; }
+#env-warn { margin: 6px 0 0; padding: 6px 8px; border-radius: 8px; background: rgba(224, 86, 60, 0.18); border: 1px solid rgba(224, 86, 60, 0.5); font-size: 12px; }
+#env-note { margin: 4px 0 0; font-size: 11.5px; color: var(--ink-dim); }
+#navlog-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 8px 10px; }
+#navlog-list .group { margin-bottom: 6px; }
+#navlog-list .group-label { all: unset; box-sizing: border-box; display: flex; flex-direction: column; width: 100%; padding: 7px 8px; border-radius: 8px; cursor: pointer; }
+#navlog-list .group-label .name { font-weight: 600; font-size: 13px; }
+#navlog-list .group-label .sub, #meter .sub { font-size: 11px; color: var(--ink-dim); }
+#navlog-list .group.collapsed .group-label:hover { background: var(--hover); }
+#navlog-list .group.current > .group-label { color: var(--accent); }
+#navlog-list .session { margin: 6px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--well); overflow: hidden; }
+#navlog-list .session.current { border-color: rgba(242, 177, 90, 0.6); }
+#navlog-list .session.done { opacity: 0.55; }
+.session-head { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 11.5px; color: var(--ink-dim); border-bottom: 1px solid var(--line); }
+#navlog-list ol.steps { list-style: none; margin: 0; padding: 2px 0; }
+#navlog-list button.step { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 14px 1fr auto; gap: 6px; align-items: baseline; width: 100%; padding: 6px 10px; cursor: pointer; font-size: 12.5px; line-height: 1.3; }
+@media (pointer: coarse) { #navlog-list button.step { padding: 10px; } }
+#navlog-list button.step:hover { background: var(--hover); }
+#navlog-list button.step.current { background: rgba(242, 177, 90, 0.16); color: var(--ink); font-weight: 600; }
+#navlog-list button.step.done { color: var(--ink-dim); }
+#navlog-list .tick { color: #7fc77f; font-size: 11px; }
+.chips { display: inline-flex; gap: 4px; }
+.chip { font-size: 10.5px; line-height: 1; padding: 3px 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; font-weight: 500; }
+.chip.buddy { border-color: rgba(224, 137, 47, 0.7); color: #f2b278; }
+.chip.unknown { color: var(--ink-dim); border-style: dashed; }
+.marker { margin: 4px 6px; padding: 5px 8px; font-size: 11.5px; border-radius: 8px; }
+.marker.cure { border: 1px dashed rgba(238, 233, 225, 0.35); color: var(--ink-soft); }
+.marker.cure.warn { border-color: rgba(224, 86, 60, 0.7); color: #f0a08f; }
+.marker.buy { border: 1px solid rgba(110, 200, 120, 0.6); color: #a6e3ad; background: rgba(110, 200, 120, 0.08); }
+.note.gu { margin: 2px 10px 6px 30px; font-size: 11.5px; color: var(--ink-dim); font-style: italic; }
+#meter { top: var(--top); left: var(--stage-l); right: var(--right); display: flex; padding: 0; overflow: hidden; }
+#meter .tile { display: flex; flex-direction: column; gap: 2px; padding: 7px 12px 8px; min-width: 0; flex: 1 1 0; }
+#meter .tile + .tile { border-left: 1px solid var(--line); }
+#meter .tile b { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#meter .tile .sub, #meter .tile .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#stage { left: var(--stage-l); right: var(--right); bottom: var(--bottom); display: flex; flex-direction: column; height: clamp(190px, 32vh, 290px); overflow: hidden; } /* a fixed height: the free view (and the camera's framing) must not change with the bench's content */
+#stagebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--line); }
+#tp-play { min-width: 72px; }
+#caption { flex: 1 1 200px; margin: 0; font-size: 14px; font-weight: 600; color: var(--accent); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#bench { flex: 1; min-height: 0; padding: 8px 12px 10px; overflow-y: auto; }
+.bench-title { margin: 0 0 6px; font-size: 14px; }
+.bench-grid { display: grid; grid-template-columns: minmax(130px, 0.8fr) minmax(220px, 1.6fr) minmax(150px, 1fr); gap: 6px 16px; margin: 0; }
+.bench-row:has(> dd[data-k="materials"]) { grid-row: span 2; }
+@media (max-width: 900px) { .bench-grid { grid-template-columns: 1fr 1fr; } }
+.bench-row dt { margin-bottom: 2px; }
+.bench-row dd { margin: 0; font-size: 12px; line-height: 1.35; color: var(--ink-soft); }
+.bench-list { margin: 0; padding-left: 16px; }
+#bench .source { margin: 8px 0 0; font-size: 11px; color: var(--ink-dim); }
+#bench .ev { font-style: normal; color: var(--ink-dim); overflow-wrap: anywhere; } /* a sourced value's citation, derivation note or link */
+@media (max-width: 760px) { body[data-player] { --nav-w: 44vw; } #meter { flex-wrap: wrap; } #meter .tile { flex: 1 1 45%; } }
+
+/* the narrow-layout parts are out of the wide layout's way: the gear and its sheet are not shown, the sheet's handle is not shown,
+   and the sheet body is transparent to the stage's flex column (the bench is laid out exactly as before) */
+#env-toggle, #sheet-handle, #meter .l-short, #meter .q { display: none; }
+#sheet-body { display: contents; }
+
+/* ---- the player on a narrow or portrait screen (body[data-narrow], set by src/ui/narrow.ts for width <= 820 px or portrait): the 3D
+   view gets the screen. Top: the meter strip (three numbers, a tap opens all five) and the gear. Bottom: one sheet, collapsed to the
+   session and step, the caption and one transport row; open, it holds the step list and the bench. Touch targets are 44 px. ---- */
+body[data-narrow] { --gap: 10px; --strip: 48px; }
+body[data-narrow] #navlog { display: none; }
+body[data-narrow] #meter { left: var(--left); right: calc(var(--right) + var(--strip) + 8px); top: var(--top); min-height: var(--strip); cursor: pointer; flex-wrap: nowrap; }
+body[data-narrow] #meter .tile { flex: 1 1 auto; justify-content: center; padding: 5px 10px; min-width: 0; }
+body[data-narrow] #meter .tile b { font-size: 13.5px; }
+body[data-narrow] #meter .tile .label, body[data-narrow] #meter .tile b { overflow: visible; text-overflow: clip; }
+body[data-narrow] #meter .tile .sub { display: none; }
+/* the collapsed strip keeps each number's qualifier beside it (partial, estimate, unpriced): the full subtitle is one tap away */
+body[data-narrow] #meter[data-open="false"] .tile { display: grid; grid-template-columns: auto auto; column-gap: 4px; align-items: baseline; align-content: center; }
+body[data-narrow] #meter[data-open="false"] .tile .label { grid-column: 1 / -1; }
+body[data-narrow] #meter[data-open="false"] .tile .q { display: inline; font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+body[data-narrow] #meter .l-long { display: none; }
+body[data-narrow] #meter .l-short { display: inline; }
+body[data-narrow] #meter[data-open="false"] .tile[data-tile="spent"], body[data-narrow] #meter[data-open="false"] .tile[data-tile="calendar"] { display: none; }
+body[data-narrow] #meter[data-open="true"] { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); z-index: 13; }
+body[data-narrow] #meter[data-open="true"] .tile { padding: 8px 12px 9px; border-left: 0; border-bottom: 1px solid var(--line); justify-content: flex-start; }
+body[data-narrow] #meter[data-open="true"] .tile .sub { display: block; }
+body[data-narrow] #meter[data-open="true"] .tile .sub, body[data-narrow] #meter[data-open="true"] .tile .label, body[data-narrow] #meter[data-open="true"] .tile b { white-space: normal; overflow-wrap: anywhere; }
+body[data-narrow] #meter[data-open="true"] .l-long { display: inline; }
+body[data-narrow] #meter[data-open="true"] .l-short { display: none; }
+
+body[data-narrow] #env-toggle { display: grid; top: var(--top); right: var(--right); width: var(--strip); height: var(--strip); padding: 0; border-radius: 12px; }
+body[data-narrow] #env-toggle[aria-expanded="true"] { background: var(--ink); color: var(--on-ink); }
+body[data-narrow] #env-toggle[data-warn]::after { content: ""; position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: #e0563c; }
+body[data-narrow] #envsheet { z-index: 14; top: calc(var(--top) + var(--strip) + 8px); right: var(--right); width: min(400px, calc(100vw - var(--left) - var(--right))); max-height: calc(100% - var(--top) - var(--strip) - 24px); overflow-y: auto; padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+#envsheet > div { display: flex; flex-direction: column; gap: 4px; }
+#envsheet > div + div { padding-top: 10px; border-top: 1px solid var(--line); }
+body[data-narrow] #envsheet .env-row { grid-template-columns: 1fr auto; gap: 2px 12px; min-height: 0; padding: 2px 0; }
+body[data-narrow] #envsheet .env-row .label { grid-column: 1 / -1; font-size: 12px; }
+body[data-narrow] #envsheet .env-row input[type="range"] { width: 100%; min-width: 0; height: 44px; margin: 0; }
+body[data-narrow] #envsheet .env-row .val { min-width: 60px; text-align: right; font-size: 13px; }
+body[data-narrow] #envsheet .env-row select { grid-column: 1 / -1; width: 100%; min-height: 44px; }
+body[data-narrow] #envsheet .env-row input[type="number"] { width: 96px; min-height: 44px; font-size: 16px; } /* 16 px: iOS zooms into smaller inputs */
+body[data-narrow] #envsheet .env-row select { font-size: 16px; }
+body[data-narrow] #envsheet #controls { position: static; width: auto; max-width: none; padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body[data-narrow] #envsheet #controls .btn, body[data-narrow] #envsheet #controls .check.lead { min-height: 44px; }
+body[data-narrow] #envsheet #controls .btn.sq { width: 44px; }
+
+body[data-narrow] #stage { left: 0; right: 0; bottom: 0; height: auto; max-height: calc(100% - var(--top) - var(--strip) - 8px); border-radius: 16px 16px 0 0; border-bottom: 0; padding-bottom: env(safe-area-inset-bottom); }
+body[data-narrow] #stage[data-open="true"] { height: calc(100% - var(--top) - var(--strip) - 8px); z-index: 12; }
+body[data-narrow] #sheet-handle { all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: stretch; gap: 5px; width: 100%; min-height: 44px; padding: 6px 16px 6px; cursor: grab; touch-action: none; flex: none; }
+body[data-narrow] #sheet-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+#sheet-handle .grab { align-self: center; width: 38px; height: 4px; border-radius: 2px; background: rgba(238, 233, 225, 0.35); }
+#sheet-summary { font-size: 13px; line-height: 1.35; color: var(--ink-soft); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+#sheet-summary b { color: var(--ink); font-weight: 600; }
+body[data-narrow] #stagebar { flex: none; flex-wrap: wrap; justify-content: space-between; gap: 6px 4px; padding: 4px 8px 8px; }
+body[data-narrow] #stagebar > .row { gap: 0; }
+body[data-narrow] #stagebar .btn, body[data-narrow] #stagebar .seg button { min-width: 44px; min-height: 44px; padding: 0 6px; }
+body[data-narrow] #stagebar .btn.sq { width: 44px; }
+body[data-narrow] #stagebar .seg { padding: 0; gap: 0; }
+body[data-narrow] #tp-play { min-width: 44px; width: 44px; padding: 0; font-size: 0; display: grid; place-items: center; }
+body[data-narrow] #tp-play::before { content: "\25B6\FE0E"; font-size: 17px; }
+body[data-narrow] #tp-play[aria-pressed="true"]::before { content: "\275A\275A"; font-size: 13px; letter-spacing: -1px; }
+body[data-narrow] #caption { order: -1; flex: 1 0 100%; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; font-size: 14px; line-height: 1.35; padding: 0 6px; }
+body[data-narrow] #sheet-body { display: none; }
+body[data-narrow] #stage[data-open="true"] #sheet-body { display: block; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid var(--line); }
+body[data-narrow] #sheet-body #navlog-list { overflow: visible; padding: 6px 10px 4px; }
+body[data-narrow] #sheet-body #bench { overflow: visible; border-top: 1px solid var(--line); padding: 10px 14px 16px; }
+body[data-narrow] #navlog-list .group-label { min-height: 44px; }
+body[data-narrow] #navlog-list button.step { padding: 12px 10px; min-height: 44px; }
+@media (max-width: 600px) { body[data-narrow] .bench-grid { grid-template-columns: 1fr; } }
+@media (min-width: 601px) { body[data-narrow] #stagebar { justify-content: flex-start; column-gap: 14px; } }
+body[data-narrow] #tp-play::before { line-height: 1; }
+/* the shop sliders get a 44 px touch row on every engine (WebKit ignores a native range's height), with the value beside the thumb's track */
+body[data-narrow] #envsheet .env-row input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+body[data-narrow] #envsheet .env-row input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: rgba(238, 233, 225, 0.25); }
+body[data-narrow] #envsheet .env-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%; background: var(--accent); border: 0; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+body[data-narrow] #envsheet .env-row input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: rgba(238, 233, 225, 0.25); }
+body[data-narrow] #envsheet .env-row input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: 0; }
+/* the heat select: WebKit draws a native menu at its own height, so it is drawn here (44 px, with its own chevron) */
+body[data-narrow] #envsheet .env-row select { -webkit-appearance: none; appearance: none; padding: 0 36px 0 12px;
+  background: var(--well) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23eee9e1' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
+/* a desktop meter tile too narrow for "Sessions left in group" shows the short label instead of an ellipsis (the narrow strip sizes
+   its tiles to their content, so it opts out of the container) */
+#meter .tile { container-type: inline-size; }
+@container (max-width: 150px) { #meter .l-long { display: none; } #meter .l-short { display: inline; } }
+body[data-narrow] #meter .tile { container-type: normal; }

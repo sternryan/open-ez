@@ -95,7 +95,7 @@ export async function recordFilm({ film, out, fps = 60, url, timeoutMs = MAX_RUN
       logs.push(`${message.type()}: ${message.text()}`.slice(0, 1000))
       if (logs.length > 20) logs.shift()
     })
-    await watch(page.goto(`${url}${url.includes('?') ? '&' : '?'}rec=1`))
+    await watch(page.goto(`${url}${url.includes('?') ? '&' : '?'}rec=1&player=0`)) // films are of the legacy lab (the player is the default page)
     // A ?rec=1 page has no animation loop; poll on a timer.
     try {
       await watch(page.waitForFunction(() => typeof window.__rec === 'object', null, { timeout: Math.min(timeoutMs, 120000), polling: 250 }))

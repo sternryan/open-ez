@@ -31,6 +31,29 @@ def needs(g, op_id):
     return seen
 
 
+def test_sourced_buys_match_the_sourcing_record(g):
+    """Official means a page the sourcing record read. Derived means a derivation it records."""
+    buys = [
+        (op.id, buy.item, buy.flag)
+        for op in g.ops.values()
+        if op.plan is not None
+        for buy in op.plan.buy
+        if buy.flag in {"official", "derived"}
+    ]
+    assert ("f04.firewall-fwd", "an509-10r10", "official") not in buys
+    assert ("f04.firewall-fwd", "an509-10r10", "estimate") in [
+        (op.id, buy.item, buy.flag)
+        for op in g.ops.values()
+        if op.plan is not None
+        for buy in op.plan.buy
+    ]
+    assert [row for row in buys if row[2] == "official"] == []
+    assert [row for row in buys if row[2] == "derived"] == [
+        ("f05.gear-extrusions", "lmga-assembly", "derived"),
+        ("f05.gear-extrusions", "main-gear-extrusion", "derived"),
+    ]
+
+
 def test_graph_valid_and_complete(g):
     assert validate(g) == []
     by_ch = {c: [o for o in fuselage_ops(g) if o.chapter == c] for c in (4, 5, 6)}
@@ -151,7 +174,28 @@ def test_topo_order_keeps_the_canard_order_and_follows_the_book_in_chapter_4():
         i
         for i in order
         if g.ops[i].chapter
-        not in (4, 5, 6, 7, 8, 9, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)
+        not in (
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+        )
         and i not in NEW_R30
         and not i.startswith("r30.elev-")
     ] == CANARD_ORDER

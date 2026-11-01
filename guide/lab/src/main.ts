@@ -36,6 +36,20 @@ import { HINGE_OP, CUT_OP, liftProgress, openProgress, clampOpenDeg, canopyKin, 
 import { fuseBarOps, parseSubject, stationLayers, stationSummary, fmtFs, cgRow, groundRow, sparRow, removedByStationCut, crossedByStationCut, labelPriority, homeLabel, keyScale, cutRangeFor, FUSE_CHAPTERS, SUBJECT_KEY, NOSE_CHAPTER, type Subject, type FuseLayup, type LedgerLite, type JigPose } from './logic/fuselage'
 import { hangPitchDeg, hangsNoseDown, travelAngle, travelText, travelDuration, hangState, hangText, hangDuration, APART_IN, TRAVEL_OPS, HANG_OP, RIG_OP, retractProgress, crankText, noseArmText, nosePoints, stickText, clampDeflectionDeg, type NoseGearKin } from './logic/kin'
 import { STATION, fsToX } from './scene/fuselageStation'
+import { Player, type Speed } from './player'
+import { setupNarrow, type Narrow } from './ui/narrow'
+import { buildSequence, noteFor, toPlanSteps } from './logic/sequence'
+import { packSessions, type Session } from './logic/sessions'
+import { kitsFor, meterAt, type Kit, type Meter } from './logic/kits'
+import { cureGateHours, HEAT_BOOST_C, type Env } from './logic/cure'
+import { compileStep, type Action, type Beat, type PropId } from './logic/actions'
+import type { PlanFile } from './logic/graph'
+import { renderNavlog, renderMeter } from './ui/navlog'
+import { renderBench } from './ui/bench'
+import { renderEnvironment, loadEnv, saveEnv, loadSessionHours, saveSessionHours, SESSION_RANGE } from './ui/environment'
+import { makeGlovePair, poseGlovePair } from './scene/gloves'
+import { makeProp } from './scene/props'
+import { plyPlan, plyNote, type DrawnPly, type PlyPlan } from './logic/plyMap'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
 import './style.css'
 
@@ -46,6 +60,11 @@ const TEST = params.get('test') === '1'
 const REC = params.get('rec') === '1'
 if (params.get('clean') === '1') document.body.classList.add('clean')
 if (REC) document.body.classList.add('rec')
+// The build rehearsal player is the page (the phase 1 gate's default flip). An explicit ?player=0 is the legacy lab, unchanged;
+// the recorder and the legacy tests ask for it.
+const PLAYER = params.get('player') !== '0'
+const PLAYER_ASKED = params.get('player') === '1'
+if (PLAYER) document.body.dataset.player = '1'
 const statusEl = document.getElementById('status') as HTMLElement
 const setStatus = (msg: string | null, err = false) => {
   statusEl.hidden = msg === null
@@ -54,7 +73,7 @@ const setStatus = (msg: string | null, err = false) => {
 }
 
 interface PlyRef { node: string; op: string; order: number }
-interface Graph extends GraphLite { loadpaths?: LoadPath[]; components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode>; fuselage?: FuseLayup } | null }
+interface Graph extends GraphLite { pages?: Record<string, string>; loadpaths?: LoadPath[]; components: Record<string, { label?: string }>; plies?: Record<string, PlyRef[]>; layup?: { semi_span?: number; nodes?: Record<string, LayupNodeLite & LayupNode>; fuselage?: FuseLayup } | null }
 interface LoadPath { id: string; label: string; kind: string; parts: string[]; segments: number[][][] }
 interface Cfg { model: string }
 interface CamState { pos: number[]; target: number[]; fov: number }
@@ -160,6 +179,13 @@ interface LabHook {
   opIds(): string[]
   /** the canard installed on the airplane (chapters 12-13): shown, and the group's offset in the box frame (F.S., up) */
   installedCanard(): { shown: boolean; at: number[]; nodes: number; boxes: Record<string, number[][]> } | null
+  /** player mode only (absent on the legacy page): the nav log's current step and session count, the meter, the transport, the gloves */
+  navlog?(): { current: string; sessions: number }
+  meter?(): Meter | null
+  /** lay: the scrubber position; laid: the selected op's ply meshes shown now (lay order <= lay), in lay order; standIn: the op's plies are a representational stand-in (caption-only ply beats) */
+  player?(): { step: string; playing: boolean; speed: number; caption: string; lay: number; laid: string[]; standIn: boolean }
+  /** which pairs and props show, and where each pair's right hand is (world metres) */
+  gloves?(): { owner: boolean; buddy: boolean; props: string[]; at: { owner: number[]; buddy: number[] } }
 }
 interface CutInfo {
   enabled: boolean; bl: number; planeConstant: number | null
@@ -365,9 +391,18 @@ async function boot() {
     // Portrait screens see far less width: pull every shot back, as airsup does.
     rig.scale = camera.aspect >= 1 ? Math.max(1, 1.6 / camera.aspect) : Math.min(3.2, (1.6 / camera.aspect) * 0.82)
     rig.outsideScale = camera.aspect >= 1 ? null : 1.8 // a portrait phone stands further back for the whole airplane than the room's pull-back gives
+    // the player's cards leave a smaller free view: centre the picture in it (an off-centre lens, no camera move) and stand back
+    const free = playerFrame()
+    if (free) {
+      camera.setViewOffset(W, H, W / 2 - free.cx, H / 2 - free.cy, W, H)
+      rig.scale *= free.pull
+      if (rig.outsideScale !== null) rig.outsideScale *= free.pull
+    } else if (camera.view?.enabled) camera.clearViewOffset()
     if (rig.lastUser < 0 && !rig.flying && currentShot) rig.set(currentShot) // the user has not touched the camera: keep the framing
   }
   let currentShot: string | null = null
+  /** player mode: the free part of the screen (centre, and how much further back shots stand); null on the legacy page */
+  let playerFrame: () => { cx: number; cy: number; pull: number } | null = () => null
   // keep every landing spot inside the room, whatever the portrait pull-back does
   // an outside shot (the whole airplane) may be further than the 7.5 m the wheel allows; the range follows it and goes back for any other shot
   rig.onShot = (s) => { controls.maxDistance = s.outside ? Math.max(7.5, new THREE.Vector3(...s.pos).sub(new THREE.Vector3(...s.target)).length() * (rig.outsideScale ?? rig.scale) * 1.05) : 7.5 }
@@ -385,9 +420,11 @@ async function boot() {
   let stepKin: (dt: number) => void = () => {} // the elevators' and nose gear's poses and the motion readout
   let stepDirector: (t: number) => void = () => {}
   let stepLower: (dt: number) => void = () => {} // the canard12 film's lowering
+  let stepPlayer: (dt: number) => void = () => {} // the rehearsal player (?player=1): its step changes call select() before the camera moves
   const step = (dt: number) => {
     simT += dt
     GLOW_TIME.value = simT
+    stepPlayer(dt)
     stepDirector(simT)
     stepPose(dt)
     stepKin(dt)
@@ -550,6 +587,8 @@ async function boot() {
     ])
     // the fuselage mass ledger (core.ledger.fuselage_ledger_json) ships beside graph.json; a site without one says so in the CG row
     const ledgerP: Promise<LedgerLite | null> = fetch(DATA + 'ledger.json').then((r) => (r.ok ? (r.json() as Promise<LedgerLite>) : null)).catch(() => null)
+    // the player's plan (groups, resins, catalog, step scripts); the legacy page never asks for it
+    const planP: Promise<PlanFile | null> = PLAYER ? fetch(DATA + 'plan.json').then((r) => (r.ok ? (r.json() as Promise<PlanFile>) : null)).catch(() => null) : Promise.resolve(null)
     const gltf = await new GLTFLoader().loadAsync(DATA + cfg.model)
     const fuseRaw = graph.layup?.fuselage ?? null
     // the nose and nose-gear parts (chapter 13, layup.json "extras") are parts of the fuselage subject like the box's; the bay reads them as such
@@ -1112,9 +1151,10 @@ async function boot() {
       if (changed) refresh()
       else if (layT !== before) paint()
     }
+    let flyDur = 1.8 // the player shortens camera moves at 4x and 16x
     const goto = (shot: string, fly: boolean) => {
       currentShot = shot
-      if (fly) rig.fly(shot, 1.8, 0.05); else rig.set(shot)
+      if (fly) rig.fly(shot, flyDur, 0.05); else rig.set(shot)
     }
 
     // ---- section cut: airsup's CutState on our meshes. Station b (B.L. inches) is the plane at model Z = -b + EPS, so a ply whose
@@ -1297,7 +1337,7 @@ async function boot() {
     // and none may run off the screen's edges (a pill is centred on its anchor, so near an edge it would be cut off)
     const cardRects = () => {
       const W = window.innerWidth, H = window.innerHeight, far = 1e5
-      return ['controls', 'dock', 'opbar', 'viewpop'].map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e && !e.hidden)
+      return ['controls', 'dock', 'opbar', 'viewpop', 'navlog', 'meter', 'stage', 'env-toggle', 'envsheet'].map((id) => document.getElementById(id)).filter((e): e is HTMLElement => !!e && !e.hidden)
         .map((e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom } }).filter((r) => r.r > r.l && r.b > r.t)
         .concat([{ l: -far, t: -far, r: 0, b: far }, { l: W, t: -far, r: far, b: far }, { l: -far, t: -far, r: far, b: 0 }, { l: -far, t: H, r: far, b: far }])
     }
@@ -1738,12 +1778,17 @@ async function boot() {
     ui.setSubject('canard')
     const subjEl = document.getElementById('subject')
     if (subjEl) subjEl.hidden = !bay // no fuselage in this build: no choice to offer
+    const plan = await planP
+    const playerOn = PLAYER && !!plan && !!bay
+    if (PLAYER && !playerOn) delete document.body.dataset.player // no plan.json or no fuselage in this build: the legacy lab, said so below
     const want = params.get('op')
     let stored: string | null = null
     try { stored = storage?.getItem(SUBJECT_KEY) ?? null } catch { stored = null }
     const wantOp = graph.ops.find((o) => o.id === want)
     const startSubject: Subject = !bay ? 'canard' : wantOp ? (FUSE_CHAPTERS.has(wantOp.chapter) ? 'fuselage' : 'canard') : parseSubject(stored)
-    if (startSubject === 'fuselage') {
+    if (playerOn) {
+      setSubject('fuselage', false, false) // the first stretch is the fuselage's; the player selects its own start step below
+    } else if (startSubject === 'fuselage') {
       lastSel.fuselage = fuseBarOps(graph, variant).find((o) => o.id === want)?.id
       setSubject('fuselage', false, false)
     } else {
@@ -1950,8 +1995,248 @@ async function boot() {
       controls.update()
       rig.lastUser = performance.now() // treat as the user's camera so a resize keeps it
     }
+    // ---- the build rehearsal player (?player=1): nav log, meter, bench, transport and gloves over the same scene. Every step
+    // change goes through select(id), so the camera flies to the op's own shot (fuseShots.ts) on the sim clock, exactly as a chip
+    // click does. A person's orbit takes the camera until the next step; playback carries on. ----
+    if (playerOn && plan && bay) {
+      const $ = (id: string) => document.getElementById(id) as HTMLElement
+      for (const id of ['navlog', 'meter', 'stage']) $(id).hidden = false
+      const seq = buildSequence(graph, plan.groups)
+      const planSteps = toPlanSteps(seq)
+      const order = planSteps.map((s) => s.id)
+      const opById = new Map(graph.ops.map((o) => [o.id, o]))
+      const plyTotal = (id: string) => (opById.get(id)?.materials ?? []).reduce((a, m) => a + m.plies, 0)
+      const beatsByStep = new Map<string, Beat[]>(order.map((id) => [id, compileStep(plan.scripts[id] as Action[] | undefined, opById.get(id)!.title, plyTotal(id))]))
+      // each authored ply maps to its own drawn meshes (by cloth, row and lay order, logic/plyMap.ts), never to a proportional neighbour
+      const drawnPlies = (id: string): DrawnPly[] => [
+        ...Object.values(graph.plies ?? {}).flat().filter((r) => r.op === id).map((r) => {
+          const n = graph.layup?.nodes?.[r.node] as { cloth?: string; where?: string; component?: string } | undefined
+          return { name: r.node, part: n?.component ?? '', cloth: n?.cloth ?? '', where: n?.where ?? '', opOrder: r.order }
+        }),
+        ...bay.plyRows(id),
+      ]
+      const plyPlans = new Map<string, PlyPlan>(order.map((id) => [id, plyPlan(opById.get(id)!.materials, drawnPlies(id))]))
+      const targetOf = (a: Action | null | undefined) => (a?.ply ? plyPlans.get(player.step)?.targets[a.ply - 1] : undefined)
+      const player = new Player(beatsByStep, order)
+      const buys: Record<string, { item: string; qty: number }[]> = {}
+      for (const g of seq) buys[g.id] = g.steps.flatMap((o) => (o.plan?.buy ?? []).map((b) => ({ item: b.item, qty: b.qty })))
+      const kits: Kit[] = kitsFor(seq.map((g) => g.id), buys, plan.catalog)
+      let env: Env = loadEnv(storage)
+      let sessionHours = loadSessionHours(storage)
+      let sessions: Session[] = []
+      const repack = () => { sessions = packSessions(planSteps, plan.resins, env, sessionHours) }
+      const curSession = () => Math.max(0, sessions.findIndex((s) => s.steps.includes(player.step)))
+      const meterNow = (): Meter | null => (sessions.length ? meterAt(sessions, kits, curSession()) : null)
+      const navList = $('navlog-list'), meterEl = $('meter'), benchEl = $('bench'), captionEl = $('caption')
+      const effTemp = () => env.tempC + HEAT_BOOST_C[env.heat]
+      /** the cure wait after a step now, and why it is unknown when it is (never a guessed number) */
+      const cureOf = (id: string): { hours: number | null; why: string | null } => {
+        const op = opById.get(id)
+        const r = op?.plan?.resin ? plan.resins[op.plan.resin] : undefined
+        if (!r) return { hours: null, why: 'no resin data' }
+        const hours = cureGateHours(r, env)
+        if (hours !== null) return { hours, why: null }
+        if (r.min_temp_c !== null && effTemp() < r.min_temp_c) return { hours, why: `below the resin's ${r.min_temp_c} °C minimum` }
+        if (r.flag === 'unsourced' || !r.gate_hours.length) return { hours, why: 'the resin cure curve is unsourced' }
+        return { hours, why: 'below the cure curve' }
+      }
+      const usedResins = [...new Set(planSteps.filter((s) => s.cure !== 'none' && s.resin).map((s) => s.resin!))].map((id) => plan.resins[id]).filter((r) => !!r)
+      const renderWarn = () => {
+        const cold = usedResins.find((r) => r.min_temp_c !== null && effTemp() < r.min_temp_c)
+        const warn = $('env-warn'), note = $('env-note')
+        warn.hidden = !cold
+        if (cold) $('env-toggle').dataset.warn = '1'
+        else delete $('env-toggle').dataset.warn
+        warn.textContent = cold ? `Below the resin's minimum of ${cold.min_temp_c} °C (the shop is at ${effTemp()} °C with heat): cure waits can't be planned.` : ''
+        const unsourced = usedResins.some((r) => r.flag === 'unsourced' || !r.gate_hours.length)
+        note.hidden = !unsourced
+        note.textContent = unsourced ? 'The resin cure curve is unsourced, so cure waits show as unknown. Heat boosts are estimates.' : ''
+      }
+      const onStep = (id: string) => { player.seekStep(id); applyStep(player.step, true) }
+      const summaryEl = $('sheet-summary')
+      const renderPlan = () => {
+        renderNavlog(navList, seq, sessions, kits, player.step, onStep, 'group')
+        const m = meterNow()
+        if (m) renderMeter(meterEl, m, 'group')
+        // the collapsed sheet's line (narrow layout): the session and the step
+        const sess = document.createElement('b')
+        sess.textContent = sessions.length ? `Session ${curSession() + 1} of ${sessions.length}` : 'Session'
+        summaryEl.replaceChildren(sess, document.createTextNode(` · ${opById.get(player.step)?.title ?? ''}`))
+      }
+      const renderStepPanel = () => {
+        const op = opById.get(player.step)
+        if (op) renderBench(benchEl, op, plan.catalog, { pages: graph.pages, cure: cureOf(op.id), note: noteFor(seq, op.id) })
+      }
+      renderEnvironment($('environment'), env, (e) => {
+        env = e
+        saveEnv(storage, env)
+        repack(); renderPlan(); renderStepPanel(); renderWarn()
+      })
+      const hoursEl = $('session-hours') as HTMLInputElement
+      hoursEl.value = String(sessionHours)
+      hoursEl.addEventListener('change', () => {
+        const v = Number(hoursEl.value)
+        if (!Number.isFinite(v) || v < SESSION_RANGE.min || v > SESSION_RANGE.max) { hoursEl.value = String(sessionHours); return }
+        sessionHours = v
+        saveSessionHours(storage, v)
+        repack(); renderPlan() // shop hours stay what they are; only the packing changes
+      })
+
+      // ---- gloves and props: the owner's pair always, the buddy's when the step or the beat needs a second person ----
+      const owner = makeGlovePair('owner'), buddy = makeGlovePair('buddy')
+      buddy.visible = false
+      scene.add(owner, buddy)
+      const props = new Map<PropId, THREE.Object3D>()
+      const propFor = (id: PropId) => { let p = props.get(id); if (!p) { p = makeProp(id); p.visible = false; props.set(id, p) } return p }
+      let held: THREE.Object3D | null = null
+      let standin: string | null = null
+      const work = { center: new THREE.Vector3(), size: new THREE.Vector3(0.3, 0.1, 0.3), side: new THREE.Vector3(0, 0, 1) }
+      /** world box of a component as drawn now (the fuselage bay's meshes), or null */
+      const partBox = (cid: string): THREE.Box3 | null => {
+        const bx = new THREE.Box3()
+        for (const m of bay.meshes) {
+          if (m.cid !== cid) continue
+          const mesh = bay.shown(m.name)
+          if (mesh && mesh.visible) bx.union(new THREE.Box3().setFromObject(mesh))
+        }
+        return bx.isEmpty() ? null : bx
+      }
+      const stepBox = (id: string): THREE.Box3 | null => {
+        const bx = new THREE.Box3()
+        for (const c of opById.get(id)?.components ?? []) { const b = partBox(c); if (b) bx.union(b) }
+        return bx.isEmpty() ? null : bx
+      }
+      const aim = (part: string | undefined) => {
+        const bx = (part ? partBox(part) : null) ?? stepBox(player.step)
+        if (bx) { bx.getCenter(work.center); bx.getSize(work.size) } else { work.center.copy(controls.target); work.size.set(0.3, 0.1, 0.3) }
+        work.side.copy(camera.position).sub(work.center).setY(0)
+        if (work.side.lengthSq() < 1e-6) work.side.set(0, 0, 1)
+        work.side.normalize()
+      }
+      const label = (cid: string | undefined) => (cid ? graph.components[cid]?.label ?? cid : '')
+      const captionOf = (b: Beat | null) => (!b ? '' : (b.action?.part && b.caption.includes(b.action.part) ? b.caption.replace(b.action.part, label(b.action.part)) : b.caption) + plyNote(targetOf(b.action)))
+      let beatNow: Beat | null = null, kNow = 0
+      const applyBeat = (b: Beat | null) => {
+        beatNow = b
+        captionEl.textContent = captionOf(b)
+        const a = b?.action ?? null
+        aim(a?.part)
+        // a drawn ply goes on as its own meshes; a ply the model does not draw (or a stand-in layup) leaves the scene as it is
+        const tgt = targetOf(a)
+        if (tgt && tgt.lay !== null && tgt.lay !== lay) setLay(tgt.lay)
+        const hand = (a?.who === 'buddy' ? buddy : owner).getObjectByName('right')!
+        if (held) held.visible = false
+        held = a?.tool ? propFor(a.tool) : null
+        if (held) { hand.add(held); held.visible = true }
+        standin = a?.tool === 'stand-in' ? label(a.part) || 'fixture' : null
+        buddy.visible = opById.get(player.step)?.plan?.people === 2 || a?.who === 'buddy'
+      }
+      const applyStep = (id: string, fly: boolean) => {
+        flyDur = player.playing ? Math.max(0.3, 1.8 / player.speed) : 1.8
+        select(id, fly)
+        flyDur = 1.8
+        // no geometry in view for this step: frame its parts, or the bench, so every step still gets a default view
+        if (!rig.shots[id] && fly) { const bx = stepBox(id) ?? bay.homeBox(); rig.shots.playerStep = fitShot(bx, bx.getCenter(new THREE.Vector3()), new THREE.Vector3(-0.4, 0.6, 0.7).normalize(), LAB_FOV, camera.aspect, 0.6); goto('playerStep', true) }
+        // the plies go on as the script lays them; a stand-in layup stays drawn whole through the step
+        if (!plyPlans.get(id)?.standIn && (beatsByStep.get(id) ?? []).some((b) => b.action?.ply)) setLay(0)
+        renderPlan(); renderStepPanel()
+        applyBeat(player.tick(0).beat)
+      }
+      const playBtn = $('tp-play')
+      const syncTransport = () => {
+        playBtn.setAttribute('aria-pressed', String(player.playing))
+        playBtn.textContent = player.playing ? 'Pause' : 'Play'
+        for (const b of $('tp-speed').querySelectorAll<HTMLElement>('button[data-speed]')) b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === player.speed))
+      }
+      playBtn.addEventListener('click', () => {
+        if (player.playing) player.pause()
+        else { const was = player.step; player.play(); if (player.step !== was) applyStep(player.step, true) }
+        syncTransport()
+      })
+      $('tp-prev').addEventListener('click', () => { player.prev(); applyStep(player.step, true) })
+      $('tp-next').addEventListener('click', () => { player.next(); applyStep(player.step, true) })
+      $('tp-speed').addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest('button[data-speed]') as HTMLElement | null
+        if (b) { player.setSpeed(Number(b.dataset.speed) as Speed); syncTransport() }
+      })
+      // top and side snaps: framed on the step's parts, inside the room (a closer eye widens the lens instead of leaving the room)
+      const snapTo = (kind: 'top' | 'side') => {
+        const bx = stepBox(player.step) ?? bay.homeBox()
+        const c = bx.getCenter(new THREE.Vector3())
+        const dir = kind === 'top' ? new THREE.Vector3(0, 1, 0.02) : camera.position.clone().sub(c).setY(0)
+        if (kind === 'side') { if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); dir.normalize().setY(0.06) }
+        dir.normalize()
+        const s = fitShot(bx, c, dir, LAB_FOV, camera.aspect, 0.62)
+        const p = new THREE.Vector3(...s.pos), d = p.distanceTo(c)
+        const q = p.clone()
+        rig.clampPos?.(q)
+        const avail = Math.max(0.3, q.distanceTo(c))
+        let fov = LAB_FOV
+        if (avail < d * 0.98) { fov = Math.min(75, (2 * Math.atan(Math.tan((LAB_FOV * Math.PI) / 360) * (d / avail)) * 180) / Math.PI); p.copy(c).addScaledVector(dir, avail) }
+        rig.fly({ pos: p.toArray() as [number, number, number], target: c.toArray() as [number, number, number], fov, noScale: true }, 1.2)
+        currentShot = null
+      }
+      $('snap-top').addEventListener('click', () => snapTo('top'))
+      $('snap-side').addEventListener('click', () => snapTo('side'))
+      // the stand-in's words float over it (props without geometry say what they stand for)
+      const sp = new THREE.Vector3()
+      labels.add({
+        id: 'player.standin', text: 'Stand-in', sub: () => standin ?? '', color: '#a7b0b8', cls: 'fitted',
+        at: () => (standin && held ? held.getWorldPosition(sp).add(new THREE.Vector3(0, 0.08, 0)) : null),
+        vis: () => (standin && held?.visible ? 1 : 0),
+      })
+
+      stepPlayer = (dt) => {
+        tourRate = player.playing ? player.speed : 1 // the plies unroll and wet out at the player's speed
+        const wasPlaying = player.playing
+        const r = player.tick(dt)
+        if (r.changed) applyStep(r.step, true)
+        else if (r.beat !== beatNow) applyBeat(r.beat)
+        kNow = r.k
+        const a = beatNow?.action ?? null
+        const ownerDo = a && a.who !== 'buddy' ? a.do : null, buddyDo = a?.who === 'buddy' ? a.do : null
+        poseGlovePair(owner, { do: ownerDo, k: kNow, t: simT, center: work.center, size: work.size, side: work.side })
+        if (buddy.visible) poseGlovePair(buddy, { do: buddyDo, k: kNow, t: simT + 1.3, center: work.center, size: work.size, side: work.side.clone().negate() })
+        if (wasPlaying !== player.playing) syncTransport()
+      }
+
+      repack()
+      renderWarn()
+      syncTransport()
+      // narrow or portrait screens: the bottom sheet and the gear (src/ui/narrow.ts); a layout switch re-frames the view
+      const narrow: Narrow = setupNarrow(() => resize())
+      let sheetTop = window.innerHeight // the collapsed sheet's top: the open sheet is a list to read, so the framing does not chase it
+      playerFrame = () => {
+        const W = window.innerWidth, H = window.innerHeight
+        const nav = $('navlog').getBoundingClientRect(), top = $('meter').getBoundingClientRect(), stage = $('stage').getBoundingClientRect()
+        const l = nav.right > 0 && nav.right < W * 0.6 ? nav.right : 0
+        let t = top.bottom > 0 && top.bottom < H * 0.4 ? top.bottom : 0
+        let b = stage.top > H * 0.3 ? stage.top : H
+        if (narrow.on()) {
+          if (meterEl.dataset.open === 'true') t = $('env-toggle').getBoundingClientRect().bottom
+          if (!narrow.open()) sheetTop = stage.top
+          b = Math.min(H, sheetTop)
+        }
+        const fw = Math.max(1, W - l), fh = Math.max(1, b - t)
+        return { cx: (l + W) / 2, cy: (t + b) / 2, pull: Math.min(1.7, Math.max(1, W / fw, (H / fh) * 0.8)) }
+      }
+      new ResizeObserver(() => resize()).observe($('stage'))
+      resize()
+      const start = order.includes(want ?? '') ? want! : order[0]
+      if (start) { player.seekStep(start); applyStep(player.step, false) } // the start step's shot, framed for the free view
+      hook.navlog = () => ({ current: player.step, sessions: sessions.length })
+      hook.meter = meterNow
+      hook.player = () => {
+        const laid = drawnPlies(player.step).filter((d) => d.opOrder <= lay).sort((x, y) => x.opOrder - y.opOrder).map((d) => d.name)
+        return { step: player.step, playing: player.playing, speed: player.speed, caption: captionEl.textContent ?? '', lay, laid, standIn: !!plyPlans.get(player.step)?.standIn }
+      }
+      const wpos = (pair: THREE.Object3D) => pair.getObjectByName('right')!.getWorldPosition(new THREE.Vector3()).toArray()
+      hook.gloves = () => ({ owner: owner.visible, buddy: buddy.visible, props: [...props].filter(([, p]) => p.visible).map(([id]) => id), at: { owner: wpos(owner), buddy: wpos(buddy) } })
+    }
     setStatus(null)
     hook.ready = true
+    // said only when the player was asked for by name: a build without the plan simply opens the lab
+    if (PLAYER_ASKED && !playerOn) setStatus('The rehearsal player needs plan.json and the fuselage model; this build has the lab only.', true)
     if (REC) {
       ;(window as unknown as Record<string, unknown>).__rec = {
         /** begin the film and return its length in seconds; the recorder's `canard` film is the Roncz chapter 30, `fuselage6`, `fuselage8` and `fuselage9` the fuselage's chapters 6, 8 and 9, `canard12` the canard lowering onto F22 (chapter 12) */

@@ -1,0 +1,307 @@
+{
+ "_source": "extracted from a real guide.build_site build (graph.json layup rows and op materials), 2026-10-18; regenerate if the layup changes",
+ "f04.panel-f22-f28-fwd": {
+  "drawn": [
+   {
+    "cloth": "BID",
+    "name": "fuselage.panel.p3",
+    "opOrder": 1,
+    "part": "panel",
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "name": "fuselage.f22.p3",
+    "opOrder": 2,
+    "part": "f22",
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "name": "fuselage.f28.p3",
+    "opOrder": 3,
+    "part": "f28",
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "name": "fuselage.panel.p4",
+    "opOrder": 4,
+    "part": "panel",
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "name": "fuselage.f22.p4",
+    "opOrder": 5,
+    "part": "f22",
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "name": "fuselage.f28.p4",
+    "opOrder": 6,
+    "part": "f28",
+    "where": "forward faces of panel, F22 and F28"
+   }
+  ],
+  "materials": [
+   {
+    "cloth": "BID",
+    "plies": 2,
+    "where": "forward faces of panel, F22 and F28"
+   },
+   {
+    "cloth": "BID",
+    "plies": 1,
+    "where": "upper panel, forward face, extra"
+   },
+   {
+    "cloth": "UND",
+    "plies": 5,
+    "where": "F22 canard attach pad, left and right, forward face only"
+   },
+   {
+    "cloth": "BID",
+    "plies": 4,
+    "where": "F22 canard attach pad, left and right, forward face only"
+   }
+  ]
+ },
+ "f14.spar-caps": {
+  "drawn": [
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p1",
+    "opOrder": 1,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 1"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p2",
+    "opOrder": 2,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 2"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p3",
+    "opOrder": 3,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 3"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p4",
+    "opOrder": 4,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 4"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p5",
+    "opOrder": 5,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 5"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p6",
+    "opOrder": 6,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 6"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p7",
+    "opOrder": 7,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 7"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p8",
+    "opOrder": 8,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 8"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p9",
+    "opOrder": 9,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 9"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p10",
+    "opOrder": 10,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 10"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p11",
+    "opOrder": 11,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 11"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_top.p12",
+    "opOrder": 12,
+    "part": "spar_cap_top",
+    "where": "cap_top spar cap, ply 12"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p1",
+    "opOrder": 13,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 1"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p2",
+    "opOrder": 14,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 2"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p3",
+    "opOrder": 15,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 3"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p4",
+    "opOrder": 16,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 4"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p5",
+    "opOrder": 17,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 5"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p6",
+    "opOrder": 18,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 6"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p7",
+    "opOrder": 19,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 7"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p8",
+    "opOrder": 20,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 8"
+   },
+   {
+    "cloth": "UND",
+    "name": "spar.cap_bottom.p9",
+    "opOrder": 21,
+    "part": "spar_cap_bottom",
+    "where": "cap_bottom spar cap, ply 9"
+   }
+  ],
+  "materials": [
+   {
+    "cloth": "UND",
+    "plies": 12,
+    "where": "top spar cap, 3 in wide, 4 full span then 5 in taper per side"
+   },
+   {
+    "cloth": "UND",
+    "plies": 9,
+    "where": "bottom spar cap, 3 in wide, 3 full span then 7 in taper per side"
+   }
+  ]
+ },
+ "r30.shear-web": {
+  "drawn": [
+   {
+    "cloth": "UND",
+    "name": "canard.shear_web.p1",
+    "opOrder": 1,
+    "part": "canard.shear_web",
+    "where": "crossed, full span (108 in)"
+   },
+   {
+    "cloth": "UND",
+    "name": "canard.shear_web.p2",
+    "opOrder": 2,
+    "part": "canard.shear_web",
+    "where": "crossed, full span (108 in)"
+   },
+   {
+    "cloth": "UND",
+    "name": "canard.shear_web.p3",
+    "opOrder": 3,
+    "part": "canard.shear_web",
+    "where": "crossed, inboard of BL 30"
+   },
+   {
+    "cloth": "UND",
+    "name": "canard.shear_web.p4",
+    "opOrder": 4,
+    "part": "canard.shear_web",
+    "where": "crossed, inboard of BL 30"
+   },
+   {
+    "cloth": "BID",
+    "name": "canard.shear_web.p5",
+    "opOrder": 5,
+    "part": "canard.shear_web",
+    "where": "45 degrees, inboard of BL 20"
+   },
+   {
+    "cloth": "BID",
+    "name": "canard.shear_web.p6",
+    "opOrder": 6,
+    "part": "canard.shear_web",
+    "where": "45 degrees, inboard of BL 10"
+   }
+  ],
+  "materials": [
+   {
+    "cloth": "UND",
+    "plies": 2,
+    "where": "crossed, full span (108 in)"
+   },
+   {
+    "cloth": "UND",
+    "plies": 2,
+    "where": "crossed, inboard of BL 30"
+   },
+   {
+    "cloth": "BID",
+    "plies": 1,
+    "where": "45 degrees, inboard of BL 20"
+   },
+   {
+    "cloth": "BID",
+    "plies": 1,
+    "where": "45 degrees, inboard of BL 10"
+   },
+   {
+    "cloth": "BID",
+    "plies": 9,
+    "where": "pad over each CL-1 nut plate"
+   }
+  ]
+ }
+}

@@ -1,6 +1,7 @@
 import pytest
 
 from guide.check import main
+from tests.guide.test_plan_fields import with_plan
 from tests.guide.test_schema import gdir as _schema_gdir
 
 _graph_dir = pytest.fixture(name="gdir")(_schema_gdir.__wrapped__)
@@ -138,6 +139,105 @@ def test_overlap_truncates_to_three_words(gdir, tmp_path, monkeypatch, capsys):
     assert "c10.cores.summary" in out
     # Check that the hit is truncated: should contain "hot wire the…" not the full phrase
     assert "hot wire the…" in out
+
+
+@pytest.mark.parametrize(
+    ("plan", "needle"),
+    [
+        ("plan:\n  hours: {value: .nan, flag: estimate}\n", "finite"),
+        ("plan:\n  hours: {value: .inf, flag: estimate}\n", "finite"),
+        ("plan:\n  hours: {value: -1, flag: estimate}\n", ">="),
+        (
+            "plan:\n  buy: [{item: bid-7725, qty: .nan, flag: estimate}]\n",
+            "finite",
+        ),
+        (
+            "plan:\n  buy: [{item: bid-7725, qty: .inf, flag: estimate}]\n",
+            "finite",
+        ),
+        (
+            "plan:\n  buy: [{item: bid-7725, qty: -0.5, flag: estimate}]\n",
+            ">=",
+        ),
+    ],
+)
+def test_check_rejects_bad_plan_numbers(gdir, capsys, plan, needle):
+    with_plan(gdir, plan)
+    assert main(["--schema-only", "--graph", str(gdir)]) == 1
+    assert needle in capsys.readouterr().out
+
+
+def _point_check_at(monkeypatch, tmp_path, prices: str, resin: str) -> None:
+    catalog = tmp_path / "catalog"
+    catalog.mkdir()
+    (catalog / "prices.yaml").write_text(prices)
+    resins = tmp_path / "resins"
+    resins.mkdir()
+    (resins / "sample.yaml").write_text(resin)
+    monkeypatch.setattr("guide.check.DATA", tmp_path)
+
+
+@pytest.mark.parametrize(
+    ("prices", "resin", "needle"),
+    [
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: 'https://example.com/a', price_usd: .nan, unit: each, read: 2026-10-08, flag: page}\n",
+            "id: sample\nsource: null\nmin_temp_c: null\ngate_hours: []\nflag: unsourced\n",
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: 'https://example.com/a', price_usd: .inf, unit: each, read: 2026-10-08, flag: page}\n",
+            "id: sample\nsource: null\nmin_temp_c: null\ngate_hours: []\nflag: unsourced\n",
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: 'https://example.com/a', price_usd: -1, unit: each, read: 2026-10-08, flag: page}\n",
+            "id: sample\nsource: null\nmin_temp_c: null\ngate_hours: []\nflag: unsourced\n",
+            ">=",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            "id: sample\nsource: null\nmin_temp_c: .nan\ngate_hours: []\nflag: unsourced\n",
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            "id: sample\nsource: null\nmin_temp_c: .inf\ngate_hours: []\nflag: unsourced\n",
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            "id: sample\nsource: null\nmin_temp_c: -5\ngate_hours: []\nflag: unsourced\n",
+            ">=",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            'id: sample\nsource: "om-1980:p25"\nmin_temp_c: 10\ngate_hours: [[.nan, 24]]\nflag: official\n',
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            'id: sample\nsource: "om-1980:p25"\nmin_temp_c: 10\ngate_hours: [[10, .inf]]\nflag: official\n',
+            "finite",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            'id: sample\nsource: "om-1980:p25"\nmin_temp_c: 10\ngate_hours: [[-1, 24]]\nflag: official\n',
+            ">=",
+        ),
+        (
+            "- {id: a, label: A, vendor: null, part: null, url: null, price_usd: null, unit: each, read: null, flag: unsourced}\n",
+            'id: sample\nsource: "om-1980:p25"\nmin_temp_c: 10\ngate_hours: [[10, -2]]\nflag: official\n',
+            ">=",
+        ),
+    ],
+)
+def test_check_rejects_bad_catalog_and_resin_numbers(
+    gdir, tmp_path, monkeypatch, capsys, prices, resin, needle
+):
+    _point_check_at(monkeypatch, tmp_path, prices, resin)
+    assert main(["--schema-only", "--graph", str(gdir)]) == 1
+    assert needle in capsys.readouterr().out
 
 
 def test_zero_shingles_reads_as_failure(gdir, tmp_path, monkeypatch, capsys):

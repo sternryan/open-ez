@@ -6,10 +6,19 @@ import argparse
 import sys
 from pathlib import Path
 
+from guide.catalog import DATA, load_catalog
 from guide.linker import candidates, recall
 from guide.lpc import parse_lpcs
 from guide.overlap import SourceIndex
-from guide.schema import SchemaError, authored_texts, load_graph, validate
+from guide.resin import load_resins
+from guide.schema import (
+    SchemaError,
+    authored_texts,
+    load_graph,
+    validate,
+    validate_refs,
+)
+from guide.scripts_schema import load_scripts, scripts_for, validate_scripts
 from guide.sources import (
     ENV,
     load_markers,
@@ -32,6 +41,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"SCHEMA: {e}")
         return 1
     fails = [f"SCHEMA: {e}" for e in validate(g)]
+    try:
+        catalog = load_catalog(DATA / "catalog" / "prices.yaml")
+        resins = load_resins(DATA / "resins")
+    except SchemaError as e:
+        fails.append(f"SCHEMA: {e}")
+    else:
+        fails += [f"SCHEMA: {e}" for e in validate_refs(g, catalog, resins)]
+    try:
+        overrides = load_scripts(Path(a.graph))
+    except SchemaError as e:
+        fails.append(f"SCHEMA: {e}")
+    else:
+        fails += [
+            f"SCHEMA: {e}" for e in validate_scripts(scripts_for(g, overrides), g)
+        ]
 
     if a.schema_only:
         print("OVERLAP GATE NOT RUN (--schema-only)")
