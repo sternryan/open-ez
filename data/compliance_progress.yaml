@@ -1,0 +1,16 @@
+# Real builder task completions for the 14 CFR 21.191(g) amateur-built credit tally.
+#
+# This file records ACTUAL work by the builder of record, and nothing else. No
+# simulated, planned or generated-artifact entries belong here: a generated part
+# is a fabrication aid, not builder credit.
+#
+# Each entry under `completed` has:
+#   task_id:  a task id from core/compliance ComplianceTracker (for example wing_cores_left)
+#   method:   a ManufacturingMethod value (builder_manual, builder_cnc, builder_helper,
+#             commercial_kit, commercial_service)
+#   date:     the date the task was finished (YYYY-MM-DD)
+#   evidence: non-empty build-log reference (log page, photo set id) a DAR can check
+#
+# scripts/compliance_audit.py loads this file. An unknown task_id, unknown method,
+# missing or empty evidence, or a duplicate task_id is an integrity error.
+completed: []
