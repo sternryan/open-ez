@@ -146,6 +146,29 @@ Status: {status}
 """
 
 
+@dataclass(frozen=True)
+class LiftSurfaceTerms:
+    """Canard and wing terms of the two-surface neutral point (calculate_neutral_point)."""
+
+    s_wing_sqft: float
+    s_canard_sqft: float
+    ac_wing_fs: float
+    ac_canard_fs: float
+    a_wing_per_rad: float
+    a_canard_per_rad: float
+    d_eps_dalpha: float
+    mac_wing_in: float
+
+    @property
+    def wing_term(self) -> float:
+        """a_w S_w (1 - de/da): the wing's share of the airplane lift slope (sq ft per rad)."""
+        return self.a_wing_per_rad * self.s_wing_sqft * (1.0 - self.d_eps_dalpha)
+
+    @property
+    def canard_term(self) -> float:
+        return self.a_canard_per_rad * self.s_canard_sqft
+
+
 class PhysicsEngine:
     """
     Internal solver for basic stability and weight & balance.
@@ -295,23 +318,11 @@ class PhysicsEngine:
             width=width,
         )
 
-    def calculate_neutral_point(self) -> float:
-        """
-        Calculate longitudinal Neutral Point (NP) for canard configuration.
+    def lift_surface_terms(self) -> "LiftSurfaceTerms":
+        """The two-surface quantities behind calculate_neutral_point (one computation, two users).
 
-        The neutral point is the center of lift for the complete aircraft.
-        For a canard, it's weighted by the lift contributions of both surfaces.
-
-        Two-surface neutral point (Raymer eq. 16.9; Etkin and Reid sec. 2.3), with the
-        forward surface's downwash acting on the AFT surface, which for a canard is the wing:
-        NP = (a_w S_w (1 - de/da) x_ac_w + a_c S_c x_ac_c) / (a_w S_w (1 - de/da) + a_c S_c)
-
-        where:
-        - a = lift curve slope (per radian)
-        - S = area; the wing is the gross reference trapezoid (wing_area_sqft)
-        - x_ac = aerodynamic center: quarter chord of each surface's MAC (calculate_mac for
-          the wing, the same planform as S_w)
-        - de/da = canard downwash derivative averaged over the wing span (ledger C3, C4)
+        Returned so that a load split between canard and wing (core.flight_loads) uses exactly the
+        slopes, areas, aerodynamic centres and downwash the neutral point uses.
         """
         # Areas (sq ft)
         s_wing = self.geo.wing_area
@@ -396,13 +407,39 @@ class PhysicsEngine:
         # effective slope is a_w (1 - de/da) (C3). Kept approximation: wing upwash at the canard
         # is omitted.
         d_eps_dalpha = self.canard_downwash_gradient_on_wing(a_canard, ac_canard)
-        wing_downwash_factor = 1.0 - d_eps_dalpha
 
-        # Calculate NP
-        wing_term = a_wing * s_wing * wing_downwash_factor
-        canard_term = a_canard * s_canard
-        numerator = wing_term * ac_wing + canard_term * ac_canard
-        denominator = wing_term + canard_term
+        return LiftSurfaceTerms(
+            s_wing_sqft=s_wing,
+            s_canard_sqft=s_canard,
+            ac_wing_fs=ac_wing,
+            ac_canard_fs=ac_canard,
+            a_wing_per_rad=a_wing,
+            a_canard_per_rad=a_canard,
+            d_eps_dalpha=d_eps_dalpha,
+            mac_wing_in=mac_wing,
+        )
+
+    def calculate_neutral_point(self) -> float:
+        """
+        Calculate longitudinal Neutral Point (NP) for canard configuration.
+
+        The neutral point is the center of lift for the complete aircraft.
+        For a canard, it's weighted by the lift contributions of both surfaces.
+
+        Two-surface neutral point (Raymer eq. 16.9; Etkin and Reid sec. 2.3), with the
+        forward surface's downwash acting on the AFT surface, which for a canard is the wing:
+        NP = (a_w S_w (1 - de/da) x_ac_w + a_c S_c x_ac_c) / (a_w S_w (1 - de/da) + a_c S_c)
+
+        where:
+        - a = lift curve slope (per radian)
+        - S = area; the wing is the gross reference trapezoid (wing_area_sqft)
+        - x_ac = aerodynamic center: quarter chord of each surface's MAC (calculate_mac for
+          the wing, the same planform as S_w)
+        - de/da = canard downwash derivative averaged over the wing span (ledger C3, C4)
+        """
+        t = self.lift_surface_terms()
+        numerator = t.wing_term * t.ac_wing_fs + t.canard_term * t.ac_canard_fs
+        denominator = t.wing_term + t.canard_term
 
         np_location = numerator / denominator
         return np_location

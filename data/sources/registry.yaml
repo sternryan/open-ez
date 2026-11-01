@@ -117,6 +117,55 @@ sources:
     obtain: govinfo.gov Code of Federal Regulations, title 14
     copy: document
     page_basis: pdf
+  cfr14-23-303-2011:
+    title: 14 CFR 23.303, Factor of safety
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-303.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-305-2011:
+    title: 14 CFR 23.305, Strength and deformation
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-305.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-333-2011:
+    title: 14 CFR 23.333, Flight envelope
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-333.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-335-2011:
+    title: 14 CFR 23.335, Design airspeeds
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-335.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-337-2011:
+    title: 14 CFR 23.337, Limit maneuvering load factors
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-337.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-341-2011:
+    title: 14 CFR 23.341, Gust loads factors
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-341.pdf)
+    copy: document
+    page_basis: pdf
+  cfr14-23-613-2011:
+    title: 14 CFR 23.613, Material strength properties and design values
+    edition: 2011 edition, GPO govinfo (Part 23 before amendment 23-64)
+    obtain: govinfo.gov Code of Federal Regulations, title 14 (CFR-2011-title14-vol1-sec23-613.pdf)
+    copy: document
+    page_basis: pdf
+  naca-tm-948:
+    title: "O. Schrenk, A simple approximation method for obtaining the spanwise lift distribution, NACA TM 948"
+    edition: NACA, August 1940 (translation of Luftwissen vol 7 no 4, 1940)
+    obtain: NASA NTRS 19930094469
+    copy: document
+    page_basis: printed
+    note: printed page = pdf page - 4 (the NTIS cover and notice come first); the procedure is printed p2.
   ncamp-8552-as4:
     title: "NCAMP Test Report CAM-RP-2010-002 Rev A, Hexcel 8552 AS4 unidirectional prepreg material qualification"
     edition: NIAR Wichita State University, 2011-05-06, 278 pp
@@ -152,6 +201,13 @@ sources:
     copy: document
     page_basis: pdf
     note: page = slide number. Follows Kaw, Mechanics of Composite Materials 2nd ed.; book pages not checked.
+  kaw-ocw-ch2-engconst:
+    title: A. Kaw, Mechanics of Composites open course, Chapter 2 engineering constants of an angle lamina slides
+    edition: University of South Florida open courseware
+    obtain: https://kaw.eng.usf.edu/compositesOCW/ppts/chapter2_revised/ (Chapter2_6_engineering constants.pdf)
+    copy: document
+    page_basis: pdf
+    note: page = slide number. Slide 4 prints the glass/epoxy lamina elastic constants of the book's Table 2.1.
   kaw-ocw-ch2-tsaiwu:
     title: A. Kaw, Mechanics of Composites open course, Chapter 2 Tsai-Wu failure theory slides
     edition: University of South Florida open courseware

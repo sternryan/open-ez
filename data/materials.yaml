@@ -362,6 +362,56 @@ materials:
         units: lb/ft2
         flag: unsourced
         note: no cured lamina data found, S2
+  glass_epoxy_ud_kaw:
+    use: design-proxy
+    description: typical unidirectional glass/epoxy lamina (Kaw Table 2.1, process and fibre volume not stated
+      on the slides); mean values, SI converted at 6894.757 Pa/psi; the spar model knocks them down to
+      wet-layup design allowables in core/cap_allowables.py
+    properties:
+      E1:
+        value: 5598456.7
+        units: psi
+        cite: kaw-ocw-ch2-engconst:p4
+        note: printed 38.6 GPa
+      E2:
+        value: 1199462.1
+        units: psi
+        cite: kaw-ocw-ch2-engconst:p4
+        note: printed 8.27 GPa
+      G12:
+        value: 600456.2
+        units: psi
+        cite: kaw-ocw-ch2-engconst:p4
+        note: printed 4.14 GPa
+      nu12:
+        value: 0.26
+        units: '1'
+        cite: kaw-ocw-ch2-engconst:p4
+      F1t:
+        value: 154030.1
+        units: psi
+        cite: kaw-ocw-ch2-tsaiwu:p12
+        note: printed 1062 MPa
+      F1c:
+        value: 88473.0
+        units: psi
+        cite: kaw-ocw-ch2-tsaiwu:p12
+        note: printed 610 MPa
+      F2t:
+        value: 4496.2
+        units: psi
+        cite: kaw-ocw-ch2-tsaiwu:p12
+        note: printed 31 MPa
+      F2c:
+        value: 17114.5
+        units: psi
+        cite: kaw-ocw-ch2-tsaiwu:p12
+        note: printed 118 MPa
+      F6:
+        value: 10442.7
+        units: psi
+        cite: kaw-ocw-ch2-tsaiwu:p12
+        note: printed 72 MPa
   legacy_uni_glass:
     use: legacy
     description: values formerly hard-coded for the uni glass default in the simulation adapter

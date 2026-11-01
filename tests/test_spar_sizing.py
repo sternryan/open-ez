@@ -120,7 +120,7 @@ def test_more_plies_strictly_raise_the_margin(result, y):
             ss.section_response(
                 ss.cap_section(st.cap_depth_in, st.cap_width_in, t, n, n),
                 st.moment_ultimate,
-                ss.load_cap_material()[0],
+                ss.design_cap_material()[0],
             )[1]
         )
         for n in range(1, 13)
@@ -129,7 +129,7 @@ def test_more_plies_strictly_raise_the_margin(result, y):
 
 
 def test_solved_plies_meet_the_margin_and_one_fewer_does_not(result):
-    mat = ss.load_cap_material()[0]
+    mat = ss.design_cap_material()[0]
     t = G.spar_ply_thickness_laid_in
     for st in result.stations:
         assert st.margin >= result.required_margin
@@ -143,7 +143,9 @@ def test_solved_plies_meet_the_margin_and_one_fewer_does_not(result):
             )
             assert (
                 ss.margin_from_ratio(
-                    ss.section_response(sec, st.moment_ultimate, mat)[1]
+                    ss.governing_response(
+                        sec, (st.moment_ultimate, st.moment_ultimate_neg), mat
+                    )[1]
                 )
                 < result.required_margin
             )
@@ -210,7 +212,7 @@ def test_gate_infeasible_requirement_is_rejected():
     with pytest.raises(ss.InfeasibleError):
         ss.solve_plies(5.0e7, 6.0, 3.0, 0.0375, MAT, 0.0)
     with pytest.raises(ss.InfeasibleError):
-        ss.size_spar_caps(stations=[23.0], assumptions=ss.Assumptions(n_limit=400.0))
+        ss.size_spar_caps(stations=[23.0], assumptions=ss.Assumptions(load_scale=400.0))
 
 
 def _station(**kw):
@@ -221,6 +223,8 @@ def _station(**kw):
         "cap_width_in": 3.0,
         "moment_limit": 1.0,
         "moment_ultimate": 1.5,
+        "moment_ultimate_neg": -1.0,
+        "governing_case": "positive",
         "I_in4": 5.0,
         "sigma_psi": 1.0,
         "R": 2.0,
@@ -324,25 +328,78 @@ def test_every_input_row_is_cited_or_flagged(result):
     from core.sources import check_citation
 
     for row in (i.as_row() for i in result.inputs):
-        if row["source"] == ss.UNSOURCED:
+        assert row["status"] in (ss.SOURCED, ss.DERIVED, ss.ASSUMPTION, ss.UNSOURCED)
+        if row["status"] in (ss.UNSOURCED, ss.ASSUMPTION):
+            assert row["source"] == row["status"]
             continue
         check_citation(row["source"])
+        for c in row["also"]:
+            check_citation(c)
+    # only the representational geometry the owner's full-size sheets would settle stays unsourced
+    assert sorted(result.unsourced) == sorted(
+        ["airfoil_shape", "le_inboard_of_bl_55_5", "cap_top_ply7_offset"]
+    )
+    # the two engineering choices with no source, both on the severe or heavy side, say so
+    assert sorted(result.assumptions) == ["density", "inertia_relief"]
     for name in (
-        "n_limit",
+        "n_limit_manoeuvre",
         "factor_of_safety",
-        "wing_share",
-        "density",
+        "wing_share_trim",
+        "wing_share_increment",
+        "spanload_shape",
         "cap_F1c",
+        "cap_E1",
+        "f12_star",
         "required_margin",
-    ):
-        assert name in result.unsourced
-    for name in (
         "wing_book_spar_cap_width_in",
         "spar_ply_thickness_laid_in",
         "gross_weight_lb",
         "wing_cap_top_plies_in",
     ):
-        assert name not in result.unsourced
+        assert name not in result.unsourced + result.assumptions
+
+
+# ---- the retired load case and allowables fail ----------------------------------------------------------
+
+
+def test_the_legacy_load_knobs_are_gone():
+    # the old unsourced n 3.8 x wing share 1.0 cannot be passed any more
+    for knob in ("n_limit", "wing_share", "factor_of_safety"):
+        with pytest.raises(TypeError):
+            ss.Assumptions(**{knob: 1.0})
+
+
+def test_sourced_load_case_is_not_the_legacy_one(result):
+    rows = {i.name: i for i in result.inputs}
+    assert (
+        rows["n_limit_manoeuvre"].value == 4.4
+    )  # utility, not the normal-category 3.8
+    assert rows["n_limit_manoeuvre"].source.startswith("cfr14-23-337-2011")
+    shares = rows["wing_share_trim"].value
+    assert all(0.6 < v < 0.9 for v in shares.values())  # the canard lifts; 1.0 is wrong
+    assert 0.7 < rows["wing_share_increment"].value < 0.95
+    lc = result.load_case
+    # the legacy wing lift factor was 3.8 x 1.0; the sourced one is a different number
+    assert abs(lc["k_pos"] - 3.8) > 0.05
+    assert lc["k_neg"] < 0  # a negative case now exists at all
+    assert lc["governing_pos"].startswith("gust")
+
+
+def test_cap_strengths_are_not_the_legacy_set(result):
+    rows = {i.name: i for i in result.inputs}
+    assert rows["cap_F1c"].status == ss.DERIVED
+    assert rows["cap_F1c"].value < 0.5 * 100000  # legacy unsourced F1c was 100 ksi
+    assert rows["cap_F1t"].value < 0.6 * 150000  # legacy unsourced F1t was 150 ksi
+
+
+def test_negative_case_governs_somewhere_or_is_checked(result):
+    # both signs are evaluated at every station; the negative moment is the scaled positive one
+    k = result.load_case["k_neg"] / result.load_case["k_pos"]
+    for st in result.stations:
+        assert st.moment_ultimate_neg == pytest.approx(
+            st.moment_ultimate * k, rel=1e-12
+        )
+        assert st.governing_case in ("positive", "negative")
 
 
 def test_disclaimer_in_module_and_output(result):
@@ -370,3 +427,18 @@ def test_report_script_writes_only_where_told(tmp_path, capsys):
     assert data["margin_convention"].startswith("R - 1")
     assert len(data["stations"]) == len(ss.default_stations())
     assert "UNSOURCED" in capsys.readouterr().out
+
+
+def test_gate_assumption_without_rationale_is_rejected():
+    with pytest.raises(ValueError, match="rationale"):
+        ss.Input("density", 0.072, "lb/in3", ss.ASSUMPTION, None, "  ")
+
+
+def test_gate_derived_with_an_unknown_supporting_citation_is_rejected():
+    with pytest.raises(ValueError, match="unknown source id"):
+        ss.Input("x", 1.0, "1", ss.DERIVED, "om-1980:p4", "m", ("nosuch-doc:p2",))
+
+
+def test_gate_assumption_carrying_a_citation_is_rejected():
+    with pytest.raises(ValueError, match="may not carry a citation"):
+        ss.Input("x", 1.0, "1", ss.ASSUMPTION, "om-1980:p4", "why")

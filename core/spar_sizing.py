@@ -1,20 +1,22 @@
 """Main-wing spar cap sizing: a two-cap beam per spanwise station, ply stresses from core.kernels.
 
-THIS IS A DESIGN-ANALYSIS MODEL. It is NOT a certification or airworthiness substantiation, it has
-not been checked against any test, and its strength allowables are unsourced (see below).
+THIS IS A DESIGN-ANALYSIS MODEL. It is NOT a certification or airworthiness substantiation and it
+has not been checked against any test.
 
 What it does, per spanwise station of one wing panel (BL 23 to the tip, chapter 19 caps):
 
-* Load. Ultimate wing lift per side L = n_limit * FoS * W_gross * wing_share / 2, spread as an
-  elliptic spanload over BL 0 to the tip (half-span s). Bending moment about the streamwise axis,
-  closed form with a = y / s:
+* Load. core.flight_loads.wing_load_case: utility-category 14 CFR Part 23 manoeuvre and gust load
+  factors, split between canard and wing by trim (at the CG) and by the neutral point (the gust
+  increment), at both CG limits. Ultimate wing lift per side L = k * FoS * W_gross / 2 for the
+  governing positive and negative lift factors k. Spanload by Schrenk's method (naca-tm-948:p2) over
+  BL 0 to the tip; the elliptic closed form below is its elliptic half:
       M_bl(y) = (4 L s / pi) * [ (1 - a^2)^1.5 / 3 - a * (pi/4 - (a sqrt(1 - a^2) + asin a) / 2) ]
   Moment arms are taken along the swept web line, so the moment the caps see is
   M(y) = M_bl(y) / cos(web sweep). Torsion and inertia relief are not modelled.
-* Section. Two 0-degree UND caps of width w and ply thickness t, outer faces on the airfoil surface
-  at the cap's mid-width station (web forward face + w/2), plies stacking INWARD. Surface depth
-  h = z_upper - z_lower from core.wing_book (printed chord and t/c, airfoil shape representational).
-  Neutral axis at the area centroid (same material both caps); I by parallel axis
+* Section. Two 0-degree unidirectional caps of width w and ply thickness t, outer faces on the
+  airfoil surface at the cap's mid-width station (web forward face + w/2), plies stacking INWARD.
+  Surface depth h = z_upper - z_lower from core.wing_book (printed chord and t/c, airfoil shape
+  representational). Neutral axis at the area centroid (same material both caps); I by parallel axis
       I = sum over caps of [ w (n t)^3 / 12 + w n t (z_c - z_na)^2 ]
   which for equal caps is I = 2 (I_own + A d^2), d = half the centroid separation. The shear web
   and the skins are EXCLUDED (conservative for stress); the skin thickness is not subtracted from h.
@@ -22,17 +24,19 @@ What it does, per spanwise station of one wing panel (BL 23 to the tip, chapter 
   force and moment resultants of that field per unit width, N = sigma(z_c) * n t and
   M_own = -(M / I) (n t)^3 / 12, and core.kernels.laminate.ply_stresses solves the cap laminate
   (free transverse edges). core.kernels.tsai_wu gives the strength ratio R at every ply face;
-  margin = R - 1 (the only margin convention used here). Positive M puts the top cap in compression.
+  margin = R - 1 (the only margin convention used here). Positive M puts the top cap in compression;
+  the negative case puts the bottom cap in compression. R is the minimum over both cases.
+* Allowables. core.cap_allowables: a cited textbook glass/epoxy lamina knocked down to wet-layup
+  A-basis at the 140 F operating limit by measured AGATE / NCAMP ratios.
 * Re-solve. Smallest integer n >= 1 (same n both caps) with margin(n) >= required margin at
-  ultimate, by bisection over n with the section rebuilt at each n. The upper bound is the largest n
-  for which the two caps do not meet (2 n t < h). No feasible n raises InfeasibleError.
+  ultimate in both cases, by bisection over n with the section rebuilt at each n. The upper bound is
+  the largest n for which the two caps do not meet (2 n t < h). No feasible n raises InfeasibleError.
 * Mass. Per station: plies * t * w * density * (BL tributary length / cos(web sweep)), summed over
   both caps; the tributary length is the midpoint rule over the station spacing. Never the full span.
 
-Every input is an `Input` row (value, unit, status, citation, note). A row is SOURCED only with a
-registered citation (core.sources.check_citation); config geometry rows take their status from
-GEOMETRY_PROVENANCE, and a field that must be sourced but is not is rejected. Everything else is
-flagged UNSOURCED in the output.
+Every input is an `Input` row (core.inputs: sourced, derived, assumption or unsourced). Config
+geometry rows take their status from GEOMETRY_PROVENANCE, and a field that must be sourced but is
+not is rejected. The output lists UNSOURCED rows and ASSUMPTION rows separately.
 """
 
 from __future__ import annotations
@@ -49,57 +53,19 @@ import yaml
 from config import config as _default_config
 from config.aircraft_config import GEOMETRY_PROVENANCE
 from config.provenance_check import SOURCED_STATUSES
+from core.inputs import ASSUMPTION, DERIVED, SOURCED, UNSOURCED, Input
 from core.kernels import lamina, laminate
 from core.kernels.tsai_wu import tsai_wu_strength_ratio
-from core.sources import check_citation
 
-SOURCED = "sourced"
-UNSOURCED = "UNSOURCED"
+__all__ = ["ASSUMPTION", "DERIVED", "SOURCED", "UNSOURCED", "Input"]
+
 MATERIALS_YAML = Path(__file__).resolve().parents[1] / "data" / "materials.yaml"
-CAP_MATERIAL = "legacy_uni_glass"  # the only UND set in data/materials.yaml with every property filled
+CAP_MATERIAL = "cap_allowables"  # core.cap_allowables.design_allowables (textbook set, wet knockdowns)
 _MAT_KEYS = ("E1", "E2", "G12", "nu12", "F1t", "F1c", "F2t", "F2c", "F6")
 
 
 class InfeasibleError(ValueError):
     """No ply count up to the geometric limit meets the required margin."""
-
-
-@dataclass(frozen=True)
-class Input:
-    """One model input. SOURCED needs a registered citation; UNSOURCED carries none."""
-
-    name: str
-    value: object
-    unit: str
-    status: str
-    source: str | None
-    note: str = ""
-
-    def __post_init__(self) -> None:
-        if self.status not in (SOURCED, UNSOURCED):
-            raise ValueError(
-                f"{self.name}: status must be {SOURCED!r} or {UNSOURCED!r}"
-            )
-        if self.status == SOURCED:
-            if not self.source or not str(self.source).strip():
-                raise ValueError(f"{self.name}: a sourced input needs a citation")
-            check_citation(self.source)  # raises on an unknown registry id or bad form
-        elif self.source:
-            raise ValueError(
-                f"{self.name}: an UNSOURCED input may not carry a citation"
-            )
-
-    def as_row(self) -> dict:
-        v = self.value
-        if isinstance(v, tuple):
-            v = list(v)
-        return {
-            "name": self.name,
-            "value": v,
-            "unit": self.unit,
-            "source": self.source if self.status == SOURCED else UNSOURCED,
-            "note": self.note,
-        }
 
 
 def geometry_input(
@@ -247,27 +213,55 @@ def max_plies(depth_in: float, t_ply_in: float) -> int:
     return n
 
 
+def _moments(moment) -> tuple[float, ...]:
+    ms = (
+        tuple(float(m) for m in moment)
+        if isinstance(moment, Sequence)
+        else (float(moment),)
+    )
+    if not ms:
+        raise ValueError("no moment given")
+    return ms
+
+
+def governing_response(
+    sec: Section, moment, mat: CapMaterial
+) -> tuple[float, float, int]:
+    """(peak |sigma_1|, min R, index of the governing moment) over every moment case."""
+    best = None
+    for i, m in enumerate(_moments(moment)):
+        sg, r = section_response(sec, m, mat)
+        if best is None or r < best[1]:
+            best = (sg, r, i)
+    return best
+
+
 def solve_plies(
-    moment: float,
+    moment,
     depth_in: float,
     width_in: float,
     t_ply_in: float,
     mat: CapMaterial,
     required_margin: float = 0.0,
 ) -> int:
-    """Smallest n >= 1 (both caps) with margin(n) >= required_margin; bisection, section rebuilt per n."""
+    """Smallest n >= 1 (both caps) with margin(n) >= required_margin under every moment given
+    (a number or a sequence of cases); bisection, section rebuilt per n."""
     _check_required_margin(required_margin)
+    moments = _moments(moment)
 
     def ok(n: int) -> bool:
         sec = cap_section(depth_in, width_in, t_ply_in, n, n)
         return (
-            margin_from_ratio(section_response(sec, moment, mat)[1]) >= required_margin
+            margin_from_ratio(governing_response(sec, moments, mat)[1])
+            >= required_margin
         )
 
     hi = max_plies(depth_in, t_ply_in)
     if hi < 1 or not ok(hi):
         raise InfeasibleError(
-            f"no ply count up to {hi} meets margin {required_margin} at M = {moment:.0f} in-lbf"
+            f"no ply count up to {hi} meets margin {required_margin} at M = "
+            + ", ".join(f"{m:.0f}" for m in moments)
+            + " in-lbf"
         )
     lo = 1
     if ok(lo):
@@ -308,6 +302,8 @@ class StationResult:
     cap_width_in: float
     moment_limit: float
     moment_ultimate: float
+    moment_ultimate_neg: float
+    governing_case: str
     I_in4: float
     sigma_psi: float
     R: float
@@ -368,10 +364,13 @@ class SparSizingResult:
     extra_ply_mass_lb: float
     book_schedule_sourced: bool = True
     unsourced: list[str] = field(default_factory=list)
+    assumptions: list[str] = field(default_factory=list)
+    load_case: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {
             "disclaimer": "design-analysis model, NOT a certification or airworthiness substantiation",
+            "allowables": "textbook glass/epoxy lamina knocked down to wet-layup A-basis at 140 F (core.cap_allowables); not coupon data",
             "margin_convention": "R - 1 (Tsai-Wu strength ratio minus one)",
             "required_margin_ultimate": self.required_margin,
             "stations": [s.as_row() for s in self.stations],
@@ -383,92 +382,104 @@ class SparSizingResult:
             "book_schedule_sourced": self.book_schedule_sourced,
             "inputs": [i.as_row() for i in self.inputs],
             "unsourced": self.unsourced,
+            "assumptions": self.assumptions,
+            "load_case": self.load_case,
             "notes": self.notes,
         }
 
 
 @dataclass(frozen=True)
 class Assumptions:
-    """Inputs the repo does not source. Each becomes an UNSOURCED row."""
+    """Model choices that are not loads. The load case comes from core.flight_loads; `load_scale`
+    multiplies it (1.0 = the sourced case; only a deliberately broken input uses anything else)."""
 
-    n_limit: float = 3.8
-    factor_of_safety: float = 1.5
-    wing_share: float = 1.0
     density_lb_in3: float = 0.072
     f12_star: float = -0.5
     required_margin: float = 0.0
+    load_scale: float = 1.0
 
     def rows(self) -> list[Input]:
-        return [
-            Input(
-                "n_limit",
-                self.n_limit,
-                "g",
-                UNSOURCED,
-                None,
-                "positive limit load factor; no registered source in the repo (14 CFR 23.337 is not registered)",
-            ),
-            Input(
-                "factor_of_safety",
-                self.factor_of_safety,
-                "1",
-                UNSOURCED,
-                None,
-                "ultimate / limit; 14 CFR 23.303 is not registered",
-            ),
-            Input(
-                "wing_share",
-                self.wing_share,
-                "1",
-                UNSOURCED,
-                None,
-                "share of the airplane's weight lifted by the wing; 1.0 ignores canard lift (conservative)",
-            ),
-            Input(
-                "spanload_shape",
-                "elliptic over BL 0 to tip",
-                "-",
-                UNSOURCED,
-                None,
-                "assumed; fuselage and strake carry-through lumped into the elliptic shape",
-            ),
-            Input(
-                "inertia_relief",
-                "none",
-                "-",
-                UNSOURCED,
-                None,
-                "wing and fuel weight relief ignored (conservative)",
-            ),
+        rows = [
             Input(
                 "density",
                 self.density_lb_in3,
                 "lb/in3",
-                UNSOURCED,
+                ASSUMPTION,
                 None,
-                "legacy fea_adapter uni-glass density 0.072; data/materials.yaml says unit unstated; lb/in3 assumed",
+                "mass only, never strength: heavier than glass/epoxy by rule of mixtures at 45 % fibre "
+                "(about 0.065), so the cap mass is not under-stated; no cured density of the tape is registered",
             ),
             Input(
                 "f12_star",
                 self.f12_star,
                 "1",
-                UNSOURCED,
-                None,
-                "Tsai-Wu interaction term kept from the legacy adapter",
+                SOURCED,
+                "kaw-ocw-ch2-tsaiwu:p10",
+                "Mises-Hencky interaction H12 = -1/2 sqrt(H11 H22); zero effect here since sigma_2 = 0 in a 0-degree cap",
             ),
             Input(
                 "required_margin",
                 self.required_margin,
                 "R-1 at ultimate",
-                UNSOURCED,
-                None,
-                "no repo-defined required margin; 0.0 at ultimate chosen",
+                SOURCED,
+                "cfr14-23-305-2011:p1",
+                "23.305(b): ultimate load without failure, so R - 1 >= 0 at ultimate",
             ),
         ]
+        if self.load_scale != 1.0:
+            rows.append(
+                Input(
+                    "load_scale",
+                    self.load_scale,
+                    "1",
+                    UNSOURCED,
+                    None,
+                    "test override of the sourced load case",
+                )
+            )
+        return rows
+
+
+def design_cap_material(f12_star: float = -0.5) -> tuple[CapMaterial, list[Input]]:
+    """Cap lamina from core.cap_allowables; moduli sourced, strengths derived with every input cited."""
+    from core import cap_allowables as ca
+
+    allow = ca.design_allowables()
+    chain = (
+        ca.AGATE_CITE,
+        "agate-wp33-114:p14",
+        "agate-wp33-114:p15",
+        "agate-wp33-114:p9",
+        ca.PREPREG_CITE,
+        "plans-1980:p30",
+        "cfr14-23-613-2011:p1",
+    )
+    rows = []
+    for k in _MAT_KEYS:
+        al = allow[k]
+        if al.knockdown is None:
+            rows.append(
+                Input(f"cap_{k}", al.value, al.unit, SOURCED, al.base_cite, al.note())
+            )
+        else:
+            rows.append(
+                Input(
+                    f"cap_{k}",
+                    al.value,
+                    al.unit,
+                    DERIVED,
+                    al.base_cite,
+                    al.note(),
+                    chain,
+                )
+            )
+    return CapMaterial(
+        f12_star=f12_star, **{k: allow[k].value for k in _MAT_KEYS}
+    ), rows
 
 
 def load_cap_material(
-    name: str = CAP_MATERIAL, f12_star: float = -0.5
+    name: str, f12_star: float = -0.5
 ) -> tuple[CapMaterial, list[Input]]:
     """Cap lamina properties from data/materials.yaml; each property row keeps its cite or flag."""
     mats = yaml.safe_load(MATERIALS_YAML.read_text())["materials"]
@@ -560,9 +571,7 @@ def size_spar_caps(
     asm = assumptions or Assumptions()
     _check_required_margin(asm.required_margin)
     for v, what in (
-        (asm.n_limit, "n_limit"),
-        (asm.factor_of_safety, "factor_of_safety"),
-        (asm.wing_share, "wing_share"),
+        (asm.load_scale, "load_scale"),
         (asm.density_lb_in3, "density"),
     ):
         if not (math.isfinite(v) and v > 0):
@@ -595,17 +604,6 @@ def size_spar_caps(
         gi("wing_cap_bottom_plies_in", "in"),
         gi("wing_cap_bottom_offsets_in", "in"),
     ]
-    gross = cfg.flight_condition.gross_weight_lb
-    rows.append(
-        Input(
-            "gross_weight_lb",
-            gross,
-            "lb",
-            SOURCED,
-            "om-1980:p4",
-            "normal max takeoff gross (config flight_conditions comment)",
-        )
-    )
     rows.append(
         Input(
             "airfoil_shape",
@@ -636,9 +634,13 @@ def size_spar_caps(
             "core.wing_book carries the 6 in step on to top ply 7 (representational)",
         )
     )
-    mat, mat_rows = load_cap_material(CAP_MATERIAL, asm.f12_star)
+    mat, mat_rows = design_cap_material(asm.f12_star)
     rows += mat_rows
     rows += asm.rows()
+    from core.flight_loads import schrenk_moment, wing_load_case
+
+    lc = wing_load_case(cfg)
+    rows += lc.rows
 
     g = cfg.geometry
     root, tip = g.wing_book_rib_bl[0], g.wing_book_rib_bl[-1]
@@ -646,7 +648,9 @@ def size_spar_caps(
     w = g.wing_book_spar_cap_width_in
     t = g.spar_ply_thickness_laid_in
     cos_web = math.cos(math.radians(g.wing_book_shear_web_sweep_deg))
-    lift_half_ult = asm.n_limit * asm.factor_of_safety * gross * asm.wing_share / 2
+    gross = lc.gross_lb
+    lift_half_ult = asm.load_scale * lc.k_pos * lc.factor_of_safety * gross / 2
+    neg_ratio = lc.neg_over_pos
 
     ys = sorted(
         float(y) for y in (default_stations(cfg) if stations is None else stations)
@@ -663,14 +667,20 @@ def size_spar_caps(
         chord = wb.chord(y)
         x_cap = wb.web_fs(y) + w / 2
         depth = wb.z_surface(y, x_cap, 1) - wb.z_surface(y, x_cap, -1)
-        m_ult = elliptic_moment(y, lift_half_ult, semispan) / cos_web
-        m_lim = m_ult / asm.factor_of_safety
-        n = solve_plies(m_ult, depth, w, t, mat, asm.required_margin)
+        m_ult = (
+            schrenk_moment(y, lift_half_ult, semispan, lc.c_root_in, lc.c_tip_in)
+            / cos_web
+        )
+        m_neg = m_ult * neg_ratio
+        m_lim = m_ult / lc.factor_of_safety
+        n = solve_plies((m_ult, m_neg), depth, w, t, mat, asm.required_margin)
         sec = cap_section(depth, w, t, n, n)
-        sigma, R = section_response(sec, m_ult, mat)
+        sigma, R, gi_case = governing_response(sec, (m_ult, m_neg), mat)
         nt, nb = book_plies(y)
         if nt >= 1 and nb >= 1:
-            R_b = section_response(cap_section(depth, w, t, nt, nb), m_ult, mat)[1]
+            R_b = governing_response(
+                cap_section(depth, w, t, nt, nb), (m_ult, m_neg), mat
+            )[1]
         else:
             R_b = (
                 0.0  # a station with no book cap has no bending strength in this model
@@ -684,11 +694,13 @@ def size_spar_caps(
                 cap_width_in=w,
                 moment_limit=m_lim,
                 moment_ultimate=m_ult,
+                moment_ultimate_neg=m_neg,
+                governing_case=("positive", "negative")[gi_case],
                 I_in4=sec.I_in4,
                 sigma_psi=sigma,
                 R=R,
                 margin=margin_from_ratio(R),
-                margin_limit=margin_from_ratio(R * asm.factor_of_safety),
+                margin_limit=margin_from_ratio(R * lc.factor_of_safety),
                 plies_solved=n,
                 plies_book_top=nt,
                 plies_book_bottom=nb,
@@ -714,11 +726,16 @@ def size_spar_caps(
     notes = [
         "Design-analysis model, NOT a certification or airworthiness substantiation.",
         "Margin = R - 1 everywhere (Tsai-Wu strength ratio); infinite R at zero moment is written 'inf'.",
+        (
+            f"Load: wing lift factor +{lc.k_pos:.3f} / {lc.k_neg:.3f} x gross at limit "
+            f"({lc.governing_pos}; {lc.governing_neg}), FoS {lc.factor_of_safety}; core.flight_loads."
+        ),
+        "Spanload: Schrenk over BL 0 to the tip on the gross trapezoid; no winglet side-load moment.",
         "Web and skins excluded from the section (conservative); skin thickness not subtracted from the depth.",
         "Caps stack inward from the airfoil surface at the cap mid-width; the depth shrinks by n t per cap.",
         "Solved count is the same n for both caps; the book layup is asymmetric (top 7, bottom 5 at the root) and is evaluated as laid.",
-        "Moment arms along the swept web line (1/cos web sweep); torsion and inertia relief not modelled.",
-        "Stress allowables are the legacy unsourced uni-glass set: no cured UND lamina data are registered (data/materials.yaml und_7715_wet).",
+        "Moment arms along the swept web line (1/cos web sweep); torsion, buckling and inertia relief not modelled.",
+        "Allowables: textbook glass/epoxy knocked down to wet-layup A-basis at 140 F (core.cap_allowables), not coupon data; the Block 5 coupons replace them.",
         "Book schedule is the chapter 19 base schedule; the CP25 thin-tape box adds plies and is not modelled.",
         "Station masses use the midpoint rule over the station spacing; per wing, both caps.",
     ]
@@ -732,4 +749,13 @@ def size_spar_caps(
         extra_ply_mass_lb=extra,
         book_schedule_sourced=True,
         unsourced=[r.name for r in rows if r.status == UNSOURCED],
+        assumptions=[r.name for r in rows if r.status == ASSUMPTION],
+        load_case={
+            "k_pos": lc.k_pos,
+            "k_neg": lc.k_neg,
+            "governing_pos": lc.governing_pos,
+            "governing_neg": lc.governing_neg,
+            "cases": lc.cases,
+            "factor_of_safety": lc.factor_of_safety,
+        },
     )

@@ -267,7 +267,8 @@ class BucklingAnalyzer:
         }
 
     def standard_load_cases(self) -> List[Dict[str, float]]:
-        """Run standard load cases: +3.8g, -1.52g.
+        """Run the sourced wing load cases (core.flight_loads: governing positive and negative
+        wing lift factors, which replaced the unsourced +3.8 g / -1.52 g).
 
         Estimates bending stress in the compression skin using simple beam theory
         applied to the panel geometry.
@@ -286,9 +287,12 @@ class BucklingAnalyzer:
 
         # Simple estimate: bending stress = n * W * span / (4 * b * t)
         # where n is load factor
+        from core.flight_loads import wing_load_case
+
+        wl = wing_load_case()
         load_cases = [
-            {"name": "positive_3.8g", "n": 3.8, "k": 4.0},
-            {"name": "negative_1.52g", "n": 1.52, "k": 4.0},
+            {"name": f"positive_{wl.k_pos:.3f}", "n": wl.k_pos, "k": 4.0},
+            {"name": f"negative_{-wl.k_neg:.3f}", "n": -wl.k_neg, "k": 4.0},
         ]
         results = []
         for lc in load_cases:
