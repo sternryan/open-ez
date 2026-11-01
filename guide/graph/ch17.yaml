@@ -35,7 +35,7 @@
   title: Trim parts and springs
   summary: Make the pitch handle, the roll-trim levers and the phenolic washers, and cut the springs to their free lengths.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: []
   geometry_visible: false
   sources:

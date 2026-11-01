@@ -76,7 +76,7 @@ def test_ops_valid_and_no_unknown_ids(g):
         assert op.sources and 2 <= len(op.completion) <= 6 and not op.stub, i
         assert op.summary.strip() and op.variants == ("both",), i
         assert all(s.scan_pp in set(PAGES[op.chapter]) | {134} for s in op.sources), i
-        assert "c03.layup-skills" in needs(g, i) | {i}, i
+        assert "g00.bookend" in needs(g, i) | {i}, i
 
 
 def test_order_follows_the_plans(g):

@@ -1,8 +1,5 @@
-# Prerequisites outside the canard slice (shown as stubs), plus the back-cover reference page.
-- id: c03.layup-skills
-  chapter: 3
-  title: Composite layup skills (education chapter)
-  stub: true
+# Prerequisites outside this graph (shown as stubs), plus the back-cover reference page.
+# The education chapter is the ground-school group in ch00_ground.yaml, not a stub.
 - id: c11.elevators
   chapter: 11
   title: GU elevators built

@@ -11,7 +11,7 @@
   title: Firewall accessory parts
   summary: Make the belcrank plates, brackets, pulley brackets, brake arms and the bushing from the printed patterns. Most come prefabricated.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: []
   geometry_visible: false
   sources:

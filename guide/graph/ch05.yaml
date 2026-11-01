@@ -13,7 +13,7 @@
   title: Side foam blank
   summary: Butt-join the thick blue foam into a 103 by 21 blank with one edge dead straight, which becomes the top edge of both sides.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [fuselage.side_left, fuselage.side_right]
   geometry_visible: true
   sources:

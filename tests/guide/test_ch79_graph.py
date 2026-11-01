@@ -68,7 +68,7 @@ def test_every_op_is_complete_and_reaches_layup_skills(g):
             assert (
                 not op.stub and op.summary.strip() and op.completion and op.sources
             ), i
-            assert "c03.layup-skills" in needs(g, i), i
+            assert "g00.bookend" in needs(g, i), i
             assert op.components, i
 
 

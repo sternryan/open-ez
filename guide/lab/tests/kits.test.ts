@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { GROUND_GROUP } from '../src/logic/ground'
 import { SCRAP, kitsFor, meterAt, type Kit } from '../src/logic/kits'
 import type { Session } from '../src/logic/sessions'
 
@@ -161,4 +162,85 @@ test('the meter sums shop hours and counts sessions left in the group', () => {
   assert.equal(done.nextBuy, null)
   assert.equal(done.spentUnpriced, 0)
   assert.equal(done.calendarHours, 1)
+})
+
+test('skipping ground school leaves spent and hours done at the start; playing the lessons counts them', () => {
+  // Practice kit is 25 plus one unpriced line. The two build kits are 10 and 12.5.
+  const kits = kitsFor(
+    [GROUND_GROUP, 'sides', 'nose'],
+    {
+      [GROUND_GROUP]: [
+        { item: 'bid', qty: 2 },
+        { item: 'peel', qty: 1 },
+      ],
+      sides: [{ item: 'carbon', qty: 2 }],
+      nose: [{ item: 'bid', qty: 1 }],
+    },
+    catalog,
+  )
+  const sessions = [
+    session({ index: 0, group: GROUND_GROUP, hours: 2, cureAfter: { hours: 3, scope: 'part' } }),
+    session({ index: 1, group: GROUND_GROUP, hours: 2 }),
+    session({ index: 2, group: 'sides', hours: 2 }),
+    session({ index: 3, group: 'nose', hours: 2 }),
+  ]
+  const atStart = meterAt(sessions, kits, 0)
+  assert.equal(atStart.spent, null)
+  assert.equal(atStart.hoursDone, 0)
+  assert.equal(atStart.remaining, 47.5)
+  assert.equal(atStart.hoursTotal, 8)
+  assert.equal(atStart.totalSessions, 4)
+
+  // Start, then watch through to the first build step. Today's reading: the lessons are done.
+  const played = meterAt(sessions, kits, 2)
+  assert.equal(played.spent, 25)
+  assert.equal(played.spentUnpriced, 1)
+  assert.equal(played.hoursDone, 4)
+  assert.equal(played.remaining, 22.5)
+  assert.equal(played.calendarHours, 7)
+  assert.equal(played.hoursTotal, atStart.hoursTotal)
+  assert.equal(played.totalSessions, atStart.totalSessions)
+
+  // Skip lands on that same step. The lessons were not bought or spent. The practice kit stays
+  // in the remaining estimate. Plan totals do not move.
+  const skipped = meterAt(sessions, kits, 2, {}, { groundSkipped: true })
+  assert.equal(skipped.spent, atStart.spent)
+  assert.equal(skipped.spentUnpriced, 0)
+  assert.equal(skipped.hoursDone, atStart.hoursDone)
+  assert.equal(skipped.remaining, atStart.remaining)
+  assert.equal(skipped.remainingUnpriced, atStart.remainingUnpriced)
+  assert.equal(skipped.calendarHours, atStart.calendarHours)
+  assert.equal(skipped.hoursTotal, atStart.hoursTotal)
+  assert.equal(skipped.totalSessions, atStart.totalSessions)
+  assert.deepEqual(skipped.nextBuy, { group: 'sides', amount: 10, unpriced: 0 })
+
+  // Later build steps still count. The skipped practice kit does not.
+  const further = meterAt(sessions, kits, 3, {}, { groundSkipped: true })
+  assert.equal(further.spent, 10)
+  assert.equal(further.spentUnpriced, 0)
+  assert.equal(further.hoursDone, 2)
+  assert.equal(further.remaining, 37.5)
+  assert.equal(further.remainingUnpriced, 1)
+  assert.equal(further.calendarHours, 2)
+  assert.equal(further.hoursTotal, atStart.hoursTotal)
+  assert.equal(further.totalSessions, atStart.totalSessions)
+
+  const playedFurther = meterAt(sessions, kits, 3)
+  assert.equal(playedFurther.spent, 35)
+  assert.equal(playedFurther.hoursDone, 6)
+  assert.equal(playedFurther.remaining, 12.5)
+  assert.equal(playedFurther.calendarHours, 9)
+})
+
+test('a skipped ground lesson with placeholder hours does not make elapsed time unknown', () => {
+  const sessions = [
+    session({ index: 0, group: GROUND_GROUP, hours: 1, hoursKnown: false }),
+    session({ index: 1, group: 'sides', hours: 2 }),
+  ]
+  const skipped = meterAt(sessions, [], 1, {}, { groundSkipped: true })
+  assert.equal(skipped.hoursDone, 0)
+  assert.equal(skipped.calendarHours, 0)
+  const played = meterAt(sessions, [], 1)
+  assert.equal(played.hoursDone, 1)
+  assert.equal(played.calendarHours, null)
 })

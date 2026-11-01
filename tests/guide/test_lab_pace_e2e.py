@@ -24,7 +24,7 @@ def test_pace_scales_shop_hours_and_survives_reload(rsite):
     s, url = lab.serve(rsite)
     try:
         with lab.sync_playwright() as p:
-            b, pg, errors = lab._player(p, url)
+            b, pg, errors = lab._player(p, url, ground_seen=True)
             assert pg.input_value("#pace-choice") == "logged"
             assert "pace-scaled" not in pg.inner_text("#meter")
             assert "pace-scaled" not in pg.inner_text("#bench")

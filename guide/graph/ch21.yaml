@@ -15,7 +15,7 @@
   title: Cut the ribs, baffles and skin cores
   summary: From 0.35 in PV foam cut ribs R23 and R45 (drawn full size on A14, which this guide does not hold), the baffles B23 (21.3 by 7.3 in), DB (28.5 in) and BAB (13.4 in), the leading-edge strips TLE (33.5 in) and BLE (25.5 in), the outboard diagonal OD, and four skin cores from six 32 by 48 in sheets. The plans size each tank at 25.5 gal, the Owner's Manual says 28 gal each and 52 gal in all, and the model carries 26 gal a side with both figures shown. Keep R45 where it is; moving it outboard shifts the CG aft.
   variants: [both]
-  requires: [c03.layup-skills, f14.bond-spar]
+  requires: [g00.bookend, f14.bond-spar]
   components: [strake.ribs, strake.baffles, strake.leading_edge, strake.skins]
   geometry_visible: true
   sources:

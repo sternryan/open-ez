@@ -63,7 +63,7 @@ def test_nine_ops_valid_and_no_unknown_ids(g):
         assert all(
             135 <= s.scan_pp <= 140 for s in op.sources if s.doc == "scan-1980"
         ), i
-        assert "c03.layup-skills" in needs(g, i) | {i}, i
+        assert "g00.bookend" in needs(g, i) | {i}, i
 
 
 def test_order_and_the_rudder_stub_is_replaced(g):
@@ -137,7 +137,10 @@ def test_book_order_the_wing_waiters_follow_their_chapter(g):
     the winglet are walked right after the chapter they wait on."""
     order = topo_order(g)
     pos = {i: k for k, i in enumerate(order)}
-    ch = lambda n: [i for i in order if g.ops[i].chapter == n]
+
+    def ch(n):
+        return [i for i in order if g.ops[i].chapter == n]
+
     assert max(pos[i] for i in ch(18)) < pos["f19.jig"]
     assert max(pos[i] for i in ch(17)) < pos["f19.jig"]
     assert pos["f19.attach"] < pos["f16.aileron-linkage"] < pos["f20.cut-cores"]

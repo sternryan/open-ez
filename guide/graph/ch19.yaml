@@ -13,7 +13,7 @@
   title: Set up the five wing jigs
   summary: Stand five plywood jigs on a straight floor line, leading edge up, with the 17.4 water line level across them. The jigs sit 31.7, 51.7 and 88.4 in from the first one, 125.6 in end to end, and their outlines come from templates this guide does not hold.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [wing.jigs]
   geometry_visible: true
   sources:

@@ -20,7 +20,7 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
-import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, holdTier, nextRes, initialRes, holdRes, type ResState, type Tier, type StepState } from './quality'
+import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, holdTier, nextRes, initialRes, holdRes, emptyFrames, pushFrameWindow, frameStats, formatHud, noteTransition, FRAME_CAP_MS, type ResState, type Tier, type StepState, type HudSnapshot, type HudTransition } from './quality'
 import { Director, chapterTour, tourChapter, canard12Film, CHAPTER, TOUR_BUILD_RATE } from './director'
 import { viewOffset } from './fuseShots'
 import { lowerLift, lowerProgress, LOWER_HEIGHT, LOWER_HOLD, LOWER_SECONDS, LOWER_LABEL } from './logic/lower'
@@ -39,6 +39,7 @@ import { STATION, fsToX } from './scene/fuselageStation'
 import { Player, type Speed } from './player'
 import { setupNarrow, type Narrow } from './ui/narrow'
 import { buildSequence, noteFor, toPlanSteps } from './logic/sequence'
+import { DEFAULT_SPEED, choiceForOffer, clearGroundSkipped, firstBuildStep, firstGroundStep, isGroundGroup, loadGroundSeen, loadGroundSkipped, saveGroundSeen, saveGroundSkipped, showsShopControls, speedFor, type SpeedChoice } from './logic/ground'
 import { packSessions, type Session } from './logic/sessions'
 import { kitsFor, meterAt, type Kit, type Meter } from './logic/kits'
 import { applyActuals, loadActuals, saveActuals, type Actual } from './logic/actuals'
@@ -87,6 +88,8 @@ interface LabHook {
   /** WebGL context loss (?test=1): whether it is lost now; loseContext/restoreContext drive it through WEBGL_lose_context (false when the browser has no such extension) */
   contextLost(): boolean; loseContext(): boolean; restoreContext(): boolean
   tier(): Tier; setTier(t: Tier): void; auto(): boolean; setAuto(on: boolean): void; feedFrame(ms: number): void
+  /** the same numbers the ?hud=1 panel shows, plus the panel text */
+  quality(): HudSnapshot & { text: string }
   ready: boolean; meshNames(): string[]; stats(): { calls: number; triangles: number; pixels: number }; advance(seconds: number): void
   /** the tour (the film) is running; the tourSteps index it is on */
   touring(): boolean; tourIndex(): number
@@ -210,6 +213,7 @@ const hook: LabHook = {
   plyBox: () => null, setSection: () => {}, labels: () => [], labelsAll: () => [], cutGlow: () => 0, toWorld: (p) => p, setCamera: () => {},
   contextLost: () => false, loseContext: () => false, restoreContext: () => false,
   resScale: () => 1, tier: () => 'high', setTier: () => {}, auto: () => false, setAuto: () => {}, feedFrame: () => {},
+  quality: () => ({ tier: 'high', auto: false, resScale: 1, pixelRatio: 1, devicePixelRatio: 1, medianMs: 0, p75Ms: 0, tierSteps: 0, resSteps: 0, lastTierAtMs: null, lastResAtMs: null, step: '', log: [], text: '' }),
   paths: () => [], project: () => [0, 0], state: () => ({}), phase: () => null, lay: () => 0, setLay: () => {}, play: () => false, playing: () => false, ghost: () => {}, freeze: () => {},
   subject: () => 'canard', setSubject: () => {}, placement: () => ({}), jigPose: () => 'upright', fuseShots: () => ({}), cg: () => ({ value: 'not yet computed', sub: null }), fuseToWorld: (p) => p,
   fuseRestToWorld: (p) => p, fuseTurning: () => false, fuseFloor: () => null, gearMarks: () => null, ground: () => null, ref: () => null,
@@ -332,6 +336,46 @@ async function boot() {
   const resAdapt = !REC && params.get('freeze') !== '1'
   let autoOn = !forcedTier && !REC && params.get('freeze') !== '1'
   CHEAP.on = TIERS[tier].cheapShaders // set before any material exists
+  // ?hud=1: a small readout of the tier, the resolution and the recent frame times. Absent without the flag.
+  // The test hook (window.__lab.quality) always carries the same numbers once the page is up.
+  const HUD = params.get('hud') === '1'
+  const watchFrames = HUD || TEST
+  let pixelRatio = 1
+  let hudStep = ''
+  let frameWindow = emptyFrames()
+  let tierSteps = 0
+  let resSteps = 0
+  let lastTierAtMs: number | null = null
+  let lastResAtMs: number | null = null
+  let hudLog: HudTransition[] = []
+  let hudText = ''
+  const hudT0 = performance.now()
+  const hudEl = HUD ? document.createElement('div') : null
+  if (hudEl) {
+    hudEl.id = 'lab-hud'
+    hudEl.className = 'card'
+    hudEl.setAttribute('aria-label', 'Quality readout')
+    document.body.appendChild(hudEl)
+  }
+  const hudSnapshot = (): HudSnapshot => {
+    const stats = frameStats(frameWindow)
+    return {
+      tier, auto: autoOn, resScale: res.scale, pixelRatio, devicePixelRatio: window.devicePixelRatio || 1,
+      medianMs: stats.medianMs, p75Ms: stats.p75Ms, tierSteps, resSteps, lastTierAtMs, lastResAtMs, step: hudStep, log: hudLog,
+    }
+  }
+  const paintHud = () => {
+    if (!hudEl) return
+    const text = formatHud(hudSnapshot())
+    if (text !== hudText) { hudText = text; hudEl.textContent = text }
+  }
+  const recordChange = (kind: 'tier' | 'res', from: string, to: string) => {
+    const atMs = performance.now() - hudT0
+    if (kind === 'tier') { tierSteps += 1; lastTierAtMs = atMs } else { resSteps += 1; lastResAtMs = atMs }
+    hudLog = noteTransition(hudLog, { atMs, kind, from, to, step: hudStep })
+    console.info(`lab quality ${kind} ${from} -> ${to} @ ${hudStep || '-'}`)
+    paintHud()
+  }
 
   const scene = new THREE.Scene()
   scene.background = null // a colour background would force-clear on every render() call
@@ -385,6 +429,7 @@ async function boot() {
   const resize = () => {
     const W = window.innerWidth, H = window.innerHeight
     const dpr = Math.max(0.1, tierPixelRatio(TIERS[tier], window.devicePixelRatio, W, H) * Math.sqrt(res.scale))
+    pixelRatio = dpr
     renderer.setPixelRatio(dpr)
     renderer.setSize(W, H, false)
     camera.aspect = W / H
@@ -402,6 +447,7 @@ async function boot() {
       if (rig.outsideScale !== null) rig.outsideScale *= free.pull
     } else if (camera.view?.enabled) camera.clearViewOffset()
     if (rig.lastUser < 0 && !rig.flying && currentShot) rig.set(currentShot) // the user has not touched the camera: keep the framing
+    paintHud()
   }
   let currentShot: string | null = null
   /** player mode: the free part of the screen (centre, and how much further back shots stand); null on the legacy page */
@@ -471,8 +517,12 @@ async function boot() {
   let onTier: () => void = () => {}
   const applyTier = (t: Tier) => {
     if (t === tier) return
+    const fromTier = tier
+    const fromScale = res.scale
     tier = t
     res = initialRes(1500)
+    recordChange('tier', fromTier, t)
+    if (fromScale !== res.scale) recordChange('res', fromScale.toFixed(2), res.scale.toFixed(2))
     const spec = TIERS[t]
     tierPipeline()
     key.shadow.mapSize.set(Math.max(1, spec.shadowMap), Math.max(1, spec.shadowMap))
@@ -487,21 +537,24 @@ async function boot() {
     resize()
     onTier()
   }
-  const setAuto = (on: boolean) => { autoOn = on; stepState = initialStep(tier); onTier() }
+  const setAuto = (on: boolean) => { autoOn = on; stepState = initialStep(tier); onTier(); paintHud() }
   const feedRes = (ms: number) => {
     if (tier !== 'low' || !resAdapt) return
     const n = nextRes(res, ms)
     const changed = n.scale !== res.scale
+    const prev = res.scale
     res = n
-    if (changed) resize()
+    if (changed) { recordChange('res', prev.toFixed(2), n.scale.toFixed(2)); resize() }
   }
   const feed = (ms: number) => {
+    if (watchFrames) frameWindow = pushFrameWindow(frameWindow, Math.min(Math.max(ms, 0), FRAME_CAP_MS))
     feedRes(ms)
-    if (!autoOn) return
+    if (!autoOn) { paintHud(); return }
     const n = nextTier(stepState, ms)
-    const drop = n.tier !== stepState.tier
+    const moved = n.tier !== stepState.tier
     stepState = n
-    if (drop) applyTier(n.tier)
+    if (moved) applyTier(n.tier) // a drop or a step back up: both rebuild the tier
+    else paintHud()
   }
   // a step or scene change (select) is a hitch: those frames must not ratchet the tier or the resolution down
   const noteChange = () => { res = holdRes(res); stepState = holdTier(stepState) }
@@ -570,6 +623,7 @@ async function boot() {
   hook.auto = () => autoOn
   hook.setAuto = setAuto
   hook.feedFrame = feed
+  hook.quality = () => { const s = hudSnapshot(); return { ...s, text: formatHud(s) } }
   hook.stats = () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, pixels: pipeline.w * pipeline.h })
 
   // ---- data + model ----
@@ -852,6 +906,9 @@ async function boot() {
     let selected: string | null = null
     // what the lab is building. The canard is the default; the choice is remembered like the other view settings (guarded storage).
     let subject: Subject = 'canard'
+    // The rehearsal keeps the fuselage subject so the airplane stays where the build left it, and also
+    // draws the canard on its bench during the canard group (the canard subject would hide that airplane).
+    let rehearsal = false
     const lastSel: Record<Subject, string | null | undefined> = { canard: undefined, fuselage: undefined }
     let bayStale = true // the canard subject shows the finished box; repaint it only when something it depends on changed
     // ---- build state: recomputed from scratch with visibleSet on every change (op, lay, variant, ghost), never patched ----
@@ -882,8 +939,15 @@ async function boot() {
     const SKIN_OP = 'r30.elev-skin-bottom'
     /** The elevators are shown on chapter 11's ops only: the chapter 30 ops that follow them in the book (pins, alignment) keep the canard alone, as before. */
     const elevHidden = () => chapterOf(selected) !== 11
+    const groupOfOp = (id: string | null) => (id ? graph.ops.find((o) => o.id === id)?.group : undefined)
+    /** Canard-group steps in the rehearsal: the bench canard, on top of the fuselage the build has already drawn. */
+    const benchCanard = () => rehearsal && subject === 'fuselage' && groupOfOp(selected) === 'canard'
+    const canardLive = () => subject === 'canard' || benchCanard()
+    /** The canard leaves the bench at this step and stands on the airplane from here on. */
+    const CANARD_ON_AIRPLANE = 'r30.install-pins'
+    const canardInstalled = (id: string | null) => orderIdx(id) >= 0 && orderIdx(CANARD_ON_AIRPLANE) >= 0 && orderIdx(id) >= orderIdx(CANARD_ON_AIRPLANE)
     type ElevMode = 'travel' | 'hang' | 'apart' | 'none'
-    const elevMode = (): ElevMode => (subject !== 'canard' || !selected ? 'none' : TRAVEL_SET.has(selected) ? 'travel' : selected === HANG_OP ? 'hang' : APART_OPS.has(selected) ? 'apart' : 'none')
+    const elevMode = (): ElevMode => (!canardLive() || !selected ? 'none' : TRAVEL_SET.has(selected) ? 'travel' : selected === HANG_OP ? 'hang' : APART_OPS.has(selected) ? 'apart' : 'none')
     const hingeXZ: [number, number] = ELEV?.hinge_xz ?? [0, 0]
     const hangPitch = ELEV ? hangPitchDeg(ELEV.hang_cg.dx, ELEV.hang_cg.dz) : 0
     const hangNose = ELEV ? hangsNoseDown(ELEV.hang_cg.dx, ELEV.hang_cg.dz) : false
@@ -898,6 +962,8 @@ async function boot() {
       for (const m of elevMeshes) {
         const core = m.node!.endsWith('~core')
         if (core ? skinned : m.cid === 'elevator.right' && !skinned) m.mesh.visible = false
+        // the hang draws the leading-edge weights: their own op is later, so build state still says hidden
+        if (mode === 'hang' && m.cid === 'elevator.balance_weight' && !hide.some((h) => (m.node ?? m.cid).startsWith(h))) m.mesh.visible = true
         // the hinge plates stay on the canard until the elevator hangs from them
         const turn = m.cid !== 'elevator.hinges' || mode === 'hang'
         eM.makeTranslation(elevDx, 0, 0)
@@ -905,9 +971,9 @@ async function boot() {
         m.mesh.matrix.copy(eM)
         m.mesh.matrixWorldNeedsUpdate = true
       }
-      jigs.visible = subject === 'canard' && (mode === 'apart' || mode === 'hang') && ['built', 'current'].includes(bstate.get('elevator.tube.right') ?? '')
+      jigs.visible = canardLive() && (mode === 'apart' || mode === 'hang') && ['built', 'current'].includes(bstate.get('elevator.tube.right') ?? '')
       jigs.position.x = mode === 'hang' ? elevDx : APART_IN
-      const open = !!COVE && subject === 'canard' && elevMeshes.some((m) => (bstate.get(m.node!) ?? 'hidden') !== 'hidden') // by build state: ?hide= (a debugging aid) must not close it
+      const open = !!COVE && canardLive() && elevMeshes.some((m) => (bstate.get(m.node!) ?? 'hidden') !== 'hidden') // by build state: ?hide= (a debugging aid) must not close it
       if (open !== coveOpen) { coveOpen = open; cut.setCove(open ? COVE : null); pipeline.shadowDirty = true }
       root.updateMatrixWorld(true)
     }
@@ -920,7 +986,7 @@ async function boot() {
     }
     /** the motion readout for what is selected now */
     const kinNow = (): { label: string; value: string; sub: string } | null => {
-      if (subject === 'canard' && ELEV) {
+      if (canardLive() && ELEV) {
         const mode = elevMode()
         if (mode === 'travel') return { label: 'Elevator travel', value: travelText(elevDeg, ELEV.travel), sub: 'Roncz limits: 30 down, 15 up (12.5 is the absolute floor)' }
         if (mode === 'hang') return { label: 'Elevator hang', value: hangText(hangPitch, hangNose, opT > hangDuration()), sub: `Hung on its hinge line; ${ELEV.hang_cg.note}` }
@@ -994,7 +1060,7 @@ async function boot() {
     }
     stepKin = (dt) => {
       opT += dt
-      if (subject === 'canard' && ELEV) {
+      if (canardLive() && ELEV) {
         const mode = elevMode(), k = 1 - Math.exp(-dt * 3.5)
         let dx = elevDx, deg = elevDeg
         if (mode === 'travel') { deg = travelAngle(opT, ELEV.travel); dx += (0 - dx) * k }
@@ -1034,7 +1100,13 @@ async function boot() {
       bstate = selected && opIdx.has(selected)
         ? visibleSet(graph, variant, selected, lay, mine)
         : new Map<string, BuildState>(mine.map((i) => [i.name, 'built']))
-      if (subject === 'canard' && elevHidden()) for (const m of elevMeshes) bstate.set(m.node!, 'hidden')
+      // The rehearsal stays on the fuselage subject. During the canard group the bench canard is drawn too,
+      // from the same build state the canard subject uses, so a part stays on the bench after the step that makes it.
+      if (benchCanard()) {
+        const cstate = visibleSet(graph, variant, selected!, lay, infos)
+        for (const [name, st] of cstate) bstate.set(name, st)
+      }
+      if (canardLive() && elevHidden()) for (const m of elevMeshes) bstate.set(m.node!, 'hidden')
     }
     const paint = () => {
       const cur = selected ? opIdx.get(selected) : undefined, count = opCount(selected)
@@ -1051,10 +1123,14 @@ async function boot() {
         sig += m.mesh.visible && m.mesh.castShadow ? '1' : '0'
       }
       applyElev() // after the build state set each mesh's visibility: the body as cores or skinned, the jigs
+      // The canard subject owns the root. On the fuselage subject the root is on only while a bench part is drawn.
+      if (subject !== 'canard') canardRoot.visible = merged.some((m) => m.mesh.visible)
       // the fuselage: its own build state in its subject; the finished box on its jig while the canard is the subject
       if (bay && (subject === 'fuselage' || bayStale)) {
         bayFsig = subject === 'fuselage' ? bay.paint(bstate, selected, lay, layT, ghost, opIdx) : bay.paint(null, null, lay, layT, ghost, opIdx, canardBackdrop)
         bayStale = false
+        // Once the install step has passed, the canard stays on the airplane whenever the airplane itself is drawn.
+        if (rehearsal && canardInstalled(selected) && bay.meshes.some((m) => m.jig.visible && m.cid.startsWith('fuselage.'))) bay.installed.visible = true
       }
       if (bay && hide.length) for (const m of bay.installedMeshes()) m.visible = !hide.some((h) => m.name.startsWith(h)) // ?hide= reaches the installed canard's meshes too
       if (bay && hide.length) for (const m of bay.meshes) if (hide.some((h) => m.name.startsWith(h))) m.jig.visible = m.table.visible = false // and the fuselage's own meshes (chapters 14-17's pixel checks)
@@ -1574,6 +1650,8 @@ async function boot() {
     const homeShot = () => (subject === 'canard' ? 'home' : selected === null && bay?.pose === 'on-gear' ? 'ffinal' : 'fhome')
     const select = (id: string | null, fly = true) => {
       noteChange()
+      hudStep = id ?? ''
+      paintHud()
       selected = id
       lastSel[subject] = id
       opT = 0 // the elevators' and the nose gear's motions run from here, in sim time
@@ -1587,7 +1665,7 @@ async function boot() {
       if (bay && subject === 'fuselage' && CTL) { bay.setSparSlide(slideNow()); bay.setStick(stickNow()); paint() } // the spar starts clear of the box on its fit op; the stick at the op's own start
       if (bay && subject === 'fuselage' && CANOPY) { bay.setCanopyLift(liftNow()); bay.setCanopyOpen(canopyNow()); paint() } // the canopy starts on the airplane at its cut op, closed at the hinge op
       if (bay && subject === 'fuselage' && WING) { bay.setAileron(aileronNow()); bay.setRudder(rudderNow()); paint() } // the aileron and rudder start neutral on their own ops
-      if (subject === 'canard') setPose(orientation(graph, variant, id), fly)
+      if (canardLive()) setPose(orientation(graph, variant, id), fly)
       goto(id && rig.shots[id] ? id : homeShot(), fly)
     }
     const subjectOps = () => (subject === 'canard' ? barOps(graph, variant) : fuseBarOps(graph, variant))
@@ -1897,6 +1975,8 @@ async function boot() {
     hook.meshBox = (name) => {
       const m = merged.find((x) => (x.node ?? x.cid) === name)
       const mesh = m ? m.mesh : bay?.shown(name) ?? null
+      // A hidden mesh, or one under a hidden parent, is not on screen. setFromObject would still return its box.
+      for (let o: THREE.Object3D | null = mesh; o; o = o.parent) if (!o.visible) return null
       if (!mesh) return null
       const bx = new THREE.Box3().setFromObject(mesh)
       return [bx.min.toArray(), bx.max.toArray()]
@@ -2006,6 +2086,7 @@ async function boot() {
     // click does. A beat whose part or ply is not drawn then frames the step's components, or the group's assembly, instead of
     // the op's close shot. A person's orbit takes the camera until the next step; playback carries on. ----
     if (playerOn && plan && bay) {
+      rehearsal = true // before the first step, so the bench canard is drawn from the opening frame
       const $ = (id: string) => document.getElementById(id) as HTMLElement
       for (const id of ['navlog', 'meter', 'stage']) $(id).hidden = false
       const seq = buildSequence(graph, plan.groups)
@@ -2025,6 +2106,11 @@ async function boot() {
       const plyPlans = new Map<string, PlyPlan>(order.map((id) => [id, plyPlan(opById.get(id)!.materials, drawnPlies(id))]))
       const targetOf = (a: Action | null | undefined) => (a?.ply ? plyPlans.get(player.step)?.targets[a.ply - 1] : undefined)
       const player = new Player(beatsByStep, order)
+      const groupOf = (id: string) => seq.find((g) => g.steps.some((s) => s.id === id))?.id ?? ''
+      // A speed-button click overrides the side the owner is on and then sticks for the rest of the
+      // session, so a play-through they sped up does not drop back to the other side's default.
+      let speedChoice: SpeedChoice = { ...DEFAULT_SPEED }
+      let speedManual = false
       const buys: Record<string, { item: string; qty: number; step?: string }[]> = {}
       for (const g of seq) buys[g.id] = g.steps.flatMap((o) => (o.plan?.buy ?? []).map((b) => ({ item: b.item, qty: b.qty, step: o.id })))
       const kits: Kit[] = kitsFor(seq.map((g) => g.id), buys, plan.catalog)
@@ -2037,7 +2123,11 @@ async function boot() {
       // Pace multiplies known estimates. Actuals are applied after, so a logged hour stays what happened.
       const repack = () => { sessions = packSessions(applyActuals(applyPace(planSteps, pace.m), actuals), plan.resins, env, sessionHours) }
       const curSession = () => Math.max(0, sessions.findIndex((s) => s.steps.includes(player.step)))
-      const meterNow = (): Meter | null => (sessions.length ? meterAt(sessions, kits, curSession(), actuals) : null)
+      // Skip is a view change. The flag stays with the browser so a reload still does not count those lessons.
+      let groundSkipped = loadGroundSkipped(storage)
+      const meterNow = (): Meter | null => (sessions.length ? meterAt(sessions, kits, curSession(), actuals, { groundSkipped }) : null)
+      // Filled in once the offer element exists. Play, next, previous and a nav choice answer it on the first move.
+      let noteOffer: (action: 'play' | 'select', stepId: string) => void = () => {}
       const navList = $('navlog-list'), meterEl = $('meter'), benchEl = $('bench'), captionEl = $('caption')
       const effTemp = () => env.tempC + HEAT_BOOST_C[env.heat]
       /** the cure wait after a step now, and why it is unknown when it is (never a guessed number) */
@@ -2063,7 +2153,7 @@ async function boot() {
         note.hidden = !unsourced
         note.textContent = unsourced ? 'The resin cure curve is unsourced, so cure waits show as unknown. Heat boosts are estimates.' : ''
       }
-      const onStep = (id: string) => { player.seekStep(id); applyStep(player.step, true) }
+      const onStep = (id: string) => { noteOffer('select', id); player.seekStep(id); applyStep(player.step, true) }
       const summaryEl = $('sheet-summary')
       const renderPlan = () => {
         const scaled = scaledEstimateIds(planSteps, actuals, pace.m)
@@ -2132,13 +2222,27 @@ async function boot() {
       let held: THREE.Object3D | null = null
       let standin: string | null = null
       const work = { center: new THREE.Vector3(), size: new THREE.Vector3(0.3, 0.1, 0.3), side: new THREE.Vector3(0, 0, 1) }
-      /** world box of a component as drawn now (the fuselage bay's meshes), or null */
+      /** world box of a component as drawn now (bay, bench canard, or the canard on the airplane), or null */
       const partBox = (cid: string): THREE.Box3 | null => {
+        const hit = (name: string) => name === cid || name.startsWith(cid + '.') || name.startsWith(cid + '~')
         const bx = new THREE.Box3()
         for (const m of bay.meshes) {
-          if (m.cid !== cid) continue
+          if (!hit(m.cid)) continue
           const mesh = bay.shown(m.name)
           if (mesh && mesh.visible) bx.union(new THREE.Box3().setFromObject(mesh))
+        }
+        if (canardRoot.visible) {
+          for (const m of merged) {
+            if (!m.mesh.visible || !hit(m.cid)) continue
+            bx.union(new THREE.Box3().setFromObject(m.mesh))
+          }
+        }
+        if (bay.installed.visible) {
+          for (const mesh of bay.installedMeshes()) {
+            if (!mesh.visible) continue
+            const bare = mesh.name.replace(/^installed:/, '').replace(/:left$/, '')
+            if (hit(bare)) bx.union(new THREE.Box3().setFromObject(mesh))
+          }
         }
         return bx.isEmpty() ? null : bx
       }
@@ -2147,21 +2251,26 @@ async function boot() {
         for (const c of opById.get(id)?.components ?? []) { const b = partBox(c); if (b) bx.union(b) }
         return bx.isEmpty() ? null : bx
       }
+      /** drawn parts of this step's group, or null when the group has nothing on screen */
+      const drawnGroup = (id: string): THREE.Box3 | null => {
+        const g = seq.find((x) => x.steps.some((s) => s.id === id))
+        const bx = new THREE.Box3()
+        for (const s of g?.steps ?? []) { const b = stepBox(s.id); if (b) bx.union(b) }
+        return bx.isEmpty() ? null : bx
+      }
       const aim = (part: string | undefined) => {
-        const bx = (part ? partBox(part) : null) ?? stepBox(player.step)
-        if (bx) { bx.getCenter(work.center); bx.getSize(work.size) } else { work.center.copy(controls.target); work.size.set(0.3, 0.1, 0.3) }
+        // The step's own part, else anything the group has already drawn, else the bench under the look point.
+        // The look point itself is in the air: copying its height is what left the hands hovering.
+        const bx = (part ? partBox(part) : null) ?? stepBox(player.step) ?? drawnGroup(player.step)
+        if (bx) { bx.getCenter(work.center); bx.getSize(work.size) }
+        else { work.center.copy(controls.target); work.center.y = TABLE_TOP_Y; work.size.set(0.3, 0.02, 0.3) }
         work.side.copy(camera.position).sub(work.center).setY(0)
         if (work.side.lengthSq() < 1e-6) work.side.set(0, 0, 1)
         work.side.normalize()
       }
       const toBox = (b: THREE.Box3): Box3Like => ({ min: [b.min.x, b.min.y, b.min.z], max: [b.max.x, b.max.y, b.max.z] })
       /** drawn parts of every step in this step's group; the station when the group has nothing on screen yet */
-      const groupBox = (id: string): THREE.Box3 => {
-        const g = seq.find((x) => x.steps.some((s) => s.id === id))
-        const bx = new THREE.Box3()
-        for (const s of g?.steps ?? []) { const b = stepBox(s.id); if (b) bx.union(b) }
-        return bx.isEmpty() ? bay.homeBox() : bx
-      }
+      const groupBox = (id: string): THREE.Box3 => drawnGroup(id) ?? bay.homeBox()
       /** the beat's ply is caption-only, or its part has no mesh in view */
       const undrawn = (a: Action | null | undefined): boolean => {
         if (!a) return false
@@ -2184,7 +2293,12 @@ async function boot() {
         if (!same) goto('playerCaption', fly)
       }
       const label = (cid: string | undefined) => (cid ? graph.components[cid]?.label ?? cid : '')
-      const captionOf = (b: Beat | null) => (!b ? '' : (b.action?.part && b.caption.includes(b.action.part) ? b.caption.replace(b.action.part, label(b.action.part)) : b.caption) + plyNote(targetOf(b.action)))
+      const captionOf = (b: Beat | null): string => {
+        if (!b) return ''
+        const base = (b.action?.part && b.caption.includes(b.action.part) ? b.caption.replace(b.action.part, label(b.action.part)) : b.caption) + plyNote(targetOf(b.action))
+        // why rides on the action; the player shows it only during ground school
+        return isGroundGroup(groupOf(player.step)) && b.why ? `${base} — ${b.why}` : base
+      }
       let beatNow: Beat | null = null, kNow = 0
       const applyBeat = (b: Beat | null, fly = true) => {
         beatNow = b
@@ -2207,6 +2321,10 @@ async function boot() {
         buddy.visible = opById.get(player.step)?.plan?.people === 2 || a?.who === 'buddy'
       }
       const applyStep = (id: string, fly: boolean) => {
+        if (!speedManual) player.setSpeed(speedFor(groupOf(id), speedChoice))
+        const envRoot = $('environment')
+        if (showsShopControls(id)) envRoot.dataset.lesson = 'shop-setup'
+        else delete envRoot.dataset.lesson
         directedSince = performance.now() // the new step takes the camera back; an orbit during the last step does not carry over
         flyDur = player.playing ? Math.max(0.3, 1.8 / player.speed) : 1.8
         select(id, fly)
@@ -2220,6 +2338,7 @@ async function boot() {
         flyDur = stepDur // a caption-only beat replaces the op shot, so it keeps the step-change duration
         applyBeat(player.tick(0).beat, fly)
         flyDur = 1.8
+        syncTransport()
       }
       const playBtn = $('tp-play')
       const syncTransport = () => {
@@ -2229,14 +2348,26 @@ async function boot() {
       }
       playBtn.addEventListener('click', () => {
         if (player.playing) player.pause()
-        else { const was = player.step; player.play(); if (player.step !== was) applyStep(player.step, true) }
+        else {
+          noteOffer('play', player.step) // the step on screen now, before play moves on
+          const was = player.step
+          player.play()
+          if (player.step !== was) applyStep(player.step, true)
+        }
         syncTransport()
       })
-      $('tp-prev').addEventListener('click', () => { player.prev(); applyStep(player.step, true) })
-      $('tp-next').addEventListener('click', () => { player.next(); applyStep(player.step, true) })
+      $('tp-prev').addEventListener('click', () => { player.prev(); noteOffer('select', player.step); applyStep(player.step, true) })
+      $('tp-next').addEventListener('click', () => { player.next(); noteOffer('select', player.step); applyStep(player.step, true) })
       $('tp-speed').addEventListener('click', (e) => {
         const b = (e.target as HTMLElement).closest('button[data-speed]') as HTMLElement | null
-        if (b) { player.setSpeed(Number(b.dataset.speed) as Speed); syncTransport() }
+        if (!b) return
+        const x = Number(b.dataset.speed) as Speed
+        if (x !== 1 && x !== 4 && x !== 16) return
+        const side = isGroundGroup(groupOf(player.step)) ? 'ground' : 'build'
+        speedChoice = { ...speedChoice, [side]: x }
+        speedManual = true
+        player.setSpeed(x)
+        syncTransport()
       })
       // top and side snaps: framed on the step's parts, inside the room (a closer eye widens the lens instead of leaving the room)
       const snapTo = (kind: 'top' | 'side') => {
@@ -2269,7 +2400,7 @@ async function boot() {
         tourRate = player.playing ? player.speed : 1 // the plies unroll and wet out at the player's speed
         const wasPlaying = player.playing
         const r = player.tick(dt)
-        if (r.changed) applyStep(r.step, true)
+        if (r.changed) { noteOffer('select', r.step); applyStep(r.step, true) }
         else if (r.beat !== beatNow) applyBeat(r.beat)
         kNow = r.k
         const a = beatNow?.action ?? null
@@ -2282,6 +2413,34 @@ async function boot() {
       repack()
       renderWarn()
       syncTransport()
+      const offer = $('ground-offer')
+      const seen = loadGroundSeen(storage)
+      const groundFirst = firstGroundStep(planSteps)
+      const buildFirst = firstBuildStep(planSteps)
+      const dismissOffer = () => { offer.hidden = true; saveGroundSeen(storage) }
+      noteOffer = (action, stepId) => {
+        if (offer.hidden) return
+        const choice = choiceForOffer(action, isGroundGroup(groupOf(stepId)))
+        dismissOffer()
+        if (choice === 'start') { clearGroundSkipped(storage); groundSkipped = false }
+        else { saveGroundSkipped(storage); groundSkipped = true }
+        renderPlan()
+      }
+      offer.hidden = seen
+      $('ground-start').addEventListener('click', () => {
+        dismissOffer()
+        clearGroundSkipped(storage)
+        groundSkipped = false
+        speedManual = false
+        if (groundFirst) { player.seekStep(groundFirst); applyStep(player.step, true) }
+      })
+      $('ground-skip').addEventListener('click', () => {
+        dismissOffer()
+        saveGroundSkipped(storage)
+        groundSkipped = true
+        speedManual = false
+        if (buildFirst) { player.seekStep(buildFirst); applyStep(player.step, true) }
+      })
       // narrow or portrait screens: the bottom sheet and the gear (src/ui/narrow.ts); a layout switch re-frames the view
       const narrow: Narrow = setupNarrow(() => resize())
       let sheetTop = window.innerHeight // the collapsed sheet's top: the open sheet is a list to read, so the framing does not chase it
@@ -2301,7 +2460,10 @@ async function boot() {
       }
       new ResizeObserver(() => resize()).observe($('stage'))
       resize()
-      const start = order.includes(want ?? '') ? want! : order[0]
+      const requested = order.includes(want ?? '') ? want! : null
+      // First launch sits on the first lesson under the offer. Once the offer is answered, the
+      // build is the view, and the ground group stays pinned in the nav for replay.
+      const start = requested ?? (seen ? buildFirst : groundFirst) ?? order[0]
       if (start) { player.seekStep(start); applyStep(player.step, false) } // the start step's shot, framed for the free view
       hook.navlog = () => ({ current: player.step, sessions: sessions.length })
       hook.meter = meterNow

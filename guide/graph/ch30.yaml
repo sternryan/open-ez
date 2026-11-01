@@ -10,7 +10,7 @@
   title: Templates and Roncz foam cores
   summary: Prepare the Roncz hot-wire templates and cut the inboard, outboard and elevator foam cores, then make the dowels that will locate the cores later.
   variants: [roncz]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [canard.core]
   geometry_visible: true
   sources:
@@ -258,7 +258,7 @@
   title: Install NC-2 inserts
   summary: Press five inserts into torque-tube pockets. Drill, grease, rivet, and seal. Deepen the slots.
   variants: [roncz]
-  requires: [c03.layup-skills, r30.top-skin]
+  requires: [g00.bookend, r30.top-skin]
   components: [elevator.tube]
   geometry_visible: false
   sources:

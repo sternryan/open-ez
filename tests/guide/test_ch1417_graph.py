@@ -122,7 +122,7 @@ def test_every_op_is_complete_and_requires_resolve(g):
             and 2 <= len(op.completion) <= 6
         ), i
         assert all(r in g.ops for r in op.requires), i
-        assert "c03.layup-skills" in needs(g, i), i
+        assert "g00.bookend" in needs(g, i), i
         assert all(s.doc in ("scan-1980", "cobelu") for s in op.sources), i
         assert all(
             84 <= s.scan_pp <= 107 or (i == "f14.sh1-tabs" and s.scan_pp == 48)

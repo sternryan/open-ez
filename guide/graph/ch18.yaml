@@ -14,7 +14,7 @@
   title: Trim the plexiglass
   summary: Cut the bubble to the trim lines, 68 in long, with half an inch off each side and three quarters round the nose. File and polish the edges, then spray on a peel coat.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [canopy.plexi]
   geometry_visible: true
   sources:

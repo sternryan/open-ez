@@ -18,7 +18,7 @@
   title: Front seat bulkhead, front face
   summary: Cut the front seat bulkhead blank from the thick blue foam, taper one end, and cover its front face and that tapered end with two crossed unidirectional plies.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [fuselage.front_seat_bkhd]
   geometry_visible: true
   materials:
@@ -75,7 +75,7 @@
   title: Rear seat bulkhead foam and glass
   summary: Cut the rear seat bulkhead from the thick blue foam as a wedge-ended piece about 20.6 wide at the bottom, 18.7 wide at the top and 16.1 long. Taper top and bottom, slope both sides, and put two crossed unidirectional plies on one face.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [fuselage.rear_seat_bkhd]
   geometry_visible: true
   materials:
@@ -132,7 +132,7 @@
   title: "Instrument panel, F22 and F28: aft faces"
   summary: Cut the panel, F22 and F28 from the thin red foam using the full-size templates, then glass their aft faces. A foam doubler is pressed in wet and covered, with an extra ply above the leg cutouts.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [fuselage.panel, fuselage.f22, fuselage.f28]
   geometry_visible: true
   materials:
@@ -197,7 +197,7 @@
   title: "Firewall: plywood and aft glass"
   summary: Cut the firewall from quarter-inch birch plywood, put one BID ply on its aft face and drill the six pulley holes. The rest of the firewall build-up is fitted in chapter 15.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [fuselage.firewall]
   geometry_visible: true
   materials:

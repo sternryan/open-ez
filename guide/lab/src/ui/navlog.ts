@@ -1,6 +1,7 @@
 // The nav log (the session cards of the current build group, with cure and buy markers between them) and the top meter.
 // Direct DOM rendering from the planning logic; no three.js. Unknown values render as "—", never as a guessed number.
 import type { SeqGroup } from '../logic/sequence'
+import { GROUND_GROUP } from '../logic/ground'
 import type { Session } from '../logic/sessions'
 import type { Kit, Meter } from '../logic/kits'
 import { SCRAP } from '../logic/kits'
@@ -108,7 +109,7 @@ export function renderNavlog(root: HTMLElement, seq: SeqGroup[], sessions: Sessi
     for (const g of seq) {
       const mine = sessions.filter((s) => s.group === g.id)
       const open = g.id === openId
-      const sec = el('section', 'group' + (g.id === curGroup ? ' current' : '') + (open ? '' : ' collapsed'))
+      const sec = el('section', 'group' + (g.id === curGroup ? ' current' : '') + (open ? '' : ' collapsed') + (g.id === GROUND_GROUP ? ' pinned' : ''))
       sec.dataset.group = g.id
       const head = el('button', 'group-label')
       head.type = 'button'

@@ -2,6 +2,7 @@
 // A step with no buys is still a member of its group: its receipt is counted once and nothing is subtracted.
 
 import type { Actual } from './actuals'
+import { isGroundGroup } from './ground'
 import type { Session } from './sessions'
 
 export interface Kit {
@@ -137,9 +138,19 @@ function priceKit(kit: Kit, actuals: Record<string, Actual>, memberSteps: readon
   return { amount: receipts + estimated + estimated * SCRAP, unpriced }
 }
 
-export function meterAt(sessions: Session[], kits: Kit[], currentSession: number, actuals: Record<string, Actual> = {}): Meter {
+export function meterAt(
+  sessions: Session[],
+  kits: Kit[],
+  currentSession: number,
+  actuals: Record<string, Actual> = {},
+  view: { groundSkipped?: boolean } = {},
+): Meter {
   const currentGroup = sessions[currentSession].group
   const currentKitIndex = kits.findIndex((k) => k.group === currentGroup)
+  // Skip changes the step on screen. Ground lessons behind that step were not bought or spent,
+  // and their kit stays in the remaining estimate. A real start still counts them.
+  const skipGround = view.groundSkipped === true
+  const doneGroup = (group: string) => !(skipGround && isGroundGroup(group))
 
   let spent: number | null = null
   let spentUnpriced = 0
@@ -147,9 +158,10 @@ export function meterAt(sessions: Session[], kits: Kit[], currentSession: number
   const priced = (kit: Kit) => priceKit(kit, actuals, stepsInGroup(sessions, kit.group))
 
   if (currentKitIndex > 0) {
-    spent = 0
     for (let i = 0; i < currentKitIndex; i++) {
+      if (!doneGroup(kits[i].group)) continue
       const p = priced(kits[i])
+      if (spent === null) spent = 0
       spent += p.amount
       spentUnpriced += p.unpriced
     }
@@ -162,6 +174,14 @@ export function meterAt(sessions: Session[], kits: Kit[], currentSession: number
     const here = priced(kits[currentKitIndex])
     nextBuy = { group: kits[currentKitIndex].group, amount: here.amount, unpriced: here.unpriced }
     remaining = 0
+    if (skipGround) {
+      for (let i = 0; i < currentKitIndex; i++) {
+        if (!isGroundGroup(kits[i].group)) continue
+        const p = priced(kits[i])
+        remaining += p.amount
+        remainingUnpriced += p.unpriced
+      }
+    }
     for (let i = currentKitIndex; i < kits.length; i++) {
       const p = priced(kits[i])
       remaining += p.amount
@@ -169,7 +189,7 @@ export function meterAt(sessions: Session[], kits: Kit[], currentSession: number
     }
   }
 
-  const hoursDone = sessions.slice(0, currentSession).reduce((acc, s) => acc + s.hours, 0)
+  const hoursDone = sessions.slice(0, currentSession).reduce((acc, s) => acc + (doneGroup(s.group) ? s.hours : 0), 0)
   const hoursTotal = sessions.reduce((acc, s) => acc + s.hours, 0)
   const hoursKnown = sessions.every((s) => s.hoursKnown)
 
@@ -177,10 +197,12 @@ export function meterAt(sessions: Session[], kits: Kit[], currentSession: number
     .slice(currentSession)
     .filter((s) => s.group === currentGroup).length
 
-  // the calendar is real hours plus the cure waits behind them: a planning placeholder (hoursKnown false) behind us makes it unknown
+  // the calendar is real hours plus the cure waits behind them: a planning placeholder (hoursKnown false) behind us makes it unknown.
+  // A skipped ground lesson is not behind us as work, so its placeholder does not blank the calendar.
   let calendarHours: number | null = hoursDone
   for (let i = 0; i < currentSession; i++) {
     const s = sessions[i]
+    if (!doneGroup(s.group)) continue
     if (!s.hoursKnown) {
       calendarHours = null
       break

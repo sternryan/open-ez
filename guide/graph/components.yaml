@@ -168,3 +168,9 @@
 - {id: upholstery.cushions, label: "Front and rear seat cushions (sizes book, outlines fitted)", fidelity: unvalidated}
 - {id: upholstery.headrests, label: "Front and rear headrests (sizes book)", fidelity: unvalidated}
 - {id: upholstery.suitcases, label: "Left and right suitcases (sizes book, left shortened by an unprinted length)", fidelity: unvalidated}
+# Practice pieces for ground school. No airplane geometry; the sizes that are known are in the sourcing record.
+- {id: practice.cloth, label: "Practice cloth scrap", fidelity: no-geometry}
+- {id: practice.flat, label: "Six-ply practice rectangle", fidelity: no-geometry}
+- {id: practice.beam, label: "Practice load beam", fidelity: no-geometry}
+- {id: practice.bookend, label: "Practice bookend", fidelity: no-geometry}
+- {id: practice.scrap, label: "Scrap foam for the hot-wire pass", fidelity: no-geometry}

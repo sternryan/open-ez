@@ -78,7 +78,7 @@ def test_eighteen_ops_valid_and_no_unknown_ids(g):
             for s in op.sources
             if s.doc == "scan-1980" and s.scan_pp != 171
         ), i
-        assert "c03.layup-skills" in needs(g, i) | {i}, i
+        assert "g00.bookend" in needs(g, i) | {i}, i
 
 
 def test_order_follows_the_plans(g):

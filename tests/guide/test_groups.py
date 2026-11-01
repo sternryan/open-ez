@@ -246,9 +246,10 @@ def test_groups_respect_dag(tmp_path):
 
 def test_real_graph_assigns_first_stretch_groups(tmp_path):
     g = _real_graph(tmp_path)
+    # P3-A: "g00.* IDs in ground-school, first group"
     assert [(grp.id, grp.label) for grp in g.groups][:2] == [
+        ("ground-school", "Ground school"),
         ("bulkheads-firewall", "Seat bulkheads and firewall"),
-        ("fuselage-sides", "Fuselage sides"),
     ]
     assert {"ch04.yaml", "ch05.yaml"} <= g.groups_required
     ch04 = [op for op in g.ops.values() if op.file == "ch04.yaml"]

@@ -904,3 +904,55 @@ r30.top-spar-cap:
 r30.turnover-twist-check:
 - {do: check-string, part: canard.core, tool: stand-in, who: owner, why: confirm no twist after flipping}
 - {do: sand, part: canard.core, tool: stand-in, who: owner, why: contour skin edges to template}
+# Ground school. Every action carries a why. The flat rectangle's six plies are wetted in order.
+g00.shop-setup:
+- {do: check-level, tool: level, who: owner, why: "a bench that is out of level twists the practice pieces before any glass is on them"}
+g00.tools:
+- {do: place, part: practice.cloth, tool: stand-in, who: owner, why: "the cloth and the tools have to be on the bench before the cup is mixed"}
+- {do: cut, part: practice.cloth, tool: scissors, who: owner, why: "scissors follow a marked line without pulling the weave out of square"}
+- {do: drape, part: practice.cloth, who: buddy, why: "the buddy pair holds the cloth while the owner wets it, which is how a large skin gets laid"}
+g00.mix:
+- {do: place, part: practice.flat, tool: cup, who: owner, why: "weigh 100 parts of resin to 40 of hardener, then stir the walls and the bottom"}
+g00.orientation:
+- {do: cut, part: practice.cloth, tool: scissors, who: owner, why: "BID is cut on the bias and UND is cut with its warp along the load"}
+- {do: place, part: practice.cloth, who: owner, why: "bias BID takes shear and drapes; UND puts its strength along the warp"}
+g00.flat-layup:
+- {do: cut, part: practice.flat, tool: scissors, who: owner, why: "cut all six BID plies on the bias before the cup is mixed"}
+- {do: place, part: practice.flat, ply: 1, who: owner, why: "the first ply sets the fiber direction for the rectangle"}
+- {do: wet-out, part: practice.flat, ply: 1, tool: brush, who: owner, why: "the brush pushes resin through the weave until no white cloth remains"}
+- {do: squeegee, part: practice.flat, ply: 1, tool: squeegee, who: owner, why: "resin left in this ply is what pushes the cured weight over 12.5 ounces"}
+- {do: place, part: practice.flat, ply: 2, who: owner, why: "the next ply goes down only after the one below is wet"}
+- {do: wet-out, part: practice.flat, ply: 2, tool: brush, who: owner, why: "wet this ply through before covering it"}
+- {do: squeegee, part: practice.flat, ply: 2, tool: squeegee, who: owner, why: "pull the spare resin out so the ply stays near the cloth weight"}
+- {do: place, part: practice.flat, ply: 3, who: owner, why: "the third ply crosses the stack the same way"}
+- {do: wet-out, part: practice.flat, ply: 3, tool: brush, who: owner, why: "a dry spot in the middle cannot be fixed after the next ply covers it"}
+- {do: squeegee, part: practice.flat, ply: 3, tool: squeegee, who: owner, why: "work the spare resin to the edge, where the trim will cut it off"}
+- {do: place, part: practice.flat, ply: 4, who: owner, why: "the fourth ply follows the same bias as the first"}
+- {do: wet-out, part: practice.flat, ply: 4, tool: brush, who: owner, why: "wet the ply out fully; a starved ply is the light, white rectangle"}
+- {do: squeegee, part: practice.flat, ply: 4, tool: squeegee, who: owner, why: "squeegee until the weave shows, not until the cloth goes white"}
+- {do: place, part: practice.flat, ply: 5, who: owner, why: "the fifth ply is still bias BID, same as the rest of this rectangle"}
+- {do: wet-out, part: practice.flat, ply: 5, tool: brush, who: owner, why: "wet it before the last ply hides any dry strand"}
+- {do: squeegee, part: practice.flat, ply: 5, tool: squeegee, who: owner, why: "keep this ply as lean as the ones under it"}
+- {do: place, part: practice.flat, ply: 6, who: owner, why: "the sixth ply closes the practice stack"}
+- {do: wet-out, part: practice.flat, ply: 6, tool: brush, who: owner, why: "the last ply is the one the weight check is most sensitive to"}
+- {do: squeegee, part: practice.flat, ply: 6, tool: squeegee, who: owner, why: "the target is about 11 ounces for the trimmed 10 by 16 inch piece"}
+- {do: wait-cure, part: practice.flat, who: owner, why: "trim and weigh only after this stack has cured"}
+g00.peel-ply:
+- {do: place, part: practice.flat, tool: peel-ply, who: owner, why: "peel ply stays on through the cure and keeps air off the last ply"}
+- {do: squeegee, part: practice.flat, tool: squeegee, who: owner, why: "squeegee on the peel ply so the fibers under it do not drag"}
+g00.micro-flox:
+- {do: bond, part: practice.bookend, tool: cup, who: owner, why: "dry micro fills the inside corner so the glass does not crease over a sharp edge"}
+- {do: bond, part: practice.bookend, tool: cup, who: owner, why: "flox is the paste that carries load; micro is only the light filler"}
+g00.foam-shape:
+- {do: cut, part: practice.scrap, tool: hot-wire, who: owner, why: "the hot wire is the core-cutting tool, practiced here on scrap rather than on a flight core"}
+- {do: sand, part: practice.bookend, tool: sanding-block, who: owner, why: "urethane sands away under the block, so a ridge becomes a bump in the glass"}
+- {do: check-string, part: practice.beam, tool: string-line, who: owner, why: "a string shows a bow that the eye reads as straight"}
+- {do: check-level, part: practice.beam, tool: level, who: owner, why: "the beam has to sit level before it is glassed or the cure locks in a twist"}
+g00.load-beam:
+- {do: place, part: practice.beam, who: owner, why: "the urethane core is on the bench before any cloth touches it"}
+- {do: squeegee, part: practice.beam, tool: squeegee, who: owner, why: "push spare resin to the edges and trim those edges after the cure"}
+- {do: wait-cure, part: practice.beam, who: owner, why: "the load across the round support waits until the beam has cured"}
+g00.bookend:
+- {do: flip, part: practice.bookend, who: owner, why: "the back face is glassed only after the front face has cured"}
+- {do: sand, part: practice.bookend, tool: sanding-block, who: owner, why: "sand the cured glass dull or the next plies will not stick"}
+- {do: wait-cure, part: practice.bookend, who: owner, why: "this is the last practice cure; the airplane steps wait on it"}

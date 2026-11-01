@@ -110,7 +110,7 @@ def test_every_op_is_complete_and_reaches_layup_skills(g):
             and op.components
         ), i
         assert 2 <= len(op.completion) <= 6, i
-        assert "c03.layup-skills" in needs(g, i), i
+        assert "g00.bookend" in needs(g, i), i
         assert op.variants == (("roncz",) if i.startswith("r30.") else ("both",)), i
         assert op.chapter == (13 if i.startswith("f13.") else 12 if i in GAP else 11), i
 

@@ -142,9 +142,13 @@ def test_lab_renders_the_canard_and_the_classic_viewer_still_loads(rsite):
         s.shutdown()
 
 
-def _open(p, url, w, h, init=None, query="", q="low"):
+def _open(p, url, w, h, init=None, query="", q="low", ground_seen=True):
     b = p.chromium.launch(args=GL)
     ctx = b.new_context(viewport={"width": w, "height": h})
+    # Build-player checks are returning visitors. A first launch (the ground offer, opening on
+    # g00.shop-setup) opts out with ground_seen=False. test_ground_first_launch_offer covers that.
+    if ground_seen and "player=1" in query:
+        ctx.add_init_script("localStorage.setItem('longez.ground', 'seen')")
     if init:
         ctx.add_init_script(init)
     pg = ctx.new_page()
@@ -2689,8 +2693,8 @@ def test_tour_from_a_stub_only_chapter_falls_back_to_the_first_real_chapter(
     try:
         with sync_playwright() as p:
             b, pg, errors = _open_rec(p, url)
-            pg.evaluate("__lab.select('c03.layup-skills')")
-            assert pg.evaluate("__lab.selected()") == "c03.layup-skills"
+            pg.evaluate("__lab.select('ref.back-cover-3view')")
+            assert pg.evaluate("__lab.selected()") == "ref.back-cover-3view"
             pg.click("#tour")
             assert pg.evaluate("__lab.touring()") is True
             assert _tour_seen(pg, 1)[0] == want[0]  # the first real chapter's film
@@ -8998,8 +9002,16 @@ def test_public_briefing_room_is_read_only(public_briefing_site):
 FIRST_STRETCH_LAST = "f05.gear-extrusions"
 
 
-def _player(p, url, w=1180, h=820, query="", init=None):
-    b, pg, errors = _open(p, url, w, h, init=init, query="&player=1&freeze=1" + query)
+def _player(p, url, w=1180, h=820, query="", init=None, ground_seen=True):
+    b, pg, errors = _open(
+        p,
+        url,
+        w,
+        h,
+        init=init,
+        query="&player=1&freeze=1" + query,
+        ground_seen=ground_seen,
+    )
     pg.wait_for_selector("#navlog button.step[data-op]")
     return b, pg, errors
 
@@ -9018,15 +9030,19 @@ def _roncz_in_group(g, gid):
 
 
 def _grouped(rsite):
-    """The whole build as the player orders it: each plan group's Roncz, non-stub ops in graph order.
+    """The sequence a returning visitor plays: each plan group's Roncz, non-stub ops, after ground school.
 
-    Phase 2 plays every grouped step (plan P2-A: "every non-stub Roncz step grouped and ordered").
+    Phase 2 plays every grouped build step (plan P2-A: "every non-stub Roncz step grouped and ordered").
     The phase-1 first stretch ended at f05.gear-extrusions (plan P1-D).
+    Phase 3 (plan P3-B): "skip to first build step, always pin ground group for replay";
+    "skip changes viewing only". The ground lessons are test_ground_play_through.
     """
     g = _graph(rsite)
     plan = json.loads((rsite / "plan.json").read_text())
     out = []
     for grp in plan["groups"]:
+        if grp["id"] == "ground-school":
+            continue
         out += _roncz_in_group(g, grp["id"])
     return plan, out
 
@@ -9078,7 +9094,10 @@ def test_player_navlog_lists_the_first_stretch_groups(rsite):
             assert [x[0] for x in labels] == [gr["id"] for gr in plan["groups"]]
             for (gid, text), gr in zip(labels, plan["groups"]):
                 assert gr["label"] in text, (gid, text)
-            # the current group shows its session cards and steps; walking to the other group shows its steps
+            # the open group is the first build step's group (plan P3-B: "skip to first build step,
+            # always pin ground group for replay"). The pinned ground group stays collapsed, so its
+            # lessons are not in this sequence; test_ground_play_through plays them. Walking the
+            # other groups shows their steps.
             seen = []
             for k, gr in enumerate(plan["groups"]):
                 if k:
@@ -9302,6 +9321,9 @@ def test_player_step_change_flies_to_its_shot(rsite):
     try:
         with sync_playwright() as p:
             b, pg, errors = _player(p, url)
+            # Plan P3-B: "Ground defaults 1×, build defaults 4×, user can override either."
+            # The landing check advances 2 s of sim time, which is the 1× flight window.
+            pg.click('#tp-speed [data-speed="1"]')
             pg.click("#tp-play")
             checked = 0
             last = pg.evaluate("window.__lab.player().step")
@@ -9388,6 +9410,134 @@ def test_player_shows_both_glove_pairs_on_a_two_person_step(rsite):
             pg.evaluate("window.__lab.advance(0.5)")
             g = pg.evaluate("window.__lab.gloves()")
             assert g["buddy"] is False and "stand-in" in g["props"], g
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+def _drawn_components(pg, components):
+    """Names of built or current meshes for each component that also have a world box.
+
+    A component matches its own mesh and its ply or stage meshes (`cid`, `cid.p1`, `cid~core`).
+    """
+    st = pg.evaluate("window.__lab.stateAll()")
+    out = {}
+    for cid in components:
+        hits = []
+        for name, state in st.items():
+            if state not in ("built", "current"):
+                continue
+            if (
+                name != cid
+                and not name.startswith(cid + ".")
+                and not name.startswith(cid + "~")
+            ):
+                continue
+            if pg.evaluate(f"window.__lab.meshBox({json.dumps(name)})"):
+                hits.append(name)
+        out[cid] = hits
+    return out
+
+
+# Cores, shear web, spar cap and bottom skin are made before the hinge-foam step.
+# The elevator tube, cores and bottom skin are made before the top elevator skin.
+_CANARD_BENCH = (
+    "canard.core",
+    "canard.shear_web",
+    "canard.spar_cap_bottom",
+    "canard.skin_bottom",
+)
+_ELEV_BENCH = ("elevator.tube", "elevator.right")
+
+
+def test_player_keeps_canard_and_elevator_parts_built_earlier_in_the_group(rsite):
+    """Once a canard or elevator part is built, later steps in that group still draw it.
+
+    The player used to leave the fuselage subject on for the whole build, so the
+    canard table was empty at the hinge-foam step and at the top elevator skin.
+    """
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, query="&op=r30.hinge-foam")
+            pg.evaluate("window.__lab.advance(0.3)")
+            assert pg.evaluate("window.__lab.player().step") == "r30.hinge-foam"
+            missing = [
+                c
+                for c, hits in _drawn_components(pg, _CANARD_BENCH).items()
+                if not hits
+            ]
+            assert not missing, missing
+            pg.click('#navlog button.step[data-op="r30.elev-skin-top"]')
+            pg.evaluate("window.__lab.advance(0.3)")
+            assert pg.evaluate("window.__lab.player().step") == "r30.elev-skin-top"
+            missing = [
+                c
+                for c, hits in _drawn_components(
+                    pg, _CANARD_BENCH + _ELEV_BENCH
+                ).items()
+                if not hits
+            ]
+            assert not missing, missing
+            assert not errors, errors
+            b.close()
+    finally:
+        s.shutdown()
+
+
+# Hands sit a little above the work (the idle pose is 0.14 m up). Farther than this is in the air.
+_GLOVE_REST = """(tol) => {
+  const L = window.__lab
+  const g = L.gloves()
+  const hands = []
+  if (g.owner) hands.push(g.at.owner)
+  if (g.buddy) hands.push(g.at.buddy)
+  const boxes = []
+  for (const n of L.meshNames()) {
+    const b = L.meshBox(n)
+    if (b) boxes.push(b)
+  }
+  const inst = L.installedCanard()
+  if (inst && inst.shown) for (const b of Object.values(inst.boxes)) boxes.push(b)
+  const tableY = L.tableTopY()
+  const gap = (p, b) => {
+    const dx = Math.max(b[0][0] - p[0], 0, p[0] - b[1][0])
+    const dy = Math.max(b[0][1] - p[1], 0, p[1] - b[1][1])
+    const dz = Math.max(b[0][2] - p[2], 0, p[2] - b[1][2])
+    return Math.hypot(dx, dy, dz)
+  }
+  return hands.filter((p) => {
+    let best = Infinity
+    for (const b of boxes) best = Math.min(best, gap(p, b))
+    return best > tol && Math.abs(p[1] - tableY) > tol
+  })
+}"""
+
+
+def test_player_gloves_rest_on_a_drawn_part_or_the_bench(rsite):
+    """Each glove sits on a drawn mesh, or on the bench when the step draws nothing.
+
+    The hinge-foam and top-elevator-skin steps, and a caption-only ply (the attach
+    tabs), used to leave the hands at the camera's look point.
+    """
+    s, url = serve(rsite)
+    try:
+        with sync_playwright() as p:
+            b, pg, errors = _player(p, url, query="&op=r30.hinge-foam")
+
+            def rest(op):
+                pg.evaluate("window.__lab.advance(0.3)")
+                assert pg.evaluate("window.__lab.player().step") == op
+                floating = pg.evaluate(_GLOVE_REST, 0.35)
+                assert not floating, (op, floating)
+
+            rest("r30.hinge-foam")
+            pg.click('#navlog button.step[data-op="r30.elev-skin-top"]')
+            rest("r30.elev-skin-top")
+            pg.click('#navlog .group[data-group="main-gear"] > .group-label')
+            pg.click('#navlog button.step[data-op="f09.tab-layup"]')
+            rest("f09.tab-layup")
             assert not errors, errors
             b.close()
     finally:
@@ -9749,8 +9899,10 @@ NARROW = [(390, 844), (820, 1180)]
 HIT = 44
 
 
-def _narrow(p, url, w, h, query=""):
-    b, pg, errors = _open(p, url, w, h, query="&player=1&freeze=1" + query)
+def _narrow(p, url, w, h, query="", ground_seen=True):
+    b, pg, errors = _open(
+        p, url, w, h, query="&player=1&freeze=1" + query, ground_seen=ground_seen
+    )
     pg.wait_for_selector("#navlog-list button.step[data-op]", state="attached")
     return b, pg, errors
 
@@ -10124,12 +10276,17 @@ def test_player_narrow_layout_leaves_the_wide_layout_alone(rsite):
 
 
 def test_player_is_default(rsite):
-    """A raw URL (not _open, which asks for the legacy page) opens the player; ?player=0 still opens the legacy lab."""
+    """A raw URL (not _open, which asks for the legacy page) opens the player for a returning visitor; ?player=0 still opens the legacy lab.
+
+    A first visit, which shows #ground-offer and opens on g00.shop-setup, is test_ground_first_launch_offer.
+    """
     s, url = serve(rsite)
     try:
         with sync_playwright() as p:
             b = p.chromium.launch(args=GL)
-            pg = b.new_page(viewport={"width": 1180, "height": 820})
+            ctx = b.new_context(viewport={"width": 1180, "height": 820})
+            ctx.add_init_script("localStorage.setItem('longez.ground', 'seen')")
+            pg = ctx.new_page()
             errors = []
             pg.on("pageerror", lambda e: errors.append(str(e)))
             pg.goto(url + "?test=1&q=low&freeze=1")

@@ -166,7 +166,7 @@ def test_ch4_groups_are_independent(g):
     for b in rest:
         assert not needs(g, b) & set(seat)
     for i in ch4:
-        assert "c03.layup-skills" in needs(g, i)
+        assert "g00.bookend" in needs(g, i)
 
 
 def test_ch5_chain_independent_of_ch4(g):
@@ -201,7 +201,17 @@ def test_recall_finds_the_four_new_annotations(g):
 # the tie-break must not move any of them.
 CANARD_ORDER = [
     "ref.back-cover-3view",
-    "c03.layup-skills",
+    # the education stub's place in this order is the ground-school group
+    "g00.shop-setup",
+    "g00.tools",
+    "g00.mix",
+    "g00.orientation",
+    "g00.flat-layup",
+    "g00.peel-ply",
+    "g00.micro-flox",
+    "g00.foam-shape",
+    "g00.load-beam",
+    "g00.bookend",
     "c10.templates-cores",
     "c10.shear-web",
     "c10.jig-cores",

@@ -101,7 +101,7 @@ def test_ops_valid_and_no_unknown_ids(g):
         assert op.summary.strip() and op.variants == ("both",), i
         ok = set(PAGES[op.chapter]) | {171}
         assert all(s.scan_pp in ok for s in op.sources if s.doc == "scan-1980"), i
-        assert "c03.layup-skills" in needs(g, i) | {i}, i
+        assert "g00.bookend" in needs(g, i) | {i}, i
 
 
 def test_order_follows_the_plans(g):

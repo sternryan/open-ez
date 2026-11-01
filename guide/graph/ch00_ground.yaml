@@ -1,0 +1,220 @@
+# Ground school, before any airplane part. Our words. Sources and the arithmetic are in
+# docs/harness/rehearsal-sourcing-p3.md. The plans education chapter was not opened.
+- id: g00.shop-setup
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [level]
+  chapter: 3
+  title: Shop air, temperature, and skin
+  summary: Put the bench where the resin can be worked, with air that moves and gloves that stop epoxy. Sanding dust and a rash are the reasons, not a tidy shop.
+  variants: [both]
+  components: []
+  geometry_visible: false
+  sources:
+    - {doc: mgs-l285-tds, page: "1", heading: "Processing 10 to 50 C"}
+    - {doc: faa-ac-43-13-1b, page: "1-20", heading: "Handling of adhesives"}
+    - {doc: niosh-hhe-2011-0180-3193, page: "ppe", heading: "Gloves for DGEBA epoxy"}
+  completion:
+    - Bench level, and the room between 10 and 50 C, nearer 20 to 40 C
+    - Air moving while epoxy is open
+    - Gloves are polyvinyl alcohol or a multilayer laminate, not latex, neoprene, polyethylene, or PVC
+    - The MGS safety sheet's own glove polymer is still unread
+- id: g00.tools
+  group: ground-school
+  plan:
+    people: 2
+    people_why: shows the buddy pair used when one person holds cloth and the other wets it
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [scissors, stand-in]
+  chapter: 3
+  title: Gloves and the bench tools
+  summary: Lay out the cloth and the tools the later steps pick up. The second glove pair is the buddy, for the layups one person should not wet alone.
+  variants: [both]
+  requires: [g00.shop-setup]
+  components: [practice.cloth]
+  geometry_visible: false
+  sources:
+    - {doc: as-rutan-cloth, page: "1", heading: "Rutan fiberglass cloths"}
+    - {doc: glantz-side-2013, page: "1", heading: "One mixes, one wets out"}
+  completion:
+    - Owner gloves and buddy gloves both on the bench
+    - Scissors, brush, squeegee, cup, peel ply, sanding block, hot wire, level, and string line laid out
+- id: g00.mix
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [cup]
+  chapter: 3
+  title: Weigh the resin
+  summary: Weigh 100 parts of L285 to 40 parts of hardener, plus or minus 2, and stir until the cup is clear, including the walls and the bottom.
+  variants: [both]
+  requires: [g00.tools]
+  components: [practice.flat]
+  geometry_visible: false
+  sources:
+    - {doc: mgs-l285-tds, page: "4", heading: "Mixing ratios"}
+  completion:
+    - Ratio weighed, not pumped by volume
+    - Cup clear, walls and bottom stirred in
+    - No extra hardener added to make it kick faster
+- id: g00.orientation
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [scissors]
+  chapter: 3
+  title: Which way the fibers run
+  summary: Cut BID at 45 degrees to the selvage so it drapes and carries shear. Keep UND fibers along the load. UND is the cloth with almost all of its glass along the selvage.
+  variants: [both]
+  requires: [g00.mix]
+  components: [practice.cloth]
+  geometry_visible: false
+  sources:
+    - {doc: as-rutan-cloth, page: "1", heading: "BID bias cut and UND warp"}
+  completion:
+    - A BID scrap cut on the bias, not along the selvage
+    - An UND scrap with its warp along a marked line
+- id: g00.flat-layup
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: 3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [scissors, brush, squeegee]
+    buy:
+      - {item: bid-7725, qty: 0.70, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.020, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.041, flag: estimate}
+  chapter: 3
+  title: Six-ply practice rectangle
+  summary: Lay six BID plies, squeegee each one before the next goes down, and after the cure trim a 10 by 16 inch rectangle. Eleven ounces means the resin amount was right. Under 10.5 is dry, over 12.5 is heavy.
+  variants: [both]
+  requires: [g00.orientation]
+  components: [practice.flat]
+  geometry_visible: false
+  materials:
+    - {cloth: BID, plies: 6, where: "flat practice rectangle, bias cut"}
+  sources:
+    - {doc: glantz-flat-2013, page: "1", heading: "Six-ply weight band"}
+    - {doc: meatballs-ch3-2011, page: "1", heading: "Ten by sixteen inches"}
+  completion:
+    - Six bias-cut BID plies, each wetted and squeegeed before the next
+    - Cured, then trimmed to 10 by 16 inches
+    - Weight between 10.5 and 12.5 ounces, with 11 ounces the reported good weight
+    - The inch size is one builder's statement, not a plans page we opened
+- id: g00.peel-ply
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [peel-ply, squeegee]
+  chapter: 3
+  title: Peel ply over a wet face
+  summary: Lay peel ply on the wet rectangle and squeegee on the ply, not on the glass. It stays through the cure so air stays off the last ply, and it comes off before anything else is bonded on.
+  variants: [both]
+  requires: [g00.flat-layup]
+  components: [practice.flat]
+  geometry_visible: false
+  sources:
+    - {doc: faa-ac-43-13-1b, page: "3-2", heading: "Cover the resin with peel ply"}
+  completion:
+    - Peel ply covers the wet face
+    - Squeegee ran on the peel ply
+    - Ply left in place until the cure, then pulled
+- id: g00.micro-flox
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup]
+  chapter: 3
+  title: Micro corner and flox bead
+  summary: Mix dry micro for an inside corner so the glass does not turn a sharp edge, and a flox bead where the joint has to carry load. The resin sheet names both fillers and gives no ratio.
+  variants: [both]
+  requires: [g00.peel-ply]
+  components: [practice.bookend]
+  geometry_visible: false
+  sources:
+    - {doc: mgs-l285-tds, page: "2", heading: "Microballoons and cotton flakes"}
+    - {doc: glantz-bookend-2013, page: "1", heading: "Dry micro corner and flox lip"}
+  completion:
+    - Dry micro fillet on an inside corner, stiff enough to hold a radius
+    - Flox bead where the lip is structural
+    - No quantity bought; the bead length was not printed
+- id: g00.foam-shape
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: null, flag: unsourced, source: null}
+    cure: none
+    tools: [hot-wire, sanding-block, string-line, level]
+  chapter: 3
+  title: Shape practice foam
+  summary: Run the hot wire on a scrap, sand the urethane fair, and check the practice pieces with a string and a level before any glass goes on. No opened practice post describes a hot-wire cut.
+  variants: [both]
+  requires: [g00.micro-flox]
+  components: [practice.scrap, practice.bookend, practice.beam]
+  geometry_visible: false
+  sources:
+    - {doc: glantz-bookend-2013, page: "1", heading: "Urethane sanded"}
+    - {doc: glantz-beam-2013, page: "1", heading: "Urethane load beam"}
+  completion:
+    - One hot-wire pass on scrap foam, not on a flight core
+    - Bookend foam sanded fair
+    - Beam checked with a string and a level
+- id: g00.load-beam
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: 3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [brush, squeegee]
+  chapter: 3
+  title: Practice load beam
+  summary: Glass a urethane beam and push spare resin out to the edges, to be trimmed after the cure. The cured beam is then loaded across a round support.
+  variants: [both]
+  requires: [g00.foam-shape]
+  components: [practice.beam]
+  geometry_visible: false
+  sources:
+    - {doc: glantz-beam-2013, page: "1", heading: "Squeegee to the edges"}
+  completion:
+    - Urethane core glassed, spare resin at the edges
+    - Cured before the trim
+    - Loaded across a round support
+    - Blank size and ply count not opened, so nothing is bought here
+- id: g00.bookend
+  group: ground-school
+  plan:
+    people: 1
+    hours: {value: 3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block]
+  chapter: 3
+  title: Practice bookend
+  summary: Glass one face of the urethane bookend, let it cure, turn it, and glass the back. Sand cured glass dull before the next plies. This is the last practice piece.
+  variants: [both]
+  requires: [g00.load-beam]
+  components: [practice.bookend]
+  geometry_visible: false
+  sources:
+    - {doc: glantz-bookend-2013, page: "1", heading: "Front face, then the back"}
+  completion:
+    - Front face cured before the back is glassed
+    - Cured glass sanded dull before the next plies
+    - Bottom lip carries the flox bead from the filler lesson
+    - Ply count not opened, so no cloth is bought here

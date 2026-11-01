@@ -1,10 +1,13 @@
 # Chapter 10 — original GU canard (1980 first edition). Summaries are ours; the plans pages are the authority.
+# These steps take the canard group so the grouped practice bookend stays a legal prerequisite.
+# The player drops GU-only steps, so this group still shows the Roncz canard.
 - id: c10.templates-cores
   chapter: 10
+  group: canard
   title: Hot-wire templates and foam cores
   summary: Mount the paper templates on thin plywood, then hot-wire the foam blocks into four canard cores (two inboard with the spar trough, two outboard). Offcuts are kept for the elevator and winglet cores later.
   variants: [gu]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [canard.core_gu]
   geometry_visible: true
   sources:
@@ -19,6 +22,7 @@
     - Elevator and winglet foam set aside, not scrapped
 - id: c10.shear-web
   chapter: 10
+  group: canard
   title: Join the inboard cores and glass the shear web
   summary: Align the two aft inboard cores on a straight 2x4 fixture, bond them at the centerline, recess the aluminum inserts, and lay up the diagonal shear web across the face of the spar trough.
   variants: [gu]
@@ -39,6 +43,7 @@
     - Shear web plies laid at 45 degrees and cured without bubbles
 - id: c10.jig-cores
   chapter: 10
+  group: canard
   title: Jig the cores and check for twist
   summary: Set six jig blocks on the table, notch the leading-edge cores around the lift tabs, and fit all six cores upside down in the jig with zero twist before bonding them together.
   variants: [gu]
@@ -54,6 +59,7 @@
     - Incidence checked at several stations; no twist
 - id: c10.bottom-spar-skin
   chapter: 10
+  group: canard
   title: Bottom spar cap and bottom skin
   summary: Build the bottom spar cap by folding UND into the trough until it is eleven plies thick at the center, then drape and wet out the three-ply bottom skin over the whole canard.
   variants: [gu]
@@ -75,6 +81,7 @@
     - Edges knife-trimmed while the layup is still green
 - id: c10.top-spar-skin
   chapter: 10
+  group: canard
   title: Top spar cap and top skin
   summary: Turn the canard right side up in a level fixture, add the high-density foam blocks for the elevator hinges, then lay up the thicker top spar cap and the four-ply top skin, lapping the bottom skin at the leading edge.
   variants: [gu]

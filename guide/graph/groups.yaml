@@ -1,4 +1,5 @@
 groups:
+  - {id: ground-school, label: "Ground school"}
   - {id: bulkheads-firewall, label: "Seat bulkheads and firewall"}
   - {id: fuselage-sides, label: "Fuselage sides"}
   - {id: fuselage-box, label: "Fuselage box"}
@@ -22,6 +23,7 @@ groups:
   - {id: finish, label: "Finish"}
   - {id: upholstery, label: "Upholstery"}
 required_files:
+  - ch00_ground.yaml
   - ch04.yaml
   - ch05.yaml
   - ch06.yaml

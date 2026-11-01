@@ -13,7 +13,7 @@
   title: Build the spar jig
   summary: Cut a particle-board upright, lay out the swept top view on it, Bondo it true to the bench, and set the three shelf parts square to it.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [spar.jig]
   geometry_visible: true
   sources:
@@ -66,7 +66,7 @@
   title: Forward-face skin pieces
   summary: Glass three PVC pieces that will become the forward face, one BID ply at 45 degrees each, with a peel-ply border, then knife-trim them.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [spar.box]
   geometry_visible: true
   materials:
@@ -91,7 +91,7 @@
   title: Fabricate the LWA fittings
   summary: Cut the five wing-attach aluminium fittings, LWA1 to LWA5, from the printed patterns, clean and sand them dull, and round their corners. LWA4 and LWA5 take the enlarged heights from the newsletter correction.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [spar.lwa]
   geometry_visible: true
   sources:

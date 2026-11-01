@@ -77,15 +77,40 @@ export const SETTLE_MS = 1000
 export const CHANGE_SETTLE_MS = 1000
 /** One frame counts for at most this much (a tab coming back from the background reports seconds). */
 export const FRAME_CAP_MS = 500
+/**
+ * A frame at or under this is fast enough to climb a tier. Well under SLOW_MS: a 60 Hz frame (16.7 ms) still counts,
+ * and 18–33 ms holds the tier where it is (not slow enough to drop, not fast enough to grow).
+ */
+export const TIER_FAST_MS = 17
+/**
+ * Fast frame time before one step up, once a step change has happened since the last tier change. Eight times the
+ * 1.5 s drop window, so a short smooth patch cannot flap. A 16x play-through still has about 25 s of fast frames
+ * after the long canopy layup, so two of these (low to mid, then mid to high) fit in that tail.
+ */
+export const TIER_UP_WINDOW_MS = 12_000
+/**
+ * The same climb when the view never changes step. Longer than the 40 s of 8 ms frames the no-step-up test feeds
+ * (those frames do count toward this), so that run stays on the lower tier.
+ */
+export const TIER_UP_STILL_MS = 48_000
 
-export interface StepState { tier: Tier; frames: number[]; sum: number; settle: number }
+export interface StepState {
+  tier: Tier
+  frames: number[]
+  sum: number
+  settle: number
+  /** fast frame time (ms) accumulated toward a step up */
+  fast: number
+  /** a step change has happened since the last tier change, so the shorter up window applies */
+  held: boolean
+}
 
 /** `settle` is how many ms of frames to ignore first (the page's own start-up compiles). */
-export const initialStep = (tier: Tier, settle = 0): StepState => ({ tier, frames: [], sum: 0, settle })
+export const initialStep = (tier: Tier, settle = 0): StepState => ({ tier, frames: [], sum: 0, settle, fast: 0, held: false })
 
-/** Drop the tier window and ignore the next frames: a step or scene change just happened. */
+/** Drop the tier window and ignore the next frames: a step or scene change just happened. Fast-frame credit is kept. */
 export function holdTier(state: StepState): StepState {
-  return { ...state, frames: [], sum: 0, settle: Math.max(state.settle, CHANGE_SETTLE_MS) }
+  return { ...state, frames: [], sum: 0, settle: Math.max(state.settle, CHANGE_SETTLE_MS), held: true }
 }
 
 export function median(xs: number[]): number {
@@ -94,29 +119,46 @@ export function median(xs: number[]): number {
   return s[s.length >> 1]
 }
 
+/** One tier toward high when the fast credit has covered the up window. Null when it has not, or the tier is already high. */
+function stepUp(state: StepState, frames: number[], sum: number, settle: number, fast: number): StepState | null {
+  const idx = TIER_ORDER.indexOf(state.tier)
+  if (idx <= 0) return null
+  const need = state.held ? TIER_UP_WINDOW_MS : TIER_UP_STILL_MS
+  if (fast < need) return null
+  return { tier: TIER_ORDER[idx - 1], frames: [], sum: 0, settle: SETTLE_MS, fast: 0, held: false }
+}
+
 /**
  * Feed one frame time (ms). Returns the next state; when the returned tier differs from the input's, the caller applies it.
- * It drops one tier when the median of the last WINDOW_MS of frames is over SLOW_MS, never goes below low, and never steps up:
- * a session that dropped stays down (the owner can raise it with the control), so it cannot flap between two tiers.
+ * It drops one tier when the median of the last WINDOW_MS of frames is over SLOW_MS, and never goes below low.
+ * It steps back up one tier only after a long run of frames at or under TIER_FAST_MS. A slow frame outside the
+ * post-change settle resets that credit. A slow frame inside the settle is the hitch and is ignored both ways;
+ * a fast frame there still counts, because a 16x step is shorter than the settle and would otherwise never recover.
  */
 export function nextTier(state: StepState, frameMs: number): StepState {
   const ms = Math.min(Math.max(frameMs, 0), FRAME_CAP_MS)
-  if (state.settle > 0) return { ...state, settle: Math.max(0, state.settle - ms) }
+  if (state.settle > 0) {
+    const settle = Math.max(0, state.settle - ms)
+    const fast = ms <= TIER_FAST_MS ? state.fast + ms : state.fast
+    return stepUp(state, state.frames, state.sum, settle, fast) ?? { ...state, settle, fast }
+  }
   const frames = state.frames.concat(ms)
   let sum = state.sum + ms
   // keep the newest frames that still cover the window
   while (frames.length > 1 && sum - frames[0] >= WINDOW_MS) sum -= frames.shift()!
   const idx = TIER_ORDER.indexOf(state.tier)
   if (sum >= WINDOW_MS && frames.length >= MIN_FRAMES && median(frames) > SLOW_MS && idx < TIER_ORDER.length - 1) {
-    return { tier: TIER_ORDER[idx + 1], frames: [], sum: 0, settle: SETTLE_MS }
+    return { tier: TIER_ORDER[idx + 1], frames: [], sum: 0, settle: SETTLE_MS, fast: 0, held: false }
   }
-  return { tier: state.tier, frames, sum, settle: 0 }
+  const fast = ms <= TIER_FAST_MS ? state.fast + ms : 0
+  return stepUp(state, frames, sum, 0, fast) ?? { tier: state.tier, frames, sum, settle: 0, fast, held: state.held }
 }
 
 // ---- adaptive resolution (the low tier only) ----
 // Low is the last tier, so a device that still misses the frame rate there has nothing left to drop but pixels. While on low the
 // canvas resolution steps down until most frames land on the display's refresh, and steps back up only after a longer stretch of
-// fast frames (hysteresis: a short smooth patch must not flap back up into the next drop). The tier itself never steps back up.
+// fast frames (hysteresis: a short smooth patch must not flap back up into the next drop). The tier steps back up on its own,
+// slower clock (nextTier): a session that only dipped for a heavy layup is not left on the cheap tier for the rest of the build.
 /** Shrink while a quarter of the recent frames run over this. A 60 Hz display with a frame to spare reads 16.7 ms. */
 export const RES_SLOW_MS = 20
 /** Each shrink aims the frame time at this, but never cuts the pixel count by more than half in one step. */
@@ -179,4 +221,74 @@ export function nextRes(state: ResState, frameMs: number): ResState {
     if (scale > state.scale) return { scale, frames: [], sum: 0, settle: RES_SETTLE_MS, fast: 0 }
   }
   return { ...state, frames: [], sum: 0, fast }
+}
+
+// ---- on-screen readout (?hud=1) ----
+// The panel is a view of these pure numbers. The page owns the DOM and the clock; tests check the text and the window here.
+
+/** How much recent frame time the readout's median and p75 cover. */
+export const HUD_WINDOW_MS = 2000
+/** The panel keeps this many tier and resolution transitions, newest last. */
+export const HUD_LOG_KEEP = 4
+
+export interface FrameWindow { frames: number[]; sum: number }
+export const emptyFrames = (): FrameWindow => ({ frames: [], sum: 0 })
+
+/** Append one frame time and drop the oldest until the window is about `windowMs` long. */
+export function pushFrameWindow(w: FrameWindow, frameMs: number, windowMs = HUD_WINDOW_MS): FrameWindow {
+  const ms = Math.min(Math.max(frameMs, 0), FRAME_CAP_MS)
+  const frames = w.frames.concat(ms)
+  let sum = w.sum + ms
+  while (frames.length > 1 && sum - frames[0] >= windowMs) sum -= frames.shift()!
+  return { frames, sum }
+}
+
+export function frameStats(w: FrameWindow): { n: number; medianMs: number; p75Ms: number } {
+  return { n: w.frames.length, medianMs: median(w.frames), p75Ms: percentile(w.frames, 0.75) }
+}
+
+export interface HudTransition {
+  /** ms since the page started feeding frames (wall clock, owned by the page) */
+  atMs: number
+  kind: 'tier' | 'res'
+  from: string
+  to: string
+  step: string
+}
+
+export interface HudSnapshot {
+  tier: Tier
+  auto: boolean
+  resScale: number
+  pixelRatio: number
+  devicePixelRatio: number
+  medianMs: number
+  p75Ms: number
+  /** how many times the tier has changed since load, and the wall time of the last change */
+  tierSteps: number
+  resSteps: number
+  lastTierAtMs: number | null
+  lastResAtMs: number | null
+  step: string
+  log: HudTransition[]
+}
+
+export function noteTransition(log: HudTransition[], next: HudTransition): HudTransition[] {
+  const out = log.concat(next)
+  return out.length > HUD_LOG_KEEP ? out.slice(out.length - HUD_LOG_KEEP) : out
+}
+
+const hudAt = (ms: number | null): string => (ms === null ? '—' : `${(ms / 1000).toFixed(1)}s`)
+
+/** The panel text. One snapshot, so the test hook and the screen cannot disagree. */
+export function formatHud(m: HudSnapshot): string {
+  const lines = [
+    `${TIER_LABEL[m.tier]} · ${m.auto ? 'auto' : 'manual'}`,
+    `res ${m.resScale.toFixed(2)} · px ${m.pixelRatio.toFixed(2)} / dpr ${m.devicePixelRatio.toFixed(2)}`,
+    `med ${m.medianMs.toFixed(1)} · p75 ${m.p75Ms.toFixed(1)} ms`,
+    `tier ×${m.tierSteps} @ ${hudAt(m.lastTierAtMs)} · res ×${m.resSteps} @ ${hudAt(m.lastResAtMs)}`,
+    m.step || '—',
+    ...m.log.map((t) => `${(t.atMs / 1000).toFixed(1)}s ${t.kind} ${t.from} -> ${t.to} ${t.step || '—'}`),
+  ]
+  return lines.join('\n')
 }

@@ -14,7 +14,7 @@
   title: Stiffen the gear strut
   summary: Sand the prefabricated strut dull, glue three nails on as stops, coat it with epoxy, and wrap eight UND plies around it at 30 to 40 degrees. Do this before the tabs and axles go on.
   variants: [both]
-  requires: [c03.layup-skills]
+  requires: [g00.bookend]
   components: [gear.strut]
   geometry_visible: true
   materials:

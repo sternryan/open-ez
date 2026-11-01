@@ -1512,7 +1512,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1527,7 +1527,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1542,7 +1542,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1557,7 +1557,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -1572,7 +1572,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -1587,7 +1587,7 @@
      "component": "wing.shear_web",
      "side": "right",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -1602,7 +1602,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1617,7 +1617,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1632,7 +1632,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1647,7 +1647,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -1662,7 +1662,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -1677,7 +1677,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1692,7 +1692,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1707,7 +1707,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1722,7 +1722,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -1737,7 +1737,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -1752,7 +1752,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -1767,7 +1767,7 @@
      "component": "wing.spar_caps",
      "side": "right",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 7,
      "order": 7,
      "stack": 7,
@@ -1782,7 +1782,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1797,7 +1797,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1812,7 +1812,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1827,7 +1827,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1842,7 +1842,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1857,7 +1857,7 @@
      "component": "wing.skins",
      "side": "right",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1872,7 +1872,7 @@
      "component": "winglet.skins",
      "side": "right",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1887,7 +1887,7 @@
      "component": "winglet.skins",
      "side": "right",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1902,7 +1902,7 @@
      "component": "winglet.skins",
      "side": "right",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1917,7 +1917,7 @@
      "component": "winglet.skins",
      "side": "right",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1932,7 +1932,7 @@
      "component": "winglet.skins",
      "side": "right",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1947,7 +1947,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -1962,7 +1962,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -1977,7 +1977,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -1992,7 +1992,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -2007,7 +2007,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -2022,7 +2022,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -2037,7 +2037,7 @@
      "component": "winglet.layups",
      "side": "right",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 7,
      "order": 7,
      "stack": 7,
@@ -2052,7 +2052,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2067,7 +2067,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2082,7 +2082,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2097,7 +2097,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -2112,7 +2112,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -2127,7 +2127,7 @@
      "component": "wing.shear_web",
      "side": "left",
      "op": "f19.shear-web",
-     "op_index": 171,
+     "op_index": 180,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -2142,7 +2142,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2157,7 +2157,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2172,7 +2172,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2187,7 +2187,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -2202,7 +2202,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.bottom-cap",
-     "op_index": 174,
+     "op_index": 183,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -2217,7 +2217,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2232,7 +2232,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2247,7 +2247,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2262,7 +2262,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -2277,7 +2277,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -2292,7 +2292,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -2307,7 +2307,7 @@
      "component": "wing.spar_caps",
      "side": "left",
      "op": "f19.top-cap",
-     "op_index": 176,
+     "op_index": 185,
      "op_order": 7,
      "order": 7,
      "stack": 7,
@@ -2322,7 +2322,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2337,7 +2337,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2352,7 +2352,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.bottom-skin",
-     "op_index": 175,
+     "op_index": 184,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2367,7 +2367,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2382,7 +2382,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2397,7 +2397,7 @@
      "component": "wing.skins",
      "side": "left",
      "op": "f19.top-skin",
-     "op_index": 178,
+     "op_index": 187,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2412,7 +2412,7 @@
      "component": "winglet.skins",
      "side": "left",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2427,7 +2427,7 @@
      "component": "winglet.skins",
      "side": "left",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2442,7 +2442,7 @@
      "component": "winglet.skins",
      "side": "left",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2457,7 +2457,7 @@
      "component": "winglet.skins",
      "side": "left",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2472,7 +2472,7 @@
      "component": "winglet.skins",
      "side": "left",
      "op": "f20.skins",
-     "op_index": 186,
+     "op_index": 195,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2487,7 +2487,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 1,
      "order": 1,
      "stack": 1,
@@ -2502,7 +2502,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 2,
      "order": 2,
      "stack": 2,
@@ -2517,7 +2517,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 3,
      "order": 3,
      "stack": 3,
@@ -2532,7 +2532,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 4,
      "order": 4,
      "stack": 4,
@@ -2547,7 +2547,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 5,
      "order": 5,
      "stack": 5,
@@ -2562,7 +2562,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 6,
      "order": 6,
      "stack": 6,
@@ -2577,7 +2577,7 @@
      "component": "winglet.layups",
      "side": "left",
      "op": "f20.outside-layups",
-     "op_index": 190,
+     "op_index": 199,
      "op_order": 7,
      "order": 7,
      "stack": 7,
@@ -2751,7 +2751,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_ribs_rib_r23_left": {
      "node": "strake.ribs.rib_r23.left",
@@ -2770,7 +2770,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_ribs_rib_r45_right": {
      "node": "strake.ribs.rib_r45.right",
@@ -2789,7 +2789,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_ribs_rib_r45_left": {
      "node": "strake.ribs.rib_r45.left",
@@ -2808,7 +2808,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_b23_right": {
      "node": "strake.baffles.b23.right",
@@ -2827,7 +2827,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_b23_left": {
      "node": "strake.baffles.b23.left",
@@ -2846,7 +2846,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_db_right": {
      "node": "strake.baffles.db.right",
@@ -2865,7 +2865,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_db_left": {
      "node": "strake.baffles.db.left",
@@ -2884,7 +2884,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_bab_right": {
      "node": "strake.baffles.bab.right",
@@ -2903,7 +2903,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_bab_left": {
      "node": "strake.baffles.bab.left",
@@ -2922,7 +2922,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_baffles_od_right": {
      "node": "strake.baffles.od.right",
@@ -2941,7 +2941,7 @@
      "show": {
       "from": "f21.od-outlet"
      },
-     "op_index": 202
+     "op_index": 211
     },
     "strake_baffles_od_left": {
      "node": "strake.baffles.od.left",
@@ -2960,7 +2960,7 @@
      "show": {
       "from": "f21.od-outlet"
      },
-     "op_index": 202
+     "op_index": 211
     },
     "strake_leading_edge_tle_right": {
      "node": "strake.leading_edge.tle.right",
@@ -2979,7 +2979,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_leading_edge_tle_left": {
      "node": "strake.leading_edge.tle.left",
@@ -2998,7 +2998,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_leading_edge_ble_right": {
      "node": "strake.leading_edge.ble.right",
@@ -3017,7 +3017,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_leading_edge_ble_left": {
      "node": "strake.leading_edge.ble.left",
@@ -3036,7 +3036,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_skins_skin_bottom_right": {
      "node": "strake.skins.skin_bottom.right",
@@ -3056,7 +3056,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_skins_skin_bottom_left": {
      "node": "strake.skins.skin_bottom.left",
@@ -3076,7 +3076,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198
+     "op_index": 207
     },
     "strake_skins_skin_top_right": {
      "node": "strake.skins.skin_top.right",
@@ -3096,7 +3096,7 @@
      "show": {
       "from": "f21.close-tank"
      },
-     "op_index": 201
+     "op_index": 210
     },
     "strake_skins_skin_top_left": {
      "node": "strake.skins.skin_top.left",
@@ -3116,7 +3116,7 @@
      "show": {
       "from": "f21.close-tank"
      },
-     "op_index": 201
+     "op_index": 210
     },
     "strake_skins_cutout_baggage_right": {
      "node": "strake.skins.cutout_baggage.right",
@@ -3134,7 +3134,7 @@
      "show": {
       "from": "f21.fuselage-cutouts"
      },
-     "op_index": 197,
+     "op_index": 206,
      "void": true
     },
     "strake_skins_cutout_baggage_left": {
@@ -3153,7 +3153,7 @@
      "show": {
       "from": "f21.fuselage-cutouts"
      },
-     "op_index": 197,
+     "op_index": 206,
      "void": true
     },
     "strake_skins_cutout_tank_right": {
@@ -3172,7 +3172,7 @@
      "show": {
       "from": "f21.fuselage-cutouts"
      },
-     "op_index": 197,
+     "op_index": 206,
      "void": true
     },
     "strake_skins_cutout_tank_left": {
@@ -3191,7 +3191,7 @@
      "show": {
       "from": "f21.fuselage-cutouts"
      },
-     "op_index": 197,
+     "op_index": 206,
      "void": true
     },
     "strake_sump_sump_blister_right": {
@@ -3211,7 +3211,7 @@
      "show": {
       "from": "f21.outside-bottom"
      },
-     "op_index": 203
+     "op_index": 212
     },
     "strake_sump_sump_blister_left": {
      "node": "strake.sump.sump_blister.left",
@@ -3230,7 +3230,7 @@
      "show": {
       "from": "f21.outside-bottom"
      },
-     "op_index": 203
+     "op_index": 212
     },
     "strake_tank_tank_right": {
      "node": "strake.tank.tank.right",
@@ -3250,7 +3250,7 @@
      "show": {
       "from": "f21.close-tank"
      },
-     "op_index": 201,
+     "op_index": 210,
      "inset": true
     },
     "strake_tank_tank_left": {
@@ -3271,7 +3271,7 @@
      "show": {
       "from": "f21.close-tank"
      },
-     "op_index": 201,
+     "op_index": 210,
      "inset": true
     },
     "strake_fairing_fairing_right": {
@@ -3291,7 +3291,7 @@
      "show": {
       "from": "f21.fairing-caps"
      },
-     "op_index": 206
+     "op_index": 215
     },
     "strake_fairing_fairing_left": {
      "node": "strake.fairing.fairing.left",
@@ -3310,7 +3310,7 @@
      "show": {
       "from": "f21.fairing-caps"
      },
-     "op_index": 206
+     "op_index": 215
     },
     "strake_fittings_drain_insert_right": {
      "node": "strake.fittings.drain_insert.right",
@@ -3330,7 +3330,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198,
+     "op_index": 207,
      "inset": true
     },
     "strake_fittings_drain_insert_left": {
@@ -3351,7 +3351,7 @@
      "show": {
       "from": "f21.jig-bond"
      },
-     "op_index": 198,
+     "op_index": 207,
      "inset": true
     },
     "strake_fittings_vent_line_right": {
@@ -3370,7 +3370,7 @@
      "show": {
       "from": "f21.vent-screen"
      },
-     "op_index": 200
+     "op_index": 209
     },
     "strake_fittings_vent_line_left": {
      "node": "strake.fittings.vent_line.left",
@@ -3388,7 +3388,7 @@
      "show": {
       "from": "f21.vent-screen"
      },
-     "op_index": 200
+     "op_index": 209
     },
     "strake_fittings_screen_right": {
      "node": "strake.fittings.screen.right",
@@ -3407,7 +3407,7 @@
      "show": {
       "from": "f21.vent-screen"
      },
-     "op_index": 200
+     "op_index": 209
     },
     "strake_fittings_screen_left": {
      "node": "strake.fittings.screen.left",
@@ -3426,7 +3426,7 @@
      "show": {
       "from": "f21.vent-screen"
      },
-     "op_index": 200
+     "op_index": 209
     },
     "strake_fittings_outlet_tube_right": {
      "node": "strake.fittings.outlet_tube.right",
@@ -3444,7 +3444,7 @@
      "show": {
       "from": "f21.od-outlet"
      },
-     "op_index": 202
+     "op_index": 211
     },
     "strake_fittings_outlet_tube_left": {
      "node": "strake.fittings.outlet_tube.left",
@@ -3462,7 +3462,7 @@
      "show": {
       "from": "f21.od-outlet"
      },
-     "op_index": 202
+     "op_index": 211
     },
     "strake_fittings_fuel_cap_right": {
      "node": "strake.fittings.fuel_cap.right",
@@ -3480,7 +3480,7 @@
      "show": {
       "from": "f21.fairing-caps"
      },
-     "op_index": 206
+     "op_index": 215
     },
     "strake_fittings_fuel_cap_left": {
      "node": "strake.fittings.fuel_cap.left",
@@ -3498,7 +3498,7 @@
      "show": {
       "from": "f21.fairing-caps"
      },
-     "op_index": 206
+     "op_index": 215
     },
     "elec_battery_shelf_shelf": {
      "node": "elec.battery_shelf.shelf",
@@ -3516,7 +3516,7 @@
      "show": {
       "from": "f22.battery-shelf"
      },
-     "op_index": 210,
+     "op_index": 219,
      "pocket": true
     },
     "elec_battery_shelf_cover": {
@@ -3535,7 +3535,7 @@
      "show": {
       "from": "f22.battery-shelf"
      },
-     "op_index": 210,
+     "op_index": 219,
      "pocket": true
     },
     "elec_battery_shelf_strap": {
@@ -3554,7 +3554,7 @@
      "show": {
       "from": "f22.battery-shelf"
      },
-     "op_index": 210,
+     "op_index": 219,
      "pocket": true
     },
     "elec_battery_battery": {
@@ -3575,7 +3575,7 @@
      "show": {
       "from": "f22.battery-shelf"
      },
-     "op_index": 210,
+     "op_index": 219,
      "pocket": true
     },
     "elec_relays_start_relay": {
@@ -3595,7 +3595,7 @@
      "show": {
       "from": "f22.firewall-terminals"
      },
-     "op_index": 211,
+     "op_index": 220,
      "pocket": true
     },
     "elec_relays_overvoltage_unit": {
@@ -3614,7 +3614,7 @@
      "show": {
       "from": "f22.firewall-terminals"
      },
-     "op_index": 211,
+     "op_index": 220,
      "pocket": true
     },
     "elec_wiring_battery_cable": {
@@ -3633,7 +3633,7 @@
      "show": {
       "from": "f22.firewall-terminals"
      },
-     "op_index": 211,
+     "op_index": 220,
      "pocket": true
     },
     "elec_wiring_panel_bundle": {
@@ -3652,7 +3652,7 @@
      "show": {
       "from": "f22.panel-wiring"
      },
-     "op_index": 208
+     "op_index": 217
     },
     "elec_wiring_firewall_cable": {
      "node": "elec.wiring.firewall_cable",
@@ -3670,7 +3670,7 @@
      "show": {
       "from": "f22.firewall-terminals"
      },
-     "op_index": 211
+     "op_index": 220
     },
     "elec_lights_light_right": {
      "node": "elec.lights.light_right",
@@ -3689,7 +3689,7 @@
      "show": {
       "from": "f22.wing-wiring"
      },
-     "op_index": 212
+     "op_index": 221
     },
     "elec_lights_light_left": {
      "node": "elec.lights.light_left",
@@ -3708,7 +3708,7 @@
      "show": {
       "from": "f22.wing-wiring"
      },
-     "op_index": 212
+     "op_index": 221
     },
     "elec_lights_strobe_supply": {
      "node": "elec.lights.strobe_supply",
@@ -3727,7 +3727,7 @@
      "show": {
       "from": "f22.wing-wiring"
      },
-     "op_index": 212
+     "op_index": 221
     },
     "elec_antennas_nav_strip_right": {
      "node": "elec.antennas.nav_strip_right",
@@ -3745,7 +3745,7 @@
      "show": {
       "from": "f22.antennas"
      },
-     "op_index": 213
+     "op_index": 222
     },
     "elec_antennas_nav_strip_left": {
      "node": "elec.antennas.nav_strip_left",
@@ -3763,7 +3763,7 @@
      "show": {
       "from": "f22.antennas"
      },
-     "op_index": 213
+     "op_index": 222
     },
     "elec_antennas_comm_strips": {
      "node": "elec.antennas.comm_strips",
@@ -3781,7 +3781,7 @@
      "show": {
       "from": "f22.antennas"
      },
-     "op_index": 213,
+     "op_index": 222,
      "in_foam": true
     },
     "engine_block_block": {
@@ -3803,7 +3803,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_starter_starter": {
      "node": "engine.starter.starter",
@@ -3822,7 +3822,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_alternator_alternator": {
      "node": "engine.alternator.alternator",
@@ -3841,7 +3841,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_magnetos_magnetos": {
      "node": "engine.magnetos.magnetos",
@@ -3860,7 +3860,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_carburettor_carburettor": {
      "node": "engine.carburettor.carburettor",
@@ -3879,7 +3879,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_fuel_pump_fuel_pump": {
      "node": "engine.fuel_pump.fuel_pump",
@@ -3898,7 +3898,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_mount_pads_mount_pads": {
      "node": "engine.mount_pads.mount_pads",
@@ -3917,7 +3917,7 @@
      "show": {
       "from": "f23.engine-install"
      },
-     "op_index": 214
+     "op_index": 223
     },
     "engine_bracket_bracket": {
      "node": "engine.bracket.bracket",
@@ -3935,7 +3935,7 @@
      "show": {
       "from": "f23.carb-bracket"
      },
-     "op_index": 215
+     "op_index": 224
     },
     "engine_cowl_cowl": {
      "node": "engine.cowl.cowl",
@@ -3955,7 +3955,7 @@
      "show": {
       "from": "f23.cowl-trim"
      },
-     "op_index": 216
+     "op_index": 225
     },
     "engine_rib_rib_right": {
      "node": "engine.rib.rib_right",
@@ -3974,7 +3974,7 @@
      "show": {
       "from": "f23.root-rib"
      },
-     "op_index": 218
+     "op_index": 227
     },
     "engine_rib_rib_left": {
      "node": "engine.rib.rib_left",
@@ -3993,7 +3993,7 @@
      "show": {
       "from": "f23.root-rib"
      },
-     "op_index": 218
+     "op_index": 227
     }
    },
    "fuel": {
@@ -4298,7 +4298,7 @@
      "show": {
       "from": "f24.aft-cover"
      },
-     "op_index": 219
+     "op_index": 228
     },
     "cover_console_lc1_lc1": {
      "node": "cover.console_lc1.lc1",
@@ -4315,7 +4315,7 @@
      "show": {
       "from": "f24.console-lc1"
      },
-     "op_index": 220
+     "op_index": 229
     },
     "cover_consoles_lc2": {
      "node": "cover.consoles.lc2",
@@ -4332,7 +4332,7 @@
      "show": {
       "from": "f24.consoles-left"
      },
-     "op_index": 221
+     "op_index": 230
     },
     "cover_consoles_lc3": {
      "node": "cover.consoles.lc3",
@@ -4349,7 +4349,7 @@
      "show": {
       "from": "f24.consoles-left"
      },
-     "op_index": 221
+     "op_index": 230
     },
     "cover_consoles_lc4": {
      "node": "cover.consoles.lc4",
@@ -4367,7 +4367,7 @@
      "show": {
       "from": "f24.consoles-left"
      },
-     "op_index": 221
+     "op_index": 230
     },
     "cover_consoles_lc5": {
      "node": "cover.consoles.lc5",
@@ -4385,7 +4385,7 @@
      "show": {
       "from": "f24.consoles-left"
      },
-     "op_index": 221
+     "op_index": 230
     },
     "cover_consoles_lc6": {
      "node": "cover.consoles.lc6",
@@ -4402,7 +4402,7 @@
      "show": {
       "from": "f24.consoles-left"
      },
-     "op_index": 221
+     "op_index": 230
     },
     "cover_thigh_thigh_floor": {
      "node": "cover.thigh.thigh_floor",
@@ -4419,7 +4419,7 @@
      "show": {
       "from": "f24.thigh-support"
      },
-     "op_index": 222
+     "op_index": 231
     },
     "cover_thigh_thigh_rib_a": {
      "node": "cover.thigh.thigh_rib_a",
@@ -4436,7 +4436,7 @@
      "show": {
       "from": "f24.thigh-support"
      },
-     "op_index": 222
+     "op_index": 231
     },
     "cover_thigh_thigh_rib_b": {
      "node": "cover.thigh.thigh_rib_b",
@@ -4453,7 +4453,7 @@
      "show": {
       "from": "f24.thigh-support"
      },
-     "op_index": 222
+     "op_index": 231
     },
     "cover_valve_valve_cover": {
      "node": "cover.valve.valve_cover",
@@ -4470,7 +4470,7 @@
      "show": {
       "from": "f24.thigh-support"
      },
-     "op_index": 222
+     "op_index": 231
     },
     "cover_canard_canard_cover": {
      "node": "cover.canard.canard_cover",
@@ -4487,7 +4487,7 @@
      "show": {
       "from": "f24.canard-cover"
      },
-     "op_index": 223
+     "op_index": 232
     },
     "cover_seal_seal_right": {
      "node": "cover.seal.seal_right",
@@ -4504,7 +4504,7 @@
      "show": {
       "from": "f24.gap-seal"
      },
-     "op_index": 224
+     "op_index": 233
     },
     "cover_seal_seal_left": {
      "node": "cover.seal.seal_left",
@@ -4521,7 +4521,7 @@
      "show": {
       "from": "f24.gap-seal"
      },
-     "op_index": 224
+     "op_index": 233
     },
     "upholstery_cushions_front_cushion": {
      "node": "upholstery.cushions.front_cushion",
@@ -4538,7 +4538,7 @@
      "show": {
       "from": "f26.cushions-headrests"
      },
-     "op_index": 230
+     "op_index": 239
     },
     "upholstery_cushions_rear_cushion": {
      "node": "upholstery.cushions.rear_cushion",
@@ -4555,7 +4555,7 @@
      "show": {
       "from": "f26.cushions-headrests"
      },
-     "op_index": 230
+     "op_index": 239
     },
     "upholstery_headrests_front_headrest": {
      "node": "upholstery.headrests.front_headrest",
@@ -4572,7 +4572,7 @@
      "show": {
       "from": "f26.cushions-headrests"
      },
-     "op_index": 230
+     "op_index": 239
     },
     "upholstery_headrests_rear_headrest": {
      "node": "upholstery.headrests.rear_headrest",
@@ -4589,7 +4589,7 @@
      "show": {
       "from": "f26.cushions-headrests"
      },
-     "op_index": 230
+     "op_index": 239
     },
     "upholstery_suitcases_suitcase_right": {
      "node": "upholstery.suitcases.suitcase_right",
@@ -4606,7 +4606,7 @@
      "show": {
       "from": "f26.suitcases"
      },
-     "op_index": 231
+     "op_index": 240
     },
     "upholstery_suitcases_suitcase_left": {
      "node": "upholstery.suitcases.suitcase_left",
@@ -4623,7 +4623,7 @@
      "show": {
       "from": "f26.suitcases"
      },
-     "op_index": 231
+     "op_index": 240
     }
    },
    "finish": {
