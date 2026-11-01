@@ -229,7 +229,7 @@ powerplant one.
 land, against their plans-graph step ids. The "hangar bay" rename (section 8) waits for the same landing.
 
 Later, each by the owner's word: more Mod-EZ decisions, the RV-12 spot, Model 1 and the ideas
-generator.
+generator. Decided 2026-11-01: the RV-12 and Model 1 spots stay reserved with no work scheduled (a product preference; reserving costs nothing and is reversible).
 
 ## 8. Constraints
 

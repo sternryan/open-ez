@@ -456,10 +456,9 @@ reviewer item 2).
 - an extensometer or rosettes;
 - E4 verification.
 
-That is worth it only if Block 5's part proof tests need the same frame. That decision is Ryan's.
+That is worth it only if Block 5's part proof tests need the same frame. Decided 2026-11-01: no owner test frame unless Block 5 part proof tests need one.
 
-**Testing labs.** None of the candidates below was contacted. Contacting any of them is outward
-and is the owner's call.
+**Testing labs.** None of the candidates below was contacted. Decided 2026-11-01, on merit as recommended above: the owner makes every panel and specimen, a lab with an E4-verified frame runs the record tests, and the university materials facility is the first lab to ask. Contacting labs and spending stay the owner's action.
 
 - **Primary candidate: a university materials characterization facility** with a published external
   rate of about $124/hr for an Instron 34TM-50. Open questions:

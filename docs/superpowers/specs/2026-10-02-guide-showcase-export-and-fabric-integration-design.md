@@ -47,7 +47,7 @@ is not fabrication-ready.
 
 The first export is a visualization package: canonical GLB plus a manifest declaring revision,
 units, axes, identities, transforms, represented state, fidelity and visual-only effects. STEP and
-STL come later from eligible CadQuery solids.
+STL come later from eligible CadQuery solids. Decided 2026-11-01: STEP/STL export (OE7) is scheduled as the entry task of the printed-plug block (the roadmap step after Block 3), because printed plugs need exported solids; it is not built before then.
 
 ### 2.3 Recording must fail closed
 
@@ -202,6 +202,8 @@ private-source gates pass in their intended environments; known physics failures
 recorded artifacts identify the source revision and hashes.
 
 ### OE3 — Semantic state and declarative films
+
+Decided 2026-11-01: OE3 is deferred, not scheduled; no build step depends on it.
 
 Dependencies: OE2 baseline; schema design may start after OE0.
 

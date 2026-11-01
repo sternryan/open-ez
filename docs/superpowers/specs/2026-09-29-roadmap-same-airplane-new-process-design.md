@@ -208,7 +208,7 @@ Each block proves something before the next one relies on it.
 
 - **Canard choice: resolved, Roncz** (owner, 2026-09-29). Its span, vortilons and evidence base
   are the baseline.
-- **Engine: Rotax, model open.** The engine swap is the one planned change that touches CG and
+- **Engine: Rotax, model open.** Decided 2026-11-01: the engine model is an output of the Block 6 fit-and-CG trade, not an input; the book O-235 stays the modelled engine until that trade runs. Selection rule: among candidates with a sourced installed weight and CG, pick the one that keeps the loaded CG inside FS 97 to 103 (om-1980:p23) with the least ballast, then the least installed weight. The engine swap is the one planned change that touches CG and
   possibly the cowl, so it is checked against the ledger before any structural work depends on
   the CG envelope.
 - **Carbon-specific risks** the new process must answer:

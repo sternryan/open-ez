@@ -115,4 +115,4 @@ Full research: `docs/harness/m22-fuselage-research.md`; Task 1 appends its geome
 
 ### Task 7 (lead)
 - Deploy, publish the public build if the public-share lane has landed, grade, and push.
-- The owner walks it.
+- The owner walks it. Decided 2026-11-01: the owner walk is non-blocking; the milestone stands on its tests, and any finding from a later walk opens a new row.

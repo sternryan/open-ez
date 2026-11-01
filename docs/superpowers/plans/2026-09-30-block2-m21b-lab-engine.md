@@ -150,6 +150,8 @@ compiled build), Playwright e2e, ffmpeg for the film.
 
 ### Task 9: Owner review (lead)
 
+Decided 2026-11-01: the owner walk is non-blocking; the milestone stands on its tests, and any finding from a later walk opens a new row.
+
 - Deploy. Put the lab-versus-airsup screenshots and the film in front of the owner.
 - The owner walks through on the iPad. Record the verdict and iterate on what they name.
 - Grade, leak scan, push.

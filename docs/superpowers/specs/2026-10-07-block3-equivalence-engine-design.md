@@ -55,7 +55,7 @@ Block 3 also proves nothing about material allowables (Block 5, coupons) or manu
   - never measure an undimensioned image.
 - **Reuse.** Kernels carry no Long-EZ assumptions; airframe data lives in `config/` and `data/`. No
   generic multi-airframe framework is built now. It is extracted when a second airframe needs it.
-- **No UI work.** A separate design pass covers it later.
+- **No UI work.** A separate design pass covers it later. Decided 2026-11-01: no equivalence or flutter UI until a Block 3 result exists whose inputs are all sourced or explicitly marked assumptions; a UI would otherwise display unsourced numbers.
 
 ## 3. What exists today (checked 2026-10-07)
 
