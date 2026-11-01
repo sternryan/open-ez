@@ -3,7 +3,7 @@ from datetime import datetime
 
 from core.assembly import AircraftAssembly
 from core.manufacturing import GCodeEngine, JigFactory
-from core.compliance import compliance_tracker, ManufacturingMethod
+from core.compliance import compliance_tracker
 
 
 def produce_final_package():
@@ -67,12 +67,8 @@ def produce_final_package():
     gov_dir = package_dir / "compliance"
     gov_dir.mkdir(parents=True, exist_ok=True)
 
-    # Record final task progress for package
-    compliance_tracker.complete_task("wing_cores_left", ManufacturingMethod.BUILDER_CNC)
-    compliance_tracker.complete_task(
-        "wing_cores_right", ManufacturingMethod.BUILDER_CNC
-    )
-    compliance_tracker.complete_task("canard_cores", ManufacturingMethod.BUILDER_CNC)
+    # No simulated completions: generated artifacts are fabrication aids, not builder credit.
+    # Real completions live in data/compliance_progress.yaml (scripts/compliance_audit.py).
 
     report_md = compliance_tracker.generate_report()
     with open(gov_dir / "FAA_compliance_report.md", "w") as f:

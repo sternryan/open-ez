@@ -22,6 +22,8 @@ jobs:
           python -m pip install -r requirements-dev.txt
       - name: Decided hangar records are not rewritten in place
         run: python scripts/check_decided_records.py --base "${{ github.event.pull_request.base.sha || github.event.before }}"
+      - name: Compliance audit (report; fails on integrity errors, not on build progress)
+        run: python scripts/compliance_audit.py --out-dir "$RUNNER_TEMP/compliance"
       - name: Run pre-commit
         run: pre-commit run --all-files
 

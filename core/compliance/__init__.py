@@ -15,6 +15,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 import json
+import math
 
 from config import config
 
@@ -274,18 +275,53 @@ class ComplianceTracker:
         task.photo_paths = photo_paths or []
 
     @property
-    def total_credit(self) -> float:
-        """Calculate total builder credit from completed tasks."""
+    def raw_credit(self) -> float:
+        """Sum of builder-credited task weights (not normalized)."""
         return sum(task.builder_credit for task in self._tasks.values())
 
     @property
+    def total_base_weight(self) -> float:
+        """Sum of every task's base credit (the whole job)."""
+        return sum(task.base_credit for task in self._tasks.values())
+
+    @property
+    def total_credit(self) -> float:
+        """Builder-credited share of the whole job, a fraction in 0..1.
+
+        Raw credited weight divided by the sum of all task base credits, so the
+        51% threshold is compared against a true fraction of the job.
+        """
+        total = self.total_base_weight
+        if not math.isfinite(total) or total <= 0:
+            return 0.0
+        return self.raw_credit / total
+
+    def integrity_errors(self) -> List[str]:
+        """Structural problems with the task table (empty list when sound)."""
+        errors: List[str] = []
+        seen: set = set()
+        for key, task in self._tasks.items():
+            if task.task_id in seen:
+                errors.append(f"duplicate task id: {task.task_id}")
+            seen.add(task.task_id)
+            if key != task.task_id:
+                errors.append(f"task key {key!r} != task_id {task.task_id!r}")
+            credit = task.base_credit
+            if not math.isfinite(credit) or credit <= 0:
+                errors.append(f"task {task.task_id}: base_credit {credit!r} not > 0")
+        total = self.total_base_weight
+        if not math.isfinite(total) or total <= 0:
+            errors.append(f"total base weight {total!r} not > 0")
+        return errors
+
+    @property
     def is_compliant(self) -> bool:
-        """Check if build meets 51% requirement."""
+        """Check if build meets the 51% requirement (fraction of the whole job)."""
         return self.total_credit >= self.REQUIRED_CREDIT
 
     @property
     def remaining_credit_needed(self) -> float:
-        """Calculate how much more credit is needed for compliance."""
+        """Fraction of the job still to be builder-credited for compliance."""
         return max(0.0, self.REQUIRED_CREDIT - self.total_credit)
 
     def get_incomplete_tasks(self) -> List[BuildTask]:
@@ -319,7 +355,7 @@ Aircraft: {config.project_name} ({config.baseline})
 
 | Metric | Value |
 |--------|-------|
-| Total Builder Credit | {self.total_credit:.1%} |
+| Builder Credit (share of whole job) | {self.total_credit:.1%} |
 | Required Threshold | {self.REQUIRED_CREDIT:.0%} |
 | Status | {"**COMPLIANT**" if self.is_compliant else "**NOT YET COMPLIANT**"} |
 | Tasks Completed | {len(completed)} / {len(self._tasks)} |

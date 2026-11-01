@@ -105,6 +105,12 @@ sources:
     obtain: FAA regulatory and guidance library (faa.gov)
     copy: document
     page_basis: pdf
+  cfr14-21-191-2011:
+    title: 14 CFR 21.191, Experimental certificates
+    edition: 2011 edition, GPO govinfo
+    obtain: govinfo.gov Code of Federal Regulations, title 14
+    copy: document
+    page_basis: pdf
   cfr14-23-629-2011:
     title: 14 CFR 23.629, Flutter
     edition: 2011 edition, GPO govinfo
