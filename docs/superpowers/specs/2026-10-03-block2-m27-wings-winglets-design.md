@@ -165,3 +165,4 @@ wing, aileron and winglet builder weights as reference rows.
 
 Strakes, fuel and the wing/spar gap seal (chapters 21 and 24); vortilons and the high-performance
 rudder (later CPs, noted only); re-running VSPAERO; moving the analysis planform.
+Decided 2026-11-01: the model carries the plans baseline plus plans changes only; optional later-CP modifications are not modelled (roadmap: same airplane first).

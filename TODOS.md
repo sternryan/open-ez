@@ -70,7 +70,7 @@ an undimensioned image.
   closure rows (ledger row 65). Still open: `fuselage_weight_lb` 120 (the closure fuselage is 183 lb with spar and gear),
   the hardcoded propulsion installation weights in `core/systems.py` (mount, exhaust, baffles, cowl, prop), and the
   flutter estimate, which fell to 203 KTAS (240 required) with the 132.4 lb wing mass: two tests are strict xfail,
-  decision with the captain (row 68).
+  Decided 2026-11-01: the all-in wing mass (132.4 lb incl. winglets, rudders, ailerons) belongs in the flutter estimate, because everything attached to the panel moves with it in bending and torsion, and it is the conservative choice. The strict xfails stay (203.2 KTAS estimated vs 240 required; the bound is not widened) (row 68).
 - **VSPAERO leg.** Re-run 2026-10-04 on the M2.8 planform (delta +1.63 in, ledger rows 62 and 66). Re-run it again after
   any change to the analysis planform or the strakes; the report reads `not run` when the stored run is stale.
 
@@ -87,3 +87,21 @@ an undimensioned image.
 - Canard planform plans check: done by the 2026-09-29 planform correction; the result is the
   conflict flag above (`docs/geometry-correction-ledger.md`).
 - Tests no longer rewrite tracked files: the suite writes to `tmp_path`, and `output/` is untracked.
+
+## Decided 2026-11-01 (OEZ2 intent ledger)
+
+- L028 Shop companion: not built until a real build starts; trigger is the first real part logged.
+- L036 Engine model: an output of the Block 6 fit-and-CG trade; book O-235 stays modelled until then; pick the candidate keeping loaded CG in FS 97 to 103 (om-1980:p23) with least ballast, then least installed weight.
+- L083 M2.1b Task 9 owner review: non-blocking; milestone stands on its tests; later findings open a new row.
+- L091 M2.2 Task 7 owner walk: same as L083.
+- L115 Block 3 UI: none until a Block 3 result has all inputs sourced or marked assumptions.
+- L118 Block 5 testing route: owner makes panels and specimens; lab with an E4-verified frame runs record tests; university materials facility asked first; no owner frame unless part proof tests need one. Contact and spend stay the owner's action.
+- L127 RV-12 and Model 1 spots: stay reserved, no work scheduled.
+- L138 STEP/STL export (OE7): entry task of the printed-plug block (step after Block 3).
+- L139 OE3 showcase/inspector/URL state: deferred, not scheduled.
+- L142 Vortilons, high-performance rudder, later-CP mods: not modelled; plans baseline plus plans changes only.
+- L160 Flutter wing mass: all-in 132.4 lb belongs in the estimate; strict xfails stay, bound not widened.
+- L167 canard_oswald_e: stays `unsourced`; clears by measurement or a derived value from a registered method.
+- L199 Block 5 lab fees: placeholder until the owner contacts the lab (owner's action).
+- L200 Block 3 standards: buy the ASTM standards the plan cites first (owner's spend).
+- L203 Warp-direction data: no supplier contact; Block 5 coupons are the source; main-wing spar uses a cited textbook glass/epoxy set with wet-layup knockdowns as a design proxy (separate change).

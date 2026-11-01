@@ -16,7 +16,7 @@ panels, 150 specimens cut.
 - **all**: needed on every route, because the owner makes every panel.
 - **owner-test**: needed only if the owner runs the tests instead of a lab.
 
-A lab route adds lab fees, which are a placeholder until the lab search reports.
+A lab route adds lab fees, which are a placeholder until the lab search reports. Decided 2026-11-01: lab route per plan section 10; fees stay a placeholder until the owner contacts the lab (outward contact and money are the owner's action).
 
 ## Sizing
 

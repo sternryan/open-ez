@@ -193,7 +193,7 @@ Each item names the evidence that would clear it.
 | canard_span 141.6, canard_chord 13.02 | conflict | The Roncz canard planform sheets (span and chord of the airplane as built with the Roncz canard). Today they are the GU numbers from the manual |
 | canard_le_wl 1.5, canard_vertical_offset_in 1.5 | conflict | A page that labels the canard LE (or chord line) waterline for the model's canard. 18.9 (p171 side view), 19.4 (GU template level line) and 19.8 (Roncz template level line) are different references and none says LE |
 | canard_incidence -1.5 | unsourced | A printed incidence angle. CP 47 gives the method (level to the top longeron) but no angle |
-| canard_oswald_e | unsourced | Aero estimate, not a plans value; clears by a measurement or by being relabelled a model assumption |
+| canard_oswald_e | unsourced | Aero estimate, not a plans value. Decided 2026-11-01: no new provenance status; it stays `unsourced` and clears only by a measurement or a derived value from a registered method |
 | fuselage_length 175.3 | conflict | One basis now: the property `fs_tail - fs_nose` = 175.3, used by both VSP builders. It still conflicts with the manual's 201.4 overall (om-1980:p3). A printed aft-end station for the fuselage would settle it |
 | fs_tail 168.5 | converted-unsourced | A printed aft-end station (none is printed in Section I) |
 | wing_root_bl 23.3 | unsourced | A page giving the root butt line for the model's root chord. Plans-1980:p126 has the TE meeting the cowl at BL 23, which is not a root chord station. It sets the panel span 133.3 and the exposed area; the reference area extends the taper to BL 0 and does not depend on it |

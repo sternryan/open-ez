@@ -21,7 +21,7 @@ corrections apply and why, and how the parts fit together in space.
 |---|---|---|
 | **M1 Build Rehearsal** | ~17 authored operations across ch 10 (GU canard), ch 30 (Roncz canard), ch 12 (canard install), with checklists, verified plans-change links, and minimal selectable 3D | this spec |
 | M2 Layup cutaway | one spatial explanation (canard layup cutaway linked to its steps), via the headless-Blender GPU payload. **Timeboxed**, and committed as M1's direct successor | next spec |
-| C Shop companion | progress, build-log photos, 8000-38 evidence, BOM consumption | deferred until a real build |
+| C Shop companion | progress, build-log photos, 8000-38 evidence, BOM consumption | deferred until a real build (Decided 2026-11-01: not built until a real build starts; trigger is the first real part logged, since it has no input before then) |
 
 **Out of M1:** whole-airframe geometry, fixing open-ez aero defects (§9), Sections II+.
 

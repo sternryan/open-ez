@@ -20,8 +20,8 @@ from config import config
 FLUTTER_REASON = (
     "Block 2 2.n Task 3 (ledger row 68): the sourced wing mass 132.4 lb (closure row wings, 2 x 64 + 2 x 2.2, with winglets, "
     "rudders and ailerons) replaced the unsourced 85.0 lb in FlutterEstimator's mass per length, and the estimate fell from "
-    "253.6 to 203.2 KTAS against the 240 required. The 240 bound is NOT widened and the estimator is not tuned; whether the "
-    "all-in wing mass belongs in a lifting-surface flutter estimate is a captain decision."
+    "253.6 to 203.2 KTAS against the 240 required. The 240 bound is NOT widened and the estimator is not tuned; it was "
+    "decided 2026-11-01 that the all-in wing mass belongs in a lifting-surface flutter estimate."
 )
 
 

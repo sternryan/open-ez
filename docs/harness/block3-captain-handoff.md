@@ -78,7 +78,7 @@ the plan (`docs/superpowers/plans/2026-10-07-block3-equivalence-engine.md`), the
 
 ## Next, added by captain #3
 
-1. **Before any panel exists:** buy the standards (Ryan), so the NOT READ values in plan §5 can be
+1. **Before any panel exists:** buy the standards (the owner's spend; decided 2026-11-01: buy the ASTM standards the plan cites first, since they unblock the NOT READ values), so the NOT READ values in plan §5 can be
    filled. Fill the lab and oven placeholder in plan §10 when that search reports.
 2. **Before the first record panel:** write `data/validation/block5_coupon_predictions.yaml` and freeze
    its hash in a row (plan §8).
@@ -90,8 +90,7 @@ the plan (`docs/superpowers/plans/2026-10-07-block3-equivalence-engine.md`), the
    commit `data/validation/equivalence_canard.json`. Every gate will read blocked today. The
    `station_capacities` test needs T4 and T7.
 2. **T5** (NCAMP and glass comparisons) after T4.
-3. **Warp data:** the untried leads in the source notes. A supplier request is outward contact, so it
-   is the owner's call.
+3. **Warp data:** decided 2026-11-01: no supplier contact; the Block 5 coupons are the source for UND/UNI warp-direction data. The main-wing spar model uses a cited textbook glass/epoxy set with wet-layup knockdowns as a design proxy (separate change).
 4. **S3:** retry the NTSB lookups for N25063 and N707LT.
 5. **Report 45:** re-read Figs 3 and 4 and the p8 tab constant before T10.
 
