@@ -412,6 +412,16 @@ materials:
         units: psi
         cite: kaw-ocw-ch2-tsaiwu:p12
         note: printed 72 MPa
+      t_ply:
+        value: null
+        units: in
+        flag: unsourced
+        note: not printed on the slides; the spar model uses the plans' laid tape thickness instead
+      areal_mass:
+        value: null
+        units: lb/ft2
+        flag: unsourced
+        note: not printed on the slides
   legacy_uni_glass:
     use: legacy
     description: values formerly hard-coded for the uni glass default in the simulation adapter
