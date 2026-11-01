@@ -52,9 +52,12 @@ OP_KEYS = {
     "group",
     "plan",
 }
-PLAN_KEYS = {"people", "people_why", "hours", "cure", "resin", "tools", "buy"}
+PLAN_KEYS = {"people", "people_why", "hours", "cure", "resin", "tools", "buy", "fuel"}
 VALUE_KEYS = {"value", "flag", "source"}
 BUY_KEYS = {"item", "qty", "flag"}
+FUEL_KEYS = {"wetted", "fuel", "resin_compat", "why", "source"}
+RESIN_COMPAT = {"unknown", "sourced"}
+FUEL_GRADE = "UL94"
 GROUP_FILE_KEYS = {"groups", "required_files"}
 GROUP_KEYS = {"id", "label"}
 CHANGE_KEYS = {"cp", "lpc", "class", "status", "kind", "note", "annotation_pp"}
@@ -127,6 +130,15 @@ class Buy:
 
 
 @dataclass(frozen=True)
+class Fuel:
+    wetted: bool
+    fuel: str
+    resin_compat: str
+    why: str
+    source: str | None
+
+
+@dataclass(frozen=True)
 class Plan:
     people: int = 1
     people_why: str | None = None
@@ -135,6 +147,7 @@ class Plan:
     resin: str | None = None
     tools: tuple[str, ...] = ()
     buy: tuple[Buy, ...] = ()
+    fuel: Fuel | None = None
 
 
 @dataclass(frozen=True)
@@ -269,6 +282,35 @@ def _buy(d, where: str) -> Buy:
     return Buy(item, _number(d["qty"], f"{where} qty"), flag)
 
 
+def _fuel(d, where: str) -> Fuel:
+    if not isinstance(d, dict):
+        raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
+    _extra(d, FUEL_KEYS, where)
+    wetted = d.get("wetted")
+    if wetted is not True:
+        raise SchemaError(f"{where}: wetted must be true, got {wetted!r}")
+    grade = d.get("fuel")
+    if grade != FUEL_GRADE:
+        raise SchemaError(f"{where}: bad fuel {grade!r}")
+    compat = d.get("resin_compat")
+    if compat not in RESIN_COMPAT:
+        raise SchemaError(f"{where}: bad resin_compat {compat!r}")
+    why = d.get("why")
+    if not isinstance(why, str) or why.strip() == "":
+        raise SchemaError(f"{where}: why must be a non-empty string, got {why!r}")
+    source = d.get("source")
+    if compat == "sourced":
+        if not isinstance(source, str) or source.strip() == "":
+            raise SchemaError(f"{where}: sourced needs a source")
+        try:
+            check_citation(source)
+        except ValueError as e:
+            raise SchemaError(f"{where}: {e}") from e
+    elif source is not None:
+        raise SchemaError(f"{where}: unknown carries no source")
+    return Fuel(True, grade, compat, why, source)
+
+
 def _plan(d, where: str) -> Plan:
     if not isinstance(d, dict):
         raise SchemaError(f"{where}: must be a mapping, got {type(d).__name__}")
@@ -299,6 +341,8 @@ def _plan(d, where: str) -> Plan:
     if not isinstance(raw_buy, list):
         raise SchemaError(f"{where}: buy must be a list")
     buy = tuple(_buy(b, f"{where} buy {i}") for i, b in enumerate(raw_buy))
+    raw_fuel = d.get("fuel")
+    parsed_fuel = None if raw_fuel is None else _fuel(raw_fuel, f"{where} fuel")
     return Plan(
         people=people,
         people_why=why,
@@ -307,6 +351,7 @@ def _plan(d, where: str) -> Plan:
         resin=resin,
         tools=tuple(tools),
         buy=buy,
+        fuel=parsed_fuel,
     )
 
 

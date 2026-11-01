@@ -37,6 +37,7 @@ export function setupNarrow(onLayout: () => void): Narrow {
   const shop = byId('envsheet-shop'), view = byId('envsheet-view')
   const sessionRow = byId('session-hours').closest('.env-row') as HTMLElement
   const list = mover(byId('navlog-list'))
+  const zoom = mover(byId('nav-zoom'))
   const shopParts = [byId('environment'), sessionRow, byId('env-warn'), byId('env-note')].map(mover)
   const controls = mover(byId('controls'))
   let on = false, inited = false
@@ -65,6 +66,7 @@ export function setupNarrow(onLayout: () => void): Narrow {
     setSheet(false); setEnv(false); setMeter(false)
     if (on) {
       body.dataset.narrow = '1'
+      zoom.narrow(sheetBody, bench)
       list.narrow(sheetBody, bench)
       for (const p of shopParts) p.narrow(shop)
       controls.narrow(view)
@@ -74,6 +76,7 @@ export function setupNarrow(onLayout: () => void): Narrow {
       meter.setAttribute('aria-label', 'Plan so far: tap for the full meter')
     } else {
       delete body.dataset.narrow
+      zoom.wide()
       list.wide()
       for (const p of shopParts) p.wide()
       controls.wide()

@@ -2,6 +2,12 @@
 # front seat -> instrument panel -> F22 -> rear seat (plans p. 6-2 text). The firewall bond comes last, after the chapter 14 spar fit (Canard Pusher 25 hint).
 - id: f06.trial-fit
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 0.9, flag: estimate, source: null}
+    cure: none
+    tools: [clamps, threaded-rod-clamps, square, level, drill, marker]
   title: Trial fit of sides and bulkheads
   summary: Dry-fit both sides with the firewall, front seat bulkhead, F22 and rear seat bulkhead, keeping the firewall square to the top longeron. Mark the locating holes in each bulkhead.
   variants: [both]
@@ -16,6 +22,12 @@
     - Both sides match in length and bulkhead stations
 - id: f06.jig-check
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 0.9, flag: estimate, source: null}
+    cure: none
+    tools: [level, square, tape-measure, string, shims]
   title: Jig blocks and squareness check
   summary: Level two jig blocks on the bench and stand the sides upside down on them. Check the assembly is square, level and symmetric before any bulkhead is bonded.
   variants: [both]
@@ -31,6 +43,13 @@
     - Diagonals and heights measured and recorded before bonding
 - id: f06.bond-front-seat
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 3.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, mixing-stick, flox-bag, clamps, brush, squeegee, scissors, sanding-block]
   title: Bond the front seat bulkhead
   summary: First into the jig. After the dry run, everything comes apart, every bond face gets flox, and the parts go back in the same order. The front seat bulkhead goes in first and its corners get two 45-degree BID tapes while the flox is still wet.
   variants: [both]
@@ -47,6 +66,13 @@
     - Corner tapes wet and smooth
 - id: f06.bond-panel
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 3.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, mixing-stick, flox-bag, clamps, brush, squeegee, scissors, sanding-block]
   title: Bond the instrument panel
   summary: Second in the order. Flox the panel to both sides at its mark and tape the corners with two 45-degree BID plies.
   variants: [both]
@@ -63,6 +89,13 @@
     - Corner tapes laid while the flox is wet
 - id: f06.bond-f22
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 0.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, mixing-stick, flox-bag, clamps, drill, screwdriver, wrench]
   title: Bond F22
   summary: Third in the order. Flox F22 into place; tape it only where the plans show tape.
   variants: [both]
@@ -77,6 +110,13 @@
     - Tape added only at the locations the page shows
 - id: f06.bond-rear-seat
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 0.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, mixing-stick, flox-bag, clamps, drill, screwdriver]
   title: Bond the rear seat bulkhead
   summary: Fourth in the order. Flox the rear seat bulkhead to both sides, with its lower edge level with the side bottoms and its top corner at the lower forward corner of the spar cutout.
   variants: [both]
@@ -92,6 +132,15 @@
     - Flox squeeze-out visible all round
 - id: f06.f28-install
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, sanding-block, cup, flox-bag, brush, scissors, knife, peel-ply, multitool]
+    buy:
+      - {item: spruce-capstrip-075x1, qty: 0.5, flag: estimate}
   title: Install F28
   summary: Set F28 5.9 in behind F22's forward face and bond it with two small wood doublers, each covered with a single 45-degree BID ply.
   variants: [both]
@@ -109,6 +158,13 @@
     - Two doublers bonded and covered by BID laps
 - id: f06.rear-seat-tape
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 2.7, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, knife, sanding-block, cling-wrap]
   title: Tape the rear seat bulkhead
   summary: After the rear seat bond has cured, add two BID plies of tape to its joints with the sides.
   variants: [both]
@@ -124,6 +180,14 @@
     - Tape laid along both joints
 - id: f06.bottom-foam-fit
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: none
+    tools: [saw, knife, router, marker, straightedge]
+    buy:
+      - {item: foam-pvc-1p6, qty: 14.24, flag: estimate}
   title: Fit the bottom foam
   summary: Fit the thick foam bottom block against F22 and trim it a little outboard of the side marks and a hair aft of the rear seat mark. Cut the nose-gear well.
   variants: [both]
@@ -137,6 +201,12 @@
     - Nose-gear well cut to the plans size
 - id: f06.bottom-contour
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: none
+    tools: [router, sanding-block, perma-grit, orbital-sander, templates, dust-mask]
   title: Carve the bottom contour
   summary: Carve the block to the printed sections. The plans say none of the carved dimensions is critical.
   variants: [both]
@@ -151,6 +221,17 @@
     - Surface smooth, no flat spots
 - id: f06.bottom-glass
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 5, flag: community, source: "https://www.aryjglantz.com/2013/06/glassing-and-bonding-floor.html"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, knife, peel-ply, router]
+    buy:
+      - {item: bid-7725, qty: 3.3, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.136, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.278, flag: estimate}
   title: Glass the bottom
   summary: Lay two 45-degree BID plies over the bottom, with one more under the rear-seat entry area. Leave one inch overlaps and two inches of extra cloth at the aft end.
   variants: [both]
@@ -167,6 +248,13 @@
     - Aft excess left long for wrapping onto the rear seat bulkhead
 - id: f06.bottom-bond
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, flox-bag, weights, brush, squeegee, level]
   title: Bond the bottom to the fuselage
   summary: Put flox beads on the joints, invert the structure, weight the bottom down, and wet the aft excess cloth onto the aft face of the rear seat bulkhead.
   variants: [both]
@@ -180,6 +268,18 @@
     - Excess cloth wet onto the rear seat bulkhead
 - id: f06.bottom-tape
   chapter: 6
+  group: fuselage-box
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, knife, peel-ply, cling-wrap]
+    buy:
+      - {item: bid-7725, qty: 0.31, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.013, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.026, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.039, flag: estimate}
   title: Tape the bottom corners
   summary: Tape every inside corner where the bottom meets the sides and bulkheads, with one 45-degree BID ply two inches wide.
   variants: [both]
@@ -195,6 +295,13 @@
     - Fuselage box closed and ready for the next chapter
 - id: f06.bond-firewall
   chapter: 6
+  group: spar-firewall
+  plan:
+    people: 1
+    hours: {value: 0.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, flox-bag, clamps, wrench, square, brush, scissors]
   title: Bond the firewall
   summary: The firewall stays dry-fit and loose until the spar fit (chapter 14), so this step now follows it. The scanned plan's fit step inserts from one side; CP25's separate builder-order hint describes it as rearward. Flox it to both sides, lap one BID ply round its edges, check it is still square to the top longeron, then leave the assembly untouched for twelve hours.
   variants: [both]

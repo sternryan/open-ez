@@ -10,6 +10,14 @@ export interface PlanJson {
   tools?: string[]
   /** source: the buy's evidence (a citation, a derivation note or a link) when the build carries one */
   buy?: { item: string; qty: number; flag: string; source?: string | null }[]
+  /** fuel-wetted steps only: the resin's compatibility with that fuel is unknown until a coupon test, or sourced */
+  fuel?: {
+    wetted: boolean
+    fuel: string
+    resin_compat: 'unknown' | 'sourced'
+    why: string
+    source: string | null
+  } | null
 }
 
 export interface Op {

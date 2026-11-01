@@ -233,12 +233,16 @@ def test_scripts_for_generates_two_plies_in_order(laid):
     actions = scripts_for(g, {})["c10.cores"]
     assert actions == [
         {"do": "place", "part": "canard.core", "who": "owner"},
+        {"do": "drape", "ply": 1, "who": "buddy"},
         {"do": "wet-out", "ply": 1, "tool": "brush", "who": "owner"},
         {"do": "squeegee", "ply": 1, "tool": "squeegee", "who": "owner"},
+        {"do": "drape", "ply": 2, "who": "buddy"},
         {"do": "wet-out", "ply": 2, "tool": "brush", "who": "owner"},
         {"do": "squeegee", "ply": 2, "tool": "squeegee", "who": "owner"},
     ]
-    assert len(actions) == 5
+    assert (
+        len(actions) == 7
+    )  # the fixture op is a two-person step, so the buddy drapes each ply
 
 
 def test_scripts_for_override_wins(laid):
@@ -407,3 +411,34 @@ def test_real_front_seat_rejects_a_backwards_ply_reference():
     assert _checked_front_seat(actions) == [
         _fault(_FRONT, len(original), "ply 1 goes back from ply 2")
     ]
+
+
+def test_scripts_for_adds_buddy_drape_on_two_person_ply_steps():
+    """A generated two-person ply step shows the buddy draping each ply before the owner wets it out."""
+    g = load_graph(ROOT / "guide" / "graph")
+    overrides = load_scripts(ROOT / "guide" / "graph")
+    scripts = scripts_for(g, overrides)
+    checked = 0
+    for op_id, op in g.ops.items():
+        if op_id in overrides or not op.materials or not op.plan or op.plan.people != 2:
+            continue
+        acts = scripts[op_id]
+        wet = [i for i, a in enumerate(acts) if a["do"] == "wet-out"]
+        assert wet, op_id
+        for i in wet:
+            prev = acts[i - 1]
+            assert prev == {"do": "drape", "ply": acts[i]["ply"], "who": "buddy"}, (
+                op_id,
+                i,
+                prev,
+            )
+        checked += 1
+    assert checked >= 1
+    assert validate_scripts(scripts, g) == []
+    one = load_graph(ROOT / "guide" / "graph")
+    solo = [
+        o
+        for o in one.ops.values()
+        if o.materials and o.plan and o.plan.people == 1 and o.id not in overrides
+    ]
+    assert solo and all(a["who"] == "owner" for a in scripts[solo[0].id])

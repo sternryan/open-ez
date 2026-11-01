@@ -2,6 +2,18 @@
 # The nose-wheel station is a conflict in the sources (see docs); no op states it as a single number.
 - id: f13.strut-reinforce
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 5.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, cup, brush, squeegee, scissors, knife, saw]
+    buy:
+      - {item: ng-strut-longez, qty: 1, flag: derived}
+      - {item: bid-7725, qty: 0.09, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.004, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.008, flag: estimate}
   title: Reinforce the NG-1L strut
   summary: Round the edges of the NG-1L strut and wrap it in BID, three sides first and the fourth after cure. Trim the strut to fit its castings.
   variants: [both]
@@ -20,6 +32,11 @@
     - Strut trimmed to fit the castings
 - id: f13.worm-drive-bench
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    cure: none
+    tools: [wrench-set, drill, file, spring-scale]
   title: Worm drive bench assembly
   summary: Build or buy the worm drive and its brackets, plates and fork on the bench, and check it turns freely. The friction damper should let the wheel pivot under a modest side load. The lab has no model of the worm drive, so its frame shows the reinforced strut waiting on the bench.
   variants: [both]
@@ -40,6 +57,18 @@
     - NG17 wall and spring wire follow the Canard Pusher change (CP30 LPC 87)
 - id: f13.ng30-plates
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 11.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, jigsaw, drill, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: foam-pvc-0p2, qty: 2.93, flag: estimate}
+      - {item: bid-7725, qty: 2.71, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.112, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.228, flag: estimate}
   title: Fabricate NG30 plates
   summary: Cut the two NG30 plates from thin PV foam, glass them inside and out, and build up pads at the bolt and pivot holes.
   variants: [both]
@@ -59,6 +88,13 @@
     - Four-ply outer skin laid; holes opened to 5/16 and 1/4
 - id: f13.ng-box-assemble
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 10.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [wrench-set, square, clamps, cup, mixing-stick]
   title: Assemble the NG box
   summary: Bolt the plates together over the NG6, NG23, NG7 and NG8 hardware with NG51 plates and NG14 spacers, then set the strut and NG5 in wet flox.
   variants: [both]
@@ -74,6 +110,13 @@
     - Strut and NG5 set on NG6 in wet flox, strut centred
 - id: f13.ng3-ng4
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 4.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [scissors, cup, brush, clamps, drill, caliper]
   title: Fit NG3 and NG4
   summary: Fit NG3 snug with dry BID plies, re-lay it wet with flox and clamp it, then drill for the rod end and check the bolt spacing.
   variants: [both]
@@ -91,6 +134,18 @@
     - Bolt to NG7 centre 6.71 +/- 0.05 in
 - id: f13.ng31-f6
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 5.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, squeegee, scissors, clamps, hammer]
+    buy:
+      - {item: foam-pvc-h100-0p25, qty: 0.039, flag: estimate}
+      - {item: bid-7725, qty: 0.11, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.005, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.009, flag: estimate}
   title: Install NG31 and F6
   summary: Glass the NG31 disc and flox it to the fronts of the NG30 plates, mount the assembly on F22, and tie the plates together with an F6 wrap.
   variants: [both]
@@ -112,6 +167,18 @@
     - NG31 foam is the red R100, per CP25 LPC 23
 - id: f13.floor-blocks
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 8.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: urethane-foam-2x24x48, qty: 0.178, flag: estimate}
+      - {item: bid-7725, qty: 0.37, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.015, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.031, flag: estimate}
   title: Carve floor blocks
   summary: Carve the urethane floor blocks, dished on the inboard side, fit them level with the floor at F22, and glass them in with an extra ply aft.
   variants: [both]
@@ -130,6 +197,13 @@
     - Extra ply over the aft 3 in
 - id: f13.pedal-pivot-blocks
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 6.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, rivet-squeezer, countersink, knife, sanding-block, cup]
   title: Pedal pivot blocks
   summary: "Drill through NG30 for the pivot bolt and make the pivot blocks: nutplates riveted to thin plates, set on dark-red foam blocks butted to F22."
   variants: [both]
@@ -145,6 +219,18 @@
     - Blocks 6.1 in from NG30, butted to F22
 - id: f13.side-pieces
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: urethane-foam-2x24x48, qty: 0.454, flag: estimate}
+      - {item: bid-7725, qty: 0.84, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.035, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.071, flag: estimate}
   title: Side pieces
   summary: Carve the urethane side blocks to fit, glass the inside and mount them in wet micro, then bury the pivot blocks under BID with the holes kept open.
   variants: [both]
@@ -164,6 +250,13 @@
     - Pedal holes kept open
 - id: f13.canard-attach-reinforce
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 4.7, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [scissors, cup, brush, squeegee, drill, reamer]
   title: Canard attachment reinforcement
   summary: Reinforce the top corners of F22 with BID, open the lift holes, and bond the CNL bushings and the AN970 washers.
   variants: [both]
@@ -183,6 +276,14 @@
     - AN970 bonded to F22 under one BID ply
 - id: f13.rudder-pedals
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 11.2, flag: estimate, source: null}
+    cure: none
+    tools: [drill, wrench-set, file]
+    buy:
+      - {item: rudder-pedal-longez, qty: 2, flag: derived}
   title: Rudder pedals
   summary: Open the pivot holes and bolt on the left and right pedals with CS13 spacers, then add a light return spring on a small tab.
   variants: [both]
@@ -201,6 +302,13 @@
     - Top tab reinforced (CP30 LPC 86, mandatory within 10 flight hours)
 - id: f13.lower-gear
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 4.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, file, cup, mixing-stick, drill, screwdriver]
   title: Lower gear
   summary: Trim the strut end to nest in the NG15A at the printed length, bond it in wet flox, and fit the forward door on four screws.
   variants: [both]
@@ -216,6 +324,18 @@
     - Nose-wheel station left as a flagged conflict until the A-sheet is held
 - id: f13.strut-slot-sc
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 5.1, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [multitool, knife, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: strut-cover-sc, qty: 1, flag: derived}
+      - {item: bid-7725, qty: 0.08, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.003, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.007, flag: estimate}
   title: Strut slot cutout
   summary: With the fuselage upside down, cut the bottom skin and foam aft of F22 so the strut retracts flush, then bond the SC strut cover.
   variants: [both]
@@ -232,6 +352,15 @@
     - SC cover bonded, two BID plies over bare foam
 - id: f13.nb-box
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 3.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, scissors, drill, screwdriver]
+    buy:
+      - {item: nose-wheel-cover-nb, qty: 1, flag: derived}
   title: NB box
   summary: Check tire clearance, bond the NB nose gear box with BID tape, fit a plexiglass window in the panel bulkhead and hang the aft door.
   variants: [both]
@@ -249,6 +378,12 @@
     - Aft door on three screws, aft edge rounded
 - id: f13.rig-nose-gear
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 6.2, flag: estimate, source: null}
+    cure: none
+    tools: [drill, wrench-set]
   title: Rig the nose gear
   summary: Crank the gear fully up, drill the universal and NG61, adjust the rod ends, and check the down position. The gear-down switch is chapter 22 work.
   variants: [both]
@@ -264,6 +399,15 @@
     - Down position checked
 - id: f13.pitot-static
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 1.7, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [tube-cutter, drill, pliers, cup]
+    buy:
+      - {item: al-tube-5052-0p25-6ft, qty: 0.61, flag: estimate}
   title: Install pitot-static system
   summary: Run the 1/4 in aluminium pitot tube through F22 and NG31, and make the left-side static port from a pinched, potted tube.
   variants: [both]
@@ -278,6 +422,15 @@
     - Static port in the left side, tube pinched and potted, three 1/16 in holes
 - id: f13.top-foam
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 2.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife]
+    buy:
+      - {item: urethane-foam-2x24x48, qty: 0.223, flag: estimate}
   title: Add top foam
   summary: Tack a 2 in green urethane top block to the sides and NG31 with dabs of adhesive, ready to carve.
   variants: [both]
@@ -291,6 +444,17 @@
     - Temporarily bonded to sides and NG31 with dabs
 - id: f13.carve-glass-nose
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 29.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, saw, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: bid-7725, qty: 2.26, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.093, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.19, flag: estimate}
   title: Carve glass nose
   summary: With the gear retracted, carve the nose to shape and skin it in BID, with heavier plies round the canard cutout and a bumper flange.
   variants: [both]
@@ -311,6 +475,19 @@
     - Four-ply BID bumper flange at 45 degrees
 - id: f13.nose-door
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    hours: {value: 8.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, saw, sanding-block, cup, brush, squeegee, scissors, drill, countersink, rivet-squeezer]
+    buy:
+      - {item: bid-7725, qty: 0.37, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.015, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.031, flag: estimate}
+      - {item: flush-screw-nose-door, qty: 10, flag: estimate}
+      - {item: nutplate-nose-door, qty: 10, flag: estimate}
   title: Construct nose door
   summary: Lay up the nose door over release film, cut it free with a flange, and fit it on ten flush screws and nutplates.
   variants: [both]
@@ -330,6 +507,11 @@
     - Reflox with a 1 in BID strip; ten flush screws and nutplates
 - id: f13.shock-strut
   chapter: 13
+  group: nose
+  plan:
+    people: 1
+    cure: none
+    tools: [wrench-set]
   title: Shock strut (optional)
   summary: Optional. For rough or grass fields, fit the spring assembly in place of the NG9 or NG10A rod; the Roncz text assumes it is fitted.
   variants: [both]

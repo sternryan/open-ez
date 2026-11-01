@@ -1,6 +1,7 @@
 # Chapter 12 — GU canard installation (first edition). The Roncz path installs per chapter 30 instead.
 - id: c12.alignment-pins
   chapter: 12
+  group: canard-install
   title: Make and fit the alignment pins
   summary: Turn two headless AN3 bolts into round-nosed pins and drill matching holes in the F28 bulkhead and its doublers. The pins stay loose until the canard is aligned.
   variants: [gu]
@@ -16,6 +17,7 @@
     - Pins not bonded yet
 - id: c12.align-canard
   chapter: 12
+  group: canard-install
   title: Align the canard on the fuselage
   summary: Clamp the canard to the forward bulkhead and set zero sweep, zero dihedral and zero incidence against the top longerons, shimming the lift tabs as needed, then drill the tabs and fit the rear tabs to the pins.
   variants: [gu]

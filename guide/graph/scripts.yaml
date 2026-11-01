@@ -133,3 +133,774 @@ f05.inside-layup:
 - {do: wet-out, ply: 2, tool: brush, who: owner}
 - {do: squeegee, ply: 2, tool: squeegee, who: owner}
 - {do: bond, part: fuselage.longerons, tool: cup, who: owner, why: "flox in the top longeron, stiffener and aft blocks"}
+f06.bottom-bond:
+- {do: bond, part: fuselage.bottom, who: owner, why: apply flox beads}
+- {do: flip, part: fuselage.bottom, who: owner, why: invert structure}
+- {do: place, part: fuselage.bottom, tool: stand-in, who: owner, why: weight down bottom}
+- {do: wet-out, part: fuselage.rear_seat_bkhd, who: owner, why: wet aft excess cloth}
+f06.bottom-contour:
+- {do: sand, part: fuselage.bottom, tool: sanding-block, who: owner, why: carve to printed sections}
+f06.bottom-foam-fit:
+- {do: place, part: fuselage.bottom, who: owner, why: position foam}
+- {do: cut, part: fuselage.bottom, tool: stand-in, who: owner, why: trim to marks}
+f06.bottom-glass:
+- {do: place, part: fuselage.bottom, ply: 1, who: owner, why: lay first ply}
+- {do: wet-out, part: fuselage.bottom, ply: 1, tool: brush, who: owner, why: saturate cloth}
+- {do: squeegee, part: fuselage.bottom, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.bottom, ply: 2, who: owner, why: lay second ply}
+- {do: wet-out, part: fuselage.bottom, ply: 2, tool: brush, who: owner, why: saturate cloth}
+- {do: squeegee, part: fuselage.bottom, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.bottom, ply: 3, who: owner, why: lay third ply}
+- {do: wet-out, part: fuselage.bottom, ply: 3, tool: brush, who: owner, why: saturate cloth}
+- {do: squeegee, part: fuselage.bottom, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+f07.belt-insert:
+- {do: cut, part: fuselage.bottom, tool: stand-in, who: owner, why: cut out bottom foam at lower corner}
+- {do: bond, part: fuselage.belt_insert, tool: cup, who: owner, why: micro in small wood insert}
+f07.canard-cutout:
+- {do: cut, part: fuselage.canard_cutout, tool: stand-in, who: owner, why: cut full-size pattern from sides}
+- {do: cut, part: fuselage.longerons, tool: stand-in, who: owner, why: take out longeron ahead of F28}
+- {do: cut, part: fuselage.f22, tool: stand-in, who: owner, why: trim tab down to waterline}
+f07.carve-corners:
+- {do: sand, part: fuselage.side_left, tool: stand-in, who: owner, why: round top and bottom corners}
+- {do: sand, part: fuselage.side_right, tool: stand-in, who: owner, why: round top and bottom corners}
+- {do: sand, part: fuselage.bottom, tool: stand-in, who: owner, why: round bottom corners}
+f07.fuel-gauge-area:
+- {do: sand, part: fuselage.side_left, tool: sanding-block, who: owner, why: mark and sand shallow depression}
+- {do: bond, part: fuselage.side_left, tool: cup, who: owner, why: fill bolt holes with micro}
+- {do: sand, part: fuselage.firewall, tool: sanding-block, who: owner, why: round plywood edge}
+- {do: cut, part: fuselage.firewall, tool: stand-in, who: owner, why: cut insulation back from skin lap}
+f08.access-holes:
+- {do: cut, part: fuselage.access_holes, tool: stand-in, who: owner, why: create map-case slot and baggage hole}
+f08.roll-over-bond:
+- {do: sand, part: fuselage.rollover, tool: sanding-block, who: owner}
+- {do: bond, part: fuselage.rollover, tool: cup, who: owner}
+f08.roll-over-foam:
+- {do: cut, part: fuselage.rollover, tool: stand-in, who: owner, why: cut the foam to the printed shapes}
+- {do: place, part: fuselage.rollover, who: owner}
+- {do: place, part: fuselage.front_seat_bkhd, who: owner}
+f08.roll-over-inside:
+- {do: cut, part: fuselage.rollover_inserts, tool: scissors, who: owner}
+- {do: place, part: fuselage.rollover_inserts, who: owner}
+- {do: place, part: fuselage.rollover, ply: 1, who: owner}
+- {do: wet-out, part: fuselage.rollover, ply: 1, tool: brush, who: owner}
+- {do: squeegee, part: fuselage.rollover, ply: 1, tool: squeegee, who: owner}
+- {do: wait-cure, part: fuselage.rollover, who: owner}
+f08.step:
+- {do: cut, part: fuselage.step, tool: stand-in, who: owner, why: shape aluminium step}
+f09.jig-blocks:
+- {do: place, part: gear.jig_blocks, tool: stand-in, who: owner, why: position blocks for gear tubes}
+- {do: bond, part: fuselage.gear_extrusions, tool: stand-in, who: owner, why: bolt gear tubes between extrusions}
+f09.position-gear:
+- {do: place, part: gear.jig_blocks, tool: stand-in, who: owner, why: stabilize fuselage}
+- {do: check-level, part: fuselage.gear_extrusions, tool: level, who: owner, why: ensure fuselage is level}
+- {do: check-string, part: gear.datum_board, tool: stand-in, who: owner, why: set axle position relative to spar}
+- {do: bond, part: gear.strut, tool: stand-in, who: owner, why: fix leg in position}
+- {do: cut, part: gear.strut, tool: stand-in, who: owner, why: scribe tube marks}
+f13.canard-attach-reinforce:
+- {do: place, part: canard.lift_tabs, ply: 1, who: owner, why: lay first layer}
+- {do: wet-out, part: canard.lift_tabs, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.lift_tabs, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.lift_tabs, ply: 2, who: owner, why: lay second layer}
+- {do: wet-out, part: canard.lift_tabs, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.lift_tabs, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.lift_tabs, ply: 3, who: owner, why: lay third layer}
+- {do: wet-out, part: canard.lift_tabs, ply: 3, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.lift_tabs, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.lift_tabs, ply: 4, who: owner, why: lay fourth layer}
+- {do: wet-out, part: canard.lift_tabs, ply: 4, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.lift_tabs, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: fuselage.f22, who: owner, why: attach bushings and washers}
+f13.lower-gear:
+- {do: cut, part: gear.nose_strut, tool: stand-in, who: owner, why: trim strut to length}
+- {do: bond, part: nose.ng_hardware, who: owner, why: secure strut in flox}
+f13.ng-box-assemble:
+- {do: bond, part: nose.ng_hardware, tool: cup, who: owner, why: assemble plates over hardware}
+- {do: bond, part: gear.nose_strut, tool: cup, who: owner, why: set strut in wet flox}
+f13.pedal-pivot-blocks:
+- {do: cut, part: nose.ng30_plates, tool: stand-in, who: owner, why: prepare plates for riveting}
+- {do: place, part: nose.pivot_blocks, who: owner, why: set blocks on foam}
+f13.pitot-static:
+- {do: place, part: nose.pitot, tool: stand-in, who: owner, why: run the 1/4 in aluminium pitot tube through F22 and NG31}
+- {do: place, part: nose.static_port, tool: stand-in, who: owner, why: 'make the left-side static port from a pinched, potted tube'}
+f13.rig-nose-gear:
+- {do: check-level, part: gear.nose_strut, tool: stand-in, who: owner, why: crank the gear fully up}
+- {do: check-level, part: nose.worm_drive, tool: stand-in, who: owner, why: adjust the rod ends}
+f13.rudder-pedals:
+- {do: place, part: nose.pedals, who: owner, why: mount pedals to pivot}
+f13.shock-strut:
+- {do: place, part: gear.nose_strut, who: owner, why: fit assembly}
+f13.strut-slot-sc:
+- {do: cut, part: fuselage.bottom, tool: scissors, who: owner, why: create strut retraction space}
+- {do: place, part: fuselage.bottom, ply: 1, who: owner, why: lay first layer}
+- {do: wet-out, part: fuselage.bottom, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.bottom, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.bottom, ply: 2, who: owner, why: lay second layer}
+- {do: wet-out, part: fuselage.bottom, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.bottom, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: nose.strut_cover, who: owner, why: attach cover to slot}
+f13.top-foam:
+- {do: place, part: nose.top_block, tool: stand-in, who: owner, why: tack a 2 in green urethane top block to the sides and NG31}
+f13.worm-drive-bench:
+- {do: cut, part: nose.worm_drive, tool: stand-in, who: owner, why: fabricate components}
+- {do: check-level, part: nose.worm_drive, tool: stand-in, who: owner, why: ensure free rotation}
+f14.cap-troughs:
+- {do: cut, part: spar.box, tool: stand-in, who: owner, why: slice off the foam skin at trough points}
+- {do: sand, part: spar.box, tool: sanding-block, who: owner, why: sand eight shallow troughs using templates}
+f14.close-box:
+- {do: bond, part: spar.box, tool: cup, who: owner, why: wet-micro the three CS4 pieces onto the forward face}
+- {do: wait-cure, part: spar.box, who: owner, why: let the box cure two to three days}
+f14.cs4-forward:
+- {do: place, part: spar.box, who: owner, why: prepare for glass}
+- {do: wet-out, part: spar.box, ply: 1, tool: brush, who: owner, why: glass PVC pieces}
+- {do: squeegee, part: spar.box, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: cut, part: spar.box, tool: scissors, who: owner, why: knife-trim pieces}
+f14.foam-box:
+- {do: cut, part: spar.box, tool: stand-in, who: owner, why: cut spar foam}
+- {do: bond, part: spar.box, tool: cup, who: owner, why: bond urethane cores}
+- {do: place, part: spar.bulkheads, who: owner, why: fit end bulkheads}
+- {do: sand, part: spar.bulkheads, tool: sanding-block, who: owner, why: carve dishes}
+f14.interior-layups:
+- {do: place, part: spar.box, who: owner, why: prepare interior}
+- {do: place, part: spar.bulkheads, who: owner, why: set interior bulkheads}
+- {do: place, part: spar.lwa, who: owner, why: set LWA1 fittings}
+- {do: place, part: spar.box, ply: 1, who: owner, why: lay inboard/outboard strips}
+- {do: wet-out, part: spar.box, ply: 1, tool: brush, who: owner, why: glass BID over strips}
+- {do: squeegee, part: spar.box, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 2, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 2, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 3, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 3, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 3, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 4, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 4, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 4, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 5, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 5, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 5, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 6, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 6, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 6, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 7, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 7, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 7, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 8, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 8, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 8, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 9, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 9, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 9, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 10, who: owner, why: lay next layer}
+- {do: wet-out, part: spar.box, ply: 10, tool: brush, who: owner, why: glass next layer}
+- {do: squeegee, part: spar.box, ply: 10, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: spar.box, ply: 11, who: owner, why: lay final layer}
+- {do: wet-out, part: spar.box, ply: 11, tool: brush, who: owner, why: glass final layer}
+- {do: squeegee, part: spar.box, ply: 11, tool: squeegee, who: owner, why: remove excess}
+- {do: wait-cure, part: spar.box, who: owner, why: weight stack under plastic}
+f14.jig:
+- {do: cut, part: spar.jig, tool: stand-in, who: owner, why: create upright}
+- {do: bond, part: spar.jig, tool: stand-in, who: owner, why: Bondo to bench}
+- {do: check-level, part: spar.jig, tool: level, who: owner, why: set shelves square}
+f14.lwa-fabricate:
+- {do: cut, part: spar.lwa, tool: stand-in, who: owner, why: cut fittings from patterns}
+- {do: sand, part: spar.lwa, tool: stand-in, who: owner, why: clean and round corners}
+f15.belcrank-brackets:
+- {do: place, part: firewall.belcrank, who: owner, why: offset brackets from cable slot}
+- {do: bond, part: firewall.belcrank, who: owner, why: bolt through stainless and plywood}
+f15.master-cylinders:
+- {do: place, part: firewall.master_cylinders, who: owner, why: mount cylinders between engine-mount fittings}
+- {do: bond, part: firewall.master_cylinders, who: owner, why: bolt lower bracket and upper brake arm}
+f15.parts-fab:
+- {do: cut, part: fuselage.firewall_stainless, tool: stand-in, who: owner, why: make accessory parts from patterns}
+f15.stainless-firewall:
+- {do: place, part: fuselage.firewall_stainless, who: owner, why: trial-fit sheet over engine-mount}
+- {do: bond, part: fuselage.firewall_stainless, who: owner, why: caulk silicone bead and press sheet}
+- {do: wait-cure, part: fuselage.firewall_stainless, who: owner, why: cure silicone for two days}
+f16.adjustable-pedals: []
+f16.aileron-linkage: []
+f16.brake-cables:
+- {do: place, part: firewall.master_cylinders, tool: stand-in, who: owner, why: run cable from CS15}
+f16.pivot-bulkheads:
+- {do: place, part: controls.consoles, ply: 1, who: owner, why: first layer of flox}
+- {do: wet-out, part: controls.consoles, ply: 1, tool: brush, who: owner, why: saturate flox}
+- {do: squeegee, part: controls.consoles, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: controls.consoles, ply: 2, who: owner, why: second layer of glass}
+- {do: wet-out, part: controls.consoles, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: controls.consoles, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+f16.rudder-cable-rig:
+- {do: check-level, part: controls.rudder_conduit, tool: stand-in, who: owner, why: ensure pedal verticality}
+- {do: place, part: firewall.belcrank, tool: stand-in, who: owner, why: set sleeve offset}
+f16.side-consoles:
+- {do: cut, part: controls.consoles, tool: scissors, who: owner, why: shape thin foam}
+- {do: place, part: controls.consoles, ply: 1, who: owner, why: first layer of glass}
+- {do: wet-out, part: controls.consoles, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: controls.consoles, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: controls.consoles, ply: 2, who: owner, why: second layer of glass}
+- {do: wet-out, part: controls.consoles, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: controls.consoles, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: controls.consoles, ply: 3, who: owner, why: third layer of glass}
+- {do: wet-out, part: controls.consoles, ply: 3, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: controls.consoles, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: controls.consoles, who: owner, why: bond consoles to bulkheads and panel}
+f17.fixed-trim-tab:
+- {do: cut, part: trim.roll_trim, tool: stand-in, who: owner, why: shape aluminum tab}
+f17.parts:
+- {do: cut, part: trim.pitch_handle, tool: stand-in, who: owner, why: manufacture components}
+f17.pitch-trim:
+- {do: bond, part: trim.pitch_handle, who: owner, why: swage cables and spring to belcrank}
+f17.roll-trim:
+- {do: bond, part: trim.roll_trim, tool: stand-in, who: owner, why: attach springs to levers}
+- {do: place, part: trim.roll_trim, tool: stand-in, who: owner, why: mount levers to torque tube}
+f18.carve-inside:
+- {do: cut, part: canopy.frame, tool: stand-in, who: owner, why: carve the foam from inside}
+- {do: cut, part: canopy.pads, tool: stand-in, who: owner, why: remove foam down to the skin at pads}
+f18.carve-outside:
+- {do: cut, part: canopy.frame, tool: stand-in, who: owner, why: carve the foam frame to the fuselage contour}
+f18.check-ab:
+- {do: check-level, part: canopy.plexi, tool: level, who: owner, why: verify height A and B}
+f18.cut-remove:
+- {do: cut, part: canopy.frame, tool: stand-in, who: owner, why: hacksaw across front and back}
+- {do: bond, part: canopy.frame, tool: stand-in, who: owner, why: Bondo lumber round the frame}
+- {do: cut, part: canopy.frame, tool: stand-in, who: owner, why: free the sides with a knife}
+f18.door:
+- {do: cut, part: fuselage.door, tool: stand-in, who: owner, why: cut small door}
+f18.foam-core:
+- {do: place, part: canopy.frame, tool: stand-in, who: owner, why: fit urethane blocks}
+- {do: bond, part: canopy.frame, tool: cup, who: owner, why: tack blocks with Bondo}
+f18.front-cover:
+- {do: place, part: fuselage.front_cover, ply: 1, tool: brush, who: owner, why: lay first ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.front_cover, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.front_cover, ply: 2, tool: brush, who: owner, why: lay second ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.front_cover, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.front_cover, ply: 3, tool: brush, who: owner, why: lay third ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 3, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.front_cover, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: fuselage.front_cover, ply: 4, tool: brush, who: owner, why: lay fourth ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 4, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.front_cover, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: fuselage.front_cover, tool: cup, who: owner, why: flox to fuselage and join with tape}
+f18.glass-outside:
+- {do: place, part: canopy.frame, ply: 1, who: owner, why: first ply goes into the groove}
+- {do: wet-out, part: canopy.frame, ply: 1, tool: brush, who: owner, why: wet-out first ply}
+- {do: squeegee, part: canopy.frame, ply: 1, tool: squeegee, who: owner, why: squeegee first ply}
+- {do: place, part: fuselage.front_cover, ply: 2, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 2, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.front_cover, ply: 2, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: fuselage.front_cover, ply: 3, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 3, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.front_cover, ply: 3, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: fuselage.front_cover, ply: 4, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.front_cover, ply: 4, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.front_cover, ply: 4, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: fuselage.rear_cover, ply: 5, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.rear_cover, ply: 5, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.rear_cover, ply: 5, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: fuselage.rear_cover, ply: 6, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.rear_cover, ply: 6, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.rear_cover, ply: 6, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: fuselage.rear_cover, ply: 7, who: owner, why: lay BID ply}
+- {do: wet-out, part: fuselage.rear_cover, ply: 7, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.rear_cover, ply: 7, tool: squeegee, who: owner, why: squeegee ply}
+f18.hinges:
+- {do: place, part: canopy.hinges, tool: stand-in, who: owner, why: bolt hinges to longeron}
+- {do: check-level, part: canopy.hinges, tool: stand-in, who: owner, why: verify hinge alignment}
+f18.latches:
+- {do: place, part: canopy.latches, tool: stand-in, who: owner, why: fit latches and bond fittings}
+- {do: bond, part: canopy.latches, tool: cup, who: owner, why: glue foam seal strip}
+f18.locate-blocks:
+- {do: bond, part: canopy.blocks, tool: stand-in, who: owner, why: attach wood blocks to longerons}
+- {do: place, part: canopy.plexi, tool: stand-in, who: owner, why: rest canopy on blocks}
+- {do: sand, part: canopy.plexi, tool: sanding-block, who: owner, why: prep fuselage sides}
+f18.pads-inside-glass:
+- {do: bond, part: canopy.pads, tool: cup, who: owner, why: fill each pad with flox and BID}
+- {do: sand, part: canopy.pads, tool: sanding-block, who: owner, why: sand flush}
+- {do: place, part: canopy.frame, ply: 1, who: owner, why: start glassing inside}
+- {do: wet-out, part: canopy.frame, ply: 1, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 1, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 2, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 2, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 2, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 3, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 3, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 3, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 4, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 4, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 4, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 5, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 5, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 5, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 6, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 6, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 6, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 7, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 7, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 7, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 8, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 8, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 8, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 9, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 9, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 9, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 10, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 10, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 10, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 11, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 11, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 11, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 12, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 12, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 12, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 13, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 13, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 13, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 14, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 14, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 14, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 15, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 15, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 15, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 16, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 16, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 16, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 17, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 17, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 17, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 18, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 18, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 18, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 19, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 19, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 19, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 20, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 20, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 20, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 21, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 21, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 21, tool: squeegee, who: owner, why: squeegee ply}
+- {do: place, part: canopy.frame, ply: 22, who: owner, why: lay BID ply}
+- {do: wet-out, part: canopy.frame, ply: 22, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: canopy.frame, ply: 22, tool: squeegee, who: owner, why: squeegee ply}
+f18.rear-cover-inside:
+- {do: place, part: fuselage.rear_cover, ply: 1, who: owner, why: glass one BID ply inside the rear cover}
+- {do: wet-out, part: fuselage.rear_cover, ply: 1, tool: brush, who: owner, why: wet-out ply}
+- {do: squeegee, part: fuselage.rear_cover, ply: 1, tool: squeegee, who: owner, why: squeegee ply}
+f18.safety-catch:
+- {do: place, part: canopy.safety_catch, tool: stand-in, who: owner, why: bolt catch to pad and FS 56.75}
+f18.trim-plexi:
+- {do: cut, part: canopy.plexi, tool: stand-in, who: owner, why: trim bubble to lines}
+- {do: sand, part: canopy.plexi, tool: sanding-block, who: owner, why: smooth edges}
+f18.vent-brace:
+- {do: cut, part: canopy.vent, tool: stand-in, who: owner, why: carve vent block}
+- {do: place, part: canopy.vent, ply: 1, tool: brush, who: owner, why: lay first ply}
+- {do: wet-out, part: canopy.vent, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canopy.vent, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canopy.vent, ply: 2, tool: brush, who: owner, why: lay second ply}
+- {do: wet-out, part: canopy.vent, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canopy.vent, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canopy.vent, ply: 3, tool: brush, who: owner, why: lay third ply}
+- {do: wet-out, part: canopy.vent, ply: 3, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canopy.vent, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: canopy.brace_tubes, tool: cup, who: owner, why: flox arrow shafts}
+- {do: cut, part: canopy.vent, tool: stand-in, who: owner, why: cut scoop in skin}
+f19.aileron-cut:
+- {do: cut, part: wing.skins, tool: stand-in, who: owner, why: cut hinge line}
+- {do: cut, part: wing.aileron, tool: stand-in, who: owner, why: separate aileron}
+- {do: place, part: wing.skins, ply: 1, tool: brush, who: owner, why: first spar layup}
+- {do: wet-out, part: wing.skins, ply: 1, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.skins, ply: 2, tool: brush, who: owner, why: second spar layup}
+- {do: wet-out, part: wing.skins, ply: 2, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.skins, ply: 3, tool: brush, who: owner, why: third spar layup}
+- {do: wet-out, part: wing.skins, ply: 3, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 3, tool: squeegee, who: owner, why: remove excess}
+f19.attach:
+- {do: check-level, part: wing.attach, tool: level, who: owner, why: fuselage level}
+- {do: place, part: wing.attach, tool: stand-in, who: owner, why: butt wing to spar}
+- {do: bond, part: wing.attach, tool: stand-in, who: owner, why: press in bushings}
+- {do: place, part: wing.attach, tool: stand-in, who: owner, why: fit bolts}
+f19.bottom-cap:
+- {do: drape, part: wing.spar_caps, ply: 1, tool: brush, who: buddy, why: shared ply handling}
+- {do: wet-out, part: wing.spar_caps, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: drape, part: wing.spar_caps, ply: 2, tool: brush, who: buddy, why: shared ply handling}
+- {do: wet-out, part: wing.spar_caps, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: drape, part: wing.spar_caps, ply: 3, tool: brush, who: buddy, why: shared ply handling}
+- {do: wet-out, part: wing.spar_caps, ply: 3, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 3, tool: squeegee, who: owner, why: remove excess}
+- {do: drape, part: wing.spar_caps, ply: 4, tool: brush, who: buddy, why: shared ply handling}
+- {do: wet-out, part: wing.spar_caps, ply: 4, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 4, tool: squeegee, who: owner, why: remove excess}
+- {do: drape, part: wing.spar_caps, ply: 5, tool: brush, who: buddy, why: shared ply handling}
+- {do: wet-out, part: wing.spar_caps, ply: 5, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 5, tool: squeegee, who: owner, why: remove excess}
+f19.bottom-skin:
+- {do: place, part: wing.skins, ply: 1, tool: brush, who: owner, why: lay first diagonal ply}
+- {do: wet-out, part: wing.skins, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.skins, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.skins, ply: 2, tool: brush, who: owner, why: lay second diagonal ply}
+- {do: wet-out, part: wing.skins, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.skins, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.skins, ply: 3, tool: brush, who: owner, why: lay tip reinforcement ply}
+- {do: wet-out, part: wing.skins, ply: 3, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.skins, ply: 3, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.skins, tool: peel-ply, who: owner, why: lay peel ply ahead of aileron}
+f19.controls:
+- {do: place, part: wing.controls, tool: stand-in, who: owner, why: fit phenolic block and torque tube}
+- {do: place, part: wing.controls, tool: stand-in, who: owner, why: fit belhorn and brackets}
+- {do: place, part: wing.controls, tool: stand-in, who: owner, why: set stop bolt}
+f19.core-cutouts:
+- {do: cut, part: wing.cores, tool: hot-wire, who: owner, why: cut torque-tube slot and aileron openings}
+f19.cut-cores:
+- {do: cut, part: wing.cores, tool: hot-wire, who: owner, why: hot-wire foam blocks into core pairs}
+f19.jig:
+- {do: check-level, part: wing.jigs, tool: level, who: owner, why: ensure 17.4 water line is level}
+- {do: check-string, part: wing.jigs, tool: string-line, who: owner, why: align jigs to straight floor line}
+f19.le-cores:
+- {do: bond, part: wing.cores, tool: cup, who: owner, why: apply micro FC4 and FC5}
+- {do: wait-cure, part: wing.cores, who: owner, why: hold with jig until firm}
+f19.mount-cores:
+- {do: bond, part: wing.cores, tool: cup, who: owner, why: micro the inboard and centre cores onto jigs}
+- {do: cut, part: wing.jigs, tool: stand-in, who: owner, why: cut 1.7 in wide attach depressions}
+f19.pads-plates:
+- {do: place, part: wing.hardpoints, ply: 1, tool: brush, who: owner, why: lay first ply}
+- {do: wet-out, part: wing.hardpoints, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.hardpoints, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.hardpoints, ply: 2, tool: brush, who: owner, why: lay second ply}
+- {do: wet-out, part: wing.hardpoints, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.hardpoints, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.hardpoints, ply: 3, tool: brush, who: owner, why: lay third ply}
+- {do: wet-out, part: wing.hardpoints, ply: 3, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.hardpoints, ply: 3, tool: squeegee, who: owner, why: remove excess}
+- {do: bond, part: wing.hardpoints, tool: brush, who: owner, why: epoxy plates}
+- {do: wait-cure, part: wing.hardpoints, who: owner, why: press and cure plates}
+f19.rudder-conduit:
+- {do: cut, part: wing.conduit, tool: stand-in, who: owner, why: prepare tube}
+- {do: place, part: wing.conduit, tool: stand-in, who: owner, why: bed tube in groove}
+f19.top-cap:
+- {do: place, part: wing.spar_caps, ply: 1, tool: brush, who: owner, why: lay first ply}
+- {do: wet-out, part: wing.spar_caps, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 2, tool: brush, who: owner, why: lay second ply}
+- {do: wet-out, part: wing.spar_caps, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 2, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 3, tool: brush, who: owner, why: lay third ply}
+- {do: wet-out, part: wing.spar_caps, ply: 3, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 3, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 4, tool: brush, who: owner, why: lay fourth ply}
+- {do: wet-out, part: wing.spar_caps, ply: 4, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 4, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 5, tool: brush, who: owner, why: lay fifth ply}
+- {do: wet-out, part: wing.spar_caps, ply: 5, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 5, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 6, tool: brush, who: owner, why: lay sixth ply}
+- {do: wet-out, part: wing.spar_caps, ply: 6, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 6, tool: squeegee, who: owner, why: remove excess}
+- {do: place, part: wing.spar_caps, ply: 7, tool: brush, who: owner, why: lay seventh ply}
+- {do: wet-out, part: wing.spar_caps, ply: 7, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: wing.spar_caps, ply: 7, tool: squeegee, who: owner, why: remove excess}
+f19.top-skin:
+- {do: place, part: wing.skins, ply: 1, tool: brush, who: owner, why: first UND ply}
+- {do: wet-out, part: wing.skins, ply: 1, tool: brush, who: owner, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 1, tool: squeegee, who: owner, why: remove excess}
+- {do: drape, part: wing.skins, ply: 2, tool: brush, who: buddy, why: second UND ply}
+- {do: wet-out, part: wing.skins, ply: 2, tool: brush, who: buddy, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 2, tool: squeegee, who: buddy, why: remove excess}
+- {do: drape, part: wing.skins, ply: 3, tool: brush, who: buddy, why: third UND ply}
+- {do: wet-out, part: wing.skins, ply: 3, tool: brush, who: buddy, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 3, tool: squeegee, who: buddy, why: remove excess}
+- {do: drape, part: wing.skins, ply: 4, tool: brush, who: buddy, why: BID tip ply}
+- {do: wet-out, part: wing.skins, ply: 4, tool: brush, who: buddy, why: saturate ply}
+- {do: squeegee, part: wing.skins, ply: 4, tool: squeegee, who: buddy, why: remove excess}
+- {do: drape, part: wing.skins, tool: peel-ply, who: buddy, why: protective layer}
+f20.cut-cores:
+- {do: cut, part: winglet.cores, tool: hot-wire, who: owner, why: shape the fin cores}
+f20.inside-layups:
+- {do: cut, part: winglet.layups, tool: scissors, who: owner, why: cut wing skin and flox corners}
+- {do: place, part: winglet.layups, ply: 1, tool: brush, who: owner, why: layup 1 BID strips}
+- {do: wet-out, part: winglet.layups, ply: 1, tool: brush, who: owner, why: saturate layup 1}
+- {do: squeegee, part: winglet.layups, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 2, tool: brush, who: owner, why: layup 2 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 2, tool: brush, who: owner, why: saturate layup 2}
+- {do: squeegee, part: winglet.layups, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 3, tool: brush, who: owner, why: layup 3 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 3, tool: brush, who: owner, why: saturate layup 3}
+- {do: squeegee, part: winglet.layups, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 4, tool: brush, who: owner, why: layup 3 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 4, tool: brush, who: owner, why: saturate layup 3 UND}
+- {do: squeegee, part: winglet.layups, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: flip, part: winglet.layups, tool: stand-in, who: owner, why: prepare for layup 4}
+- {do: place, part: winglet.layups, ply: 5, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 5, tool: brush, who: owner, why: saturate layup 4}
+- {do: squeegee, part: winglet.layups, ply: 5, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 6, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 6, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 6, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 7, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 7, tool: brush, who: owner, why: saturate layup 4 BID}
+- {do: squeegee, part: winglet.layups, ply: 7, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 8, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 8, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 8, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 9, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 9, tool: brush, who: owner, why: saturate layup 4 BID}
+- {do: squeegee, part: winglet.layups, ply: 9, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 10, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 10, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 10, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 11, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 11, tool: brush, who: owner, why: saturate layup 4 BID}
+- {do: squeegee, part: winglet.layups, ply: 11, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 12, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 12, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 12, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 13, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 13, tool: brush, who: owner, why: saturate layup 4 BID}
+- {do: squeegee, part: winglet.layups, ply: 13, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 14, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 14, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 14, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 15, tool: brush, who: owner, why: layup 4 BID plies}
+- {do: wet-out, part: winglet.layups, ply: 15, tool: brush, who: owner, why: saturate layup 4 BID}
+- {do: squeegee, part: winglet.layups, ply: 15, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.layups, ply: 16, tool: brush, who: owner, why: layup 4 UND plies}
+- {do: wet-out, part: winglet.layups, ply: 16, tool: brush, who: owner, why: saturate layup 4 UND}
+- {do: squeegee, part: winglet.layups, ply: 16, tool: squeegee, who: owner, why: remove excess resin}
+f20.rudder-cut:
+- {do: cut, part: winglet.rudder, tool: stand-in, who: owner, why: saw the skins and lift rudder}
+f20.skins:
+- {do: place, part: winglet.skins, ply: 1, tool: brush, who: owner, why: first UND ply}
+- {do: wet-out, part: winglet.skins, ply: 1, tool: brush, who: owner, why: saturate first UND ply}
+- {do: squeegee, part: winglet.skins, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.skins, ply: 2, tool: brush, who: owner, why: second UND ply}
+- {do: wet-out, part: winglet.skins, ply: 2, tool: brush, who: owner, why: saturate second UND ply}
+- {do: squeegee, part: winglet.skins, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.skins, ply: 3, tool: brush, who: owner, why: BID ply at 45 deg}
+- {do: wet-out, part: winglet.skins, ply: 3, tool: brush, who: owner, why: saturate BID ply}
+- {do: squeegee, part: winglet.skins, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: winglet.skins, ply: 4, tool: brush, who: owner, why: urethane cap and BID ply}
+- {do: wet-out, part: winglet.skins, ply: 4, tool: brush, who: owner, why: saturate final layer}
+- {do: squeegee, part: winglet.skins, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+f20.trim:
+- {do: cut, part: winglet.skins, tool: stand-in, who: owner, why: trim root to template}
+f21.cut-parts:
+- {do: cut, part: strake.ribs, tool: stand-in, who: owner, why: cut ribs R23 and R45}
+- {do: cut, part: strake.baffles, tool: stand-in, who: owner, why: cut baffles}
+- {do: cut, part: strake.leading_edge, tool: stand-in, who: owner, why: cut TLE and BLE}
+- {do: cut, part: strake.skins, tool: stand-in, who: owner, why: cut skin cores}
+f21.fairing-caps:
+- {do: cut, part: strake.fairing, tool: scissors, who: owner, why: shape urethane blocks}
+- {do: place, part: strake.fairing, ply: 1, who: owner, why: first UND layer}
+- {do: wet-out, part: strake.fairing, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: strake.fairing, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: strake.fairing, ply: 2, who: owner, why: second UND layer}
+- {do: wet-out, part: strake.fairing, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: strake.fairing, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: strake.fittings, tool: cup, who: owner, why: flox in aluminum rim}
+f21.fuselage-cutouts:
+- {do: cut, part: strake.skins, tool: stand-in, who: owner, why: saw fuselage-side cutouts}
+f21.jig-bond:
+- {do: check-level, part: strake.ribs, tool: level, who: owner, why: level the jig table}
+- {do: bond, part: strake.ribs, tool: cup, who: owner, why: 'micro bottom skin, ribs, TLE and BLE'}
+- {do: bond, part: strake.leading_edge, tool: cup, who: owner, why: 'micro bottom skin, ribs, TLE and BLE'}
+- {do: bond, part: strake.skins, tool: cup, who: owner, why: 'micro bottom skin, ribs, TLE and BLE'}
+- {do: bond, part: strake.fittings, tool: cup, who: owner, why: seat aluminium drain plate}
+f21.od-outlet:
+- {do: sand, part: strake.baffles, tool: sanding-block, who: owner, why: Shape OD to contour}
+- {do: place, part: strake.baffles, ply: 1, tool: brush, who: owner, why: Layup 7a BID ply}
+- {do: wet-out, part: strake.baffles, ply: 1, tool: brush, who: owner, why: Flox in with nails}
+- {do: squeegee, part: strake.baffles, ply: 1, tool: squeegee, who: owner, why: Remove excess epoxy}
+- {do: place, part: strake.fittings, who: owner, why: Run aluminium outlet tube}
+f21.plumbing: []
+f21.pressure-check:
+- {do: check-level, part: strake.tank, tool: stand-in, who: owner, why: verify seal integrity}
+- {do: wait-cure, part: strake.tank, who: owner, why: allow pressure to stabilize}
+f21.vent-screen:
+- {do: cut, part: strake.fittings, tool: scissors, who: owner, why: Create vent line hole}
+- {do: bond, part: strake.fittings, tool: brush, who: owner, why: Wet flox on vent hole faces}
+- {do: place, part: strake.fittings, who: owner, why: Dome aluminium screen over hole}
+f22.antennas:
+- {do: place, part: elec.antennas, who: owner, why: stick copper-foil strips under canard and in winglet}
+f22.battery-shelf:
+- {do: place, part: elec.battery_shelf, ply: 1, who: owner, why: base layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 1, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 2, who: owner, why: second layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 2, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 3, who: owner, why: third layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 3, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 4, who: owner, why: fourth layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 4, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 5, who: owner, why: fifth layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 5, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 5, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 6, who: owner, why: sixth layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 6, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 6, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elec.battery_shelf, ply: 7, who: owner, why: seventh layer}
+- {do: wet-out, part: elec.battery_shelf, ply: 7, tool: brush, who: owner, why: saturate fiber}
+- {do: squeegee, part: elec.battery_shelf, ply: 7, tool: squeegee, who: owner, why: remove excess resin}
+f22.microswitches: []
+f22.panel-wiring: []
+f22.wing-wiring:
+- {do: place, part: elec.wiring, who: owner, why: run nav and strobe wires through wing and spar}
+- {do: place, part: elec.lights, who: owner, why: silicone position lights to wingtips}
+f23.carb-bracket:
+- {do: cut, part: engine.bracket, who: owner, why: make Lycoming bracket from plate}
+f23.engine-install:
+- {do: place, part: engine.block, who: owner, why: position engine block aft of firewall}
+- {do: place, part: engine.starter, who: owner, why: install starter}
+- {do: place, part: engine.alternator, who: owner, why: install alternator}
+- {do: place, part: engine.magnetos, who: owner, why: install magnetos}
+- {do: place, part: engine.carburettor, who: owner, why: install carburettor}
+- {do: place, part: engine.fuel_pump, who: owner, why: install fuel pump}
+- {do: place, part: engine.mount_pads, who: owner, why: install mount pads}
+f23.root-rib:
+- {do: cut, part: engine.rib, tool: stand-in, who: owner, why: form rib shape}
+f25.feather-fill:
+- {do: place, part: finish.fill, tool: brush, who: owner, why: apply micro-balloon mix}
+- {do: sand, part: finish.fill, tool: stand-in, who: owner, why: smooth surface}
+f25.inspect-repair:
+- {do: place, part: cover.seal, tool: stand-in, who: owner, why: make sanding spline}
+- {do: check-level, part: cover.seal, tool: stand-in, who: owner, why: inspect for dips or humps}
+f25.paint-seals:
+- {do: cut, part: finish.paint, tool: stand-in, who: owner, why: prepare paint application}
+- {do: place, part: finish.paint, tool: stand-in, who: owner, why: apply finish coat}
+- {do: wait-cure, part: finish.paint, tool: stand-in, who: owner, why: allow paint to dry}
+- {do: bond, part: finish.paint, tool: stand-in, who: owner, why: seal gaps with white silicone}
+- {do: wait-cure, part: finish.paint, tool: stand-in, who: owner, why: allow silicone to cure}
+f25.primer:
+- {do: place, part: finish.primer, tool: stand-in, who: owner, why: apply lacquer primer}
+- {do: sand, part: finish.primer, tool: stand-in, who: owner, why: smooth primer}
+- {do: wet-out, part: finish.primer, tool: stand-in, who: owner, why: wet with 320 grit}
+f26.cushions-headrests:
+- {do: place, part: upholstery.cushions, tool: stand-in, who: owner, why: position cushions}
+- {do: place, part: upholstery.headrests, tool: stand-in, who: owner, why: position headrests}
+- {do: bond, part: upholstery.headrests, tool: stand-in, who: owner, why: attach headrest with contact cement}
+r30.bottom-spar-cap:
+- {do: drape, part: canard.spar_cap_bottom, tool: brush, who: buddy, why: shared ply handling for tapered cap}
+r30.canard-tips:
+- {do: cut, part: canard.tips, tool: scissors, who: owner, why: shape foam to template}
+- {do: place, part: canard.tips, ply: 1, who: owner, why: first layer}
+- {do: wet-out, part: canard.tips, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.tips, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.tips, ply: 2, who: owner, why: second layer}
+- {do: wet-out, part: canard.tips, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.tips, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.tips, ply: 3, who: owner, why: third layer}
+- {do: wet-out, part: canard.tips, ply: 3, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.tips, ply: 3, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: canard.tips, ply: 4, who: owner, why: fourth layer}
+- {do: wet-out, part: canard.tips, ply: 4, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.tips, ply: 4, tool: squeegee, who: owner, why: remove excess resin}
+- {do: cut, part: elevator.tube, tool: scissors, who: owner, why: cut hinge pins to length}
+r30.elev-balance-check:
+- {do: place, part: elevator.right, tool: stand-in, who: owner, why: hang elevator to test balance}
+- {do: place, part: elevator.left, tool: stand-in, who: owner, why: hang elevator to test balance}
+- {do: sand, part: elevator.right, tool: stand-in, who: owner, why: adjust balance by sanding UND}
+r30.elev-balance-pockets:
+- {do: cut, part: canard.skin_bottom, tool: scissors, who: owner, why: create pocket}
+- {do: cut, part: canard.core, tool: scissors, who: owner, why: create pocket}
+- {do: place, part: canard.skin_bottom, ply: 1, who: owner, why: seal with BID}
+- {do: wet-out, part: canard.skin_bottom, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: canard.skin_bottom, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: elevator.balance_weight, who: owner, why: seat weight in pocket}
+r30.elev-bond-cores:
+- {do: sand, part: elevator.tube, tool: sanding-block, who: owner}
+- {do: bond, part: elevator.right, who: owner}
+- {do: bond, part: elevator.left, who: owner}
+r30.elev-cs11:
+- {do: place, part: elevator.cs11_weight, tool: stand-in, who: owner, why: fit lead block}
+- {do: place, part: elevator.hinges, tool: stand-in, who: owner, why: secure with screws}
+r30.elev-flox-hinges:
+- {do: wet-out, part: canard.hinge_foam, tool: stand-in, who: owner, why: fill slots with flox}
+- {do: sand, part: elevator.hinges, tool: sanding-block, who: owner, why: smooth buried hinge area}
+- {do: place, part: elevator.hinges, tool: stand-in, who: owner, why: seat hinges in slots}
+r30.elev-fuselage-clearance:
+- {do: cut, part: elevator.left, tool: stand-in, who: owner, why: trim inboard end}
+- {do: cut, part: elevator.right, tool: stand-in, who: owner, why: trim inboard end}
+- {do: check-level, part: elevator.left, tool: stand-in, who: owner, why: confirm clearance}
+- {do: check-level, part: elevator.right, tool: stand-in, who: owner, why: confirm clearance}
+r30.elev-hinge-slots:
+- {do: check-string, part: canard.hinge_foam, tool: stand-in, who: owner, why: align slot gaps}
+- {do: cut, part: canard.core, tool: stand-in, who: owner, why: rout hinge slots}
+r30.elev-hinges:
+- {do: place, part: elevator.hinges, tool: stand-in, who: owner, why: position hinges on tube}
+- {do: bond, part: elevator.tube, tool: stand-in, who: owner, why: secure hinges to tube}
+r30.elev-ice-shield:
+- {do: cut, part: elevator.ice_shield, tool: scissors, who: owner, why: shape shield}
+- {do: place, part: elevator.ice_shield, ply: 1, who: owner, why: first layer}
+- {do: wet-out, part: elevator.ice_shield, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: elevator.ice_shield, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: place, part: elevator.ice_shield, ply: 2, who: owner, why: second layer}
+- {do: wet-out, part: elevator.ice_shield, ply: 2, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: elevator.ice_shield, ply: 2, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: elevator.balance_weight, who: owner, why: secure shield to weight area}
+r30.elev-nc12a:
+- {do: place, part: elevator.hinges, tool: stand-in, who: owner, why: set weldment offset}
+- {do: cut, part: elevator.tube, tool: stand-in, who: owner, why: drill through tube and arm}
+r30.elev-nc2-inserts:
+- {do: bond, part: elevator.tube, who: owner}
+r30.elev-travel-check:
+- {do: place, part: elevator.right, who: owner, why: remount elevator}
+- {do: check-level, part: elevator.right, tool: stand-in, who: owner, why: check travel limits}
+- {do: place, part: elevator.left, who: owner, why: remount elevator}
+- {do: check-level, part: elevator.left, tool: stand-in, who: owner, why: check travel limits}
+r30.elev-trim-belcrank:
+- {do: place, part: elevator.left, who: owner, why: swap belcrank}
+- {do: place, part: elevator.tube, who: owner, why: install pin}
+r30.elev-uptravel-test:
+- {do: place, part: elevator.hinges, tool: stand-in, who: owner, why: hold hinges in place}
+- {do: check-level, part: elevator.hinges, tool: stand-in, who: owner, why: measure up-travel angle}
+r30.f22-drill-tabs:
+- {do: cut, part: fuselage.f22, tool: stand-in, who: owner, why: drill holes through F22}
+- {do: place, part: canard.lift_tabs, tool: stand-in, who: owner, why: clamp with temporary bolt}
+r30.f28-pins-permanent:
+- {do: cut, part: canard.alignment_pins, tool: scissors, who: owner, why: prepare pins for removal}
+- {do: place, part: fuselage.f28, tool: stand-in, who: owner, why: position fuselage for work}
+- {do: place, part: fuselage.f28, ply: 1, tool: brush, who: owner, why: lay down glass layer}
+- {do: wet-out, part: fuselage.f28, ply: 1, tool: brush, who: owner, why: saturate glass}
+- {do: squeegee, part: fuselage.f28, ply: 1, tool: squeegee, who: owner, why: remove excess resin}
+- {do: bond, part: canard.alignment_pins, tool: cup, who: owner, why: flox pins into holes}
+r30.hinge-foam:
+- {do: cut, part: canard.core, tool: scissors, who: owner, why: create pockets for hinge mounts}
+- {do: bond, part: canard.hinge_foam, tool: cup, who: owner, why: secure high-density inserts}
+r30.install-pins:
+- {do: cut, part: canard.alignment_pins, tool: stand-in, who: owner, why: make alignment pins}
+- {do: place, part: canard.alignment_pins, tool: stand-in, who: owner, why: set canard on fuselage}
+r30.jig-assemble:
+- {do: bond, part: canard.core, tool: cup, who: owner, why: attach outboard cores to middle section}
+r30.lift-tab-bushings:
+- {do: sand, part: fuselage.f22, tool: stand-in, who: owner, why: counterbore for bushings}
+- {do: place, part: canard.lift_tabs, tool: stand-in, who: owner, why: install CN-2 bushings}
+r30.lift-tabs:
+- {do: cut, part: canard.lift_tabs, tool: stand-in, who: owner, why: cut aluminum tabs and inserts}
+- {do: place, part: canard.lift_tabs, tool: stand-in, who: owner, why: layout tab positions}
+r30.templates-cores:
+- {do: cut, part: canard.core, tool: hot-wire, who: owner, why: cut foam cores and templates}
+r30.top-skin:
+- {do: drape, part: canard.skin_top, ply: 1, who: buddy}
+- {do: wet-out, part: canard.skin_top, ply: 1, tool: brush, who: owner}
+- {do: squeegee, part: canard.skin_top, ply: 1, tool: squeegee, who: owner}
+- {do: drape, part: canard.skin_top, ply: 2, who: buddy}
+- {do: wet-out, part: canard.skin_top, ply: 2, tool: brush, who: owner}
+- {do: squeegee, part: canard.skin_top, ply: 2, tool: squeegee, who: owner}
+- {do: drape, part: canard.skin_top, ply: 3, who: buddy}
+- {do: wet-out, part: canard.skin_top, ply: 3, tool: brush, who: owner}
+- {do: squeegee, part: canard.skin_top, ply: 3, tool: squeegee, who: owner}
+- {do: drape, part: canard.skin_top, ply: 4, who: buddy}
+- {do: wet-out, part: canard.skin_top, ply: 4, tool: brush, who: owner}
+- {do: squeegee, part: canard.skin_top, ply: 4, tool: squeegee, who: owner}
+- {do: cut, part: canard.skin_top, tool: scissors, who: owner}
+- {do: sand, part: canard.skin_top, tool: sanding-block, who: owner}
+r30.top-spar-cap:
+- {do: drape, part: canard.spar_cap_top, tool: brush, who: buddy, why: shared ply handling for top cap}
+r30.turnover-twist-check:
+- {do: check-string, part: canard.core, tool: stand-in, who: owner, why: confirm no twist after flipping}
+- {do: sand, part: canard.core, tool: stand-in, who: owner, why: contour skin edges to template}

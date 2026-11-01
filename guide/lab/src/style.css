@@ -262,6 +262,8 @@ body[data-player] #controls { width: auto; top: calc(var(--top) + 70px); }
 #navlog { left: var(--left); top: var(--top); bottom: var(--bottom); width: var(--nav-w); display: flex; flex-direction: column; overflow: hidden; }
 .nav-head { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
 .nav-title { font-size: 14px; margin-bottom: 4px; }
+#nav-zoom { align-self: flex-start; margin: 2px 0 6px; }
+#navlog-list .flags { margin: 2px 8px 4px; font-size: 11px; color: var(--ink-dim); }
 .env-row { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 8px; min-height: 30px; }
 .env-row .val { min-width: 34px; }
 .env-row select, .env-row input[type="number"] { min-width: 0; font: inherit; color: var(--ink); background: var(--well); border: 1px solid var(--line); border-radius: 7px; min-height: 28px; padding: 0 6px; }
@@ -312,7 +314,11 @@ body[data-player] #controls { width: auto; top: calc(var(--top) + 70px); }
 .bench-row dt { margin-bottom: 2px; }
 .bench-row dd { margin: 0; font-size: 12px; line-height: 1.35; color: var(--ink-soft); }
 .bench-list { margin: 0; padding-left: 16px; }
+#bench .actual { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin-top: 8px; }
+#bench .actual-field { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--ink-dim); }
+#bench .actual input { font: inherit; color: var(--ink); background: var(--well); border: 1px solid var(--line); border-radius: 7px; min-height: 28px; padding: 0 6px; width: 7.5rem; }
 #bench .source { margin: 8px 0 0; font-size: 11px; color: var(--ink-dim); }
+#bench p.fuel { margin: 8px 0 0; font-size: 11.5px; color: var(--ink-dim); font-style: italic; } /* same qualifier weight as .note.gu and .chip.unknown */
 #bench .ev { font-style: normal; color: var(--ink-dim); overflow-wrap: anywhere; } /* a sourced value's citation, derivation note or link */
 @media (max-width: 760px) { body[data-player] { --nav-w: 44vw; } #meter { flex-wrap: wrap; } #meter .tile { flex: 1 1 45%; } }
 

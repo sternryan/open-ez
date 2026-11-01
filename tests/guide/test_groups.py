@@ -205,15 +205,52 @@ def test_groups_yaml_unknown_key_raises(gdir):
         load_graph(gdir)
 
 
-def test_real_graph_assigns_first_stretch_groups(tmp_path):
+def _real_graph(tmp_path):
     dest = tmp_path / "graph"
     shutil.copytree(ROOT / "guide" / "graph", dest)
-    g = load_graph(dest)
-    assert [(grp.id, grp.label) for grp in g.groups] == [
+    return load_graph(dest)
+
+
+def _needs_group(op) -> bool:
+    """Player steps. Stubs and GU-only ops are exempt from the one-group rule."""
+    return not op.stub and op.variants != ("gu",)
+
+
+def test_every_roncz_step_grouped_once(tmp_path):
+    g = _real_graph(tmp_path)
+    chapters = {p.name for p in (ROOT / "guide" / "graph").glob("ch*.yaml")}
+    assert g.groups_required == chapters
+    for op in g.ops.values():
+        if not _needs_group(op):
+            continue
+        assert sum(grp.id == op.group for grp in g.groups) == 1, op.id
+
+
+def test_groups_respect_dag(tmp_path):
+    g = _real_graph(tmp_path)
+    rank = {grp.id: i for i, grp in enumerate(g.groups)}
+
+    def grouped(op) -> bool:
+        return op.group in rank
+
+    for op in g.ops.values():
+        for req_id in op.requires:
+            req = g.ops[req_id]
+            if not grouped(req):
+                continue
+            assert grouped(op), f"{op.id} requires grouped {req.id} but has no group"
+            assert (
+                rank[req.group] <= rank[op.group]
+            ), f"{op.id} ({op.group}) requires {req.id} ({req.group})"
+
+
+def test_real_graph_assigns_first_stretch_groups(tmp_path):
+    g = _real_graph(tmp_path)
+    assert [(grp.id, grp.label) for grp in g.groups][:2] == [
         ("bulkheads-firewall", "Seat bulkheads and firewall"),
         ("fuselage-sides", "Fuselage sides"),
     ]
-    assert g.groups_required == {"ch04.yaml", "ch05.yaml"}
+    assert {"ch04.yaml", "ch05.yaml"} <= g.groups_required
     ch04 = [op for op in g.ops.values() if op.file == "ch04.yaml"]
     ch05 = [op for op in g.ops.values() if op.file == "ch05.yaml"]
     assert len(ch04) == 8 and {op.group for op in ch04} == {"bulkheads-firewall"}

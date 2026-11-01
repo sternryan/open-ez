@@ -69,6 +69,12 @@ export const WINDOW_MS = 1500
 export const MIN_FRAMES = 3
 /** After a drop the next frames are ignored for this long: the new targets and shader variants compile on them. */
 export const SETTLE_MS = 1000
+/**
+ * Frames after a step or scene change are ignored for this long. Unsourced: a step swap and the shader compile
+ * that follows it are a hitch, not the device. One second covers that burst; a device that is still slow once it
+ * has passed still steps down.
+ */
+export const CHANGE_SETTLE_MS = 1000
 /** One frame counts for at most this much (a tab coming back from the background reports seconds). */
 export const FRAME_CAP_MS = 500
 
@@ -76,6 +82,11 @@ export interface StepState { tier: Tier; frames: number[]; sum: number; settle: 
 
 /** `settle` is how many ms of frames to ignore first (the page's own start-up compiles). */
 export const initialStep = (tier: Tier, settle = 0): StepState => ({ tier, frames: [], sum: 0, settle })
+
+/** Drop the tier window and ignore the next frames: a step or scene change just happened. */
+export function holdTier(state: StepState): StepState {
+  return { ...state, frames: [], sum: 0, settle: Math.max(state.settle, CHANGE_SETTLE_MS) }
+}
 
 export function median(xs: number[]): number {
   if (!xs.length) return 0
@@ -104,18 +115,41 @@ export function nextTier(state: StepState, frameMs: number): StepState {
 
 // ---- adaptive resolution (the low tier only) ----
 // Low is the last tier, so a device that still misses the frame rate there has nothing left to drop but pixels. While on low the
-// canvas resolution steps down (never back up within a tier: no flapping) until most frames land on the display's refresh.
+// canvas resolution steps down until most frames land on the display's refresh, and steps back up only after a longer stretch of
+// fast frames (hysteresis: a short smooth patch must not flap back up into the next drop). The tier itself never steps back up.
 /** Shrink while a quarter of the recent frames run over this. A 60 Hz display with a frame to spare reads 16.7 ms. */
 export const RES_SLOW_MS = 20
 /** Each shrink aims the frame time at this, but never cuts the pixel count by more than half in one step. */
 export const RES_AIM_MS = 12
 export const RES_WINDOW_MS = 600
 export const RES_SETTLE_MS = 800
-/** The pixel-count multiplier never goes below this. */
-export const RES_MIN = 0.08
+/**
+ * Step up only when p75 stays at or under this for RES_UP_WINDOW_MS. 17 is under the 20 ms down budget, and a 60 Hz frame
+ * (16.7 ms) still counts, so a display that is actually keeping up can climb. 18–20 ms holds: not slow enough to drop, not
+ * fast enough to grow.
+ */
+export const RES_FAST_MS = 17
+/** Fast time required before a step up. Longer than the 600 ms down window, so the two cannot flap. */
+export const RES_UP_WINDOW_MS = 20_000
+/** A step up multiplies the pixel count by at most this, and never past 1. */
+export const RES_UP_MAX = 2
+/**
+ * The pixel-count multiplier never goes below this. Unsourced. 0.08 is about 28% on a side (a 1600 px frame becomes
+ * ~450 px) and reads as the blocky picture from a long session. 0.2 keeps about 45% on a side, so an edge still reads
+ * as an edge, and a slow device can still reach it in the half-steps (1 → 0.5 → 0.25 → 0.2).
+ */
+export const RES_MIN = 0.2
 
-export interface ResState { scale: number; frames: number[]; sum: number; settle: number }
-export const initialRes = (settle = 0): ResState => ({ scale: 1, frames: [], sum: 0, settle })
+export interface ResState { scale: number; frames: number[]; sum: number; settle: number; fast: number }
+export const initialRes = (settle = 0): ResState => ({ scale: 1, frames: [], sum: 0, settle, fast: 0 })
+
+/**
+ * Drop the resolution window and ignore the next frames: a step or scene change just happened.
+ * Fast-frame credit is kept. Only this settle window is excluded, so a run of short steps can still recover.
+ */
+export function holdRes(state: ResState): ResState {
+  return { ...state, frames: [], sum: 0, settle: Math.max(state.settle, CHANGE_SETTLE_MS) }
+}
 
 export function percentile(xs: number[], p: number): number {
   if (!xs.length) return 0
@@ -133,7 +167,16 @@ export function nextRes(state: ResState, frameMs: number): ResState {
   const p75 = percentile(frames, 0.75)
   if (p75 > RES_SLOW_MS && state.scale > RES_MIN) {
     const f = Math.min(0.9, Math.max(0.5, RES_AIM_MS / median(frames)))
-    return { scale: Math.max(RES_MIN, state.scale * f), frames: [], sum: 0, settle: RES_SETTLE_MS }
+    return { scale: Math.max(RES_MIN, state.scale * f), frames: [], sum: 0, settle: RES_SETTLE_MS, fast: 0 }
   }
-  return { ...state, frames: [], sum: 0 }
+  // not a down step. A window whose p75 is well under the budget adds to the up clock; anything slower resets it.
+  const quick = p75 <= RES_FAST_MS
+  const fast = quick ? state.fast + sum : 0
+  if (quick && fast >= RES_UP_WINDOW_MS && state.scale < 1) {
+    const room = RES_SLOW_MS / Math.max(p75, 1)
+    const factor = Math.min(RES_UP_MAX, Math.max(1.2, room))
+    const scale = Math.min(1, state.scale * factor)
+    if (scale > state.scale) return { scale, frames: [], sum: 0, settle: RES_SETTLE_MS, fast: 0 }
+  }
+  return { ...state, frames: [], sum: 0, fast }
 }

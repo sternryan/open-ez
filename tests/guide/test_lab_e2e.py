@@ -8980,11 +8980,13 @@ def test_public_briefing_room_is_read_only(public_briefing_site):
             pg.goto(url + "briefing.html#powerplant-fuel-resin")
             pg.wait_for_selector('[data-test="recommendation"]')
             assert pg.locator('[data-test="recommendation"]').is_visible()
-            assert pg.get_by_text("decided in briefing 1", exact=True).is_visible()  # the owner closed the record (2026-10-18)
+            assert pg.get_by_text(
+                "decided in briefing 1", exact=True
+            ).is_visible()  # the owner closed the record (2026-10-18)
             assert pg.locator('[data-test="chat"]').count() == 0
             assert pg.locator('[data-test="decide"]').count() == 0
             assert pg.locator('[data-test="reopen"]').count() == 0
-            assert pg.locator('#briefing textarea, #briefing select').count() == 0
+            assert pg.locator("#briefing textarea, #briefing select").count() == 0
             assert not errors, errors
             b.close()
     finally:
@@ -9002,20 +9004,40 @@ def _player(p, url, w=1180, h=820, query="", init=None):
     return b, pg, errors
 
 
-def _grouped(rsite):
-    """The first stretch as the player orders it: each plan group's Roncz, non-stub ops in graph order."""
-    g = _graph(rsite)
-    plan = json.loads((rsite / "plan.json").read_text())
+def _roncz_in_group(g, gid):
+    """Roncz, non-stub ops of one group, in graph order."""
     byid = {o["id"]: o for o in g["ops"]}
     out = []
+    for i in g["order"]:
+        o = byid[i]
+        if o.get("group") != gid or o["stub"]:
+            continue
+        if "both" in o["variants"] or "roncz" in o["variants"]:
+            out.append(i)
+    return out
+
+
+def _grouped(rsite):
+    """The whole build as the player orders it: each plan group's Roncz, non-stub ops in graph order.
+
+    Phase 2 plays every grouped step (plan P2-A: "every non-stub Roncz step grouped and ordered").
+    The phase-1 first stretch ended at f05.gear-extrusions (plan P1-D).
+    """
+    g = _graph(rsite)
+    plan = json.loads((rsite / "plan.json").read_text())
+    out = []
     for grp in plan["groups"]:
-        for i in g["order"]:
-            o = byid[i]
-            if o.get("group") != grp["id"] or o["stub"]:
-                continue
-            if "both" in o["variants"] or "roncz" in o["variants"]:
-                out.append(i)
+        out += _roncz_in_group(g, grp["id"])
     return plan, out
+
+
+def _end_of_build(rsite):
+    """Last step of the build: the last Roncz, non-stub op of the last plan group, in graph order."""
+    g = _graph(rsite)
+    plan = json.loads((rsite / "plan.json").read_text())
+    last = _roncz_in_group(g, plan["groups"][-1]["id"])
+    assert last, "the last plan group has a Roncz step"
+    return last[-1]
 
 
 @pytest.fixture(scope="module")
@@ -9066,24 +9088,33 @@ def test_player_navlog_lists_the_first_stretch_groups(rsite):
                     "els => els.map(e => e.dataset.op)",
                 )
             assert seen == want, (seen, want)
-            assert want[-1] == FIRST_STRETCH_LAST
+            # Phase 2 (plan P2-A): "every non-stub Roncz step grouped and ordered".
+            # P1-D's "reaches f05.gear-extrusions" was the first stretch only.
+            assert want[-1] == _end_of_build(rsite)
+            assert FIRST_STRETCH_LAST in want and want[-1] != FIRST_STRETCH_LAST
             assert pg.locator("#navlog .session[data-session]").count() >= 1
             assert pg.evaluate("window.__lab.navlog().sessions") >= 2
-            # the one two-person step carries the buddy chip
+            # every two-person step carries the buddy chip. Only the open group draws its steps.
             two = [
-                o["id"]
+                o
                 for o in _graph(rsite)["ops"]
                 if o["id"] in want and (o.get("plan") or {}).get("people") == 2
             ]
-            assert two, "the first stretch has a two-person step"
-            pg.click('#navlog .group-label:has-text("Fuselage sides")')
-            for i in two:
+            assert two, "the build has a two-person step"
+            opened = None
+            for o in two:
+                gid = o.get("group")
+                if gid != opened:
+                    pg.click(f'#navlog .group[data-group="{gid}"] > .group-label')
+                    opened = gid
                 assert (
                     pg.locator(
-                        f'#navlog button.step[data-op="{i}"] .chip.buddy'
+                        f'#navlog button.step[data-op="{o["id"]}"] .chip.buddy'
                     ).count()
                     == 1
                 )
+            # cure and buy markers below are read from the fuselage-sides group, as before
+            pg.click('#navlog .group-label:has-text("Fuselage sides")')
             # cure markers sit between cards; the shipped resin curve is unsourced, so every cure marker warns
             assert pg.locator("#navlog .marker.cure").count() >= 1
             assert (
@@ -9202,6 +9233,12 @@ def test_player_meter_shows_dash_for_unknown_hours(rsite):
 
 def test_player_play_through_reaches_the_last_step(rsite):
     _, want = _grouped(rsite)
+    # Phase 2 (plan P2-A): "every non-stub Roncz step grouped and ordered".
+    # P1-D's "reaches f05.gear-extrusions" was the first stretch only.
+    last = _end_of_build(rsite)
+    assert (
+        want[-1] == last and FIRST_STRETCH_LAST in want and last != FIRST_STRETCH_LAST
+    )
     s, url = serve(rsite)
     try:
         with sync_playwright() as p:
@@ -9221,10 +9258,10 @@ def test_player_play_through_reaches_the_last_step(rsite):
                     break
             assert seen == want, seen
             st = pg.evaluate("window.__lab.player()")
-            assert st["step"] == FIRST_STRETCH_LAST and st["playing"] is False
+            assert st["step"] == last and st["playing"] is False
             assert pg.get_attribute("#tp-play", "aria-pressed") == "false"
-            assert pg.evaluate("window.__lab.navlog().current") == FIRST_STRETCH_LAST
-            assert pg.evaluate("window.__lab.selected()") == FIRST_STRETCH_LAST
+            assert pg.evaluate("window.__lab.navlog().current") == last
+            assert pg.evaluate("window.__lab.selected()") == last
             assert any("ply" in c for c in captions), captions
             assert not errors, errors
             b.close()
@@ -9427,24 +9464,16 @@ def test_player_plies_land_on_their_own_meshes_cloth_and_order(rsite):
         s.shutdown()
 
 
-def test_player_gu_note_renders_once_on_the_bench(rsite, tmp_path):
-    """The GU asterisk (the first canard step only) is rendered once, on the bench, never also in the step list. The shipped plan has
-    no canard group yet, so a copy of the site gives two Roncz canard ops that group."""
-    import shutil
+def test_player_gu_note_renders_once_on_the_bench(rsite):
+    """The GU asterisk is rendered once, on the bench, for the first canard step only, never also in the step list.
 
-    site = tmp_path / "site"
-    shutil.copytree(rsite, site)
-    g = json.loads((site / "graph.json").read_text())
-    canard = ["r30.shear-web", "r30.bottom-spar-cap"]
-    for o in g["ops"]:
-        if o["id"] in canard:
-            o["group"] = "canard"
-    (site / "graph.json").write_text(json.dumps(g))
-    plan = json.loads((site / "plan.json").read_text())
-    plan["groups"].append({"id": "canard", "label": "Canard"})
-    (site / "plan.json").write_text(json.dumps(plan))
+    Plan P2-A: "canard is the GU-note group"; "E2E test_gu_note_once (only first canard step)".
+    Contract 9: the note is only for the first step of the group whose id is canard.
+    """
+    canard = _roncz_in_group(_graph(rsite), "canard")
+    assert len(canard) >= 2, canard
     note = "The 1980 plans built the GU canard. This build uses the Roncz."
-    s, url = serve(site)
+    s, url = serve(rsite)
     try:
         with sync_playwright() as p:
             b, pg, errors = _player(p, url, query=f"&op={canard[0]}")
@@ -10030,6 +10059,12 @@ def test_player_narrow_sheet_expands_to_the_step_list_and_bench(rsite, w, h):
 @pytest.mark.parametrize("w,h", NARROW)
 def test_player_narrow_play_through_reaches_the_last_step(rsite, w, h):
     _, want = _grouped(rsite)
+    # Phase 2 (plan P2-A): "every non-stub Roncz step grouped and ordered".
+    # P1-D's "reaches f05.gear-extrusions" was the first stretch only.
+    last = _end_of_build(rsite)
+    assert (
+        want[-1] == last and FIRST_STRETCH_LAST in want and last != FIRST_STRETCH_LAST
+    )
     s, url = serve(rsite)
     try:
         with sync_playwright() as p:
@@ -10046,11 +10081,9 @@ def test_player_narrow_play_through_reaches_the_last_step(rsite, w, h):
                 if not st["playing"]:
                     break
             assert seen == want, seen
-            assert pg.evaluate("window.__lab.player().step") == FIRST_STRETCH_LAST
+            assert pg.evaluate("window.__lab.player().step") == last
             assert pg.get_attribute("#tp-play", "aria-pressed") == "false"
-            title = {o["id"]: o for o in _graph(rsite)["ops"]}[FIRST_STRETCH_LAST][
-                "title"
-            ]
+            title = {o["id"]: o for o in _graph(rsite)["ops"]}[last]["title"]
             assert title in pg.inner_text("#sheet-handle")
             _no_hscroll(pg)
             assert not errors, errors

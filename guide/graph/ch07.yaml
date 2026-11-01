@@ -2,6 +2,12 @@
 # then the box is rolled the other way for the left side. The canard cutout outline and the lower-corner insert position are fitted shapes.
 - id: f07.carve-corners
   chapter: 7
+  group: side-glass
+  plan:
+    people: 1
+    hours: {value: 4.3, flag: estimate, source: null}
+    cure: none
+    tools: [long-sanding-block, sandpaper, dust-mask]
   title: Round the box corners
   summary: Sand the bottom and top corners of the box round with a long block held along the longerons. Leave the lower aft corner high where the gear bolts pass.
   variants: [both]
@@ -16,6 +22,12 @@
     - Lower aft corner left high at the gear bolts
 - id: f07.canard-cutout
   chapter: 7
+  group: side-glass
+  plan:
+    people: 1
+    hours: {value: 4.3, flag: estimate, source: null}
+    cure: none
+    tools: [full-size-pattern, saw, multitool, dremel, sanding-block, marker]
   title: Cut the canard opening
   summary: Cut the full-size canard pattern from the sides, take out the longeron ahead of F28, and trim the F22 tab down to the marked waterline.
   variants: [both]
@@ -33,6 +45,13 @@
     - F22 tab trimmed no higher than waterline 18.9
 - id: f07.fuel-gauge-area
   chapter: 7
+  group: side-glass
+  plan:
+    people: 1
+    hours: {value: 4.3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, cup, mixing-stick, squeegee, knife]
   title: Sight-gauge area and firewall edge
   summary: Mark and sand the shallow depression for the fuel sight gauge, peel off the grey tape, and fill the bolt holes with micro. Round the plywood firewall edge and cut the insulation back from the skin lap.
   variants: [both]
@@ -48,6 +67,13 @@
     - Insulation trimmed back so the skin laps onto the wood
 - id: f07.belt-insert
   chapter: 7
+  group: side-glass
+  plan:
+    people: 1
+    hours: {value: 4.3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, saw, cup, mixing-stick, squeegee, sanding-block]
   title: Lower-corner belt insert
   summary: On the left side only, cut out the bottom foam at the lower corner and micro in a small wood insert that will later carry the seat-belt attachment.
   variants: [both]
@@ -62,6 +88,19 @@
     - Position taken from the figure; the exact station is a fitted reading
 - id: f07.skin-right
   chapter: 7
+  group: side-glass
+  plan:
+    people: 2
+    people_why: "one mixes resin while one wets out the skin"
+    hours: {value: 6.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    fuel: {wetted: true, fuel: UL94, resin_compat: unknown, why: "no published UL94 immersion test of this resin; Block 5 coupon test pending", source: null}
+    tools: [fuselage-stands, cup, brush, squeegee, scissors, knife, peel-ply, cling-wrap]
+    buy:
+      - {item: und-7715, qty: 6.18, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.203, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.414, flag: estimate}
   title: Glass the right side
   summary: Jig the fuselage banked 45 degrees to the left and glass the right side, with two crossed UND plies and a third forward of the front seat bulkhead. Add the tapered three-ply strip along the top longeron, F.S. 60 to 110.
   variants: [both]
@@ -82,6 +121,19 @@
     - Skin cured before the box is moved
 - id: f07.skin-left
   chapter: 7
+  group: side-glass
+  plan:
+    people: 2
+    people_why: "one mixes resin while one wets out the skin"
+    hours: {value: 6.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    fuel: {wetted: true, fuel: UL94, resin_compat: unknown, why: "no published UL94 immersion test of this resin; Block 5 coupon test pending", source: null}
+    tools: [fuselage-stands, cup, brush, squeegee, scissors, knife, peel-ply, cling-wrap]
+    buy:
+      - {item: und-7715, qty: 6.18, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.203, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.414, flag: estimate}
   title: Glass the left side
   summary: Roll the fuselage to 45 degrees of right bank once the right skin is cured and glass the left side the same way. Put peel ply on the strake bond areas.
   variants: [both]

@@ -1,6 +1,12 @@
 # Chapter 30 — Roncz R1145MS canard (replaces chapters 10, 11 and 12). Source: cobelu transcription; not in the 1980 edition.
 - id: r30.templates-cores
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 18.3, flag: estimate, source: null}
+    cure: none
+    tools: [hot-wire, templates, saw, sanding-block]
   title: Templates and Roncz foam cores
   summary: Prepare the Roncz hot-wire templates and cut the inboard, outboard and elevator foam cores, then make the dowels that will locate the cores later.
   variants: [roncz]
@@ -17,6 +23,11 @@
     - Dowels cut for core location
 - id: r30.lift-tabs
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    cure: none
+    tools: [hacksaw, file, drill-press, rivet-gun, countersink]
   title: Lift tabs, inserts and drilling jig
   summary: Cut the aluminum lift tabs (CLT) and their nut-plate inserts, lay out where they sit on the inboard cores, and match-drill tab, insert and jig together so the holes line up at installation.
   variants: [roncz]
@@ -34,6 +45,13 @@
     - Nut plates riveted to the inserts
 - id: r30.shear-web
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 12, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, jig, level, cup, brush, squeegee, scissors, scale]
   title: Cut the center cores and glass the shear web
   summary: Slice the inboard cores along the shear web line, jig them vertical, and lay up the shear web in crossed UND and 45-degree BID plies, with thick BID pads over each lift-tab insert.
   variants: [roncz]
@@ -57,6 +75,13 @@
     - Insert holes opened through the pads after cure
 - id: r30.jig-assemble
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 8.7, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [level, string, jig-blocks, bondo, cup, brush, squeegee, scissors, scale]
   title: Assemble the canard in the jigs
   summary: Fit the dowels and leading-edge cores, set the jig blocks on a level bench or ladder, then bond each outboard core to the middle section with micro, keeping both edges straight.
   variants: [roncz]
@@ -74,6 +99,14 @@
     - Outboard cores bonded to the center section
 - id: r30.bottom-spar-cap
   chapter: 30
+  group: canard
+  plan:
+    people: 2
+    people_why: "holding UNI tape while threads are pulled (GLANTZ)"
+    hours: {value: 4, flag: community, source: "https://www.aryjglantz.com/2015/06/canard-bottom-spar-cap-and-skin.html"}
+    cure: part
+    resin: mgs-285-287
+    tools: [tape, heat-gun, cup, brush, squeegee, scissors, scale]
   title: Bottom spar cap
   summary: Clean and prepare the trough, then fill it one UND ply at a time, wetting and squeegeeing each ply, to build the tapered bottom spar cap.
   variants: [roncz]
@@ -89,6 +122,20 @@
     - Cap fully wet out, no dry white fibers
 - id: r30.bottom-skin
   chapter: 30
+  group: canard
+  plan:
+    people: 2
+    people_why: "full-span wet skin (GLANTZ: could not do it solo)"
+    hours: {value: 3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [peel-ply, tape, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: und-7715, qty: 2.96, flag: estimate}
+      - {item: bid-7725, qty: 1.48, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.158, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.323, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.026, flag: estimate}
   title: Bottom skin
   summary: Mask the leading edge, peel-ply the trailing edge, fill foam dings, and lay up the three-ply bottom skin.
   variants: [roncz]
@@ -107,6 +154,12 @@
     - Edges trimmed straight
 - id: r30.turnover-twist-check
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.5, flag: community, source: "https://www.longezpush.com/chapter-10-roncz-canard/"}
+    cure: none
+    tools: [straightedge, string, level, pipe]
   title: Turn it over and recheck twist
   summary: Fix a straight pipe or board along the trailing edge, lift the canard off the jigs, set it right side up, sand the skin edges to the template contour, and confirm there is still no twist.
   variants: [roncz]
@@ -123,6 +176,13 @@
     - Level and twist rechecked before the top layups
 - id: r30.hinge-foam
   chapter: 30
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 1, flag: community, source: "https://www.aryjglantz.com/2015/06/prep-for-top-skin-glassing-and-hinge.html"}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, router, cup, brush, squeegee, scissors, scale]
   title: Hinge foam inserts
   summary: Cut pockets in the core where the elevator hinges will mount and bond in high-density foam inserts, checking the stations against the torque tubes.
   variants: [roncz]
@@ -136,6 +196,14 @@
     - Inserts bonded and sanded flush
 - id: r30.top-spar-cap
   chapter: 30
+  group: canard
+  plan:
+    people: 2
+    people_why: "holding UNI tape while threads are pulled (GLANTZ)"
+    hours: {value: 4.6, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [tape, heat-gun, templates, cup, brush, squeegee, scissors, scale]
   title: Top spar cap
   summary: Confirm the top trough matches the templates, mask the surrounding foam, and build the top spar cap the same way as the bottom one.
   variants: [roncz]
@@ -149,6 +217,19 @@
     - Cap cured, or skin started while it is still green
 - id: r30.top-skin
   chapter: 30
+  group: canard
+  plan:
+    people: 2
+    people_why: "full-span wet skin (GLANTZ: would not do it solo)"
+    hours: {value: 3.4, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, templates, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: und-7715, qty: 4.45, flag: estimate}
+      - {item: bid-7725, qty: 1.48, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.207, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.423, flag: estimate}
   title: Top skin
   summary: Lay up the four-ply top skin, then trim the trailing edge and tips and sand the trailing edge straight to the template.
   variants: [roncz]
@@ -167,6 +248,13 @@
 # Elevators and canard tips (cobelu chapter 30, Elevators / Canard Tip / mass balance sections). Replaces the old r30.elevators stub.
 - id: r30.elev-nc2-inserts
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, rivet-gun, grease, file]
   title: Install NC-2 inserts
   summary: Press five inserts into torque-tube pockets. Drill, grease, rivet, and seal. Deepen the slots.
   variants: [roncz]
@@ -182,6 +270,13 @@
     - Edges sealed and the tube slots deepened
 - id: r30.elev-bond-cores
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 3.9, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, jig, cup, brush, squeegee, scissors, scale]
   title: Bond elevator cores
   summary: Sand the tube, hold it clear of the bench on the NC-7 jigs, and micro the elevator cores onto it with the outboard ends flush.
   variants: [roncz]
@@ -195,6 +290,13 @@
     - Cores micro'd on with outboard ends flush
 - id: r30.elev-skin-bottom
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 3.3, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [templates, sanding-block, knife, cup, brush, squeegee, scissors, scale]
   title: Bottom elevator skin
   summary: Fair the cores to templates H and I with a flat bottom, then lay the crossed UND skin and dig foam back at the trailing edge for a glass-to-glass closeout.
   variants: [roncz]
@@ -211,6 +313,13 @@
     - Trailing edge trimmed and foam dug out for the closeout
 - id: r30.elev-skin-top
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [peel-ply, knife, cup, brush, squeegee, scissors, scale]
   title: Top elevator skin
   summary: Lay the crossed UND top skin lapping onto the bottom skin, with dry micro under peel ply along the trailing edge.
   variants: [roncz]
@@ -227,6 +336,13 @@
     - Dry micro under peel ply along the trailing edge
 - id: r30.elev-trim-ends
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.7, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, plane, templates, drill, rivet-gun, cup, brush, squeegee, scissors, scale]
   title: Trim elevator ends
   summary: Trim the trailing edge straight against templates H and I, fit the NC-6 plugs, and close the outboard end with one BID ply.
   variants: [roncz]
@@ -245,6 +361,12 @@
     - Outboard end closed with one BID ply
 - id: r30.elev-hinges
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [dremel, pliers]
   title: Install elevator hinges
   summary: Clear the glass over the NC-2 inserts and pin the NC-3 and NC-3A hinges on with NC-8 pins, bushings and washers. The NC-12A weldments go in only temporarily.
   variants: [roncz]
@@ -260,6 +382,12 @@
     - NC-12A weldments slipped in temporarily
 - id: r30.elev-hinge-slots
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [jig, drill, router]
   title: Elevator hinge slots
   summary: With the canard upside down, jig each elevator at an even slot gap using two L jigs, then mark and rout the seven hinge slots.
   variants: [roncz]
@@ -275,6 +403,12 @@
     - Hinge stations (BL 9.2, 34.1, 59.0) are positioned from the text and figure only; the inboard ones are unconfirmed
 - id: r30.elev-uptravel-test
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [hot-glue, angle-finder, shims]
   title: Elevator up-travel test
   summary: Hold the NC-3 hinges in place with hot glue, measure the up-travel with an angle finder, and shim the hinges out until the travel is enough.
   variants: [roncz]
@@ -289,6 +423,13 @@
     - NC-3 hinges shimmed out until at least 15 degrees up
 - id: r30.elev-flox-hinges
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, stir-stick, sanding-block, rag]
   title: Flox the hinges
   summary: Fill each slot two-thirds with wet flox, sand the buried hinge area, seat the hinges, top up and wipe clean.
   variants: [roncz]
@@ -303,6 +444,12 @@
     - Hinges seated, slots topped up and wiped
 - id: r30.elev-nc12a
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [countersink, drill]
   title: Install NC-12A hinges
   summary: Recess the CS-11 screw heads, set each NC-12A weldment with its hinge offset from the tube leading edge, and drill through tube and arm for the bolt.
   variants: [roncz]
@@ -317,6 +464,11 @@
     - Number 12 hole drilled through tube and arm, AN3-12A bolt fitted
 - id: r30.elev-balance-check
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    cure: none
+    tools: [stand]
   title: Elevator balance check
   summary: Hang each elevator on its hinge points and confirm it settles nose down. Fix a wrong balance by sanding the top UND or adding a little weight forward.
   variants: [roncz]
@@ -334,6 +486,11 @@
     - "Mandatory ground inspection (CP57-8): certify elevator weight, stiffness and shape"
 - id: r30.elev-travel-check
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    cure: none
+    tools: [templates, angle-finder]
   title: Elevator travel check
   summary: Remount the elevators on the canard and check the full range of travel with template G against the Roncz limits.
   variants: [roncz]
@@ -350,6 +507,13 @@
     - "Mandatory inspection (CP66-9): check the torque tubes for corrosion"
 - id: r30.canard-tips
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 12.5, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, sanding-block, templates, hacksaw, cup, brush, squeegee, scissors, scale]
   title: Canard tips
   summary: Micro foam tip blocks on outboard of each canard half, shape them to the swoop template, glass them top and bottom, and cut the hinge pins to length.
   variants: [roncz]
@@ -372,6 +536,12 @@
     - Hinge pins trimmed to 36 in right and 61 in left
 - id: r30.elev-trim-belcrank
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [drill, rivet-gun]
   title: Elevator trim bellcrank
   summary: On the left elevator only, swap the inboard NC-12A for the NC-5A trim belcrank and rivet it on clear of the pin.
   variants: [roncz]
@@ -385,6 +555,13 @@
     - Twelve pop rivets set, clear of the hinge pin
 - id: r30.elev-mass-balance
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 1.4, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10558"}
+    cure: part
+    resin: mgs-285-287
+    tools: [jig, cup, brush, squeegee, scissors, scale]
   title: Elevator mass balance
   summary: Bond a foam spacer and a CS-10 lead weight to each elevator's leading edge on the J jig, then wrap the weight with UND strips.
   variants: [roncz]
@@ -403,6 +580,12 @@
     - Each weight kept with its own spacer and elevator
 - id: r30.elev-balance-pockets
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [dremel, knife, cup, brush, squeegee, scissors, scale]
   title: Elevator balance pockets
   summary: Cut a pocket in the canard bottom skin and foam so the balance weight swings clear, then seal it with flox and BID. Repeat at the tip rib.
   variants: [roncz]
@@ -419,6 +602,12 @@
     - Same done at the tip rib
 - id: r30.elev-ice-shield
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, squeegee, scissors, scale]
   title: Ice shield (optional)
   summary: Optional. Build a small fiberglass fence over a foam core ahead of each balance weight; skip it unless icing is possible.
   variants: [roncz]
@@ -434,6 +623,12 @@
     - Fence about 1.4 by 4 in over a foam core ahead of each weight
 - id: r30.elev-cs11
   chapter: 11
+  group: canard
+  plan:
+    people: 1
+    hours: {value: 2.2, flag: estimate, source: null}
+    cure: none
+    tools: [drill, countersink, hacksaw]
   title: Elevator CS-11
   summary: Fit a CS-11 lead block on the left side of each NC-12A, on both elevators, held by two screws with the nut side recessed.
   variants: [roncz]
@@ -448,6 +643,12 @@
     - AN509-10A screws fitted
 - id: r30.install-pins
   chapter: 30
+  group: canard-install
+  plan:
+    people: 1
+    hours: {value: 1.2, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10872"}
+    cure: none
+    tools: [drill, sanding-block, level]
   title: Pins and fuselage fit for the Roncz canard
   summary: Make the two alignment pins for F28, then set the canard on the fuselage and lower the fuselage sides until it sits at the right incidence with room for full elevator travel.
   variants: [roncz]
@@ -463,6 +664,13 @@
     - At least 0.1 in clearance around the torque tubes at both travel limits
 - id: r30.align-canard
   chapter: 30
+  group: canard-install
+  plan:
+    people: 1
+    hours: {value: 7.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10872"}
+    cure: part
+    resin: mgs-285-287
+    tools: [clamps, tape-measure, level, drill, templates, cup, brush, squeegee, scissors, scale]
   title: Align and attach the Roncz canard
   summary: Clamp the lift tabs to F22, set zero sweep and zero incidence (the average if there is slight twist), drill the tabs, fit the plywood rear tabs to the pins, and replace any sweep shims with BID pads.
   variants: [roncz]
@@ -485,6 +693,11 @@
 # Chapter 12 steps the first install ops do not spell out (cobelu Install Canard steps 4, 7, 8, 9). Step 10 (control connection) is chapter 16 work and is not an op here.
 - id: r30.f22-drill-tabs
   chapter: 12
+  group: canard-install
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, clamps]
   title: Drill F22 tabs
   summary: Using the tabs' pilot holes as guides, drill the lift tab holes through F22, then pass a temporary AN3 bolt through and clamp.
   variants: [roncz]
@@ -500,6 +713,12 @@
     - Temporary AN3 bolts through and clamped
 - id: r30.elev-fuselage-clearance
   chapter: 12
+  group: canard-install
+  plan:
+    people: 1
+    hours: {value: 2, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=10872"}
+    cure: none
+    tools: [saw, sanding-block, angle-finder]
   title: Elevator clearance check
   summary: Trim the inboard end of each elevator so it stops just short of the fuselage side, and confirm the tubes clear it through the whole travel.
   variants: [roncz]
@@ -515,6 +734,11 @@
     - 0.1 in clearance round the tubes at 30 degrees down
 - id: r30.lift-tab-bushings
   chapter: 12
+  group: canard-install
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, counterbore]
   title: Lift tab bushings
   summary: Open the tab and F22 holes, counterbore F22 for the CNL bushings, and leave those bushings loose until chapter 13. The CN-2 bushings go in the tab holes now.
   variants: [roncz]
@@ -531,6 +755,12 @@
     - CN-2 bushings in the tab holes
 - id: r30.f28-pins-permanent
   chapter: 12
+  group: canard-install
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, cup, brush, squeegee, scissors, scale]
   title: Permanent F28 pins
   summary: Pull the alignment pins, glass the marked area on F28, then drill out and flox the pins in for good.
   variants: [roncz]

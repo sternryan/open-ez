@@ -31,6 +31,20 @@ def needs(g, op_id):
     return seen
 
 
+# (op id, item, sourcing-record line). A row stays only when that line shows a
+# page the record opened and gives the quantity. Reviewed against
+# docs/harness/rehearsal-sourcing-p1.md and rehearsal-sourcing-p2.md: the
+# phase-2 candidates cite plans pages the record did not open, so none qualify.
+OFFICIAL_BUYS: tuple[tuple[str, str, str], ...] = ()
+
+# (op id, citation). Official hours need the same review: the sourcing record
+# opened the page. Reviewed against the same two files. The one official hour,
+# f24.canard-cover, cites plans-1980:p161, which rehearsal-sourcing-p2.md says
+# was not read (a four-hour ceiling, not a log). No derived hours exist.
+# Community hours cite log URLs those records opened, so they stay.
+OFFICIAL_HOURS: tuple[tuple[str, str], ...] = ()
+
+
 def test_sourced_buys_match_the_sourcing_record(g):
     """Official means a page the sourcing record read. Derived means a derivation it records."""
     buys = [
@@ -47,11 +61,68 @@ def test_sourced_buys_match_the_sourcing_record(g):
         if op.plan is not None
         for buy in op.plan.buy
     ]
-    assert [row for row in buys if row[2] == "official"] == []
+    assert [(op, item) for op, item, flag in buys if flag == "official"] == [
+        row[:2] for row in OFFICIAL_BUYS
+    ]
+    # Exact set, graph order. The gear pair stays. The rest are phase-2
+    # derivations the sourcing record writes down; a new derived buy fails.
     assert [row for row in buys if row[2] == "derived"] == [
         ("f05.gear-extrusions", "lmga-assembly", "derived"),
         ("f05.gear-extrusions", "main-gear-extrusion", "derived"),
+        ("f08.belt-attach", "an525-416r16", "derived"),
+        ("f08.belt-attach", "ms21042-4", "derived"),
+        ("f08.belt-attach", "an960-416", "derived"),
+        ("f09.strut-stiffen", "main-gear-strut", "derived"),
+        ("f09.tab-assembly", "an960-1016", "derived"),
+        ("f09.axles-brakes", "an4-22a", "derived"),
+        ("f09.axles-brakes", "ms21042-4", "derived"),
+        ("f09.axles-brakes", "main-axle", "derived"),
+        ("f09.axles-brakes", "wheel-brake-5in", "derived"),
+        ("f09.brake-lines", "brake-line-nylon-316", "derived"),
+        ("f13.strut-reinforce", "ng-strut-longez", "derived"),
+        ("f13.rudder-pedals", "rudder-pedal-longez", "derived"),
+        ("f13.strut-slot-sc", "strut-cover-sc", "derived"),
+        ("f13.nb-box", "nose-wheel-cover-nb", "derived"),
+        ("f14.lwa-fabricate", "al-2024-bar-0125x2", "derived"),
+        ("f14.lwa-fabricate", "al-2024-bar-025x2", "derived"),
+        ("f14.spruce-layup6", "spruce-1x1", "derived"),
+        ("f14.bond-spar", "al-2024-angle-1x1x0125", "derived"),
+        ("f15.master-cylinders", "master-cylinder", "derived"),
+        ("f16.rudder-conduit", "rudder-conduit-nylon", "derived"),
+        ("f18.trim-plexi", "canopy-bubble", "derived"),
+        ("f19.cut-cores", "styrofoam-8x16x67", "derived"),
+        ("f19.cut-cores", "styrofoam-8x16x42", "derived"),
+        ("f19.aileron-build", "steel-rod-0p375", "derived"),
+        ("f19.aileron-build", "piano-hinge-p6-3ft", "derived"),
+        ("f19.attach", "an8-21a", "derived"),
+        ("f19.attach", "an8-23a", "derived"),
+        ("f20.rudder-hang", "piano-hinge-ms20257p2-3ft", "derived"),
+        ("f20.rudder-hang", "nutplate-rudder-hinge", "derived"),
+        ("f20.rudder-hang", "pop-rivet-flush", "derived"),
+        ("f21.od-outlet", "tube-5052-0375-6ft", "derived"),
+        ("f21.fairing-caps", "fuel-cap-dzus-2in", "derived"),
+        ("f22.antennas", "copper-foil-tape", "derived"),
+        ("f23.cowl-trim", "cowl-variez", "derived"),
     ]
+    # Official hours follow the buy rule. An unread official hour is not on
+    # the allowlist, so it fails here. f24.canard-cover keeps the four-hour
+    # ceiling and is an estimate: the plans page was not read.
+    official_hours = [
+        (op.id, op.plan.hours.source)
+        for op in g.ops.values()
+        if op.plan is not None
+        and op.plan.hours is not None
+        and op.plan.hours.flag == "official"
+    ]
+    assert official_hours == [row[:2] for row in OFFICIAL_HOURS]
+    cover = g.ops["f24.canard-cover"].plan
+    assert cover is not None and cover.hours is not None
+    assert (cover.hours.flag, cover.hours.value, cover.hours.source) == (
+        "estimate",
+        4.0,
+        None,
+    )
+    assert "Not over four man-hours." in g.ops["f24.canard-cover"].summary
 
 
 def test_graph_valid_and_complete(g):

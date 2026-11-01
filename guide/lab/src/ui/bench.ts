@@ -1,8 +1,10 @@
 // The bench panel under the 3D view: what is on the bench for this step (materials, quantities, tools), why a buddy is needed,
 // what cure follows, and the step's source detail. The plans chapter appears here, in .source, and nowhere else in the player.
-import type { Op } from '../logic/graph'
+import type { Op, PlanJson } from '../logic/graph'
+import type { Actual } from '../logic/actuals'
 import { DASH, fmtH } from './navlog'
 import { evidenceOf } from '../logic/evidence'
+import { PACE_QUALIFIER } from '../logic/pace'
 
 export interface BenchExtra {
   /** graph.json `pages`: scan page -> plans page (empty in a public build) */
@@ -11,6 +13,12 @@ export interface BenchExtra {
   cure?: { hours: number | null; why: string | null }
   /** the one GU note (first canard step only) */
   note?: string | null
+  /** the owner's logged hours and receipt for this step, if any. Local only. */
+  actual?: Actual | null
+  /** multiplier on this step's estimated hours. 1 leaves the logged figure as it is. */
+  pace?: number
+  /** the next actual for this step, or null to clear it. The estimate on the step is left alone. */
+  onActual?: (next: Actual | null) => void
 }
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string): HTMLElementTagNameMap[K] => {
@@ -20,6 +28,15 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: stri
   return e
 }
 const qty = (n: number) => (Math.round(n * 100) / 100).toString()
+
+/** One line on a fuel-wetted step whose resin has no published compatibility result. */
+function fuelLine(fuel: PlanJson['fuel']): HTMLParagraphElement | null {
+  if (!fuel?.wetted || fuel.resin_compat !== 'unknown') return null
+  const text = `Fuel-wetted: ${fuel.fuel} compatibility of this resin is unknown (coupon test pending)`
+  const p = el('p', 'fuel flag unknown', text)
+  p.dataset.flag = 'unknown'
+  return p
+}
 
 /** " · flag" and, for a sourced value, its evidence: the citation, the derivation note or a link. No evidence: " · estimate". */
 function flagged(host: HTMLElement, flag: string, source: string | null | undefined): void {
@@ -64,9 +81,17 @@ export function renderBench(root: HTMLElement, op: Op, catalog: Record<string, {
     grid.append(d)
   }
   const h = plan?.hours ?? null
+  const pace = extra.pace ?? 1
+  const scale = pace !== 1 && Number.isFinite(pace) && h?.value != null && Number.isFinite(h.value)
   if (h && h.value !== null) {
-    const hv = el('span', '', `${fmtH(h.value)} h`)
+    const shown = scale ? h.value * pace : h.value
+    const hv = el('span', '', `${fmtH(shown)} h`)
     flagged(hv, h.flag, h.source)
+    if (scale && Number.isFinite(shown)) {
+      const q = el('span', 'flag', ` · ${PACE_QUALIFIER}`)
+      q.dataset.flag = PACE_QUALIFIER
+      hv.append(q)
+    }
     row('hours', 'Hours', hv)
   } else row('hours', 'Hours', `${DASH} no hours figure yet (planned as 1 h)`)
   const mats = el('ul', 'bench-list')
@@ -90,6 +115,61 @@ export function renderBench(root: HTMLElement, op: Op, catalog: Record<string, {
   }
   row('cure', 'Cure after', cure)
   root.append(grid)
+  const fuelNote = fuelLine(plan?.fuel)
+  if (fuelNote) root.append(fuelNote)
+  root.append(actualFields(extra))
   if (extra.note) root.append(el('p', 'note gu', extra.note))
   root.append(el('p', 'source', sourceText(op, extra.pages)))
+}
+
+const numOrEmpty = (raw: string): number | null | undefined => {
+  const t = raw.trim()
+  if (t === '') return null
+  const n = Number(t)
+  if (!Number.isFinite(n) || n < 0) return undefined
+  return n
+}
+
+/** Logged hours and a receipt for this step. Empty clears that field. Zero is a real value. A negative is rejected. */
+function actualFields(extra: BenchExtra): HTMLElement {
+  const box = el('div', 'actual')
+  const prev = extra.actual ?? {}
+  const emit = (patch: { hours?: number | null; spentUsd?: number | null }): void => {
+    if (!extra.onActual) return
+    const next: Actual = { ...prev }
+    if (patch.hours === null) delete next.hours
+    else if (typeof patch.hours === 'number') next.hours = patch.hours
+    if (patch.spentUsd === null) delete next.spentUsd
+    else if (typeof patch.spentUsd === 'number') next.spentUsd = patch.spentUsd
+    extra.onActual(next.hours === undefined && next.spentUsd === undefined ? null : next)
+  }
+  const field = (k: string, label: string, value: number | undefined, aria: string, on: (n: number | null) => void): HTMLLabelElement => {
+    const lab = el('label', 'actual-field')
+    const input = el('input')
+    input.type = 'number'
+    input.min = '0'
+    input.step = 'any'
+    input.inputMode = 'decimal'
+    input.dataset.k = k
+    input.setAttribute('aria-label', aria)
+    if (value !== undefined) input.value = String(value)
+    input.addEventListener('change', () => {
+      const n = numOrEmpty(input.value)
+      if (n === undefined) {
+        input.value = value !== undefined ? String(value) : ''
+        return
+      }
+      on(n)
+    })
+    lab.append(el('span', 'label', label), input)
+    return lab
+  }
+  box.append(field('actual-hours', 'Logged hours', prev.hours, 'Logged hours for this step', (n) => emit({ hours: n })))
+  box.append(field('actual-spent', 'Receipt, USD', prev.spentUsd, 'Receipt for this step, dollars', (n) => emit({ spentUsd: n })))
+  const clear = el('button', 'btn', 'Clear actual')
+  clear.type = 'button'
+  clear.dataset.k = 'actual-clear'
+  clear.addEventListener('click', () => extra.onActual?.(null))
+  box.append(clear)
+  return box
 }

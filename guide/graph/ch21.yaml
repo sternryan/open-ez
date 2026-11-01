@@ -4,6 +4,14 @@
 # the drain thread (1/4-27 printed, 1/8-27 corrected), the baggage arm. No strake weight is printed anywhere, so no op states one.
 - id: f21.cut-parts
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 11.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: none
+    tools: [saw, knife, straightedge, templates]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 6, flag: estimate}
   title: Cut the ribs, baffles and skin cores
   summary: From 0.35 in PV foam cut ribs R23 and R45 (drawn full size on A14, which this guide does not hold), the baffles B23 (21.3 by 7.3 in), DB (28.5 in) and BAB (13.4 in), the leading-edge strips TLE (33.5 in) and BLE (25.5 in), the outboard diagonal OD, and four skin cores from six 32 by 48 in sheets. The plans size each tank at 25.5 gal, the Owner's Manual says 28 gal each and 52 gal in all, and the model carries 26 gal a side with both figures shown. Keep R45 where it is; moving it outboard shifts the CG aft.
   variants: [both]
@@ -23,6 +31,12 @@
     - Tank capacity conflict noted (25.5 plans, 28 manual, model 26)
 - id: f21.fuselage-cutouts
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 2, flag: community, source: "https://www.longezpush.com/strake-build/"}
+    cure: none
+    tools: [saw, jigsaw, sanding-block, tape-measure]
   title: Saw the fuselage-side cutouts
   summary: Cut two openings in each fuselage side, measured forward from the spar face and down from the top of the longeron (WL 23). The baggage hole runs from 65.8 in forward of the spar, 4.0 below the top, down to 42 in, flush with the front seat bulkhead, 1.40 below. The tank hole starts 30 in forward of the spar and ends 15 in forward, 9.15 below WL 23. The aft end of the tank hole reads 1.90 once and 1.40 elsewhere on the page, unresolved. The baggage arm in the manual is 90, while the floor's own centroid is near 80.6; which volume the 90 covers is unresolved.
   variants: [both]
@@ -41,6 +55,13 @@
     - Both cutouts checked left and right
 - id: f21.jig-bond
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 57.7, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    tools: [level, heat-gun, nails, sanding-block, drill, tap, cup, brush, squeegee, scissors, scale]
   title: Level the jig table and bond the bottom
   summary: Level a flat table (a 4 by 4 ft plywood sheet will do) flush with the spar bottom, with the longerons level. On R45 the WL 17.4 mark stands 2.65 in above the table and on R23 3.45 in; a 35 in board props the front edge of the lower skin. Heat-form the skin curves, nail the parts to the plan, and micro the bottom skin, ribs, TLE and BLE together. Bevel the 1.25 in sump hole and seat the 1 by 1 in aluminium drain plate where fuel pools with the nose down on the ground. The page prints a 1/4-27 tap for it; the corrected thread is 1/8-27.
   variants: [both]
@@ -61,6 +82,19 @@
     - Sump hole bevelled and the drain insert set flush
 - id: f21.inside-layups
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 9.3, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    fuel: {wetted: true, fuel: UL94, resin_compat: unknown, why: "no published UL94 immersion test of this resin; Block 5 coupon test pending", source: null}
+    tools: [cup, brush, squeegee, scissors, scale, sanding-block]
+    buy:
+      - {item: und-7715, qty: 0.22, flag: estimate}
+      - {item: bid-7725, qty: 3.51, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.152, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.31, flag: estimate}
   title: Glass the inside (layups 1 to 3)
   summary: Layup 1 is one wet BID ply over the whole tank floor, lapping 1 in up the spar and fuselage side and fully onto both ribs, TLE and BAB. Layup 2 is one BID ply on each side of B23 and DB, B23 first. Layup 3 covers the outside face of R45 and the baggage floor with BID, plus a 2 in strip of two UND plies along the outer diagonal edge, fibres along its length. Use the fuel-proof epoxy for these inside layups, give the walls a heavy coat, and check the outboard ribs for pinholes that would leak fuel into the wing foam.
   variants: [both]
@@ -86,6 +120,12 @@
     - Ribs checked for pinholes
 - id: f21.vent-screen
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, tube-bender, tin-snips, cup, brush, squeegee, scissors, scale]
   title: Vent line and outlet screen
   summary: Run a 1/4 in aluminium vent line through the fuselage side with wet flox on both faces of the hole, opening 1/2 in above the top. Dome a piece of aluminium screen-door mesh over the 1 1/4 in hole in the inboard bottom skin, so it works as a finger strainer; the oval hole in B23, 5 by 3 in, lets you see it from the cap. Each tank gets its own vent line; never merge the two.
   variants: [both]
@@ -104,6 +144,20 @@
     - Screen visible through the B23 oval hole
 - id: f21.close-tank
   chapter: 21
+  group: strakes
+  plan:
+    people: 2
+    people_why: "closing the wet tank top (plans: a few helpers)"
+    hours: {value: 46.3, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    fuel: {wetted: true, fuel: UL94, resin_compat: unknown, why: "no published UL94 immersion test of this resin; Block 5 coupon test pending", source: null}
+    tools: [heat-gun, weights, lumber, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: und-7715, qty: 0.22, flag: estimate}
+      - {item: bid-7725, qty: 2.22, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.099, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.201, flag: estimate}
   title: Top cores, layup 4 and closing the tank
   summary: Fit the top core to within a tenth of an inch of the tank walls and heat-form it under weights; hold the curve with lumber and dabs of filler. Lay layup 4, one BID ply on the inside of the top plus a 2 in strip of two UND plies along the outboard diagonal, leaving 1 in dry along the inboard edge, and let it cure only two to four hours. Then close the tank with a few helpers and weights, and tape the top to R45, R23 and BAB (layup 5) and around the fuselage cutouts (layup 6). Fit the wing first and trim OD to match it.
   variants: [both]
@@ -127,6 +181,15 @@
     - Tapes of layups 5 and 6 on the ribs, BAB and cutout edges
 - id: f21.od-outlet
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 15.1, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, tube-bender, nails, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: tube-5052-0375-6ft, qty: 2.67, flag: derived}
   title: Outboard diagonal and fuel outlet tube
   summary: Shape OD to the tank's outside contour and glass it inside with one BID ply, floxed in with nails, running to the spar at its aft end. Run the 3/8 in soft aluminium outlet tube, about eight feet long, from the right side of the front cockpit floor to a 7/16 in hole in the fuselage under the tank, about 13 in forward of the firewall and 3 in below the tank bottom. It sticks out 0.4 in; keep a wood plug in it while it cures. The plans call this step and the next both layup 7; this guide names this one 7a and the outside one 7b.
   variants: [both]
@@ -148,6 +211,18 @@
     - Left tank line routed aft of the aft seat bulkhead
 - id: f21.outside-bottom
   chapter: 21
+  group: strakes
+  plan:
+    people: 2
+    people_why: "turning the airframe over (GLANTZ: two friends)"
+    hours: {value: 38.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, peel-ply, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: und-7715, qty: 5.79, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.19, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.388, flag: estimate}
   title: Outside bottom skin and sump blister (layups 7b and 8)
   summary: Turn the airframe over and fair the outside with a hard block. Lay two UND plies over the whole strake, the first with fibres parallel to the tank leading edge and the second fore and aft, lapping 4 in onto the spar, 3/4 in onto the fuselage, down the TLE and BLE faces and half way down OD. Add a 5 in UND strip along the diagonal. Then bond the sump blister, 21 in long and 2.75 in deep with a 1/2 in flange, in wet flox with a 1 in BID tape all round (layup 8); its aft end is flush with the firewall.
   variants: [both]
@@ -171,6 +246,18 @@
     - Sump blister bonded flush with the firewall and taped
 - id: f21.outside-top
   chapter: 21
+  group: strakes
+  plan:
+    people: 2
+    people_why: "righting the airframe (GLANTZ: two friends lifted it)"
+    hours: {value: 17.8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, peel-ply, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: und-7715, qty: 6.9, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.226, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.462, flag: estimate}
   title: Outside top skin (layup 9)
   summary: Fair and skin the top the same way as the bottom, two crossed UND plies and the diagonal strip, with peel ply on the edges. On the left strake only, add a fourth UND ply so the top can take a footstep when you climb into the aft cockpit.
   variants: [both]
@@ -190,6 +277,12 @@
     - Fourth ply on the left top only
 - id: f21.pressure-check
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 3.1, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: none
+    tools: [altimeter, tee-fitting, tube-plug]
   title: Leak check by altitude change
   summary: Seal the tank, plug the 3/8 in line at the forward cockpit and tee an altimeter into the vent. Raise the pressure by mouth, never with a pump, to the equivalent of 1500 ft of altitude, and wait several hours. A tank that holds is done; a leak gets repaired and tested again.
   variants: [both]
@@ -207,6 +300,15 @@
     - Leaks repaired and the test repeated
 - id: f21.fairing-caps
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    hours: {value: 33.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13817"}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, sanding-block, hole-saw, drill, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: fuel-cap-dzus-2in, qty: 2, flag: derived}
   title: Leading-edge fairing blocks and fuel caps
   summary: With the wing fitted, carve a 2 lb urethane block to the rib noses and skin it with two UND plies crossing at 45 deg, lapping 1/2 in onto the skins and fuselage. After paint, bore a 2 1/4 in hole in the aft half of each tank, flox the 2 in aluminium rim in, and fit the Dzus cap with its slot fore and aft. The 1/4 in drain marked step 10 on page 21-7 vents the closed-off outboard area; it is not a tank drain.
   variants: [both]
@@ -228,6 +330,11 @@
     - Caps fitted with the slot fore and aft and tethered
 - id: f21.plumbing
   chapter: 21
+  group: strakes
+  plan:
+    people: 1
+    cure: none
+    tools: [wrench, drill, safety-wire-pliers]
   title: Fuel valve, pumps and gascolator
   summary: Plumbing is installation only here and has no modelled geometry. Mount the left-right-off valve on the lower front floor just under the instrument panel, the electric pump high enough to reach its filter, and the gascolator at the lower right of the firewall, then connect valve, pump, gascolator and engine with fire-sleeved hose. The engine side is Section II work, which this guide does not hold.
   variants: [both]

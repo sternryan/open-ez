@@ -4,6 +4,12 @@
 # cp-corrected (CP26 LPC 31). The cap schedules are the base plies only; the CP25 thin-tape box adds plies when the five-ply test reads thin.
 - id: f19.jig
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 13.9, flag: estimate, source: null}
+    cure: none
+    tools: [saw, jigsaw, level, string-line, tape-measure]
   title: Set up the five wing jigs
   summary: Stand five plywood jigs on a straight floor line, leading edge up, with the 17.4 water line level across them. The jigs sit 31.7, 51.7 and 88.4 in from the first one, 125.6 in end to end, and their outlines come from templates this guide does not hold.
   variants: [both]
@@ -19,6 +25,16 @@
     - Edge offsets and the 17.4 water line level across all five
 - id: f19.cut-cores
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 26.8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [hot-wire, templates, straightedge, knife]
+    buy:
+      - {item: styrofoam-8x16x67, qty: 10, flag: derived}
+      - {item: styrofoam-8x16x42, qty: 4, flag: derived}
   title: Cut the wing cores
   summary: Lay out and hot-wire the seven foam blocks (five 7 by 14 by 64 in, two 7 by 14 by 41 in) into five core pairs. The cut angles are 78.64 deg centre and outboard and 77.51 deg inboard. The plan prints the leading edge at BL 106.25 two ways, FS 134.95 on its label and FS 134.45 from its chord and trailing edge, 0.5 in apart and unresolved; the model uses the straight 22.98 deg line, which sits between them.
   variants: [both]
@@ -36,6 +52,12 @@
     - Check dimensions 22.8 and 25.1 in on the inboard core
 - id: f19.core-cutouts
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 18.2, flag: estimate, source: null}
+    cure: none
+    tools: [hot-wire, knife, router, templates]
   title: Torque-tube, shell, aileron and light-hole cuts
   summary: Cut the torque-tube slot at BL 55.5 and hollow the inboard wedge of FC1, keeping a 0.6 in shell. Cut the aileron openings in FC2 and FC3 (a 3 by 8 in chunk out of FC3) and wire a 1 in light passage through FC4 and FC5.
   variants: [both]
@@ -53,6 +75,13 @@
     - Light passage cut at 2, 3.5 and 5.6 in offsets
 - id: f19.mount-cores
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 20.7, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [rotary-file, cup, level, straightedge]
   title: Cores into the jigs, attach depressions
   summary: Micro the inboard and centre cores onto the jigs, with the leading-edge cores set aside for later. Cut the 1.7 in wide attach depressions with a rotary file and round the inside corners.
   variants: [both]
@@ -67,6 +96,13 @@
     - Joggle checked, dimension A equal to B along the span
 - id: f19.hardpoints
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 11.4, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, rotary-file, cup, brush, squeegee, scissors]
   title: Hard points and the depression liner
   summary: Notch the foam and bond the aluminium blocks, two outboard and one inboard, then the thin access strips. Line each depression with two plies of BID. The block outlines are printed; their thickness and exact offsets are small hand figures.
   variants: [both]
@@ -84,6 +120,18 @@
     - Two BID plies laid in each depression
 - id: f19.shear-web
   chapter: 19
+  group: wings
+  plan:
+    people: 2
+    people_why: "one mixes resin while one lays twelve wide plies"
+    hours: {value: 25.8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, peel-ply]
+    buy:
+      - {item: und-7715, qty: 5.45, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.179, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.365, flag: estimate}
   title: Shear web (layup 2)
   summary: Cover the web face with twelve 13 in wide 45 deg UND pieces, crossed in pairs. Two plies run the full span, then the plies step in to 6 inboard (BL 23 to 70), 4 mid span (BL 70 to 120) and 2 outboard (BL 120 to 157).
   variants: [both]
@@ -105,6 +153,16 @@
     - Outboard zone left at 2 plies (cp-corrected)
 - id: f19.pads-plates
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, weights]
+    buy:
+      - {item: bid-7725, qty: 0.193, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.008, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.016, flag: estimate}
   title: Pads and plates over the hard points (layup 3)
   summary: Lay three-ply BID pads at 45 deg, 4 by 4 in and 4 by 6 in, centred on the metal and kept off the spar cap. Epoxy the LWA3 and LWA2 plates over them and press each with about 10 lb while it cures.
   variants: [both]
@@ -121,6 +179,13 @@
     - About 10 lb on each plate while it cures
 - id: f19.le-cores
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 6.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, sanding-block, clamps]
   title: Bond the leading-edge cores
   summary: Micro FC4 and FC5 onto the front of the shear web, one ahead of FC2 and one ahead of FC3, and hold them with the front jig pieces until the micro is firm.
   variants: [both]
@@ -135,6 +200,18 @@
     - Joints faired and the wing section checked in the jigs
 - id: f19.bottom-cap
   chapter: 19
+  group: wings
+  plan:
+    people: 2
+    people_why: "one mixes resin while one lays long tape"
+    hours: {value: 23.9, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, tape-measure, peel-ply]
+    buy:
+      - {item: und-7715, qty: 2.087, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.069, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.14, flag: estimate}
   title: Bottom spar cap
   summary: Turn the wing over and lay five plies of 3 in UND tape, 142, 135, 84, 52 and 19.5 in long, stepped in from the root by 5, 12, 19 and 26 in. A plywood dam stops the inboard end against the LWA3 plate. These are the base plies; the CP25 thin-tape box adds more.
   variants: [both]
@@ -155,6 +232,18 @@
     - Dam in place at the inboard end against the LWA3 plate
 - id: f19.bottom-skin
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 38.4, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, knife, peel-ply]
+    buy:
+      - {item: und-7715, qty: 15.08, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.495, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 1.01, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.012, flag: estimate}
   title: Bottom skin
   summary: Skin the bottom with two crossed diagonal plies of UND from a 38 in roll, joints butted and selvage kept, lapping the leading edge 2 in and tapering the last 0.5 in at the trailing edge. A third ply of BID reinforces the tip. Lay a peel ply 65 in long ahead of the aileron gap.
   variants: [both]
@@ -174,6 +263,17 @@
     - Trailing edge flush with a 0.5 in minimum lap
 - id: f19.top-cap
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 27.3, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, tape-measure, peel-ply]
+    buy:
+      - {item: und-7715, qty: 2.957, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.097, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.198, flag: estimate}
   title: Top spar cap
   summary: Return the wing to the jigs and lay seven plies of 3 in UND tape, 142, 142, 119, 90, 61, 39 and 20 in long, stepped in 6, 12, 18 and 24 in. The CP25 box adds plies when the tape is thin.
   variants: [both]
@@ -193,6 +293,14 @@
     - Cap clear of the attach depressions
 - id: f19.rudder-conduit
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [router, knife, cup, squeegee]
+    buy:
+      - {item: brake-line-nylon-316, qty: 23.47, flag: estimate}
   title: Rudder conduit in the wing
   summary: Bed a 3/16 in OD Nylaflow tube with a 0.025 in wall in a groove in the top surface near the trailing edge, 4.8 in from the root as drawn. It curves down 0.7 in over 8 in at the root, leaves 2 in sticking out at each end, and never uses Nylo-Seal. The curve template is on an A-sheet.
   variants: [both]
@@ -207,6 +315,19 @@
     - Root end curved down 0.7 in over 8 in
 - id: f19.top-skin
   chapter: 19
+  group: wings
+  plan:
+    people: 2
+    people_why: "one mixes resin while one wets out skin plies"
+    hours: {value: 20.1, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, brush, scissors, knife, peel-ply]
+    buy:
+      - {item: und-7715, qty: 15.08, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.495, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 1.01, flag: estimate}
+      - {item: peel-ply-582c, qty: 0.012, flag: estimate}
   title: Top skin
   summary: Skin the top with two crossed UND plies like the bottom, plus a third UND ply ahead of the hinge line only, with BID at the tip. The third ply is cut 5.9 in deep at BL 55.5 and 4.35 in at BL 106.25. Peel ply goes over the aileron gap.
   variants: [both]
@@ -225,6 +346,17 @@
     - BID tip ply and peel ply laid
 - id: f19.ribs
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12636"}
+    cure: part
+    resin: mgs-285-287
+    tools: [rotary-file, level, shims, cup, brush, squeegee, scissors, clamps]
+    buy:
+      - {item: und-7715, qty: 0.289, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.01, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.019, flag: estimate}
   title: Incidence board and root ribs (layups 5 to 8)
   summary: Glue a 2 ft straight board to the top skin and shim it level in the jig, parallel to a butt line. Form the 0.7 in root rib with a rotary file, then lay layups 5 to 8 around the attach recess and the LWA6 and LWA7 pieces.
   variants: [both]
@@ -250,6 +382,13 @@
     - LWA7 plate clamped and covered with one BID ply
 - id: f19.aileron-cut
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 46.3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, straightedge, knife, cup, brush, squeegee]
   title: Cut the aileron free, trailing-edge spar (layup 9)
   summary: Saw the skins along the hinge line from the foam joint at BL 55.5 out to BL 118.1. The top cut sits 5.9 in forward of the trailing edge at BL 55.5 and 4.35 at BL 106.25, the bottom 7.6 and 5.65. The inboard end is a vertical plane. Page 124 cuts at BL 55.5 while the back-cover view prints BL 54.3; no page says which is meant, so both are carried unresolved. Then lay the trailing-edge spar glass.
   variants: [both]
@@ -270,6 +409,16 @@
     - Trailing-edge spar glass laid, hinge notch 0.2 in deep in the top skin
 - id: f19.aileron-build
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 46.3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, drill, rivet-gun, hacksaw, cup, brush, wire]
+    buy:
+      - {item: steel-rod-0p375, qty: 10.83, flag: derived}
+      - {item: piano-hinge-p6-3ft, qty: 1.11, flag: derived}
   title: Build and hang the aileron
   summary: Slice 3/8 in of foam off the nose and bond in the 3/8 in steel rod (65 in). Add the 9 in torque tube, which sticks out 1 in inboard, and the two end brackets, then the end ribs. Hang the aileron on three piano hinges (8, 6 and 6 in) and check the balance by hanging it from a wire.
   variants: [both]
@@ -292,6 +441,13 @@
     - Balance checked by wire, no more than 0.3 lb of lead behind the rod
 - id: f19.controls
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 9.8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, wrench, protractor, cup]
   title: Aileron controls at the root, 20 degree stop
   summary: Fit the phenolic block and torque tube at the aileron, the belhorn at the root and the two CS127 brackets and CS128 belcrank in the root bay. Set the stop bolt for 20 deg up aileron, which page 131 also gives as 20 deg of belcrank travel from neutral, with the belcrank square to the pushrod at neutral. The bracket bolts print as AN3-5A on the drawing and AN3-4A in the text, unresolved.
   variants: [both]
@@ -313,6 +469,15 @@
     - Belcrank square to the pushrod at neutral
 - id: f19.attach
   chapter: 19
+  group: wings
+  plan:
+    people: 1
+    hours: {value: 11, flag: community, source: "https://www.longezpush.com/chapter-19-mounting-wings-to-cs-spar/"}
+    cure: none
+    tools: [drill, spotface-tool, reamer, water-level, level, wrench, sawhorses]
+    buy:
+      - {item: an8-21a, qty: 4, flag: derived}
+      - {item: an8-23a, qty: 2, flag: derived}
   title: Line-bore and bolt the wing to the spar
   summary: With the fuselage level, butt the wing to the centre-section spar and bore three holes through both, then press in the twelve LWA9 bushings (six per wing). The bolt spacing prints 28.85 in on the drawing and 28.83 in in the note, unresolved. Fit two AN8-21A and one AN8-23A. One washer shim changes incidence by 0.4 deg.
   variants: [both]

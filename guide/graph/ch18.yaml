@@ -3,6 +3,14 @@
 # and the 4.3 by 3.7 door. The front cut datum is not named and the latch pad centres disagree with the p117 labels by 0.75 in, so no op states either as a bare fact.
 - id: f18.trim-plexi
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 7.8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12944"}
+    cure: none
+    tools: [cutoff-wheel, file, sanding-block, polish]
+    buy:
+      - {item: canopy-bubble, qty: 1, flag: derived}
   title: Trim the plexiglass
   summary: Cut the bubble to the trim lines, 68 in long, with half an inch off each side and three quarters round the nose. File and polish the edges, then spray on a peel coat.
   variants: [both]
@@ -17,6 +25,12 @@
     - Peel coat sprayed on
 - id: f18.locate-blocks
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 2, flag: estimate, source: null}
+    cure: none
+    tools: [saw, sanding-block, tape, tape-measure]
   title: Set the canopy on its blocks
   summary: Bond four temporary wood blocks to the inside of the top longerons and rest the trimmed canopy on them. Sand the fuselage sides dull and tape them, except the back 8 in.
   variants: [both]
@@ -32,6 +46,11 @@
     - Gray tape on the fuselage sides, none in the back 8 in
 - id: f18.check-ab
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: none
+    tools: [tape-measure, level, straightedge]
   title: Check the canopy height
   summary: Measure the canopy top above the longerons at two places before any foam goes on. Check A must be at least 13.5 in and check B is 12.3 in, both from the top of the longerons, WL 23.
   variants: [both]
@@ -48,6 +67,13 @@
     - Both heights measured up from WL 23
 - id: f18.foam-core
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 4.8, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, cup, squeegee, nails]
   title: Foam around the canopy
   summary: Fit 2 in green urethane blocks around the plexiglass edge, tack them with Bondo and fair them with micro. The front block runs from F28 to the plexiglass.
   variants: [both]
@@ -62,6 +88,12 @@
     - Front block spans F28 to the plexiglass lip
 - id: f18.carve-outside
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 4, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: none
+    tools: [knife, sanding-block, dremel]
   title: Carve the frame
   summary: Carve the foam frame to the fuselage contour, 0.06 in low all round to allow for glass. Dig a groove at the plexiglass for the first ply.
   variants: [both]
@@ -77,6 +109,13 @@
     - Groove dug at the plexiglass edge
 - id: f18.glass-outside
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 11, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, trowel, knife]
   title: Glass the frame outside
   summary: Lay five plies over the frame. The first ply goes into the groove, then flox fills it flat and the last three go over the top. Sides take 2 BID and 2 UND, the front and rear 3 BID, all BID at 45 degrees.
   variants: [both]
@@ -97,6 +136,12 @@
     - Cured 48 hours
 - id: f18.cut-remove
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 0.5, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: none
+    tools: [hacksaw, knife, saw]
   title: Cut the canopy free
   summary: Hacksaw across the front and across the back at FS 117, 8 in forward of the firewall. Bondo lumber round the frame to stiffen it, free the sides with a knife and lift the canopy off. The front and rear covers stay on the fuselage.
   variants: [both]
@@ -111,6 +156,12 @@
     - Lumber bonded round the frame, sides freed, canopy turned upside down on the bench
 - id: f18.carve-inside
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 0.5, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: none
+    tools: [knife, dremel, tape-measure]
   title: Carve the inside foam
   summary: Turn the canopy over and carve the foam from inside, leaving 0.5 in. Remove all foam down to the skin at the eight pad places, each 2.5 in long, measured forward from FS 117 to the pad's aft edge.
   variants: [both]
@@ -126,6 +177,13 @@
     - The 59 in pad on the left carries the safety catch
 - id: f18.pads-inside-glass
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 16.5, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, sanding-block, knife]
   title: Fill the pads, glass inside
   summary: Fill each pad with flox and BID, 15 plies, overfilled and sanded flush. Recess the four right pads 0.15 in for the hinges, then glass the inside to the same schedule as the outside.
   variants: [both]
@@ -145,6 +203,12 @@
     - Inside skins laid, glass butted to the tape, corners floxed
 - id: f18.rear-cover-inside
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, cup, brush, squeegee, scissors]
   title: Glass inside the rear cover
   summary: Glass one BID ply inside the rear cover, which stays on the fuselage, lapping onto the firewall. Fit the cowl first, as the cowl moved aft.
   variants: [both]
@@ -160,6 +224,14 @@
     - One BID ply laid, lapped onto the firewall
 - id: f18.vent-brace
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, drill, cup, brush, squeegee]
+    buy:
+      - {item: arrow-shaft-5-16, qty: 3, flag: estimate}
   title: Vent and brace tubes
   summary: Carve a vent block, glass it with 3 BID and bond it inside. Cut the scoop in the skin along the pattern. Flox three 5/16 in arrow shafts across the canopy through the side glass.
   variants: [both]
@@ -177,6 +249,12 @@
     - Canopy spread slightly while the tubes go in
 - id: f18.hinges
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 1.8, flag: community, source: "https://www.longezpush.com/chapter-18-canopy/"}
+    cure: none
+    tools: [drill, countersink, wrench, dremel]
   title: Hinge the canopy
   summary: Bolt two hinges to the right longeron, one over each pair of right pads. Match-drill the canopy side, then check that both hinges line up and the canopy opens about 15 degrees past vertical.
   variants: [both]
@@ -195,6 +273,11 @@
     - Hinge pins outside the fuselage contour so the canopy does not bind
 - id: f18.door
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: none
+    tools: [dremel, drill, file]
   title: Cut the small door
   summary: Cut and hinge the small door in the left side, 4.3 by 3.7 in. Do this before the latches, as the plans ask.
   variants: [both]
@@ -210,6 +293,12 @@
     - Door position is only roughly located (low confidence)
 - id: f18.latches
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, wrench, cup, knife]
   title: Install the latches
   summary: Fit the three latches on the left, with the handle on the front one. Bond the C7 and C8 fittings to the frame, then link the arms and pushrods. Glue foam strip on the frame as a seal.
   variants: [both]
@@ -225,6 +314,12 @@
     - Knob left on C7
 - id: f18.front-cover
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, knife]
   title: Finish the front cover
   summary: Glass the front cover while the canopy is off, then flox it back on the fuselage. Join it to F28 and the skin with a BID tape.
   variants: [both]
@@ -243,6 +338,12 @@
     - Cover floxed onto the fuselage
 - id: f18.safety-catch
   chapter: 18
+  group: canopy
+  plan:
+    people: 1
+    hours: {value: 5, flag: estimate, source: null}
+    cure: none
+    tools: [drill, wrench, file]
   title: Fit the safety catch
   summary: Bolt the stainless catch SC-1 to the eighth pad on the left, then bolt its catch at FS 56.75. It stops the canopy about an inch open.
   variants: [both]

@@ -2,6 +2,15 @@
 # The strut and the extrusion outlines are fitted shapes: the book prints no strut outline and the extrusion sheet is not in hand. The axle station is book.
 - id: f09.strut-stiffen
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, cup, brush, squeegee, scissors, peel-ply, cling-wrap]
+    buy:
+      - {item: main-gear-strut, qty: 1, flag: derived}
   title: Stiffen the gear strut
   summary: Sand the prefabricated strut dull, glue three nails on as stops, coat it with epoxy, and wrap eight UND plies around it at 30 to 40 degrees. Do this before the tabs and axles go on.
   variants: [both]
@@ -21,6 +30,14 @@
     - Strut stiffened before any tab or axle work
 - id: f09.jig-blocks
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 2.5, flag: community, source: "https://www.longezpush.com/chapter-9-main-gear-landing-brake/"}
+    cure: none
+    tools: [saw, drill, spade-bit, file, sanding-block, wrench]
+    buy:
+      - {item: birch-ply-6mm-48x48, qty: 0.006, flag: estimate}
   title: Gear jig blocks
   summary: Make four plywood blocks with a rounded top and a sharp bevelled edge, then bolt the gear tubes between the aluminium angles so they stand in the blocks.
   variants: [both]
@@ -37,6 +54,12 @@
     - Strut and extrusion shapes in the model are fitted, not printed; only the block dimensions are book
 - id: f09.position-gear
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: estimate, source: null}
+    cure: none
+    tools: [level, straight-board, square, plumb-bob, tape-measure, bondo-spreader, scribe]
   title: Set the gear leg
   summary: Invert the fuselage and level it on the top longerons, centre the leg, and set the axle 15 in forward of the straight board at the spar's aft face (F.S. 110.5). Fix with Bondo, scribe the tube marks, then remove the leg.
   variants: [both]
@@ -58,6 +81,18 @@
     - Tube positions scribed on the Bondo, leg removed
 - id: f09.tab-layup
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, squeegee, scissors, cling-wrap, clamps, saw, dremel, drill, hole-saw]
+    buy:
+      - {item: und-7715, qty: 1.74, flag: estimate}
+      - {item: bid-7725, qty: 0.87, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.093, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.189, flag: estimate}
   title: Layup of the attach tabs
   summary: Wet out and clamp the UND and BID pads on each of the four tabs, trim them flush, then bore the 5/8 holes through.
   variants: [both]
@@ -78,6 +113,15 @@
     - 5/8 holes bored through
 - id: f09.tab-assembly
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 12.9, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, flox-bag, brush, scissors, cling-wrap, knife, sanding-block]
+    buy:
+      - {item: an960-1016, qty: 6, flag: derived}
   title: Tubes into the tabs
   summary: Put the tubes back in at the scribed marks, flox fillets round them, and add UND and BID pads in the corners. Wrap each tube with two BID plies over a foam block, then add washers and plugs.
   variants: [both]
@@ -99,6 +143,18 @@
     - Washers and plugs fitted, two BID plies over each washer
 - id: f09.axles-brakes
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [carpenter-squares, drill, reamer, torque-wrench, wrench, cup, brush, scissors]
+    buy:
+      - {item: an4-22a, qty: 8, flag: derived}
+      - {item: ms21042-4, qty: 8, flag: derived}
+      - {item: main-axle, qty: 2, flag: derived}
+      - {item: wheel-brake-5in, qty: 2, flag: derived}
   title: Axles, toe-in and brakes
   summary: Fit the axle plates, set the toe-in with squares, glass three BID plies over each face of the lower leg, bolt each axle on with four bolts, and mount the brake calipers.
   variants: [both]
@@ -123,6 +179,18 @@
     - Axle station held at F.S. 110.5 (book), height W.L. -22
 - id: f09.brake-lines
   chapter: 9
+  group: main-gear
+  plan:
+    people: 1
+    hours: {value: 4.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [tubing-cutter, drill, cup, brush, scissors, rtv-gun]
+    buy:
+      - {item: brake-line-nylon-316, qty: 12, flag: derived}
+      - {item: bid-7725, qty: 0.23, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.01, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.02, flag: estimate}
   title: Brake lines
   summary: Run the plastic brake line up the trailing edge of the strut round its inboard face, tape it down with one BID ply, drill the firewall hole and pot the line through with RTV.
   variants: [both]

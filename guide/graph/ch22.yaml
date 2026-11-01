@@ -3,6 +3,11 @@
 # unprinted: the model draws it at the middle of the nose box (F.S. 0 to 22) for illustration only. Order conflicts with chapter order are kept as text.
 - id: f22.panel-wiring
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    cure: none
+    tools: [wire-stripper, crimper, multimeter, soldering-iron]
   title: Choose the system and wire the panel
   summary: System I has solar charging, no starter and a 10 A master fuse; System II adds an alternator or generator. Both keep a 25 Ah battery in the nose, so the CG stays right. Lay the panel wire bundle along the forward side of the panel and down the lower fuselage corner, potted every 10 in, then mount the switches, breakers and ground terminal. Main leads are 10 AWG, instrument wiring 22 AWG, the breaker links 12 AWG and unmarked wire 18 AWG. In practice this comes before the side consoles are glued, though the book places it after chapter 16.
   variants: [both]
@@ -26,6 +31,11 @@
     - Wire gauges checked against the diagram
 - id: f22.microswitches
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, file, pliers, multimeter]
   title: Throttle, canopy-lock and nose-gear microswitches
   summary: The throttle switch trips within an inch of knob travel from idle, using a 1/16 in music wire and a small aluminium bracket. The canopy-lock switch rides on lock plate C9 with a bent tab that trips it when the lock closes. The nose-gear switch sits on an angle bracket on NG30 and trips in the last tenth of an inch of down travel. The canopy detail points to a page 22-10 that this chapter lacks, which is a stale pointer to the canopy chapter. The throttle itself belongs to Section II, which this guide does not hold.
   variants: [both]
@@ -42,6 +52,15 @@
     - Nose-gear switch trips in the last 0.10 in of down travel
 - id: f22.battery-shelf
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    hours: {value: 10, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12773"}
+    cure: part
+    resin: mgs-285-287
+    tools: [wax-paper, duct-tape, screwdriver, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: battery-rg25xc, qty: 1, flag: estimate}
   title: Battery shelf, cover and strap
   summary: Wrap the battery in duct tape to serve as its own mould. Lay four BID plies on wax paper, wet-set the battery on them and wrap the glass up the sides, so the shelf stands 0.6 in above the floor mark. Cover it with three BID plies over grey tape, leaving a 0.4 in gap, and pull the tape out after cure. A stainless worm clamp round the cover, battery, shelf and F6 holds it. The battery is a 12 V 25 Ah unit; its station is on a sheet the owner does not hold, so the lab draws it at FS 11, mid nose box, for illustration only. Nothing in the chapter gives its weight; the nose battery adds about 19 lb over the small one.
   variants: [both]
@@ -61,6 +80,11 @@
     - Battery station recorded as unprinted
 - id: f22.firewall-terminals
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    cure: none
+    tools: [wrench, crimper, drill, multimeter]
   title: Relays, firewall terminals and engine ground
   summary: Mount the start relay and the over-voltage unit on the front of F22, as far forward as practical, and the terminal block, regulator and braided ground strap on the firewall. The battery ground is 10 AWG without a starter and 2 AWG with one; the starter and battery cables are 2 AWG. Starter, ring gear and alternator sit at station 150 or more, a lower bound with no station printed. The starter cable goes in after the engine is on.
   variants: [both]
@@ -77,6 +101,12 @@
     - Ground wire sized for a starter or not
 - id: f22.wing-wiring
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    hours: {value: 1.2, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=14194"}
+    cure: none
+    tools: [fish-tape, crimper, silicone-gun]
   title: Wing conduits, position lights, strobe and landing light
   summary: Run the nav and strobe wires through the wing, spar and bulkheads using the CS6 and CS7 holes. Silicone the red and green position lights to the wingtips, not the winglet root. Put the strobe power supply in the centre-spar fairing on the left, behind the front seat bulkhead, or on the left thigh support; no station is printed. The retractable landing light lives in the right thigh-support cavity, and its drawing ships separately and is not held here.
   variants: [both]
@@ -96,6 +126,14 @@
     - Landing light cable run to the thigh support cavity
 - id: f22.antennas
   chapter: 22
+  group: electrical
+  plan:
+    people: 1
+    hours: {value: 6.2, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12772"}
+    cure: none
+    tools: [soldering-iron, knife, multimeter]
+    buy:
+      - {item: copper-foil-tape, qty: 7.18, flag: derived}
   title: Nav and comm antennas
   summary: Stick two copper-foil strips, 22.8 in each (not 24), under the canard for the nav antenna, with four toroids. The comm antenna goes in the winglet as two foil strips 20.3 in long, 1 in ahead of the trailing edge, with three balums, laid in the foam before the inboard skin. That means this step has to be done during chapter 20 in a real build, though the book lists it here.
   variants: [both]

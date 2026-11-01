@@ -493,3 +493,446 @@
   unit: roll
   read: null
   flag: unsourced
+# P2 rows, read 2026-10-18. One id per part: the 3/8 H45 sheet, the 3/16 Nylaflow
+# tube and the 2 in urethane sheet keep the page-priced id.
+- id: foam-pvc-1p6
+  label: "PVC foam, 1.6 in"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: sqft
+  read: null
+  flag: unsourced
+- id: an525-416r16
+  label: AN525-416R16 washer-head screw
+  vendor: Aircraft Spruce
+  part: AN525-416R16
+  url: aircraftspruce.com/catalog/pnpages/AN525-416R16.php
+  price_usd: 1.34
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: ms21042-4
+  label: MS21042-4 stop nut
+  vendor: Aircraft Spruce
+  part: MS21042-4
+  url: aircraftspruce.com/catalog/pnpages/MS21042-4.php
+  price_usd: 0.56
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: an960-416
+  label: AN960-416 flat washer
+  vendor: Aircraft Spruce
+  part: AN960-416
+  url: aircraftspruce.com/catalog/pnpages/AN960-416.php
+  price_usd: 0.12
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: an960-1016
+  label: AN960-1016 flat washer
+  vendor: Aircraft Spruce
+  part: AN960-1016
+  url: aircraftspruce.com/catalog/pnpages/AN960-1016.php
+  price_usd: 0.40
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: an4-22a
+  label: AN4-22A bolt, undrilled
+  vendor: Aircraft Spruce
+  part: AN4-22A
+  url: aircraftspruce.com/catalog/pnpages/AN4-22A.php
+  price_usd: 1.20
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: main-gear-strut
+  label: Long-EZ main gear strut
+  vendor: Aero Composites
+  part: null
+  url: aerocomposites.aero/the-hangar-price-lists/
+  price_usd: 1120.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: main-axle
+  label: main gear axle
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: wheel-brake-5in
+  label: 5 in wheel and brake assembly
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: brake-line-nylon-316
+  label: "Nylaflow tube, 3/16 OD x 0.138 ID"
+  vendor: Aircraft Spruce
+  part: "05-00110"
+  url: aircraftspruce.com/catalog/pnpages/05-00110.php
+  price_usd: 0.75
+  unit: ft
+  read: 2026-10-18
+  flag: page
+- id: bondo-body-filler
+  label: body filler
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: rtv-sealant
+  label: RTV sealant
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: foam-pvc-0p25
+  label: "H45 PVC foam, 1/4 in, 32 x 48"
+  vendor: Aircraft Spruce
+  part: "01-12300"
+  url: aircraftspruce.com/catalog/cmpages/divinycellfoam.php
+  price_usd: 43.50
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: foam-pvc-h100-0p25
+  label: "H100 PVC foam, 1/4 in, 42.1 x 42.5"
+  vendor: Aircraft Spruce
+  part: "01-01310"
+  url: aircraftspruce.com/catalog/cmpages/divinycellfoam.php
+  price_usd: 97.75
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: urethane-foam-2x24x48
+  label: "urethane foam, 2 x 24 x 48"
+  vendor: Aircraft Spruce
+  part: "01-11900"
+  url: aircraftspruce.com/catalog/pnpages/01-11900.php
+  price_usd: 51.75
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: spruce-1x1
+  label: "spruce capstrip, 1 x 1 in"
+  vendor: Aircraft Spruce
+  part: "02-11"
+  url: aircraftspruce.com/catalog/pnpages/02-11.php
+  price_usd: 6.50
+  unit: ft
+  read: 2026-10-18
+  flag: page
+- id: al-2024-bar-0125x2
+  label: "2024 bar, 1/8 x 2 in"
+  vendor: Aircraft Spruce
+  part: "03-42900"
+  url: aircraftspruce.com/catalog/mepages/alumbar.php
+  price_usd: 15.50
+  unit: ft
+  read: 2026-10-18
+  flag: page
+- id: al-2024-bar-025x2
+  label: "2024 bar, 1/4 x 2 in"
+  vendor: Aircraft Spruce
+  part: "03-43700"
+  url: aircraftspruce.com/catalog/mepages/alumbar.php
+  price_usd: 13.60
+  unit: ft
+  read: 2026-10-18
+  flag: page
+- id: al-2024-angle-1x1x0125
+  label: "2024-T3 angle, 1 x 1 x 1/8"
+  vendor: Aircraft Spruce
+  part: "03-47300"
+  url: aircraftspruce.com/catalog/mepages/alumangle.php
+  price_usd: 7.50
+  unit: ft
+  read: 2026-10-18
+  flag: page
+- id: al-tube-5052-0p25-6ft
+  label: "5052-O tube, 1/4 x 0.035, 6 ft"
+  vendor: Aircraft Spruce
+  part: "03-39300-6"
+  url: aircraftspruce.com/catalog/mepages/alumtube_5052.php
+  price_usd: 12.60
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: ng-strut-longez
+  label: Long-EZ nose gear strut
+  vendor: Aero Composites
+  part: null
+  url: aerocomposites.aero/?p=1167
+  price_usd: 170.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: strut-cover-sc
+  label: Long-EZ strut cover SC
+  vendor: Aero Composites
+  part: null
+  url: aerocomposites.aero/?p=1167
+  price_usd: 50.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: nose-wheel-cover-nb
+  label: Long-EZ nose wheel cover NB
+  vendor: Aero Composites
+  part: null
+  url: aerocomposites.aero/?p=1167
+  price_usd: 50.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: rudder-pedal-longez
+  label: Long-EZ rudder pedal weldment
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: flush-screw-nose-door
+  label: nose door flush screw
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: nutplate-nose-door
+  label: nose door nutplate
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: particle-board-sheet
+  label: "particle board, 4 x 8 sheet"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: styrofoam-8x16x67
+  label: "Styrofoam large cell, 8 x 16 x 67"
+  vendor: Aircraft Spruce
+  part: "01-10800"
+  url: aircraftspruce.com/catalog/pnpages/01-10800.php
+  price_usd: 199.75
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: styrofoam-8x16x42
+  label: "Styrofoam large cell, 8 x 16 x 42"
+  vendor: Aircraft Spruce
+  part: "01-10600"
+  url: aircraftspruce.com/catalog/pnpages/01-10600.php
+  price_usd: 126.75
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: foam-pvc-0p375-32x48
+  label: "H45 PVC foam, 3/8 in, 32 x 48"
+  vendor: Aircraft Spruce
+  part: "01-12400"
+  url: aircraftspruce.com/catalog/pnpages/01-12400.php
+  price_usd: 53.75
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: piano-hinge-p6-3ft
+  label: "piano hinge MS20001P6, 3 ft"
+  vendor: Aircraft Spruce
+  part: "03-00055-3"
+  url: aircraftspruce.com/catalog/pnpages/03-00055-3.php
+  price_usd: 189.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: an8-21a
+  label: AN8-21A bolt
+  vendor: Aircraft Spruce
+  part: AN8-21A
+  url: aircraftspruce.com/catalog/hapages/an8.php
+  price_usd: 5.85
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: an8-23a
+  label: AN8-23A bolt
+  vendor: Aircraft Spruce
+  part: AN8-23A
+  url: aircraftspruce.com/catalog/hapages/an8.php
+  price_usd: 4.35
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: master-cylinder
+  label: brake master cylinder
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: canopy-bubble
+  label: Long-EZ plexiglass canopy
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: steel-rod-0p375
+  label: 3/8 in steel rod
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: ft
+  read: null
+  flag: unsourced
+- id: rudder-conduit-nylon
+  label: nylon rudder conduit
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: ft
+  read: null
+  flag: unsourced
+- id: arrow-shaft-5-16
+  label: 5/16 in arrow shaft
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: stainless-firewall-sheet
+  label: stainless firewall sheet
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: tube-5052-0375-6ft
+  label: "5052-O tube, 3/8 x 0.035, 6 ft"
+  vendor: Aircraft Spruce
+  part: "03-39500-6"
+  url: aircraftspruce.com/catalog/pnpages/03-39500-6.php
+  price_usd: 15.24
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: piano-hinge-ms20257p2-3ft
+  label: "piano hinge MS20257P2, 3 ft"
+  vendor: Aircraft Spruce
+  part: "03-00048-3"
+  url: aircraftspruce.com/catalog/kitspages/longez.php
+  price_usd: 39.50
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: battery-rg25xc
+  label: "Concorde RG-25XC, 12 V 24 Ah"
+  vendor: Aircraft Spruce
+  part: "11-03880"
+  url: aircraftspruce.com/catalog/pnpages/11-03880.php
+  price_usd: 436.00
+  unit: each
+  read: 2026-10-18
+  flag: page
+- id: nutplate-rudder-hinge
+  label: rudder hinge nutplate
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: pop-rivet-flush
+  label: flush pop rivet
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: fuel-cap-dzus-2in
+  label: Dzus fuel cap with 2 in aluminium rim
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: copper-foil-tape
+  label: copper foil tape
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: ft
+  read: null
+  flag: unsourced
+- id: cowl-variez
+  label: VariEze/Long-EZ cowl set
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: al-6061-0-020-20x24
+  label: "aluminium sheet 6061-0, 0.020 in, 20 x 24"
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: each
+  read: null
+  flag: unsourced
+- id: foam-rubber-2in
+  label: 2 in foam rubber
+  vendor: null
+  part: null
+  url: null
+  price_usd: null
+  unit: sqft
+  read: null
+  flag: unsourced

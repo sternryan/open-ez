@@ -1,4 +1,47 @@
 groups:
   - {id: bulkheads-firewall, label: "Seat bulkheads and firewall"}
   - {id: fuselage-sides, label: "Fuselage sides"}
-required_files: [ch04.yaml, ch05.yaml]
+  - {id: fuselage-box, label: "Fuselage box"}
+  - {id: side-glass, label: "Side glass"}
+  - {id: roll-over, label: "Roll-over structure"}
+  - {id: spar-firewall, label: "Centre-section spar and firewall"}
+  - {id: shoulder-harness, label: "Shoulder harness"}
+  - {id: main-gear, label: "Main gear"}
+  - {id: canard, label: "Canard"}
+  - {id: canard-install, label: "Canard installation"}
+  - {id: nose, label: "Nose and nose gear"}
+  - {id: controls-trim, label: "Controls and trim"}
+  - {id: canopy, label: "Canopy"}
+  - {id: wings, label: "Wings"}
+  - {id: winglets, label: "Winglets and rudders"}
+  - {id: control-rigging, label: "Aileron and rudder rigging"}
+  - {id: strakes, label: "Strakes and fuel system"}
+  - {id: electrical, label: "Electrical"}
+  - {id: engine, label: "Engine installation"}
+  - {id: covers, label: "Covers and consoles"}
+  - {id: finish, label: "Finish"}
+  - {id: upholstery, label: "Upholstery"}
+required_files:
+  - ch04.yaml
+  - ch05.yaml
+  - ch06.yaml
+  - ch07.yaml
+  - ch08.yaml
+  - ch09.yaml
+  - ch10.yaml
+  - ch12.yaml
+  - ch13.yaml
+  - ch14.yaml
+  - ch15.yaml
+  - ch16.yaml
+  - ch17.yaml
+  - ch18.yaml
+  - ch19.yaml
+  - ch20.yaml
+  - ch21.yaml
+  - ch22.yaml
+  - ch23.yaml
+  - ch24.yaml
+  - ch25.yaml
+  - ch26.yaml
+  - ch30.yaml

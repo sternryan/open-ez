@@ -98,6 +98,46 @@ def _op_json(op) -> dict:
     return d
 
 
+def derive_cloth_buys(g, ops_json: list[dict], areas: dict | None = None) -> list[dict]:
+    """Shipped ops with cloth buys replaced by geometry-derived yards (contract 18).
+
+    Only cloth catalog items on ops that have layup solids change, and only when
+    quantities.derived_cloth_buy has every conversion input; everything else keeps
+    its authored qty and flag. ``areas`` defaults to quantities.cloth_m2_by_op(g),
+    computed only if some buy could be derived. Returns new dicts; input unchanged.
+    """
+    from guide import quantities
+    from guide.schema import Buy
+
+    def candidates(o) -> bool:
+        return o["id"] in layup.INCLUDED_OPS and any(
+            quantities.can_derive(b["item"]) for b in (o["plan"] or {}).get("buy", [])
+        )
+
+    if not any(candidates(o) for o in ops_json):
+        return ops_json
+    if areas is None:
+        areas = quantities.cloth_m2_by_op(g)
+    out = []
+    for o in ops_json:
+        by_cloth = areas.get(o["id"])
+        if not by_cloth or not o["plan"]:
+            out.append(o)
+            continue
+        buys = []
+        for b in o["plan"].get("buy", ()):
+            cloth = quantities.CLOTH_OF_ITEM.get(b["item"])
+            if cloth is not None and cloth in by_cloth:
+                nb = quantities.derived_cloth_buy(Buy(**b), by_cloth[cloth])
+                b = {"item": nb.item, "qty": nb.qty, "flag": nb.flag}
+            buys.append(b)
+        if buys == list(o["plan"].get("buy", ())):
+            out.append(o)
+        else:
+            out.append({**o, "plan": {**o["plan"], "buy": buys}})
+    return out
+
+
 def _render_docs(docs: Path, out: Path) -> None:
     import markdown
 
@@ -314,7 +354,7 @@ def build(
             )
         )
     payload = {
-        "ops": [_op_json(g.ops[i]) for i in topo_order(g)],
+        "ops": derive_cloth_buys(g, [_op_json(g.ops[i]) for i in topo_order(g)]),
         "order": topo_order(g),
         "components": {
             c.id: {"label": c.label, "fidelity": c.fidelity}
@@ -343,7 +383,9 @@ def build(
     (out / "config.json").write_text(
         json.dumps({"scanBase": scan_base, "model": "models/longez.glb"})
     )
-    (out / "hangar.json").write_text(json.dumps(_hangar_payload(), indent=1, default=str))
+    (out / "hangar.json").write_text(
+        json.dumps(_hangar_payload(), indent=1, default=str)
+    )
     (out / "models").mkdir()
     if models:
         shutil.copy(models, out / "models" / "longez.glb")

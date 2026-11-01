@@ -2,6 +2,12 @@
 # the master cylinder and bracket positions are not printed, so those shapes are representational. Stainless and insulation are owned here, not in chapter 4.
 - id: f15.parts-fab
   chapter: 15
+  group: spar-firewall
+  plan:
+    people: 1
+    hours: {value: 1, flag: estimate, source: null}
+    cure: none
+    tools: [hacksaw, file, drill, deburr-tool, vise]
   title: Firewall accessory parts
   summary: Make the belcrank plates, brackets, pulley brackets, brake arms and the bushing from the printed patterns. Most come prefabricated.
   variants: [both]
@@ -16,6 +22,12 @@
     - No model of these small parts yet; the later steps show only the assembled hardware
 - id: f15.stainless-firewall
   chapter: 15
+  group: spar-firewall
+  plan:
+    people: 1
+    hours: {value: 13.3, flag: estimate, source: null}
+    cure: none
+    tools: [tin-snips, drill, caulk-gun, clamps, wrench]
   title: Stainless firewall sheet
   summary: Trial-fit the stainless sheet over the engine-mount angles and the six studs. Caulk a bead of silicone near the edge, press the sheet on, bolt the pulley brackets, clamp it and cure two days. Fit the insulation after the cowling.
   variants: [both]
@@ -35,6 +47,13 @@
     - Insulation deferred until after the cowling, per the newsletter
 - id: f15.belcrank-brackets
   chapter: 15
+  group: spar-firewall
+  plan:
+    people: 1
+    hours: {value: 9.8, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, wrench, cup, squeegee]
   title: Rudder belcrank brackets
   summary: Offset the rudder and brake belcrank from the cable slot, drill through the stainless, insulation and plywood, and bolt it with AN3 bolts. Inboard nuts sit in the baggage space; outboard nuts are reached through a ground hole.
   variants: [both]
@@ -50,6 +69,13 @@
     - Belcrank height on the firewall is read from tick marks only (representational)
 - id: f15.master-cylinders
   chapter: 15
+  group: spar-firewall
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, countersink, wrench]
+    buy:
+      - {item: master-cylinder, qty: 2, flag: derived}
   title: Brake master cylinders
   summary: Mount Cleveland or Gerdes master cylinders upright between the engine-mount fittings. Bolt the lower bracket flush, fit the upper brake arm free to move, and use a longer bolt later with the engine mount.
   variants: [both]

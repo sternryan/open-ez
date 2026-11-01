@@ -20,7 +20,7 @@ import { barOps, makeStore, visibleOps, type GraphLite, type Variant } from './l
 import { visibleSet, pathVisible, type BuildState, type MeshInfo } from './logic/build'
 import { plyPhase, partPhase, PLAY_ADVANCE_T, DONE_T, type Phase } from './logic/anim'
 import { initUI } from './ui/ui'
-import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, nextRes, initialRes, type ResState, type Tier, type StepState } from './quality'
+import { TIER_ORDER, TIERS, tierPixelRatio, parseTier, startTier, nextTier, initialStep, holdTier, nextRes, initialRes, holdRes, type ResState, type Tier, type StepState } from './quality'
 import { Director, chapterTour, tourChapter, canard12Film, CHAPTER, TOUR_BUILD_RATE } from './director'
 import { viewOffset } from './fuseShots'
 import { lowerLift, lowerProgress, LOWER_HEIGHT, LOWER_HOLD, LOWER_SECONDS, LOWER_LABEL } from './logic/lower'
@@ -41,15 +41,18 @@ import { setupNarrow, type Narrow } from './ui/narrow'
 import { buildSequence, noteFor, toPlanSteps } from './logic/sequence'
 import { packSessions, type Session } from './logic/sessions'
 import { kitsFor, meterAt, type Kit, type Meter } from './logic/kits'
+import { applyActuals, loadActuals, saveActuals, type Actual } from './logic/actuals'
+import { applyPace, loadPace, savePace, scaledEstimateIds } from './logic/pace'
 import { cureGateHours, HEAT_BOOST_C, type Env } from './logic/cure'
 import { compileStep, type Action, type Beat, type PropId } from './logic/actions'
 import type { PlanFile } from './logic/graph'
 import { renderNavlog, renderMeter } from './ui/navlog'
 import { renderBench } from './ui/bench'
-import { renderEnvironment, loadEnv, saveEnv, loadSessionHours, saveSessionHours, SESSION_RANGE } from './ui/environment'
+import { renderEnvironment, loadEnv, saveEnv, loadSessionHours, saveSessionHours, renderPace, SESSION_RANGE } from './ui/environment'
 import { makeGlovePair, poseGlovePair } from './scene/gloves'
 import { makeProp } from './scene/props'
 import { plyPlan, plyNote, type DrawnPly, type PlyPlan } from './logic/plyMap'
+import { captionBounds, captionShot, type Box3Like } from './logic/captionShot'
 import { fuselageTour, fuselageTourChapters, FUSE_CUT_FS, FUSE_CUTS, FUSE_CUT_VIEW } from './director'
 import './style.css'
 
@@ -500,6 +503,8 @@ async function boot() {
     stepState = n
     if (drop) applyTier(n.tier)
   }
+  // a step or scene change (select) is a hitch: those frames must not ratchet the tier or the resolution down
+  const noteChange = () => { res = holdRes(res); stepState = holdTier(stepState) }
   // Tests own the clock: their frames are only the ones they inject (feedFrame), unless ?realframes=1 asks for the real path.
   const realFrames = !TEST || params.get('realframes') === '1'
   // ?freeze=1 (or __lab.freeze(true)): the frame loop still draws but no longer advances time, so a test or a capture owns the clock
@@ -1568,6 +1573,7 @@ async function boot() {
     // the fuselage's home: the finished box on its own feet when nothing is selected, else the station
     const homeShot = () => (subject === 'canard' ? 'home' : selected === null && bay?.pose === 'on-gear' ? 'ffinal' : 'fhome')
     const select = (id: string | null, fly = true) => {
+      noteChange()
       selected = id
       lastSel[subject] = id
       opT = 0 // the elevators' and the nose gear's motions run from here, in sim time
@@ -1997,7 +2003,8 @@ async function boot() {
     }
     // ---- the build rehearsal player (?player=1): nav log, meter, bench, transport and gloves over the same scene. Every step
     // change goes through select(id), so the camera flies to the op's own shot (fuseShots.ts) on the sim clock, exactly as a chip
-    // click does. A person's orbit takes the camera until the next step; playback carries on. ----
+    // click does. A beat whose part or ply is not drawn then frames the step's components, or the group's assembly, instead of
+    // the op's close shot. A person's orbit takes the camera until the next step; playback carries on. ----
     if (playerOn && plan && bay) {
       const $ = (id: string) => document.getElementById(id) as HTMLElement
       for (const id of ['navlog', 'meter', 'stage']) $(id).hidden = false
@@ -2018,15 +2025,19 @@ async function boot() {
       const plyPlans = new Map<string, PlyPlan>(order.map((id) => [id, plyPlan(opById.get(id)!.materials, drawnPlies(id))]))
       const targetOf = (a: Action | null | undefined) => (a?.ply ? plyPlans.get(player.step)?.targets[a.ply - 1] : undefined)
       const player = new Player(beatsByStep, order)
-      const buys: Record<string, { item: string; qty: number }[]> = {}
-      for (const g of seq) buys[g.id] = g.steps.flatMap((o) => (o.plan?.buy ?? []).map((b) => ({ item: b.item, qty: b.qty })))
+      const buys: Record<string, { item: string; qty: number; step?: string }[]> = {}
+      for (const g of seq) buys[g.id] = g.steps.flatMap((o) => (o.plan?.buy ?? []).map((b) => ({ item: b.item, qty: b.qty, step: o.id })))
       const kits: Kit[] = kitsFor(seq.map((g) => g.id), buys, plan.catalog)
       let env: Env = loadEnv(storage)
       let sessionHours = loadSessionHours(storage)
+      let actuals: Record<string, Actual> = loadActuals(storage)
+      let pace = loadPace(storage)
+      let navZoom: 'group' | 'build' = 'group'
       let sessions: Session[] = []
-      const repack = () => { sessions = packSessions(planSteps, plan.resins, env, sessionHours) }
+      // Pace multiplies known estimates. Actuals are applied after, so a logged hour stays what happened.
+      const repack = () => { sessions = packSessions(applyActuals(applyPace(planSteps, pace.m), actuals), plan.resins, env, sessionHours) }
       const curSession = () => Math.max(0, sessions.findIndex((s) => s.steps.includes(player.step)))
-      const meterNow = (): Meter | null => (sessions.length ? meterAt(sessions, kits, curSession()) : null)
+      const meterNow = (): Meter | null => (sessions.length ? meterAt(sessions, kits, curSession(), actuals) : null)
       const navList = $('navlog-list'), meterEl = $('meter'), benchEl = $('bench'), captionEl = $('caption')
       const effTemp = () => env.tempC + HEAT_BOOST_C[env.heat]
       /** the cure wait after a step now, and why it is unknown when it is (never a guessed number) */
@@ -2055,22 +2066,52 @@ async function boot() {
       const onStep = (id: string) => { player.seekStep(id); applyStep(player.step, true) }
       const summaryEl = $('sheet-summary')
       const renderPlan = () => {
-        renderNavlog(navList, seq, sessions, kits, player.step, onStep, 'group')
+        const scaled = scaledEstimateIds(planSteps, actuals, pace.m)
+        renderNavlog(navList, seq, sessions, kits, player.step, onStep, navZoom, pace.m, scaled)
         const m = meterNow()
-        if (m) renderMeter(meterEl, m, 'group')
+        if (m) renderMeter(meterEl, m, navZoom, pace.m, scaled.size > 0)
         // the collapsed sheet's line (narrow layout): the session and the step
         const sess = document.createElement('b')
         sess.textContent = sessions.length ? `Session ${curSession() + 1} of ${sessions.length}` : 'Session'
         summaryEl.replaceChildren(sess, document.createTextNode(` · ${opById.get(player.step)?.title ?? ''}`))
       }
+      // Assigned before any bench event. The closure reads this binding when the owner edits, after the assignment below.
+      let commitActual = (_id: string, _next: Actual | null): void => {}
       const renderStepPanel = () => {
         const op = opById.get(player.step)
-        if (op) renderBench(benchEl, op, plan.catalog, { pages: graph.pages, cure: cureOf(op.id), note: noteFor(seq, op.id) })
+        if (op) renderBench(benchEl, op, plan.catalog, {
+          pages: graph.pages, cure: cureOf(op.id), note: noteFor(seq, op.id), actual: actuals[op.id] ?? null,
+          pace: pace.m,
+          onActual: (next) => commitActual(op.id, next),
+        })
       }
+      commitActual = (id, next) => {
+        const copy = { ...actuals }
+        if (next && (next.hours !== undefined || next.spentUsd !== undefined)) copy[id] = next
+        else delete copy[id]
+        actuals = copy
+        saveActuals(storage, actuals)
+        repack(); renderPlan(); renderStepPanel()
+      }
+      const zoomBar = $('nav-zoom')
+      const syncZoom = () => {
+        for (const b of zoomBar.querySelectorAll<HTMLButtonElement>('button[data-level]')) b.setAttribute('aria-pressed', String(b.dataset.level === navZoom))
+      }
+      zoomBar.addEventListener('click', (e) => {
+        const level = ((e.target as HTMLElement).closest('button[data-level]') as HTMLElement | null)?.dataset.level
+        if (level !== 'group' && level !== 'build') return
+        navZoom = level
+        syncZoom(); renderPlan()
+      })
       renderEnvironment($('environment'), env, (e) => {
         env = e
         saveEnv(storage, env)
         repack(); renderPlan(); renderStepPanel(); renderWarn()
+      })
+      renderPace($('environment'), pace, (next) => {
+        pace = next
+        savePace(storage, pace)
+        repack(); renderPlan(); renderStepPanel()
       })
       const hoursEl = $('session-hours') as HTMLInputElement
       hoursEl.value = String(sessionHours)
@@ -2113,14 +2154,48 @@ async function boot() {
         if (work.side.lengthSq() < 1e-6) work.side.set(0, 0, 1)
         work.side.normalize()
       }
+      const toBox = (b: THREE.Box3): Box3Like => ({ min: [b.min.x, b.min.y, b.min.z], max: [b.max.x, b.max.y, b.max.z] })
+      /** drawn parts of every step in this step's group; the station when the group has nothing on screen yet */
+      const groupBox = (id: string): THREE.Box3 => {
+        const g = seq.find((x) => x.steps.some((s) => s.id === id))
+        const bx = new THREE.Box3()
+        for (const s of g?.steps ?? []) { const b = stepBox(s.id); if (b) bx.union(b) }
+        return bx.isEmpty() ? bay.homeBox() : bx
+      }
+      /** the beat's ply is caption-only, or its part has no mesh in view */
+      const undrawn = (a: Action | null | undefined): boolean => {
+        if (!a) return false
+        const tgt = targetOf(a)
+        if (tgt && tgt.lay === null) return true
+        return !!a.part && !partBox(a.part)
+      }
+      // set when a step starts; an orbit after that keeps the camera until the next step (Contract 13)
+      let directedSince = -1e9
+      const aimCaption = (fly: boolean) => {
+        const parts = stepBox(player.step)
+        const box = captionBounds(parts ? toBox(parts) : null, toBox(groupBox(player.step)))
+        if (!box) return
+        const shot = captionShot(box, [-0.4, 0.6, 0.7], LAB_FOV)
+        const prev = rig.shots.playerCaption
+        const same = currentShot === 'playerCaption' && !!prev
+          && prev.target.every((v, i) => Math.abs(v - shot.target[i]) < 1e-4)
+          && prev.pos.every((v, i) => Math.abs(v - shot.pos[i]) < 1e-4)
+        rig.shots.playerCaption = shot
+        if (!same) goto('playerCaption', fly)
+      }
       const label = (cid: string | undefined) => (cid ? graph.components[cid]?.label ?? cid : '')
       const captionOf = (b: Beat | null) => (!b ? '' : (b.action?.part && b.caption.includes(b.action.part) ? b.caption.replace(b.action.part, label(b.action.part)) : b.caption) + plyNote(targetOf(b.action)))
       let beatNow: Beat | null = null, kNow = 0
-      const applyBeat = (b: Beat | null) => {
+      const applyBeat = (b: Beat | null, fly = true) => {
         beatNow = b
         captionEl.textContent = captionOf(b)
         const a = b?.action ?? null
         aim(a?.part)
+        // a caption-only part or ply has nothing of its own to look at: frame the step's drawn components, or the group
+        if (rig.lastUser <= directedSince) {
+          if (undrawn(a)) aimCaption(fly)
+          else if (currentShot === 'playerCaption') goto(rig.shots[player.step] ? player.step : homeShot(), fly)
+        }
         // a drawn ply goes on as its own meshes; a ply the model does not draw (or a stand-in layup) leaves the scene as it is
         const tgt = targetOf(a)
         if (tgt && tgt.lay !== null && tgt.lay !== lay) setLay(tgt.lay)
@@ -2132,15 +2207,19 @@ async function boot() {
         buddy.visible = opById.get(player.step)?.plan?.people === 2 || a?.who === 'buddy'
       }
       const applyStep = (id: string, fly: boolean) => {
+        directedSince = performance.now() // the new step takes the camera back; an orbit during the last step does not carry over
         flyDur = player.playing ? Math.max(0.3, 1.8 / player.speed) : 1.8
         select(id, fly)
+        const stepDur = flyDur
         flyDur = 1.8
         // no geometry in view for this step: frame its parts, or the bench, so every step still gets a default view
         if (!rig.shots[id] && fly) { const bx = stepBox(id) ?? bay.homeBox(); rig.shots.playerStep = fitShot(bx, bx.getCenter(new THREE.Vector3()), new THREE.Vector3(-0.4, 0.6, 0.7).normalize(), LAB_FOV, camera.aspect, 0.6); goto('playerStep', true) }
         // the plies go on as the script lays them; a stand-in layup stays drawn whole through the step
         if (!plyPlans.get(id)?.standIn && (beatsByStep.get(id) ?? []).some((b) => b.action?.ply)) setLay(0)
         renderPlan(); renderStepPanel()
-        applyBeat(player.tick(0).beat)
+        flyDur = stepDur // a caption-only beat replaces the op shot, so it keeps the step-change duration
+        applyBeat(player.tick(0).beat, fly)
+        flyDur = 1.8
       }
       const playBtn = $('tp-play')
       const syncTransport = () => {

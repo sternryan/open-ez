@@ -4,6 +4,11 @@
 # stated as a page value. Conflicts kept as text: the rib thickness, the fastener count.
 - id: f23.engine-install
   chapter: 23
+  group: engine
+  plan:
+    people: 1
+    cure: none
+    tools: [tape]
   title: Engine, mount and installation (stands for Section II, not held)
   summary: This op stands for the engine installation that lives in Sections IIA, IIC and IIL, none of which the owner holds. Chapter 23 only fixes the limits, an O-200 or O-235 with accessories under 246 lb and a vibrating mass under 286 lb, and says the engine sits on BL 0 with 2 deg of down thrust. The lab shows an O-235-sized block aft of the firewall, striped as a fitted shape. Tape the throttle cables to the fuselage side and pot them in silicone. The exhaust drawings the page promises are not held either.
   variants: [both]
@@ -25,6 +30,11 @@
     - Section II installation recorded as not held
 - id: f23.carb-bracket
   chapter: 23
+  group: engine
+  plan:
+    people: 1
+    cure: none
+    tools: [hacksaw, file, drill, brake, rivet-gun]
   title: Throttle and mixture bracket, keeper plug
   summary: Make the Lycoming bracket from 0.063 in 2024-T3, a 6.5 by 2.5 in plate seen from below with a 2 in oil-drain hole 3.6 in from the carb hole and a 1.8 in carb hole 1.25 in from the forward end, plus a 2 by 2 in upright angle on eight rivets. The return springs must take the controls to full open and full rich if a cable fails. A Continental O-200-48 without a starter needs the keeper plug, a 1/2 in 6061-T6 rod 3.15 in long; the text says a 3/16 in hole (drill 10) and the drawing says drill 12, unresolved.
   variants: [both]
@@ -39,6 +49,15 @@
     - Keeper plug made if a Continental O-200-48 is fitted without a starter
 - id: f23.cowl-trim
   chapter: 23
+  group: engine
+  plan:
+    people: 1
+    hours: {value: 11.4, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13161"}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, dremel, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: cowl-variez, qty: 1, flag: derived}
   title: Reinforce and trim the cowl
   summary: Cut about 9 in off each outboard end of the VariEze cowl, after first laying four BID plies at 45 deg, 2 in wide, in four places just inboard of the trim line to stiffen the new edges. The Lycoming cowl sits 0.7 in further aft than on the VariEze, and the engine with it. The VariEze end ribs are not used.
   variants: [both]
@@ -58,6 +77,13 @@
     - About 9 in trimmed off each outboard end after the cure
 - id: f23.cowl-closeout
   chapter: 23
+  group: engine
+  plan:
+    people: 1
+    hours: {value: 8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13161"}
+    cure: part
+    resin: mgs-285-287
+    tools: [tape, dremel, sanding-block, cup, brush, squeegee, scissors, scale]
   title: Trailing-edge closeout and wing flange
   summary: Stand the cowl on its trailing edges, front opened 8.5 in, tape the edges, and lay a five-ply BID closeout strip, then one ply over the top, trimmed to 1.6 in wide. The fasteners are eight along the top forward edge, five on each forward bottom side, three on each trailing edge and four on each wing flange. The plans total 40, while counting those gives 32, unresolved. Build the wing flange with five BID plies at 45 deg, bottom first with the airplane inverted, and add one outside ply after the cowl comes off. Patch any gap over 1/4 in round the exhaust exit.
   variants: [both]
@@ -76,6 +102,14 @@
     - Fastener count checked against the conflict (40 printed, 32 counted)
 - id: f23.root-rib
   chapter: 23
+  group: engine
+  plan:
+    people: 1
+    hours: {value: 3.5, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=13161"}
+    cure: none
+    tools: [tin-snips, brake, file, drill]
+    buy:
+      - {item: al-6061-0-020-20x24, qty: 2, flag: estimate}
   title: Wing-root metal rib
   summary: Form a soft aluminium rib from 20 by 24 in sheet of 6061-0 that butts the spar at the front, with two 1.2 in flanges, a 0.5 in edge offset, and cut-outs for the rudder cable and the aileron pushrod; the cowl screws hold it. The page text says 0.20 in thick but the drawing and the parts list say 0.020 in, so this guide takes the thin value as a typo fix. The rib's outline is a hand drawing with no coordinates, so the lab draws a fitted shape. Many builders skipped this rib; exhaust heat can damage the wing foam without it.
   variants: [both]

@@ -87,6 +87,7 @@ def _generated(op: Operation) -> list[dict]:
     if op.components:
         place["part"] = op.components[0]
     actions = [place]
+    buddy = op.plan is not None and op.plan.people == 2
     n = 1
     for mat in op.materials:
         if not isinstance(mat, dict):
@@ -95,6 +96,8 @@ def _generated(op: Operation) -> list[dict]:
         if count is None or count <= 0:
             continue
         for _ in range(count):
+            if buddy:
+                actions.append({"do": "drape", "ply": n, "who": "buddy"})
             actions.append(
                 {
                     "do": "wet-out",

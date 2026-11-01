@@ -2,6 +2,13 @@
 # bolts to the spar tabs in chapter 14, so only the front harness is built here. The box's tilt on the seat back is "bevel as required" in the book.
 - id: f08.roll-over-foam
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: none
+    tools: [saw, knife, sanding-block, marker, straightedge]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 0.16875, flag: estimate}
   title: Roll-over box foam pieces
   summary: Cut the roll-over foam to the printed shapes, trial-fit the front piece and both sides against the rear face of the front seat bulkhead, then chamfer the joints.
   variants: [both]
@@ -18,6 +25,17 @@
     - Pieces dry-fitted on the seat bulkhead and edges chamfered
 - id: f08.roll-over-inside
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, cup, brush, squeegee, scissors, knife, sanding-block]
+    buy:
+      - {item: bid-7725, qty: 0.21, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.009, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.018, flag: estimate}
+      - {item: birch-ply-6mm-48x48, qty: 0.002, flag: estimate}
   title: Inserts and inside glass
   summary: Cut the three small plywood inserts, set them flush with the inside faces of the foam, and lay one BID ply over the inside. Cure, then trim the edges.
   variants: [both]
@@ -37,6 +55,12 @@
     - One BID ply cured and trimmed
 - id: f08.roll-over-bond
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, cup, mixing-stick, squeegee, clamps]
   title: Bond the box in place
   summary: Sand the cured fuselage skins where the box lands, then micro-bond the box to the seat bulkhead and to both sides.
   variants: [both]
@@ -51,6 +75,16 @@
     - Joints filled with no gaps
 - id: f08.roll-over-outside
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [sanding-block, cup, brush, squeegee, scissors, knife]
+    buy:
+      - {item: bid-7725, qty: 0.35, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.014, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.029, flag: estimate}
   title: Outside glass and buildups
   summary: Round the peak, then glass the outside with two BID plies lapping an inch onto the seat bulkhead and sides. Build up twelve plies over each insert and three more over the peak.
   variants: [both]
@@ -71,6 +105,11 @@
     - Three extra plies over the peak
 - id: f08.access-holes
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, hole-saw, dremel, sanding-block]
   title: Map slot and baggage hole
   summary: After cure, cut the map-case slot in the right side only and the small baggage hole at the rear only.
   variants: [both]
@@ -85,6 +124,12 @@
     - Cut edges smooth and sealed
 - id: f08.shoulder-harness
   chapter: 8
+  group: shoulder-harness
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, scissors, drill, wrench]
   title: Front shoulder harness
   summary: Build up the harness pads, drill the quarter-inch holes through the roll-over structure, and bolt the front harness on. The aft harness bolts to the SH1 spar tabs, so this step is only signed off once those are in (chapter 14).
   variants: [both]
@@ -101,6 +146,21 @@
     - Front harness bolted on
 - id: f08.belt-attach
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    hours: {value: 4.3, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, cup, flox-bag, brush, squeegee, scissors, drill, wrench, hacksaw, file]
+    buy:
+      - {item: bid-7725, qty: 0.27, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.011, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.023, flag: estimate}
+      - {item: an525-416r16, qty: 4, flag: derived}
+      - {item: ms21042-4, qty: 4, flag: derived}
+      - {item: an960-416, qty: 4, flag: derived}
+      - {item: al-2024-angle-1x1x0125, qty: 0.67, flag: estimate}
   title: Seat-belt attachments
   summary: At four places, press a rough plywood insert into wet flox, glass it with seven BID plies, drill a quarter-inch hole and bolt the aluminium angle on. Front belts sit forward of the front seat bulkhead and rear belts forward of the rear one.
   variants: [both]
@@ -118,6 +178,11 @@
     - Positions taken from the side-view sketch, which is not to scale
 - id: f08.step
   chapter: 8
+  group: roll-over
+  plan:
+    people: 1
+    cure: none
+    tools: [hacksaw, bending-brake, drill, countersink, file]
   title: Fuselage step
   summary: Cut and bend the aluminium step to its outline, drill the four countersunk holes, and mount it on the side.
   variants: [both]

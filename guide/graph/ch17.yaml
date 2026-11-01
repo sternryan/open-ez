@@ -2,6 +2,12 @@
 # differ by 0.3 in), so no op states a single station. Station numbers for the roll trim parts are not printed (representational).
 - id: f17.mount-blocks
   chapter: 17
+  group: controls-trim
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, dremel, cup, brush, squeegee, scissors]
   title: Trim mount blocks
   summary: Make the two birch mounting blocks, bond the pitch-trim one to the left side, and notch the right console and bond the roll-trim one there, each with a BID ply over it.
   variants: [both]
@@ -21,6 +27,11 @@
     - Right console notched 1/4 by 1 in; RT3 bonded, one BID ply over
 - id: f17.parts
   chapter: 17
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [hacksaw, drill, file, wire-cutter]
   title: Trim parts and springs
   summary: Make the pitch handle, the roll-trim levers and the phenolic washers, and cut the springs to their free lengths.
   variants: [both]
@@ -35,6 +46,11 @@
     - "Springs cut to free length: PTS 6.0 in, RTS 2.0 in, CS 0.5 in"
 - id: f17.pitch-trim
   chapter: 17
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [swaging-tool, safety-wire-pliers, drill, file]
   title: Pitch trim
   summary: Swage two cables to the pitch handle, set them with the trim neutral, and spring the handle to the elevator belcrank. On the Roncz canard that belcrank is the NC-5A on the left tube. Set the friction and cut the slot.
   variants: [roncz]
@@ -53,6 +69,11 @@
     - Handle fore-aft station is a conflict in the plans, so none is stated here
 - id: f17.roll-trim
   chapter: 17
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [needle, wrench, drill]
   title: Roll trim
   summary: Sew the roll springs to their levers, bolt two levers to the stick torque tube, and mount the third on its block with friction hardware. The friction should just hold full right trim against full left stick.
   variants: [both]
@@ -69,6 +90,11 @@
     - Slot left for the cosmetic cover (chapter 24)
 - id: f17.fixed-trim-tab
   chapter: 17
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [tin-snips, drill, rivet-gun]
   title: Fixed trim tab (optional)
   summary: Only if shortening the pitch spring is not enough, add a small aluminium tab on the elevator.
   variants: [both]

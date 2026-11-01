@@ -4,6 +4,17 @@
 # No weight is printed anywhere in the chapter, so no op states one.
 - id: f24.aft-cover
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, weights, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: urethane-foam-2x24x48, qty: 0.312, flag: estimate}
+      - {item: bid-7725, qty: 0.58, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.024, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.049, flag: estimate}
   title: Lower aft cover
   summary: Make the cover from an 18 by 20 by 2 in chunk of green urethane that sits on the bottom longerons and butts the firewall and the bottom block. Leave about 1/8 in clear round the main gear strut and hollow the block 1/2 in inside the first outline for baggage room. Glass the dished side, bond with flox under weights, then carve and glass the outside with a 1 in lap. The ply count is in conflict. The scan blanks the inside number and edits the outside to one ply, LPC 54 says one, and the community transcription says one inside and two outside. Leave the strut gap open until after paint, then fill it with silicone. The guide follows chapter order here.
   variants: [both]
@@ -25,6 +36,18 @@
     - Strut gap left open until after paint
 - id: f24.console-lc1
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    hours: {value: 4, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 0.047, flag: estimate}
+      - {item: bid-7725, qty: 0.18, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.007, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.015, flag: estimate}
   title: Landing-brake console piece LC1
   summary: LC1 is the one console piece with printed stations. Cut it 9.1 in by 8 in from 0.35 in type R45 foam so that it runs from FS 52 to FS 60, standing 2.0 in off the fuselage side with its top at WL 11.6; its front edge is 12 in behind the instrument panel. Lay one BID ply on the fuselage side and two on the pilot side, lapping 1/2 in onto the floor. Cut the same seat-belt cutout as on the right side before bonding. Fit the second spacer between the brake bracket and the console, use the longer bolt, and leave the section gap at 2 in, not 1 1/2 in. Do not bond it permanently until the controls are in.
   variants: [both]
@@ -47,6 +70,18 @@
     - Brake spacer and bolt changed, section gap 2 in
 - id: f24.consoles-left
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    hours: {value: 20.2, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 0.201, flag: estimate}
+      - {item: bid-7725, qty: 0.33, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.014, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.028, flag: estimate}
   title: Left front and rear consoles LC2 to LC6
   summary: With every control in, cut the front console top LC2 (30.6 in long, 2.35 wide, 0.3 in bevel at the front, throttle cutout at the rear; the community transcription reads 30.8, unresolved) and its sides LC3 (10.6 in along the top, 9.1 tall, a 3 in step) and LC4 (11.7 by 9.1 in, one hole for the pitch-trim adjust). The rear top LC5 is 18.2 by 1.9 in with a 0.35 in bevel, and the triangular side LC6 is 8 in deep. All are 0.35 in R45, bonded with micro and glass, 2 plies outside and 1 inside. Keep the left rear console short for the left suitcase. The outlines between the printed corners are fitted shapes.
   variants: [both]
@@ -68,6 +103,18 @@
     - Pieces bonded with micro and glass, 2 plies outside and 1 inside
 - id: f24.thigh-support
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    hours: {value: 11.8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12773"}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, heat-gun, sanding-block, tin-snips, cup, brush, squeegee, scissors, scale]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 0.171, flag: estimate}
+      - {item: bid-7725, qty: 0.51, flag: estimate}
+      - {item: mgs-lr285-gal, qty: 0.021, flag: estimate}
+      - {item: mgs-h287s-qt, qty: 0.043, flag: estimate}
   title: Front thigh support and fuel-valve cover
   summary: Cut two ribs 10.8 in long and 3.65 in tall at the front from 0.35 in R45, with a curved top drawn on a sheet this guide does not hold, and notch one for the fuel lines. Cut the floor, 17 by 12.3 in with a 5.6 by 4.5 in notch, heat it to about 280 F and bend it. The ribs stand 5.6 in apart with the fuel valve between. Bond and glass the ribs with one ply, then the floor with one ply inside and two outside, strong enough to stand on. Close the gap under the right console with one more ply. Make the fuel-valve cover from 0.025 in aluminium, 6.6 by 5.0 in, silicone it on with no screws, and mark OFF, LEFT and RIGHT.
   variants: [both]
@@ -90,6 +137,13 @@
     - Aluminium cover 6.6 by 5.0 in on with silicone, valve placard marked
 - id: f24.canard-cover
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    hours: {value: 4, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [saw, knife, sanding-block, tape, cup, brush, squeegee, scissors, scale]
   title: Canard cover
   summary: Fit a block of 2 in green urethane to the canard top and the fuselage, oversize, and tape the fuselage, nose, F28 and elevator slot. Bond it with wet micro to the sanded canard and carve it. Glass the outside with two plies of BID lapping about 1/4 in onto the canard. After the cure remove the canard, hollow the foam, and lay two plies of BID inside with flox corners. The plans print no size beyond the 2 in thickness, so the shape is a fitted outline. After paint seal the joint with a white silicone bead and cure it two to three days before the canard comes off. Not over four man-hours.
   variants: [both]
@@ -110,6 +164,13 @@
     - Silicone seal after paint noted
 - id: f24.gap-seal
   chapter: 24
+  group: covers
+  plan:
+    people: 1
+    hours: {value: 10.4, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=12773"}
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, squeegee, scissors, scale]
   title: Seal between the wing and the centre section
   summary: This is the seal that chapter 19 and chapter 23 point to. About half an inch of space separates the wing root from the centre-section spar; the printed fraction cannot be told from 3/4 at this scan resolution. Push urethane foam wedges in with micro on the wing side, let them cure, then sand them to shape and leave 1/16 in at the front. Remove the wing, lay one ply of BID round the foam, and seal the same way along the wing leading-edge and strake gap. After paint fill the small gap with silicone; lay release film on one side if the wings come off often. Air spilling here costs performance and spills engine cooling air.
   variants: [both]

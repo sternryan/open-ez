@@ -3,6 +3,14 @@
 # Roncz elevator travel is 15 up and 30 down only.
 - id: f16.side-consoles
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    cure: part
+    resin: mgs-285-287
+    tools: [knife, sanding-block, cup, brush, squeegee, scissors]
+    buy:
+      - {item: foam-pvc-0p375-32x48, qty: 1, flag: estimate}
   title: Right-hand consoles
   summary: Build the right front and rear consoles from thin foam, glass them inside, and bond them to the side, bulkheads and panel. Leave a large stick opening in the front console.
   variants: [both]
@@ -21,6 +29,13 @@
     - Stick opening left in the front console; console shapes are fitted (representational)
 - id: f16.pivot-bulkheads
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    hours: {value: 1, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [cup, brush, squeegee, scissors, clamps]
   title: Stick pivot bulkheads
   summary: Flox the CS109 front and CS118 rear plywood pivot bulkheads to the consoles and sides, then glass round them.
   variants: [both]
@@ -38,6 +53,12 @@
     - Pivot planes at FS 45.5 and FS 89.7 (medium confidence, read from leaders)
 - id: f16.firewall-bearing
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    hours: {value: 0.6, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=11429"}
+    cure: none
+    tools: [hole-saw, drill, file]
   title: Firewall torque-tube bearing
   summary: Cut a one-inch hole through the firewall right of centre and dimple the flanged bronze bearing so flox can grip it. Do not flox it yet; the torque tube goes in first.
   variants: [both]
@@ -53,6 +74,13 @@
     - Bearing left unfloxed until the torque tube is through the firewall (next step)
 - id: f16.torque-tubes
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    hours: {value: 24.1, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill-press, drill, reamer, wrench, cup]
   title: Torque tubes
   summary: Build the tube inserts, pilot-drill both stick pivots in one plane, ream the press fit, and run the tube through the firewall. Fit the phenolic bearings and bolt them to the pivot bulkheads.
   variants: [both]
@@ -73,6 +101,11 @@
     - CS120 on CS121, then the CS123 bearing floxed into the firewall hole with the tube in place; left undisturbed to cure
 - id: f16.sticks-pushrods
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, wrench, protractor, grease-gun]
   title: Sticks and roll pushrod
   summary: Fit the front and rear sticks on tight bolts and make a pushrod so both stay parallel. Hold the sticks 5 degrees inboard, drill the torque-tube link, fit rod ends and grease the five pivots.
   variants: [both]
@@ -94,6 +127,12 @@
     - Stick fore-aft positions are not printed (representational)
 - id: f16.pitch-pushrod
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    hours: {value: 3.9, flag: estimate, source: null}
+    cure: none
+    tools: [hacksaw, drill, rivet-gun, wrench]
   title: Pitch pushrod
   summary: Make the two-piece pitch pushrod with rod ends and a quick disconnect. On the Roncz canard one extra 0.4 in spacer offsets the elevator-end rod end outboard.
   variants: [roncz]
@@ -110,6 +149,12 @@
     - Elevator travel on the Roncz canard is 15 degrees up and 30 down; no pitch stop is printed in the plans
 - id: f16.aileron-linkage
   chapter: 16
+  group: control-rigging
+  plan:
+    people: 1
+    hours: {value: 13.8, flag: estimate, source: null}
+    cure: none
+    tools: [wrench, protractor, square]
   title: Aileron linkage (after the wing)
   summary: This waits on the wing from chapter 19. Join the stick to the aileron with the two 90-degree angles held, ailerons neutral, and protect the rod-end threads.
   variants: [both]
@@ -124,6 +169,15 @@
     - Both 90-degree angles held with ailerons neutral; rod-end threads not bent
 - id: f16.rudder-conduit
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    hours: {value: 4.5, flag: estimate, source: null}
+    cure: part
+    resin: mgs-285-287
+    tools: [drill, cup, swaging-tool, jigsaw]
+    buy:
+      - {item: rudder-conduit-nylon, qty: 13.67, flag: derived}
   title: Rudder cable conduits
   summary: Run two long nylon conduits along the sides at WL 8, through the four bulkhead holes, floxed at intervals. Thimble a cable to CS15 and slot the firewall.
   variants: [both]
@@ -138,6 +192,12 @@
     - 3/32 cable thimbled to CS15; firewall slotted
 - id: f16.rudder-cable-rig
   chapter: 16
+  group: control-rigging
+  plan:
+    people: 1
+    hours: {value: 8.8, flag: community, source: "http://www.mykitlog.com/users/category.php?user=Spodman&project=2369&category=11429"}
+    cure: none
+    tools: [swaging-tool, tape-measure, cable-cutter, wrench]
   title: Rudder cable rigging (after the winglet)
   summary: This waits on the winglet from chapter 20. With the pedal vertical at full rudder, set the sleeve 0.7 in off the firewall, run the pulley and 1/16 cable, and set the rudder travel with 0.7 in of overtravel at each end.
   variants: [both]
@@ -154,6 +214,11 @@
     - 0.7 in overtravel at both ends
 - id: f16.brake-cables
   chapter: 16
+  group: control-rigging
+  plan:
+    people: 1
+    cure: none
+    tools: [swaging-tool, cable-cutter, wrench]
   title: Brake cables
   summary: Run 3/32 cable from CS15 to the master cylinder arm with a rubber sleeve, slack until full rudder. The cylinder acts as the rudder stop. Check it returns smoothly.
   variants: [both]
@@ -168,6 +233,11 @@
     - Pedals return smoothly
 - id: f16.adjustable-pedals
   chapter: 16
+  group: controls-trim
+  plan:
+    people: 1
+    cure: none
+    tools: [drill, wrench, tape-measure]
   title: Adjustable pedals (optional)
   summary: Optional adjustable pedal hardware, positioned about 8 in forward of the panel.
   variants: [both]

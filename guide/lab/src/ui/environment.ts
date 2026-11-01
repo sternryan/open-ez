@@ -1,7 +1,8 @@
-// The shop environment (temperature, humidity, heat) and the session length: the two settings that repack the plan.
-// Storage helpers are pure (no DOM); renderEnvironment is the only DOM code and runs only in player mode.
+// The shop environment (temperature, humidity, heat), the session length, and builder pace: the settings that repack the plan.
+// Storage helpers are pure (no DOM); renderEnvironment and renderPace are the DOM code and run only in player mode.
 import type { Env } from '../logic/cure'
 import type { Storage2 } from '../logic/graph'
+import { PACE_LABELS, PACE_LONG_EZ, PACE_MAX, PACE_MIN, withCustomPace, type Pace, type PaceChoice } from '../logic/pace'
 
 export const DEFAULT_ENV: Env = { tempC: 20, humidity: 50, heat: 'none' }
 export const ENV_KEY = 'longez.env'
@@ -95,4 +96,64 @@ export function renderEnvironment(root: HTMLElement, env: Env, onChange: (e: Env
   }
   s.addEventListener('change', () => { cur = { ...cur, heat: s.value as Env['heat'] }; onChange({ ...cur }) })
   row('Heat', s)
+}
+
+const PACE_CHOICES: PaceChoice[] = ['logged', 'longez', 'custom']
+
+/** Builder pace, appended beside the climate rows in #environment. A rejected custom keeps the previous multiplier. */
+export function renderPace(root: HTMLElement, pace: Pace, onChange: (p: Pace) => void): void {
+  let cur: Pace = { choice: pace.choice, m: pace.m }
+  const row = (label: string, control: HTMLElement): HTMLElement => {
+    const r = document.createElement('label')
+    r.className = 'env-row'
+    const l = document.createElement('span')
+    l.className = 'label'
+    l.textContent = label
+    r.append(l, control)
+    root.append(r)
+    return r
+  }
+  const s = document.createElement('select')
+  s.id = 'pace-choice'
+  for (const id of PACE_CHOICES) {
+    const o = document.createElement('option')
+    o.value = id
+    o.textContent = PACE_LABELS[id]
+    if (id === cur.choice) o.selected = true
+    s.append(o)
+  }
+  s.value = cur.choice
+  const custom = document.createElement('input')
+  custom.id = 'pace-custom'
+  custom.type = 'number'
+  custom.min = String(PACE_MIN)
+  custom.max = String(PACE_MAX)
+  custom.step = 'any'
+  custom.value = String(cur.m)
+  custom.setAttribute('aria-label', 'Custom builder pace')
+  row('Builder pace', s)
+  const customRow = row('Custom pace', custom)
+  customRow.id = 'pace-custom-row'
+  customRow.hidden = cur.choice !== 'custom'
+  const publish = (next: Pace): void => {
+    cur = { choice: next.choice, m: next.m }
+    s.value = cur.choice
+    custom.value = String(cur.m)
+    customRow.hidden = cur.choice !== 'custom'
+    onChange({ choice: cur.choice, m: cur.m })
+  }
+  s.addEventListener('change', () => {
+    const v = s.value
+    if (v === 'logged') publish({ choice: 'logged', m: 1 })
+    else if (v === 'longez') publish({ choice: 'longez', m: PACE_LONG_EZ })
+    else if (v === 'custom') publish({ choice: 'custom', m: cur.m })
+  })
+  custom.addEventListener('change', () => {
+    const next = withCustomPace(cur, Number(custom.value))
+    if (next === cur) {
+      custom.value = String(cur.m)
+      return
+    }
+    publish(next)
+  })
 }
