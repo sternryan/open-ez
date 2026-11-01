@@ -74,15 +74,15 @@ def test_asymmetric_section_neutral_axis_by_hand():
     z_t, z_b = 2.5 - 0.05, -2.5 + 0.025  # 2.45, -2.475
     a_t, a_b = 0.3, 0.15
     z_na = (0.3 * 2.45 + 0.15 * -2.475) / 0.45  # 0.8083333
-    I = (3 * 0.1**3 / 12 + a_t * (z_t - z_na) ** 2) + (
+    i_na = (3 * 0.1**3 / 12 + a_t * (z_t - z_na) ** 2) + (
         3 * 0.05**3 / 12 + a_b * (z_b - z_na) ** 2
     )
     assert sec.z_na == pytest.approx(z_na, rel=1e-12)
-    assert sec.I_in4 == pytest.approx(I, rel=1e-12)
+    assert sec.I_in4 == pytest.approx(i_na, rel=1e-12)
     M = 20000.0
     sigma, _ = ss.section_response(sec, M, MAT)
     # the bottom face is furthest from the neutral axis: c = 2.5 + z_na
-    assert sigma == pytest.approx(M * (2.5 + z_na) / I, rel=1e-9)
+    assert sigma == pytest.approx(M * (2.5 + z_na) / i_na, rel=1e-9)
 
 
 def test_elliptic_moment_closed_form():

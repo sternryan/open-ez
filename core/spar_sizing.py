@@ -158,13 +158,13 @@ def cap_section(
     z_b = -depth_in / 2 + tb / 2
     a_t, a_b = width_in * tt, width_in * tb
     z_na = (a_t * z_t + a_b * z_b) / (a_t + a_b)
-    I = (
+    i_na = (
         width_in * tt**3 / 12
         + a_t * (z_t - z_na) ** 2
         + width_in * tb**3 / 12
         + a_b * (z_b - z_na) ** 2
     )
-    return Section(depth_in, width_in, t_ply_in, n_top, n_bot, z_t, z_b, z_na, I)
+    return Section(depth_in, width_in, t_ply_in, n_top, n_bot, z_t, z_b, z_na, i_na)
 
 
 def _cap_ratio(
@@ -577,7 +577,9 @@ def size_spar_caps(
         if not (math.isfinite(v) and v > 0):
             raise ValueError(f"{what} must be positive, got {v!r}")
 
-    gi = lambda n, u, **k: geometry_input(n, u, cfg, provenance, **k)
+    def gi(n: str, u: str, **k) -> Input:
+        return geometry_input(n, u, cfg, provenance, **k)
+
     rows = [
         gi("wing_book_rib_bl", "in BL"),
         gi("wing_span", "in"),

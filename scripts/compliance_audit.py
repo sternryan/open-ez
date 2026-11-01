@@ -57,13 +57,15 @@ def load_progress(tracker: ComplianceTracker, path: Path) -> List[str]:
         if not isinstance(entry, dict):
             errors.append(f"{where}: entry must be a mapping")
             continue
-        task_id = entry.get("task_id")
-        where = f"completed[{i}] ({task_id})"
+        raw_id = entry.get("task_id")
+        task_id = raw_id if isinstance(raw_id, str) else ""
+        where = f"completed[{i}] ({raw_id})"
         if task_id in seen:
             errors.append(f"{where}: duplicate task_id")
             continue
         seen.add(task_id)
-        method = methods.get(entry.get("method"))
+        raw_method = entry.get("method")
+        method = methods.get(raw_method) if isinstance(raw_method, str) else None
         evidence = entry.get("evidence")
         ok = True
         try:
@@ -88,8 +90,7 @@ def load_progress(tracker: ComplianceTracker, path: Path) -> List[str]:
             errors.append(f"{where}: date missing or not YYYY-MM-DD")
             when_dt = None
             ok = False
-        if ok:
-            assert method is not None
+        if ok and method is not None and isinstance(evidence, str):
             tracker.complete_task(task_id, method, notes=evidence.strip())
             tracker.get_task(task_id).completion_date = when_dt
     return errors
@@ -138,7 +139,9 @@ def run(argv: Optional[List[str]] = None) -> Tuple[int, str]:
     else:
         print("Status: NOT YET ELIGIBLE (credit below threshold)")
         if args.require_eligible:
-            print("FAILED: --require-eligible and credit below threshold", file=sys.stderr)
+            print(
+                "FAILED: --require-eligible and credit below threshold", file=sys.stderr
+            )
             return 1, "below threshold"
     return 0, "ok"
 

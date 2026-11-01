@@ -41,7 +41,12 @@ def _progress(tmp_path, entries):
 
 
 def _entry(task_id, method="builder_manual", evidence="build log p1"):
-    return {"task_id": task_id, "method": method, "date": "2026-01-02", "evidence": evidence}
+    return {
+        "task_id": task_id,
+        "method": method,
+        "date": "2026-01-02",
+        "evidence": evidence,
+    }
 
 
 def test_default_mode_on_shipped_empty_progress_exits_0(capsys, tmp_path):
@@ -75,7 +80,9 @@ def test_missing_evidence_is_integrity_error(capsys, tmp_path, evidence):
 
 
 def test_unknown_method_and_duplicate_are_integrity_errors(capsys, tmp_path):
-    code, _, err = _run(capsys, tmp_path, _progress(tmp_path, [_entry("paint", method="magic")]))
+    code, _, err = _run(
+        capsys, tmp_path, _progress(tmp_path, [_entry("paint", method="magic")])
+    )
     assert code == 1 and "unknown method" in err
     dup = [_entry("paint"), _entry("paint")]
     code, _, err = _run(capsys, tmp_path, _progress(tmp_path, dup))
