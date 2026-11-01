@@ -1,0 +1,2432 @@
+{
+ "spots": [
+  {
+   "id": "long-ez-1980",
+   "label": "1980 Rutan Long-EZ",
+   "analogue": "concours restoration",
+   "state": "foundation",
+   "blurb": "The book airplane, built exactly as the 1980 plans say: the knowledge foundation, open as the build rehearsal."
+  },
+  {
+   "id": "mod-ez",
+   "label": "Mod-EZ",
+   "analogue": "restomod",
+   "state": "active",
+   "blurb": "The modern Long-EZ: the same shape with a modern process, powerplant and systems, decided one record at a time."
+  },
+  {
+   "id": "rv-12",
+   "label": "Van's RV-12",
+   "analogue": "kit",
+   "state": "reserved",
+   "blurb": "A reserved spot for the second airplane this code is proven on."
+  },
+  {
+   "id": "model-1",
+   "label": "Stern Model 1",
+   "analogue": "scratch build",
+   "state": "reserved",
+   "blurb": "A reserved spot for an original design."
+  }
+ ],
+ "records": {
+  "cg-ballast": {
+   "id": "cg-ballast",
+   "spot": "mod-ez",
+   "title": "Centre of gravity with the 912 iS",
+   "status": "open",
+   "question": "How does the Mod-EZ keep its centre of gravity inside the book envelope now that the 912 iS is lighter than the book engine?",
+   "coupled_with": [
+    "powerplant-fuel-resin",
+    "propeller"
+   ],
+   "replaces": [
+    "f23.engine-install",
+    "f22.battery-shelf"
+   ],
+   "book_choice": {
+    "text": "The book defines the CG envelope as 97.0 to 103.0 inches and prints sample loadings as its own check (the light pilot sample prints 103.96, aft of the 103.0 limit); the sample rows carry no ballast.",
+    "cite": "om-1980:p26"
+   },
+   "options": [
+    {
+     "id": "book-engine-cg",
+     "label": "Book engine and loading (baseline)",
+     "kind": "book",
+     "effect": {
+      "engine": "o235-book"
+     },
+     "facts": [
+      {
+       "text": "Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve; coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. Book engine, heavy pilot solo (210 lb): landing CG 100.3 in, forward margin +3.3 in; two adults: +3.7 in",
+       "cite": "om-1980:p28"
+      },
+      {
+       "text": "Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward limit: 292 lb. Landing margin at 120 lb +7.3 in, 160 lb +5.4 in, 200 lb +3.6 in, 220 lb +2.8 in. Public weight range, no owner weights",
+       "flag": "derived",
+       "computed": "solo-range"
+      },
+      {
+       "text": "Book engine, light pilot (135 lb): CG 104.0 in at takeoff, aft of the 103.0 in limit, as in the book's own sample",
+       "cite": "om-1980:p26"
+      },
+      {
+       "text": "Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: +2.8 in (solo 220 lb, light overnight bag, mission fuel, landing). Aft limit worst: 1.6 in outside (solo 120 lb, no baggage, mission fuel, landing). Gross worst: 173 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots break the limit above 292 lb; aft: lighter solo pilots break the limit below 161 lb; gross: heavier solo pilots break the limit above 267 lb.",
+       "flag": "derived",
+       "computed": "matrix"
+      }
+     ],
+     "why": "baseline: the envelope and loadings the book itself prints; the 912 iS changes where the empty CG sits"
+    },
+    {
+     "id": "loading-limit",
+     "label": "No change, publish a loading limit",
+     "kind": "candidate",
+     "effect": {
+      "engine": "rotax-912is"
+     },
+     "facts": [
+      {
+       "text": "Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve; coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. 912 iS, heavy pilot solo: landing CG 96.8 in, forward margin -0.2 in (forward of the 97.0 in limit); two adults: +0.9 in; light pilot: +3.3 in",
+       "cite": "om-1980:p28"
+      },
+      {
+       "text": "Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward limit: 202 lb. Landing margin at 120 lb +3.9 in, 160 lb +1.9 in, 200 lb +0.1 in, 220 lb -0.7 in. Public weight range, no owner weights",
+       "flag": "derived",
+       "computed": "solo-range"
+      },
+      {
+       "text": "Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.7 in outside (solo 220 lb, light overnight bag, mission fuel, landing). Aft limit worst: +0.8 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff). Gross worst: 96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots break the limit above 202 lb; aft: lighter solo pilots break the limit below 95 lb; gross: heavier solo pilots break the limit above 344 lb.",
+       "flag": "derived",
+       "computed": "matrix"
+      }
+     ],
+     "why": "kept: costs no weight, but a heavy pilot flying solo is outside the envelope (see the solo crossing weight), so the airplane would need a maximum-front-seat-weight or minimum-passenger rule; two adults stay inside by only 0.9 in"
+    },
+    {
+     "id": "fixed-aft-ballast",
+     "label": "Fixed aft ballast",
+     "kind": "candidate",
+     "effect": {
+      "engine": "rotax-912is",
+      "extras": [
+       {
+        "name": "ballast",
+        "weight_lb": 14.587749712973439,
+        "arm_in": 141.05,
+        "flag": "derived"
+       }
+      ]
+     },
+     "facts": [
+      {
+       "text": "Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve; coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. 14.6 lb at the engine's CG arm (141.05 in) brings the heavy solo case to +0.5 in; two adults already hold that margin. The ballast arm is an assumption",
+       "flag": "derived"
+      },
+      {
+       "text": "Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside",
+       "flag": "derived"
+      },
+      {
+       "text": "Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range, no owner weights",
+       "flag": "derived",
+       "computed": "solo-range"
+      },
+      {
+       "text": "With that ballast the heavy solo landing CG is 97.5 in and empty weight rises by the same 14.6 lb, which comes off useful load",
+       "flag": "derived"
+      },
+      {
+       "text": "Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.0 in outside (solo 220 lb, light overnight bag, mission fuel, landing). Aft limit worst: +0.4 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff). Gross worst: 111 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 108 lb; gross: heavier solo pilots break the limit above 329 lb.",
+       "flag": "derived",
+       "computed": "matrix"
+      }
+     ],
+     "why": "kept: simple and testable, at a direct cost in useful load; ballast that is not fixed to the structure is a loading error waiting to happen"
+    },
+    {
+     "id": "battery-aft",
+     "label": "Move the battery aft",
+     "kind": "candidate",
+     "effect": {
+      "engine": "rotax-912is",
+      "extras": [
+       {
+        "name": "battery out of the nose",
+        "weight_lb": -19.0,
+        "arm_in": 11.0,
+        "flag": "derived"
+       },
+       {
+        "name": "battery aft",
+        "weight_lb": 19.0,
+        "arm_in": 141.05,
+        "flag": "derived"
+       }
+      ]
+     },
+     "facts": [
+      {
+       "text": "Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve; coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. The ledger carries a 19 lb larger battery at fuselage station 11 in the nose (a derived row); moving it to 141.05 in aft changes the heavy solo margin to +2.6 in and two adults to +3.1 in",
+       "flag": "derived"
+      },
+      {
+       "text": "Aft check with the same change, light pilot: highest CG 103.6 in against the 103.0 in aft limit, OUTSIDE the envelope",
+       "flag": "derived"
+      },
+      {
+       "text": "Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward limit: 267 lb. Landing margin at 120 lb +6.9 in, 160 lb +4.8 in, 200 lb +2.9 in, 220 lb +2.0 in. Public weight range, no owner weights",
+       "flag": "derived",
+       "computed": "solo-range"
+      },
+      {
+       "text": "Whether the book airplane carries the larger battery in its 730 lb empty weight (the ledger notes it may carry the small one); if it carries the small one the figures above are an upper bound",
+       "flag": "unknown"
+      },
+      {
+       "text": "Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: +2.0 in (solo 220 lb, light overnight bag, mission fuel, landing). Aft limit worst: 1.3 in outside (solo 120 lb, no baggage, full fuel, takeoff). Gross worst: 96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots break the limit above 267 lb; aft: lighter solo pilots break the limit below 151 lb; gross: heavier solo pilots break the limit above 344 lb.",
+       "flag": "derived",
+       "computed": "matrix"
+      }
+     ],
+     "why": "kept: ballast that is already carried, but it pushes the light pilot case toward or past the aft limit (see the aft check), needs longer cable runs, and is an upper bound if the book empty weight carries the small battery"
+    },
+    {
+     "id": "engine-arm-aft",
+     "label": "Move the engine installation aft",
+     "kind": "candidate",
+     "effect": {
+      "engine": "rotax-912is",
+      "engine_arm_shift_in": 3.82
+     },
+     "facts": [
+      {
+       "text": "Calculator output on the book's own sample loadings (no private weights); landing is with the 30 minute reserve; coolant and radiator weight are not included and the engine CG arm is assumed equal to the book engine's. Moving the engine's installed CG 3.8 in aft of the book arm brings the heavy solo case to +0.5 in",
+       "flag": "derived"
+      },
+      {
+       "text": "Aft check with the same change, light pilot: highest CG 101.8 in against the 103.0 in aft limit, inside",
+       "flag": "derived"
+      },
+      {
+       "text": "Solo, rear seat empty, mission fuel and baggage, reserve only at landing; solo pilot weight at the 97.0 in forward limit: 219 lb. Landing margin at 120 lb +4.6 in, 160 lb +2.6 in, 200 lb +0.8 in, 220 lb -0.0 in. Public weight range, no owner weights",
+       "flag": "derived",
+       "computed": "solo-range"
+      },
+      {
+       "text": "A mount or cowl change forced by an aft engine (the spec requires it to be called out and analysed)",
+       "flag": "unknown"
+      },
+      {
+       "text": "Loading matrix over the public range (solo 120 to 220 lb, two up, no baggage or a light bag, full, mission and reserve fuel, at takeoff and landing; no owner weights). Forward limit worst: 0.0 in outside (solo 220 lb, light overnight bag, mission fuel, landing). Aft limit worst: +0.4 in (two up 120 lb front, 220 lb rear, no baggage, full fuel, takeoff). Gross worst: 96 lb outside (two up 220 lb front, 220 lb rear, light overnight bag, full fuel, takeoff). Solo pilots forward: heavier solo pilots break the limit above 219 lb; aft: lighter solo pilots break the limit below 109 lb; gross: heavier solo pilots break the limit above 344 lb.",
+       "flag": "derived",
+       "computed": "matrix"
+      }
+     ],
+     "why": "kept: no added weight, but it moves the propeller and cowl and touches the outer shape, which the roadmap keeps out of scope; 3.8 in is the size of the problem, not a design"
+    },
+    {
+     "id": "radiator-aft",
+     "label": "Put the radiator and coolant aft",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "Coolant, radiator and oil cooler weights for the 912 iS installation",
+       "flag": "unknown"
+      },
+      {
+       "text": "Where the radiator can sit on this airframe and its duct drag",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: the coolant system has to be carried anyway, so where it sits is free ballast; there is no weight or arm to compute until the installation is drawn"
+    }
+   ],
+   "positions": [],
+   "unknowns": [
+    {
+     "id": "radiator-coolant-weight",
+     "text": "Coolant, radiator, oil cooler and exhaust installed weight and arm for the 912 iS (the calculator leaves them out)",
+     "how": "maker installation manual and the drawn installation",
+     "affects": [
+      "loading-limit",
+      "fixed-aft-ballast",
+      "battery-aft",
+      "engine-arm-aft",
+      "radiator-aft"
+     ],
+     "state": "researching"
+    },
+    {
+     "id": "installed-cg-arm",
+     "text": "The 912 iS installed CG arm (assumed equal to the book engine's)",
+     "how": "weigh and balance the installation, or compute from the maker flange datum",
+     "affects": [
+      "loading-limit",
+      "fixed-aft-ballast",
+      "battery-aft",
+      "engine-arm-aft",
+      "radiator-aft"
+     ],
+     "state": "researching"
+    },
+    {
+     "id": "large-battery-included",
+     "text": "Whether the book 730 lb empty weight already includes the large battery",
+     "how": "the builder weight records behind the empty-weight ladder",
+     "affects": [
+      "battery-aft"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "owners-own-margins",
+     "text": "Each owner's own solo and two-up margins (checked privately at brief time, not recorded here)",
+     "how": "private pilots list in the briefing room configuration",
+     "affects": [
+      "loading-limit",
+      "fixed-aft-ballast",
+      "battery-aft",
+      "engine-arm-aft"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "propeller-weight-arm",
+     "text": "Propeller weight and arm change if the propeller record picks a heavier hub",
+     "how": "weights from the maker once the propeller is chosen",
+     "affects": [
+      "fixed-aft-ballast",
+      "battery-aft",
+      "engine-arm-aft"
+     ],
+     "state": "researching"
+    }
+   ],
+   "mission_score": {
+    "o235-book": {
+     "light_solo": {
+      "option": "o235-book",
+      "loading": "light_solo",
+      "takeoff_lb": {
+       "v": 1113.0,
+       "flag": "sourced",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 103.95867026055706,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 890.023,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 103.82305120204758,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": 6.82305120204758,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": false,
+      "assumptions": [
+       "book engine arm by closure method",
+       "O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book light pilot sample (pilot 135 lb)"
+      ],
+      "worst_flag": "derived"
+     },
+     "heavy_solo": {
+      "option": "o235-book",
+      "loading": "heavy_solo",
+      "takeoff_lb": {
+       "v": 1098.0,
+       "flag": "derived",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 100.84335154826958,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 965.023,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 100.33947740105675,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": 3.3394774010567545,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": true,
+      "assumptions": [
+       "book engine arm by closure method",
+       "O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book heavy pilot sample flown solo: pilot 210 lb, no passenger or baggage"
+      ],
+      "worst_flag": "derived"
+     },
+     "heavy_two": {
+      "option": "o235-book",
+      "loading": "heavy_two",
+      "takeoff_lb": {
+       "v": 1323.0,
+       "flag": "sourced",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 101.06273620559335,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 1190.023,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 100.67864528668774,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": 3.6786452866877397,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": true,
+      "assumptions": [
+       "book engine arm by closure method",
+       "O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book heavy loading sample: two adults 210 lb each and baggage"
+      ],
+      "worst_flag": "derived"
+     }
+    },
+    "rotax-912is": {
+     "light_solo": {
+      "option": "rotax-912is",
+      "loading": "light_solo",
+      "takeoff_lb": {
+       "v": 1036.2,
+       "flag": "derived",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 101.20957344142057,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 808.8205,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 100.28455293850737,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": 3.2845529385073746,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": true,
+      "assumptions": [
+       "63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included",
+       "assumed same installed CG as the book engine",
+       "16.5 L/h at 75 percent continuous performance, 69 hp",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book light pilot sample (pilot 135 lb)"
+      ],
+      "worst_flag": "derived"
+     },
+     "heavy_solo": {
+      "option": "rotax-912is",
+      "loading": "heavy_solo",
+      "takeoff_lb": {
+       "v": 1021.2,
+       "flag": "derived",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 97.81958480219349,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 883.8205,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 96.78119284402206,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": -0.21880715597794165,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": false,
+      "assumptions": [
+       "63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included",
+       "assumed same installed CG as the book engine",
+       "16.5 L/h at 75 percent continuous performance, 69 hp",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book heavy pilot sample flown solo: pilot 210 lb, no passenger or baggage"
+      ],
+      "worst_flag": "derived"
+     },
+     "heavy_two": {
+      "option": "rotax-912is",
+      "loading": "heavy_two",
+      "takeoff_lb": {
+       "v": 1246.2,
+       "flag": "derived",
+       "note": ""
+      },
+      "takeoff_cg": {
+       "v": 98.59842721874499,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_lb": {
+       "v": 1108.8205,
+       "flag": "derived",
+       "note": ""
+      },
+      "landing_cg": {
+       "v": 97.86724023410461,
+       "flag": "derived",
+       "note": ""
+      },
+      "fwd_margin_in": {
+       "v": 0.8672402341046137,
+       "flag": "derived",
+       "note": ""
+      },
+      "in_envelope": true,
+      "assumptions": [
+       "63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included",
+       "assumed same installed CG as the book engine",
+       "16.5 L/h at 75 percent continuous performance, 69 hp",
+       "UL94 density applied to every gasoline option; mogas density is unsourced",
+       "book heavy loading sample: two adults 210 lb each and baggage"
+      ],
+      "worst_flag": "derived"
+     }
+    }
+   },
+   "decision": null,
+   "history": [],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "cg_fix",
+     "options": [
+      "book-engine-cg",
+      "loading-limit",
+      "fixed-aft-ballast",
+      "battery-aft",
+      "engine-arm-aft",
+      "radiator-aft"
+     ]
+    }
+   ],
+   "scoring": {
+    "kind": "loadings",
+    "engines": [
+     "o235-book",
+     "rotax-912is"
+    ]
+   },
+   "reopen_flag": null
+  },
+  "cooling": {
+   "id": "cooling",
+   "spot": "mod-ez",
+   "title": "Engine cooling for the 912 iS",
+   "status": "open",
+   "question": "How is the 912 iS cooled in the Mod-EZ, and where do the radiator, oil cooler and coolant go?",
+   "coupled_with": [
+    "powerplant-fuel-resin",
+    "cg-ballast"
+   ],
+   "replaces": [
+    "f23.engine-install",
+    "f23.cowl-closeout"
+   ],
+   "book_choice": {
+    "text": "The book airplane's O-235 is air cooled by cowl air (engine type; not checked against the owner's manual here)."
+   },
+   "options": [
+    {
+     "id": "air-cooled-book",
+     "label": "Air-cooled engine (book)",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "The book engine is the air-cooled Lycoming O-235; it has no liquid cooling system",
+       "flag": "derived"
+      },
+      {
+       "text": "The 912 iS needs about 1.5 l of coolant for its liquid-cooled cylinder heads, so this layout does not apply to it",
+       "flag": "derived"
+      }
+     ],
+     "why": "baseline: no coolant system to place; the 912 iS does not use it because its cylinder heads are liquid cooled (the maker lists coolant, a radiator and an expansion tank)"
+    },
+    {
+     "id": "radiator-nose-duct",
+     "label": "Radiator and oil cooler forward, ducted from the nose",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine (base engine on p96, radiator on p97)",
+       "cite": "rotax-im-912i:p97"
+      },
+      {
+       "text": "The maker lists the oil radiator at 1.0 kg (2.2 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the oil cooler at 0.6 kg (1.32 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "The maker lists a cooling air baffle at 0.36 kg (0.79 lb); the manual does not say whether this is the tractor or the pusher part",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the overflow bottle at approximately 0.5 l (0.13 US gal).",
+       "cite": "rotax-im-912i:p136"
+      },
+      {
+       "text": "The maker says an aluminium tube with a 25 mm (1 in) inner diameter can be used instead of longer coolant hoses, and lists inner diameter 25 mm in that tube's specification.",
+       "cite": "rotax-im-912i:p132"
+      },
+      {
+       "text": "The maker's coolant capacity table lists a 2 m coolant hose with an inner diameter of 18 mm.",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol coolant on the 912 i Series.",
+       "cite": "si-912-i-001r7-si-912-016r12:p1"
+      },
+      {
+       "text": "SI-PAC-014 Revision 1 states a maximum weight of 0.82 kg for the extra-large oil radiator.",
+       "cite": "si-pac-014-revision-1-oil-radiator-sets:p1"
+      },
+      {
+       "text": "Duct size, drag and the real pusher airflow for a nose radiator on this airframe are not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: judgment: a forward radiator has the easiest air supply, but the coolant and oil lines would run the length of the fuselage and its mass sits forward of the engine, which moves the CG forward (geometry, not sourced)"
+    },
+    {
+     "id": "radiator-belly-duct",
+     "label": "Radiator and oil cooler in a belly duct under the engine",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine (base engine on p96, radiator on p97)",
+       "cite": "rotax-im-912i:p97"
+      },
+      {
+       "text": "The maker lists the oil radiator at 1.0 kg (2.2 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the oil cooler at 0.6 kg (1.32 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "The maker lists a cooling air baffle at 0.36 kg (0.79 lb); the manual does not say whether this is the tractor or the pusher part",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the overflow bottle at approximately 0.5 l (0.13 US gal).",
+       "cite": "rotax-im-912i:p136"
+      },
+      {
+       "text": "The maker says an aluminium tube with a 25 mm (1 in) inner diameter can be used instead of longer coolant hoses, and lists inner diameter 25 mm in that tube's specification.",
+       "cite": "rotax-im-912i:p132"
+      },
+      {
+       "text": "The maker's coolant capacity table lists a 2 m coolant hose with an inner diameter of 18 mm.",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol coolant on the 912 i Series.",
+       "cite": "si-912-i-001r7-si-912-016r12:p1"
+      },
+      {
+       "text": "SI-PAC-014 Revision 1 states a maximum weight of 0.82 kg for the extra-large oil radiator.",
+       "cite": "si-pac-014-revision-1-oil-radiator-sets:p1"
+      },
+      {
+       "text": "Duct size, drag and the real pusher airflow for a belly radiator on this airframe are not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: short hoses and the masses stay near the engine, but a belly scoop touches the outer shape and ground clearance"
+    },
+    {
+     "id": "radiator-aft-duct",
+     "label": "Radiator and oil cooler aft of the engine in the cowl",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The maker lists the coolant radiator at 1.5 kg (3.3 lb), separate from the 63.6 kg base engine (base engine on p96, radiator on p97)",
+       "cite": "rotax-im-912i:p97"
+      },
+      {
+       "text": "The maker lists the oil radiator at 1.0 kg (2.2 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the oil cooler at 0.6 kg (1.32 lb).",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker gives the total coolant quantity for the engine as approximately 1.5 l (0.4 US gal).",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "The maker lists a cooling air baffle at 0.36 kg (0.79 lb); the manual does not say whether this is the tractor or the pusher part",
+       "cite": "rotax-im-912i:p96"
+      },
+      {
+       "text": "The maker lists the overflow bottle at approximately 0.5 l (0.13 US gal).",
+       "cite": "rotax-im-912i:p136"
+      },
+      {
+       "text": "The maker says an aluminium tube with a 25 mm (1 in) inner diameter can be used instead of longer coolant hoses, and lists inner diameter 25 mm in that tube's specification.",
+       "cite": "rotax-im-912i:p132"
+      },
+      {
+       "text": "The maker's coolant capacity table lists a 2 m coolant hose with an inner diameter of 18 mm.",
+       "cite": "rotax-im-912i:p138"
+      },
+      {
+       "text": "SI-912 i-001R7 permits ethylene-glycol coolant with 50 percent water and does not permit waterless propylene-glycol coolant on the 912 i Series.",
+       "cite": "si-912-i-001r7-si-912-016r12:p1"
+      },
+      {
+       "text": "SI-PAC-014 Revision 1 states a maximum weight of 0.82 kg for the extra-large oil radiator.",
+       "cite": "si-pac-014-revision-1-oil-radiator-sets:p1"
+      },
+      {
+       "text": "Whether the pusher cowl can pass enough air at the radiator, and the duct drag, are not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: judgment: radiator and cooler masses aft of the CG act as ballast (geometry); whether a pusher cowl can pass enough air there is not sourced"
+    }
+   ],
+   "positions": [],
+   "unknowns": [
+    {
+     "id": "radiator-position-drag",
+     "text": "Radiator position, duct size and drag for the 912 iS on this airframe (no published pusher installation found)",
+     "how": "the drawn installation and a ground cooling test",
+     "affects": [
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "coolant-hose-diameter",
+     "text": "Coolant hose inner diameter: the 2020 installation manual gives 25 mm for the aluminium tube that can replace longer hoses (p132) and an 18 mm hose in its coolant capacity table (p138)",
+     "how": "the current maker installation manual for the engine serial number",
+     "affects": [
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "coolant-installed-mass",
+     "text": "Installed mass of coolant, hoses and fittings (the maker lists radiator and cooler masses, not hose or fluid mass for a given routing)",
+     "how": "weigh the drawn installation; coolant density from the maker's coolant datasheet",
+     "affects": [
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "radiator-height-limits",
+     "text": "The maker's limits on radiator position relative to the pump inlet and on overflow-bottle suction height constrain where the duct options can put the radiator (the values were found in the manual but not checked here)",
+     "how": "the maker's installation manual, cooling system chapter, against the drawn installation",
+     "affects": [
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "pusher-cooling-air-baffle",
+     "text": "Mass and fit of the pusher cylinder cooling-air baffle parts (listed without mass)",
+     "how": "maker parts catalogue and the supplier",
+     "affects": [
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ],
+     "state": "open"
+    }
+   ],
+   "mission_score": null,
+   "decision": null,
+   "history": [],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "cooling_layout",
+     "options": [
+      "air-cooled-book",
+      "radiator-nose-duct",
+      "radiator-belly-duct",
+      "radiator-aft-duct"
+     ]
+    }
+   ],
+   "scoring": null,
+   "reopen_flag": null
+  },
+  "electrical": {
+   "id": "electrical",
+   "spot": "mod-ez",
+   "title": "Electrical system for the 912 iS",
+   "status": "open",
+   "question": "How is the 912 iS powered and charged, and what in the book panel, wing wiring and battery shelf has to change?",
+   "coupled_with": [
+    "powerplant-fuel-resin",
+    "cg-ballast",
+    "fuel-system"
+   ],
+   "replaces": [
+    "f22.panel-wiring",
+    "f22.battery-shelf",
+    "f22.wing-wiring"
+   ],
+   "book_choice": {
+    "text": "The book airplane's electrical system is the plans' battery, alternator and panel wiring (steps f22; not checked against the owner's manual here)."
+   },
+   "options": [
+    {
+     "id": "book-single-alternator",
+     "label": "Book single bus, one alternator, one battery",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "The engine-management electrical system is isolated from the rest of the aircraft.",
+       "cite": "rotax-im-912i:p53"
+      },
+      {
+       "text": "The book wiring does not provide an isolated engine ground, the engine-management supply path or the ammeter the maker requires, so it cannot be kept unchanged",
+       "flag": "derived"
+      }
+     ],
+     "why": "baseline: judgment: the book wiring was drawn for an engine that needs no electrical supply to run; the 912 iS has its own engine electrics (two lanes, generators, a backup switch) whose ground must be kept separate from the airframe ground"
+    },
+    {
+     "id": "ems-isolated-one-battery",
+     "label": "Isolated engine bus, one aircraft battery with a backup switch",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The engine-management electrical system is isolated from the rest of the aircraft.",
+       "cite": "rotax-im-912i:p53"
+      },
+      {
+       "text": "Airframe ground and EMS ground must not be interconnected.",
+       "cite": "rotax-im-912i:p55"
+      },
+      {
+       "text": "The fuse box has separate plug connections X1 (LANE A) and X2 (LANE B), which ensure power distribution to the EMS.",
+       "cite": "rotax-im-912i:p60"
+      },
+      {
+       "text": "Generator A (14.2 V/16 A) supplies the EMS after the system check and generator B (14.2 V/30 A) supplies the aircraft instruments and charges the battery.",
+       "cite": "rotax-im-912i:p57"
+      },
+      {
+       "text": "The aircraft battery must be at least 16 Ah and must hold at least 9 V on the ECU bus during start-up.",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "The battery technical data require at least 350 A cold-cranking amperes at -18 \u00b0C (SAE J537).",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "If both EMS alternators fail, the 2012 operators manual says to switch on the backup battery switch so the aircraft battery supplies power.",
+       "cite": "rotax-912is-om:p1"
+      },
+      {
+       "text": "The aircraft manufacturer must provide an ammeter because the EMS does not monitor generator-B charging.",
+       "cite": "rotax-im-912i:p57"
+      },
+      {
+       "text": "The 2020 installation manual requires a slow-blowing 50 A fuse or circuit breaker for the rectifier regulator.",
+       "cite": "rotax-im-912i:p64"
+      }
+     ],
+     "why": "kept: one battery to carry, fed through the maker's backup switch when both engine generators fail; the battery must meet the maker's minimum"
+    },
+    {
+     "id": "ems-isolated-two-batteries",
+     "label": "Isolated engine bus with its own backup battery",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The engine-management electrical system is isolated from the rest of the aircraft.",
+       "cite": "rotax-im-912i:p53"
+      },
+      {
+       "text": "Airframe ground and EMS ground must not be interconnected.",
+       "cite": "rotax-im-912i:p55"
+      },
+      {
+       "text": "The fuse box has separate plug connections X1 (LANE A) and X2 (LANE B), which ensure power distribution to the EMS.",
+       "cite": "rotax-im-912i:p60"
+      },
+      {
+       "text": "Generator A (14.2 V/16 A) supplies the EMS after the system check and generator B (14.2 V/30 A) supplies the aircraft instruments and charges the battery.",
+       "cite": "rotax-im-912i:p57"
+      },
+      {
+       "text": "The aircraft battery must be at least 16 Ah and must hold at least 9 V on the ECU bus during start-up.",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "The battery technical data require at least 350 A cold-cranking amperes at -18 \u00b0C (SAE J537).",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "If both EMS alternators fail, the 2012 operators manual says to switch on the backup battery switch so the aircraft battery supplies power.",
+       "cite": "rotax-912is-om:p1"
+      },
+      {
+       "text": "A separate engine backup battery is the builder's option, not something the maker's text requires; its mass, size and position are not sourced",
+       "flag": "derived"
+      }
+     ],
+     "why": "kept: the engine does not depend on the airframe battery, at the cost of a second battery and its mass and mounting"
+    },
+    {
+     "id": "book-battery",
+     "label": "Battery of the book airplane",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "Which battery the book empty weight carries (the mass ledger notes it may be the small one) is not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "baseline: the mass the book empty weight may or may not already include; not sourced"
+    },
+    {
+     "id": "lifepo4-etx900",
+     "label": "Lithium iron phosphate battery, 15.6 Ah class",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The EarthX ETX900 product-spec PDF lists weight of 4.9 lb (2.2 kg).",
+       "cite": "etx-series-lithium-batteries-etx900-prod:p1"
+      },
+      {
+       "text": "The EarthX ETX900 product-spec PDF lists capacity of 15.6 Ah.",
+       "cite": "etx-series-lithium-batteries-etx900-prod:p1"
+      },
+      {
+       "text": "The EarthX ETX900 product-spec PDF lists dimensions 6.5 x 3.1 x 6.6 in (166 x 79 x 168 mm).",
+       "cite": "etx-series-lithium-batteries-etx900-prod:p1"
+      },
+      {
+       "text": "15.6 Ah is below the maker's 16 Ah minimum for the aircraft battery; the maker's note leaves a lower-capacity choice to the aircraft manufacturer, so maker agreement is not stated as required",
+       "flag": "derived"
+      },
+      {
+       "text": "The maker's note says the choice of a lower-capacity battery is up to the aircraft manufacturer, and that extra electrical loads affect battery performance during starting.",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.",
+       "cite": "rotax-im-912i:p51"
+      },
+      {
+       "text": "Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked here",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: light at 4.9 lb, but its 15.6 Ah is just under the maker's 16 Ah minimum"
+    },
+    {
+     "id": "lifepo4-etx680c",
+     "label": "Lithium iron phosphate battery, 12.4 Ah class",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "EarthX lists the ETX680C mass as 3.9 lb (1.8 kg) at 13.2 V.",
+       "cite": "earthx-etx680c-product-page:p1"
+      },
+      {
+       "text": "EarthX ETX680C is rated 12.4 Ah at the 1C rate, in a 5.9 x 3.4 x 4.5 in LiFePO4 case.",
+       "cite": "earthx-etx680c-product-page:p1"
+      },
+      {
+       "text": "12.4 Ah is below the maker's 16 Ah minimum for the aircraft battery; the maker's note leaves a lower-capacity choice to the aircraft manufacturer",
+       "flag": "derived"
+      },
+      {
+       "text": "The maker's note says the choice of a lower-capacity battery is up to the aircraft manufacturer, and that extra electrical loads affect battery performance during starting.",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "The maker says a lithium-ion aircraft battery should only be used with a suitable battery management system, that responsibility then lies with the aircraft manufacturer, and that the aeronautical authority's approval may be necessary.",
+       "cite": "rotax-im-912i:p51"
+      },
+      {
+       "text": "Its cold-cranking amps and internal resistance against the maker's limits (350 A at -18 C, 10 mohm) are not checked here",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: very light at 3.9 lb, but 12.4 Ah is well below the maker's 16 Ah minimum"
+    },
+    {
+     "id": "agm-pc680",
+     "label": "Sealed lead-acid (AGM) battery, 16 Ah class",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "Odyssey lists the PC680 at 16 Ah on both the 20-hour and 10-hour rates.",
+       "cite": "ods-agm16l-pc680-odyssey-extreme-series-:p1"
+      },
+      {
+       "text": "Odyssey lists the PC680 at 15.4 lb, 7.2 in long, 3 in wide, 6.4 in high including terminals, and 6.6 in container height.",
+       "cite": "ods-agm16l-pc680-odyssey-extreme-series-:p1"
+      },
+      {
+       "text": "Odyssey lists the ODS-AGM16L (PC680) at 12 V.",
+       "cite": "ods-agm16l-pc680-odyssey-extreme-series-:p1"
+      },
+      {
+       "text": "The maker limits the aircraft battery's internal resistance to a maximum of 10 mohm at -18 C.",
+       "cite": "rotax-im-912i:p52"
+      },
+      {
+       "text": "Its cold-cranking amps and internal resistance against the maker's limits are not checked here",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: meets the maker's 16 Ah figure, at 15.4 lb the heaviest choice; its cold-cranking and internal resistance are not checked here"
+    }
+   ],
+   "positions": [],
+   "unknowns": [
+    {
+     "id": "backup-battery-requirement",
+     "text": "The current maker requirement for the backup battery (capacity, when it is mandatory): only the 2012 operators manual wording was found",
+     "how": "the maker's current installation and operators manuals",
+     "affects": [
+      "ems-isolated-one-battery",
+      "ems-isolated-two-batteries"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "battery-start-limits",
+     "text": "Whether a candidate battery meets the maker's cold-cranking (350 A at -18 C) and internal-resistance (10 mohm) limits",
+     "how": "the battery maker's data sheet against the maker's limits",
+     "affects": [
+      "lifepo4-etx900",
+      "lifepo4-etx680c",
+      "agm-pc680"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "shared-battery-ground-isolation",
+     "text": "Whether one aircraft battery shared by the airframe and the engine-management supply can satisfy the maker's rule that airframe ground and EMS ground must not be interconnected (how the battery negative and the backup switch are wired)",
+     "how": "the maker's wiring diagram and installation support, against the drawn grounding scheme",
+     "affects": [
+      "ems-isolated-one-battery"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "external-alternator-current",
+     "text": "Current available from the external alternator at cruise and the airframe load budget",
+     "how": "the maker's alternator data and the builder's load list",
+     "affects": [
+      "ems-isolated-one-battery",
+      "ems-isolated-two-batteries"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "book-wiring-reuse",
+     "text": "Which book panel and wing wiring (wire sizes, breakers, switches) can be kept for the airframe loads",
+     "how": "a circuit-by-circuit review against the maker's wiring diagram and the book wiring steps",
+     "affects": [
+      "ems-isolated-one-battery",
+      "ems-isolated-two-batteries"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "battery-location-arm",
+     "text": "Where the battery is mounted and its arm (it moves the CG; the cg-ballast record's battery option depends on it)",
+     "how": "the drawn installation and a weighing",
+     "affects": [
+      "lifepo4-etx900",
+      "lifepo4-etx680c",
+      "agm-pc680"
+     ],
+     "state": "open"
+    }
+   ],
+   "mission_score": null,
+   "decision": null,
+   "history": [],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "ems_supply",
+     "options": [
+      "book-single-alternator",
+      "ems-isolated-one-battery",
+      "ems-isolated-two-batteries"
+     ]
+    },
+    {
+     "id": "battery",
+     "options": [
+      "book-battery",
+      "lifepo4-etx900",
+      "lifepo4-etx680c",
+      "agm-pc680"
+     ]
+    }
+   ],
+   "scoring": null,
+   "reopen_flag": null
+  },
+  "fuel-system": {
+   "id": "fuel-system",
+   "spot": "mod-ez",
+   "title": "Fuel system for the 912 iS",
+   "status": "open",
+   "question": "How is fuel delivered to the 912 iS: pressure, return line, filtering and vapor-lock protection on a pusher?",
+   "coupled_with": [
+    "powerplant-fuel-resin",
+    "electrical"
+   ],
+   "replaces": [
+    "f21.plumbing",
+    "f23.carb-bracket"
+   ],
+   "book_choice": {
+    "text": "The book airplane's engine is carbureted and its fuel plumbing is built under the fuel-system steps (not checked against the owner's manual here)."
+   },
+   "options": [
+    {
+     "id": "book-carb-feed",
+     "label": "Book carburetor feed",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "EASA TCDS E.121 sets the 912 iSc Sport fuel pressure at 2.8 to 3.2 bar (the TCDS covers the iSc Sport series; the iS Sport shares the injection system)",
+       "cite": "easa-tcds-e121:p1"
+      },
+      {
+       "text": "A carburetor gravity or low-pressure feed does not supply 2.8 to 3.2 bar and has no return line, so the book plumbing cannot feed the 912 iS unchanged",
+       "flag": "derived"
+      }
+     ],
+     "why": "baseline: simple, but built for a carburetor; judgment: it would need a pressurized feed and a return line to suit the injected engine (derived from the maker's pressure figure)"
+    },
+    {
+     "id": "return-to-tank",
+     "label": "Pumped feed with a return line to the strake tank",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "EASA TCDS E.121 Issue 17 sets 912 iSc Sport fuel pressure at 2.8 to 3.2 bar.",
+       "cite": "easa-tcds-e121:p1"
+      },
+      {
+       "text": "Two electric fuel pumps are connected in series with bypass valves, and the engine runs on either or both.",
+       "cite": "rotax-im-912i:p104"
+      },
+      {
+       "text": "The coarse and fine filter mesh sizes (previously recorded as 50 to 67 micron and 8 to 12 micron) were not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "Fine filter requirement: see the coarse filter entry; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The non-drainable low point guidance for feed, return and vent lines was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The maker says fuel lines on the suction side of the fuel pump must be insulated against heat in the engine compartment and routed away from hot engine components, for prevention of vapor locks.",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "Fuels with more than 10 percent ethanol are not permitted.",
+       "cite": "si-912-i-001-r12-selection-of-suitable-o:p1"
+      },
+      {
+       "text": "The maker's minimum inner diameter for the fuel return line is 7.5 mm (0.3 in).",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "The maker recommends a restricted bypass line between the pump module outlet and the return line to vent air from the fuel system.",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "The statement that vapor bubbles in the return line must be vented to atmosphere was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The engine side-view callout naming separate tractor and pusher return connections was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The routing of a return line from the engine to the strake tanks, its length and pressure drop, are not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: the maker's architecture, with two pumps and a return connection; the cost is a return line along the full feed run and a return fitting in the strake tank"
+    },
+    {
+     "id": "return-to-header",
+     "label": "Pumped feed with a small header tank and a return line to it",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "EASA TCDS E.121 Issue 17 sets 912 iSc Sport fuel pressure at 2.8 to 3.2 bar.",
+       "cite": "easa-tcds-e121:p1"
+      },
+      {
+       "text": "Two electric fuel pumps are connected in series with bypass valves, and the engine runs on either or both.",
+       "cite": "rotax-im-912i:p104"
+      },
+      {
+       "text": "The coarse and fine filter mesh sizes (previously recorded as 50 to 67 micron and 8 to 12 micron) were not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "Fine filter requirement: see the coarse filter entry; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The non-drainable low point guidance for feed, return and vent lines was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The maker says fuel lines on the suction side of the fuel pump must be insulated against heat in the engine compartment and routed away from hot engine components, for prevention of vapor locks.",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "Fuels with more than 10 percent ethanol are not permitted.",
+       "cite": "si-912-i-001-r12-selection-of-suitable-o:p1"
+      },
+      {
+       "text": "The maker's minimum inner diameter for the fuel return line is 7.5 mm (0.3 in).",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "The maker recommends a restricted bypass line between the pump module outlet and the return line to vent air from the fuel system.",
+       "cite": "rotax-im-912i:p108"
+      },
+      {
+       "text": "The statement that vapor bubbles in the return line must be vented to atmosphere was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The engine side-view callout naming separate tractor and pusher return connections was not found on the installation manual pages checked; page unresolved",
+       "flag": "unknown"
+      },
+      {
+       "text": "The maker's favourable header-tank layout has a volume of at least 5 l (1.32 US gal).",
+       "cite": "rotax-im-912i:p115"
+      },
+      {
+       "text": "The maker says a sump should be integrated into a header tank.",
+       "cite": "rotax-im-912i:p115"
+      },
+      {
+       "text": "Whether the maker accepts a header tank return in place of a return to the main tank on a pusher with two strake tanks is not sourced",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: judgment: the maker discusses header tanks (at least 5 l, with a sump and a vent line to the wing tank); this shortens the return run at the cost of a header tank, its vent and its own supply from the strake tanks"
+    }
+   ],
+   "positions": [],
+   "unknowns": [
+    {
+     "id": "fuel-return-routing",
+     "text": "Return line routing from a pusher engine to the strake tanks: length, fittings, pressure drop, venting",
+     "how": "the drawn installation and the maker's return line limits",
+     "affects": [
+      "return-to-tank",
+      "return-to-header"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "fuel-temperature-limit",
+     "text": "Fuel temperature limit for vapor-lock protection: an older installation manual limited fuel-line temperature to 45 C and the 2020 edition states none",
+     "how": "the maker's current installation manual and a hot-soak ground test with the chosen fuel",
+     "affects": [
+      "return-to-tank",
+      "return-to-header"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "tank-selector-return",
+     "text": "Which tank the return line goes to when the airplane draws from one of two strake tanks through a selector",
+     "how": "the maker's installation support and the drawn plumbing",
+     "affects": [
+      "return-to-tank",
+      "return-to-header"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "header-tank-acceptance",
+     "text": "Whether a header tank return in place of a main-tank return is acceptable to the maker for a two-tank pusher",
+     "how": "ask the maker's installation support; a written statement",
+     "affects": [
+      "return-to-header"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "fuel-pump-power-lanes",
+     "text": "Which electrical supply feeds each fuel pump in the Mod-EZ wiring (the electrical record decides the supply)",
+     "how": "the electrical record's decision and the maker's wiring diagram",
+     "affects": [
+      "return-to-tank",
+      "return-to-header",
+      "book-carb-feed"
+     ],
+     "state": "open"
+    }
+   ],
+   "mission_score": null,
+   "decision": null,
+   "history": [],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "fuel_loop",
+     "options": [
+      "book-carb-feed",
+      "return-to-tank",
+      "return-to-header"
+     ]
+    }
+   ],
+   "scoring": null,
+   "reopen_flag": null
+  },
+  "powerplant-fuel-resin": {
+   "id": "powerplant-fuel-resin",
+   "spot": "mod-ez",
+   "title": "Powerplant, fuel and tank resin",
+   "status": "decided",
+   "question": "Which engine, on which fuel, and with which tank resin, for the Mod-EZ?",
+   "coupled_with": [],
+   "replaces": [
+    "f23.engine-install",
+    "f23.carb-bracket",
+    "f21.inside-layups",
+    "f21.plumbing"
+   ],
+   "book_choice": {
+    "text": "the book airplane uses the Lycoming O-235, two wing tanks totalling 52 gal, aviation gasoline, and a maximum true cruise of 161 kt at 75 percent power",
+    "cite": "om-1980:p15"
+   },
+   "options": [
+    {
+     "id": "o235-book",
+     "label": "Lycoming O-235",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "243 lb dry incl. starter and generator",
+       "cite": "tcds-e223:p7"
+      },
+      {
+       "text": "5.8 gal/h at 65 percent, 77 hp",
+       "cite": "lyc-om-o235:p3-8"
+      },
+      {
+       "text": "the manual warns that autogas can dissolve the epoxy in the fuel tanks",
+       "cite": "om-1980:p8"
+      }
+     ],
+     "why": "baseline, kept so the lineage is complete."
+    },
+    {
+     "id": "ul350i",
+     "label": "UL350i",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "118 hp, ready-to-fly 78.4 kg (173 lb)",
+       "cite": "ulpower-ul350i:p1"
+      },
+      {
+       "text": "mogas minimum 95 RON (91 AKI) below serial 223501, 91 RON (87 AKI) above, 100LL allowed if mogas is unavailable",
+       "cite": "ulpower-ul350i:p1"
+      },
+      {
+       "text": "estimated cruise about 18 L/h",
+       "cite": "ulpower-ul350i:p1"
+      },
+      {
+       "text": "ethanol limit",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: about 70 lb lighter installed than the book engine on the maker's ready-to-fly weight, so the tail gets lighter and the empty CG moves forward; runs on mogas; its ethanol limit is the open question. Weight bases differ between candidates (ready-to-fly, operational, a build-up of listed parts), so the weights are not strictly like for like"
+    },
+    {
+     "id": "ul350is",
+     "label": "UL350iS",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "operational weight 79.5 kg (175 lb) shared with UL350i",
+       "cite": "ulpower-techdata:p1"
+      },
+      {
+       "text": "power and fuel specifics not verified",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: same weight class as the UL350i; its power and fuel numbers have not been verified, so it is scored with unknowns"
+    },
+    {
+     "id": "rotax-912is",
+     "label": "Rotax 912iS",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "63.6 kg with gearbox plus add-ons",
+       "cite": "rotax-912is-datasheet:p1"
+      },
+      {
+       "text": "16.5 L/h (4.3 gal/h) at 75 percent",
+       "cite": "rotax-912is-om:p1"
+      },
+      {
+       "text": "more than 10 percent ethanol is not permitted",
+       "cite": "rotax-fuel-si:p1"
+      },
+      {
+       "text": "coolant and radiator weight",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: a published fuel flow at 75 percent power (69 hp), close to the mission cruise power; the maker limits ethanol to 10 percent, which ties it to the tank-resin question; coolant and radiator weight are not yet known"
+    },
+    {
+     "id": "rotax-915is",
+     "label": "Rotax 915iS",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The EASA data sheet gives 84,6 kg dry for the 915 iSc2 A, on a larger include list than the maker card",
+       "cite": "easa-tcds-e121:p13"
+      },
+      {
+       "text": "141 hp for 5 min and 82.2 kg with gearbox, turbo, intercooler and exhaust on the maker page",
+       "cite": "rotax-915is-page:p1"
+      },
+      {
+       "text": "Maker deck row at 5500 rpm: 87,47 kW burns 26,53 kg/h (about 303 g/kWh); the deck prints kg/h only",
+       "cite": "rotax-om-915i:p1"
+      },
+      {
+       "text": "TBO 1200 h or 15 years, whichever comes first",
+       "cite": "rotax-mml-915i:p1"
+      },
+      {
+       "text": "coolant and radiator weight",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept, not chosen: about 35 lb heavier installed than the 912 iS on a similar build-up basis and more power than the mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough"
+    },
+    {
+     "id": "rotax-916is",
+     "label": "Rotax 916iS",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "The EASA data sheet gives 85.8 kg dry for the 916 iSc2 A",
+       "cite": "easa-tcds-e121:p13"
+      },
+      {
+       "text": "160 hp and 85.8 kg with gearbox, turbo, intercooler and exhaust on the maker page",
+       "cite": "rotax-916is-page:p1"
+      },
+      {
+       "text": "Maker deck row at 5500 rpm: 89,96 kW burns 22,48027 kg/h (250 g/kWh); the deck prints kg/h only",
+       "cite": "rotax-om-916i:p1"
+      },
+      {
+       "text": "TBO 2,000 hrs",
+       "cite": "rotax-916is-page:p1"
+      },
+      {
+       "text": "coolant and radiator weight",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept, not chosen: about 38 lb heavier installed than the 912 iS on a similar build-up basis and more power than the mission needs; its fuel flow is derived from one maker deck row, so the range figure is rough"
+    },
+    {
+     "id": "deltahawk-dhk180",
+     "label": "DeltaHawk DHK180",
+     "kind": "dropped",
+     "facts": [
+      {
+       "text": "335 lb (151 kg) estimated",
+       "cite": "deltahawk-spec-2025:p1"
+      }
+     ],
+     "why": "dropped, the wrong direction for this CG; can be reopened."
+    },
+    {
+     "id": "electric",
+     "label": "Electric",
+     "kind": "dropped",
+     "facts": [
+      {
+       "text": "a flown electric Long-EZ carried a 525 lb pack, 450 V 80 Ah",
+       "cite": "wired-yates-2013:p1"
+      },
+      {
+       "text": "The flown pack stored 36 kWh (450 V x 80 Ah = 36,000 Wh) in 525 lb (238 kg): about 151 Wh/kg at pack level",
+       "flag": "derived"
+      },
+      {
+       "text": "a 500 Wh/kg cell is a company claim, cell level only",
+       "cite": "amprius-sicore500:p1"
+      },
+      {
+       "text": "Method: shaft power 52 kW at 150 kt (cube-law scaling of the manual's 161 kt at 75 percent of 115 hp) over 0.96 motor efficiency for 2.5 h is about 136 kWh; at 500 Wh/kg that is about 272 kg (600 lb) of cells before pack structure and reserve",
+       "flag": "derived"
+      }
+     ],
+     "why": "dropped for now: the numbers do not close the 300 nm mission with a pack that has flown (151 Wh/kg) or a claimed cell (500 Wh/kg, cell level); kept so it can be reopened when cells improve"
+    },
+    {
+     "id": "hybrid",
+     "label": "Hybrid",
+     "kind": "unavailable",
+     "facts": [
+      {
+       "text": "no homebuilder hybrid kit with a published price was found",
+       "flag": "unknown"
+      }
+     ],
+     "why": "none found: no homebuilder hybrid kit with a published price turned up in the sweep (not independently re-checked); kept so it can be reopened"
+    },
+    {
+     "id": "ul94-ethanol-free",
+     "label": "UL94 Ethanol-Free",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "UL94 is ethanol-free and weighs 5.87 lb/gal",
+       "cite": "swift-ul94-faq:p1"
+      }
+     ],
+     "why": "kept: removes the ethanol question, but no source shows how the book tank resin behaves in UL94, so the resin choice stays open",
+     "implies": {
+      "tank_resin": "No source tests UL94 on the book's epoxy tanks, so keeping the conventional tank resin is unconfirmed.",
+      "flag": "unknown"
+     }
+    },
+    {
+     "id": "mogas-e10",
+     "label": "Mogas E10",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "ethanol can partly dissolve resins in composite tanks",
+       "cite": "bmaa-sb2695:p1"
+      },
+      {
+       "text": "In a builder's 18-month immersion test (54 coupons, two per test) of E-Z Poxy, MGS and Jeffco epoxies in 100LL and 8.4 percent ethanol mogas, none showed visible deterioration; all gained some weight, and post-cure mattered more than brand. Small sample, not a long-term or maker rating",
+       "cite": "kitplanes-tank-epoxy-2018:p1"
+      }
+     ],
+     "why": "kept: the common automotive fuel, but ethanol can partly dissolve some composite-tank resins (judgment: the book's tank resin is not shown safe), so this path needs a tank resin that is shown to hold up, with a good post-cure (the rehearsal player carries an open placeholder for it); vapor lock in a hot pusher engine bay is a further judgment-level concern with no source here",
+     "implies": {
+      "tank_resin": "Ethanol can partly dissolve some composite-tank resins, so this path needs a tank resin shown to hold up in E10 with a good post-cure; which resin is not yet decided.",
+      "cite": "bmaa-sb2695:p1"
+     }
+    }
+   ],
+   "positions": [
+    {
+     "role": "propulsion",
+     "picks": {
+      "engine": "rotax-912is"
+     },
+     "confidence": "high",
+     "reasoning": "The Rotax 912iS is the only candidate with a verified cruise fuel flow of 16.5 L/h at 75% power <rotax-912is-om:p1>. The 915iS and 916iS offer more power, but their cruise fuel flows are unknown <rotax-915is-card:p1, rotax-916is-page:p1>, making them speculative 'waste' for this mission. The UL350i is lighter but its fuel specifics are not fully verified <ulpower-ul350i:p1>.",
+     "citations": [
+      "rotax-912is-om:p1",
+      "rotax-915is-card:p1",
+      "rotax-916is-page:p1",
+      "ulpower-ul350i:p1"
+     ],
+     "judgment": false
+    },
+    {
+     "role": "structures",
+     "picks": {
+      "fuel_path": "ul94-ethanol-free"
+     },
+     "confidence": "medium",
+     "reasoning": "Choosing Mogas E10 introduces a risk where ethanol can dissolve resins in composite tanks <bmaa-sb2695:p1>. While a small-scale test showed some epoxies held up <kitplanes-tank-epoxy-2018:p1>, the compatibility of the specific book tank resin with UL94 is unknown <ul94-ethanol-free:p1>. UL94 is ethanol-free <swift-ul94-faq:p1>, making it the safer structural choice, though the final decision depends on the unconfirmed behavior of the epoxy tanks in UL94.",
+     "citations": [
+      "bmaa-sb2695:p1",
+      "kitplanes-tank-epoxy-2018:p1",
+      "swift-ul94-faq:p1"
+     ],
+     "judgment": true
+    },
+    {
+     "role": "fuel-systems",
+     "picks": {
+      "fuel_path": "ul94-ethanol-free"
+     },
+     "confidence": "medium",
+     "reasoning": "The Rotax 912iS specifically prohibits more than 10 percent ethanol <rotax-fuel-si:p1>. Using UL94 ethanol-free <swift-ul94-faq:p1> avoids the ethanol-related resin dissolution risks associated with Mogas E10 <bmaa-sb2695:p1>.",
+     "citations": [
+      "rotax-fuel-si:p1",
+      "swift-ul94-faq:p1",
+      "bmaa-sb2695:p1"
+     ],
+     "judgment": false
+    },
+    {
+     "role": "aero-flight-test",
+     "picks": {},
+     "reasoning": "No flight test data is available to verify the cruise fuel flows for the higher-power Rotax models (915iS/916iS) or the UL350i average <rotax-915is-card:p1, rotax-916is-page:p1, ulpower-ul350i:p1>. A common-power model for each engine is required to close the paper case. (uncited)",
+     "citations": [],
+     "judgment": true,
+     "confidence": "low"
+    },
+    {
+     "role": "historian",
+     "picks": {
+      "engine": "o235-book"
+     },
+     "confidence": "high",
+     "reasoning": "The baseline for the mission is the Lycoming O-235, which uses aviation gasoline and provides a maximum true cruise of 161 kt at 75% power <om-1980:p15>.",
+     "citations": [
+      "om-1980:p15"
+     ],
+     "judgment": false
+    }
+   ],
+   "unknowns": [
+    {
+     "id": "ul-power-ethanol",
+     "text": "UL Power ethanol limit",
+     "how": "ask the maker for the ethanol limit in writing",
+     "affects": [
+      "ul350i"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "rotax-coolant-weight",
+     "text": "coolant and radiator weight for the Rotax installs",
+     "how": "dealer installation manual",
+     "affects": [
+      "rotax-912is",
+      "rotax-915is",
+      "rotax-916is"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "ul94-tank-behaviour",
+     "text": "UL94 behaviour on the book's epoxy tanks",
+     "how": "soak coupons of the actual tank resin",
+     "affects": [
+      "ul94-ethanol-free"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "unusable-fuel",
+     "text": "unusable fuel in the 52 gal tanks",
+     "how": "measure on the airframe",
+     "affects": [],
+     "state": "open"
+    },
+    {
+     "id": "cruise-fuel-flows",
+     "text": "The published cruise fuel flows sit at different power points (O-235 at 65 percent and 77 hp, 912 iS at 75 percent and 69 hp, UL350i a factory average), so the mission scores compare them only roughly",
+     "how": "flight-test or a common-power model for each engine",
+     "affects": [
+      "o235-book",
+      "ul350i",
+      "ul350is",
+      "rotax-912is",
+      "rotax-915is",
+      "rotax-916is"
+     ],
+     "state": "open"
+    }
+   ],
+   "mission_score": {
+    "o235-book": {
+     "option": "o235-book",
+     "empty_lb": {
+      "v": 730.0,
+      "flag": "sourced",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 111.7,
+      "flag": "derived",
+      "note": "book engine arm by closure method"
+     },
+     "fuel_needed_lb": {
+      "v": 85.115,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": 1148.115,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": 102.79067645662673,
+      "flag": "derived",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": 102.68290906767727,
+      "flag": "derived",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": 1269.8275862068967,
+      "flag": "derived",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": true,
+     "assumptions": [
+      "book engine arm by closure method",
+      "O-235-K/L/M at 65 percent rated power, 77 hp; the closest published point to the mission power, not scaled",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "derived"
+    },
+    "ul350i": {
+     "option": "ul350i",
+     "empty_lb": {
+      "v": 660.0,
+      "flag": "sourced",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 108.58712121212122,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": 69.853,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": 1062.853,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": 100.24635438767167,
+      "flag": "derived",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": 100.01029593118209,
+      "flag": "derived",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": 1563.655462184874,
+      "flag": "derived",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": true,
+     "assumptions": [
+      "ready-to-fly 78.4 kg (173 lb) as printed",
+      "assumed same installed CG as the book engine",
+      "factory estimated cruise average about 18 L/h divided by 3.785 L/gal; not tied to the mission speed",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "derived"
+    },
+    "ul350is": {
+     "option": "ul350is",
+     "empty_lb": {
+      "v": 662.0,
+      "flag": "derived",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 108.68519637462236,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": null,
+     "assumptions": [
+      "possible fully operational weight 79.5 kg (175 lb), shared UL350i/UL350iS; oil cooler and gauges are extra, so not a complete installed weight",
+      "assumed same installed CG as the book engine",
+      "cruise fuel flow",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "unknown"
+    },
+    "rotax-912is": {
+     "option": "rotax-912is",
+     "empty_lb": {
+      "v": 653.2,
+      "flag": "derived",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 108.2491733006736,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": 63.1025,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": 1049.3025,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": 99.95456148250862,
+      "flag": "derived",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": 99.72482768425357,
+      "flag": "derived",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": 1738.953488372093,
+      "flag": "derived",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": true,
+     "assumptions": [
+      "63.6 kg engine with gearbox plus exhaust 4.8, mount frame 2.0, external alternator 3.0, air guide 0.4, fuel pumps 1.6 kg = 75.4 kg; coolant and radiator weight unknown and not included",
+      "assumed same installed CG as the book engine",
+      "16.5 L/h at 75 percent continuous performance, 69 hp",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "derived"
+    },
+    "rotax-915is": {
+     "option": "rotax-915is",
+     "empty_lb": {
+      "v": 688.1,
+      "flag": "derived",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 109.91281063798867,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": 86.876,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": 1107.976,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": 101.34655173036239,
+      "flag": "derived",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": 101.13550463217611,
+      "flag": "derived",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": 1242.5675675675677,
+      "flag": "derived",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": true,
+     "assumptions": [
+      "Build-up on a similar basis to the 912 iS: 84.6 kg dry (EASA data sheet, 915 iSc2 A: base engine, gearbox, turbo, intercooler, exhaust, ECU, fusebox, wiring, oil tank, cooling baffle; no fuel pumps, radiator or oil cooler) plus engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg from the maker product page (rotax-915is-page:p1) = 91.2 kg. Coolant, radiator and oil cooler are not included (unknown). The 82.2 kg product-page figure uses a smaller include list.",
+      "assumed same installed CG as the book engine",
+      "Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 87,47 kW, 26,53 kg/h = 303 g/kWh) to the 52.0 kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably higher at low power, so this understates the fuel flow.",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "derived"
+    },
+    "rotax-916is": {
+     "option": "rotax-916is",
+     "empty_lb": {
+      "v": 690.7,
+      "flag": "derived",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 110.03002026929201,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": 71.61399999999999,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": 1095.314,
+      "flag": "derived",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": 101.39685788732729,
+      "flag": "derived",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": 101.22558733777329,
+      "flag": "derived",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": 1523.360655737705,
+      "flag": "derived",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": true,
+     "assumptions": [
+      "Build-up on a similar basis to the 912 iS: 85.8 kg dry (EASA data sheet, 916 iSc2 A, same include list as the 915) plus engine suspension frame 2.0 kg, external alternator 3.0 kg and fuel pumps 1.6 kg (rotax-916is-page:p1 lists the same add-ons) = 92.4 kg. Coolant, radiator and oil cooler are not included (unknown).",
+      "assumed same installed CG as the book engine",
+      "Constant-BSFC scale of one manufacturer deck row (5500 rpm, sea level, 89,96 kW, 22,48027 kg/h = 250 g/kWh) to the 52.0 kW mission power, then kg/h to gal/h at the record density of 5.87 lb/gal. The deck prints kg/h only. BSFC is probably higher at low power, so this understates the fuel flow.",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "derived"
+    },
+    "deltahawk-dhk180": {
+     "option": "deltahawk-dhk180",
+     "empty_lb": {
+      "v": 822.0,
+      "flag": "derived",
+      "note": ""
+     },
+     "empty_cg": {
+      "v": 114.98491484184916,
+      "flag": "derived",
+      "note": "assumed same installed CG as the book engine"
+     },
+     "fuel_needed_lb": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "takeoff_lb": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "takeoff_cg": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "landing_cg": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "range_full_fuel_nm": {
+      "v": null,
+      "flag": "unknown",
+      "note": ""
+     },
+     "block_time_h": {
+      "v": 2.5,
+      "flag": "derived",
+      "note": ""
+     },
+     "in_envelope": null,
+     "assumptions": [
+      "estimated, includes starter, alternator, turbo and exhaust; not a complete installed weight, so flagged derived",
+      "assumed same installed CG as the book engine",
+      "cruise fuel flow",
+      "mission assumption below the manual's 161 kt maximum true cruise at 75 percent power; no flight test at 150 kt",
+      "two tanks, 52 gal total; unusable fuel unknown",
+      "UL94 density applied to every gasoline option; mogas density is unsourced"
+     ],
+     "worst_flag": "unknown"
+    }
+   },
+   "decision": {
+    "picks": {
+     "engine": "rotax-912is",
+     "fuel_path": "ul94-ethanol-free"
+    },
+    "date": "2026-10-18",
+    "reason": "No compelling reason for the other powerplants."
+   },
+   "history": [
+    {
+     "date": "2026-10-18",
+     "from": "open",
+     "to": "decided",
+     "reason": "No compelling reason for the other powerplants.",
+     "picks": {
+      "engine": "rotax-912is",
+      "fuel_path": "ul94-ethanol-free"
+     }
+    }
+   ],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "engine",
+     "options": [
+      "o235-book",
+      "ul350i",
+      "ul350is",
+      "rotax-912is",
+      "rotax-915is",
+      "rotax-916is"
+     ]
+    },
+    {
+     "id": "fuel_path",
+     "options": [
+      "ul94-ethanol-free",
+      "mogas-e10"
+     ]
+    }
+   ],
+   "scoring": null,
+   "reopen_flag": null
+  },
+  "propeller": {
+   "id": "propeller",
+   "spot": "mod-ez",
+   "title": "Propeller",
+   "status": "open",
+   "question": "Which kind of propeller does the Mod-EZ run behind the 912 iS gearbox?",
+   "coupled_with": [
+    "powerplant-fuel-resin"
+   ],
+   "replaces": [
+    "f23.engine-install",
+    "f23.cowl-closeout"
+   ],
+   "book_choice": {
+    "text": "The book allows only light-weight fixed-pitch solid wood propellers; constant speed, variable pitch and metal propellers are not recommended because a pusher propeller would need extensive development and vibration testing.",
+    "cite": "om-1980:p5"
+   },
+   "options": [
+    {
+     "id": "wood-fixed-book",
+     "label": "Fixed-pitch solid wood (the book)",
+     "kind": "book",
+     "facts": [
+      {
+       "text": "For the O-235 the owner's manual lists 58 in diameter with 72 in pitch (cruise prop) or 66 in pitch (climb prop)",
+       "cite": "om-1980:p5"
+      },
+      {
+       "text": "The designers prefer the climb prop for the best takeoff performance",
+       "cite": "om-1980:p6"
+      },
+      {
+       "text": "The airplane's designers later found 62 in diameter by 66 in pitch best for the O-235 on two airplanes with several hundred hours, larger than the plans back page",
+       "cite": "cp-text:p33"
+      },
+      {
+       "text": "Static rpm at full throttle must be at least 2450 for normal takeoff performance (an O-235 figure)",
+       "cite": "om-1980:p13"
+      },
+      {
+       "text": "Rotation direction of the book propeller",
+       "flag": "unknown"
+      },
+      {
+       "text": "Weight of the book wood propeller",
+       "flag": "unknown"
+      }
+     ],
+     "why": "baseline: the only type the book approves for the pusher; it is matched to a direct-drive engine, not to a geared one"
+    },
+    {
+     "id": "carbon-wood-fixed",
+     "label": "Fixed-pitch carbon with wood core",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "Catto lists Long EZ propellers with a carbon structure and wood core: two-blade 66 in for 180-200 hp and 64 in for 150-160 hp, three-blade 60 in, and says most canards need a 6 in or 8 in extension",
+       "cite": "catto-canards:p1"
+      },
+      {
+       "text": "The 912 iS propeller shaft turns counter clockwise looking towards the face of the flange",
+       "cite": "rotax-im-912i:p1"
+      },
+      {
+       "text": "Inference: if the flange face points aft on a pusher (no reverse-rotation variant fitted), the propeller turns counter clockwise seen from behind, a left-turning pusher propeller; a reseller guide says pushers run a left turning propeller on the Rotax 912 family",
+       "flag": "derived"
+      },
+      {
+       "text": "Catto statement for the Rotax 912 iS, weight and price",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: closest to the book (fixed pitch, wood in the structure), but no source ties it to this engine or to a geared 5800 rpm drive"
+    },
+    {
+     "id": "ground-adjustable-composite",
+     "label": "Ground-adjustable composite",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "Sensenich 3B0R5 pusher blades (L68C): 68 in maximum and 64 in minimum diameter, 9.0 lb without spacer, approved for Rotax 912, 912S, 912iS and 914 series reduction drives, 5800 rpm engine, 80-115 hp",
+       "cite": "sensenich-3b0r5:p1"
+      },
+      {
+       "text": "Sensenich 2A0R5/L69E two-blade pusher: 69 in maximum and 65 in minimum, 10.5 lb, same engine list",
+       "cite": "sensenich-2a0:p1"
+      },
+      {
+       "text": "The 912 iS gearbox ratio is 2.4286 and the propeller moment of inertia window is 1500 to 6000 kg cm2",
+       "cite": "rotax-im-912i:p1"
+      },
+      {
+       "text": "The 912 iS propeller shaft turns counter clockwise looking towards the face of the flange",
+       "cite": "rotax-im-912i:p1"
+      },
+      {
+       "text": "Inference: if the flange face points aft on a pusher (no reverse-rotation variant fitted), the propeller turns counter clockwise seen from behind, a left-turning pusher propeller; a reseller guide says pushers run a left turning propeller on the Rotax 912 family",
+       "flag": "derived"
+      },
+      {
+       "text": "Maximum takeoff engine speed 5800 rpm over the 2.4286 ratio is about 2388 propeller rpm. That is a ceiling, not a static reading, and the book's 2450 static minimum is a direct-drive O-235 check that does not transfer to a geared engine",
+       "flag": "derived"
+      },
+      {
+       "text": "Approval of any of these for a Long-EZ airframe, and the pitch to set",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: the maker table found that names the 912 iS and has pusher blades; pitch can be set on the ground to fit the geared engine, but the book does not approve non-wood propellers for this airplane"
+    },
+    {
+     "id": "in-flight-adjustable",
+     "label": "Constant speed (hydraulic governor)",
+     "kind": "candidate",
+     "facts": [
+      {
+       "text": "MT-Propeller lists the MTV-34 hydraulic constant-speed propeller for the Rotax 912/914 series and the 915 iS, three-blade 9 kg (19.8 lb) plus a 1 kg governor",
+       "cite": "mt-mtv34:p1"
+      },
+      {
+       "text": "On the certified Sport series the iSc3 variant has the hydraulic governor drive (64,4 kg) and the iSc2 has a fixed-propeller flange (63,6 kg)",
+       "cite": "easa-tcds-e121:p13"
+      },
+      {
+       "text": "The book does not recommend constant speed or variable pitch propellers for the pusher, citing aerodynamic-induced vibration and the development testing needed",
+       "cite": "om-1980:p5"
+      },
+      {
+       "text": "Pusher approval for the MTV-34 and a Long-EZ installation",
+       "flag": "unknown"
+      }
+     ],
+     "why": "kept: widest operating range, but it needs the governor-drive engine variant and goes against the book's explicit caution, so it needs its own vibration evidence"
+    },
+    {
+     "id": "airmaster-electric",
+     "label": "Electric constant speed (Airmaster)",
+     "kind": "unavailable",
+     "facts": [
+      {
+       "text": "The listed Airmaster AP332 configuration is a clockwise tractor, 70 in, 25 lbs, for Rotax 912, 912S and 914; no pusher configuration appears on the page",
+       "cite": "airmaster-ap332:p1"
+      },
+      {
+       "text": "Airmaster pusher configuration for the 912 iS",
+       "flag": "unknown"
+      },
+      {
+       "text": "A 25 lb hub is heavy against the 9 to 10 lb ground-adjustable composites, which would matter for the empty weight and for where the weight sits",
+       "flag": "judgment"
+      }
+     ],
+     "why": "none found: no pusher configuration turned up on the page; kept so it can be reopened"
+    },
+    {
+     "id": "metal-fixed",
+     "label": "Metal fixed pitch",
+     "kind": "dropped",
+     "facts": [
+      {
+       "text": "The book does not recommend metal propellers for the pusher, citing aerodynamic-induced vibration",
+       "cite": "om-1980:p5"
+      }
+     ],
+     "why": "dropped on the book's own caution; no other source was found either way"
+    }
+   ],
+   "positions": [],
+   "unknowns": [
+    {
+     "id": "tip-ground-clearance",
+     "text": "Prop-tip-to-ground clearance of the Long-EZ in the tail-down attitude for each diameter (the manual prints only a rotation-angle limit, and the clearance rule of thumb found is general homebuilder advice, not a Long-EZ number)",
+     "how": "measure on the airframe with the nose gear in its takeoff and landing attitudes",
+     "affects": [
+      "wood-fixed-book",
+      "carbon-wood-fixed",
+      "ground-adjustable-composite",
+      "in-flight-adjustable",
+      "airmaster-electric"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "maximum-prop-diameter",
+     "text": "Maximum propeller diameter that fits a Long-EZ (the plans back-page figure was not read; the designers flew a larger propeller than the plans show)",
+     "how": "read the plans back page; measure on the airframe",
+     "affects": [],
+     "state": "open"
+    },
+    {
+     "id": "book-rotation-direction",
+     "text": "Rotation direction of the book propeller",
+     "how": "plans or the Canard Pusher index of propeller articles",
+     "affects": [
+      "wood-fixed-book"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "warp-drive-naming",
+     "text": "Whether the maker's 2021 Warp Drive manual names the 912 iS (the older manual does, the newer table extract does not)",
+     "how": "ask the maker",
+     "affects": [],
+     "state": "open"
+    },
+    {
+     "id": "tip-speed-limit",
+     "text": "A tip-speed or noise limit for the 912 iS gearbox propeller",
+     "how": "maker installation manual or a noise measurement",
+     "affects": [
+      "carbon-wood-fixed",
+      "ground-adjustable-composite",
+      "in-flight-adjustable",
+      "airmaster-electric"
+     ],
+     "state": "open"
+    },
+    {
+     "id": "pusher-turning-effect",
+     "text": "Pusher yaw and pitch effect of a left-turning versus right-turning propeller on this airframe",
+     "how": "flight test",
+     "affects": [
+      "carbon-wood-fixed",
+      "ground-adjustable-composite"
+     ],
+     "state": "open"
+    }
+   ],
+   "mission_score": null,
+   "decision": null,
+   "history": [],
+   "changes": null,
+   "evidence": {
+    "paper": "none",
+    "material": "none",
+    "outside_review": "none",
+    "flight": "none"
+   },
+   "axes": [
+    {
+     "id": "propeller",
+     "options": [
+      "wood-fixed-book",
+      "carbon-wood-fixed",
+      "ground-adjustable-composite",
+      "in-flight-adjustable"
+     ]
+    }
+   ],
+   "scoring": null,
+   "reopen_flag": null
+  }
+ }
+}
