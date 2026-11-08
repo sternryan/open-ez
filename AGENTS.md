@@ -28,6 +28,7 @@ This is a PUBLIC repository. See "Public-repo hygiene" below before adding anyth
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt -r requirements-guide-dev.txt
 .venv/bin/python -m pytest -q                      # full Python suite
+make test-affected BASE=<full-sha>                # push-gate --affected: smoke + tests for the changed core/guide/hangar modules
 node --test guide/viewer/tests/*.test.mjs          # viewer unit tests
 .venv/bin/python -m guide.check --schema-only      # guide schema gate (full mode needs the private corpus)
 .venv/bin/python -m guide.export_glb --out output/guide/longez.glb
@@ -37,6 +38,13 @@ python3.13 scripts/vspaero_np.py                   # VSPAERO NP leg -> data/vali
 pre-commit run --all-files                         # ruff, ruff-format, mypy (scripts/), smoke test
 python -m hangar.briefing_server --site <dir> --port <n>
 ```
+
+**Gating.** open-ez gates on the laptop (`config/push-gate-test-hosts.tsv`: the suite runs Playwright Chromium, which anvil
+cannot do without a GPU). `push-gate.sh --affected` runs `scripts/test-affected.py`: the always-on smoke tests plus tests that
+mirror or import (transitively) each changed `core/`, `guide/` or `hangar/` module and each changed test file. Anything unmapped
+(config, data, requirements, scripts, a module with no test) selects the FULL suite. A narrow green is not a full-suite green:
+the full suite (`python -m pytest -q`, about 70 minutes) is required nightly and before any release or tag, and a failure there
+is fixed before the next landing. Note the git pre-commit hook also runs the whole suite per commit on a machine with the venv.
 
 The test suite writes only to pytest's `tmp_path`. It does not rewrite tracked files; if a run
 leaves `git status` dirty, that is a bug in a test, not something to restore by hand.
