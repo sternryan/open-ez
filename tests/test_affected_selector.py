@@ -125,3 +125,14 @@ def test_execute_prints_the_lines_push_gate_records(tmp_path):
     p = subprocess.run([sys.executable, str(SCRIPT), "--repo", str(r), "--base", base, "--execute"], capture_output=True, text=True)
     for k in ("base_sha: " + base, "policy_id: ", "evidence_id: "):
         assert k in p.stdout, p.stdout
+
+
+def test_staged_selects_from_the_index_not_from_commits(tmp_path):
+    r, base = make_repo(tmp_path)
+    put(r, "core/foo.py", "x = 9\n")        # modified, NOT staged: ignored
+    p = subprocess.run([sys.executable, str(SCRIPT), "--repo", str(r), "--base", "HEAD", "--staged", "--print"], capture_output=True, text=True)
+    assert json.loads(p.stdout)["changed_paths"] == []
+    sh(r, "add", "core/foo.py")
+    p = subprocess.run([sys.executable, str(SCRIPT), "--repo", str(r), "--base", "HEAD", "--staged", "--print"], capture_output=True, text=True)
+    sel = json.loads(p.stdout)
+    assert sel["changed_paths"] == ["core/foo.py"] and "tests/test_foo.py" in checks(sel)

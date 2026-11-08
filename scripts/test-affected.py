@@ -13,7 +13,7 @@ A changed module with no related test also selects the full suite (a silent empt
 policy_id = sha256(this file). The narrow run is NOT a full-suite green: the full suite stays required
 nightly and before releases (AGENTS.md).
 
-usage: test-affected.py --base SHA [--repo .] (--print | --execute)
+usage: test-affected.py --base SHA [--repo .] [--staged] (--print | --execute)
 Exit: 0 ok, 2 fail closed, otherwise the failing check's code.
 --print emits the selection JSON (base_sha, policy_id, evidence_id, selected_checks, reason, full, ...).
 --execute prints `base_sha:`/`policy_id:`/`evidence_id:` lines (what push-gate records) then runs pytest.
@@ -49,8 +49,11 @@ def git(repo: Path, *args: str) -> str:
     return p.stdout
 
 
-def changed_paths(repo: Path, base: str) -> list[str]:
+def changed_paths(repo: Path, base: str, staged: bool = False) -> list[str]:
     git(repo, "cat-file", "-e", f"{base}^{{commit}}")
+    if staged:  # pre-commit: the change under test is the index vs HEAD
+        out = git(repo, "diff", "--cached", "--name-only", "--no-renames", base)
+        return sorted(p for p in out.splitlines() if p)
     if subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", base, "HEAD"]).returncode != 0:
         raise Closed(f"base is not an ancestor of HEAD: {base}")
     out = git(repo, "diff", "--name-only", "--no-renames", f"{base}...HEAD")
@@ -114,10 +117,10 @@ def tests_for(repo: Path, mods: set[str]) -> tuple[set[str], list[str]]:
     return picked, unmatched
 
 
-def select(repo: Path, base: str) -> dict:
-    changed = changed_paths(repo, base)
+def select(repo: Path, base: str, staged: bool = False) -> dict:
+    changed = changed_paths(repo, base, staged)
     head = git(repo, "rev-parse", "HEAD").strip()
-    tree = git(repo, "rev-parse", "HEAD^{tree}").strip()
+    tree = git(repo, "write-tree").strip() if staged else git(repo, "rev-parse", "HEAD^{tree}").strip()
     reasons: list[str] = []
     full = False
     seeds: set[str] = set()
@@ -189,13 +192,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--repo", default=".")
     ap.add_argument("--print", dest="do_print", action="store_true")
     ap.add_argument("--execute", action="store_true")
+    ap.add_argument("--staged", action="store_true", help="select for the staged change vs --base (pre-commit hook)")
     a = ap.parse_args(argv)
     if not (a.do_print or a.execute):
         print("fail closed: pass --print or --execute", file=sys.stderr)
         return 2
     repo = Path(a.repo).resolve()
     try:
-        sel = select(repo, a.base)
+        sel = select(repo, a.base, a.staged)
     except Closed as e:
         print(json.dumps({"ok": False, "error": str(e)}))
         print(str(e), file=sys.stderr)
